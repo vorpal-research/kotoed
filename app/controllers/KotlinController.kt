@@ -7,5 +7,5 @@ import javax.inject.Singleton
 
 @Singleton
 class KotlinController @Inject constructor() : Controller() {
-    fun ping() = Results.ok("Pong!")
+    fun ping() = Results.ok(views.html.index.render("bar"))
 }
