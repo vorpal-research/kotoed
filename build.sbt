@@ -8,6 +8,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 kotlinVersion := "1.1.0"
 kotlinLib("stdlib")
 
+kotlinSource := baseDirectory.value / "app"
+kotlinSource := baseDirectory.value / "test"
+
 scalaVersion := "2.11.8"
 
 libraryDependencies += filters
