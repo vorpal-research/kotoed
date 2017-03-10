@@ -11,6 +11,8 @@ kotlinLib("stdlib")
 kotlinSource := baseDirectory.value / "app"
 kotlinSource := baseDirectory.value / "test"
 
+kotlinClasspath(Compile, Def.setting(Seq(target.value / "scala-2.11" / "classes").classpath))
+
 scalaVersion := "2.11.8"
 
 libraryDependencies += filters
