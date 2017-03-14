@@ -4,7 +4,7 @@ import com.hazelcast.util.Base64
 
 object Config {
     object TeamCity {
-        val Host = "http://localhost"
+        val Host = "localhost"
         val Port = 8111
 
         val User = "kotoed"
