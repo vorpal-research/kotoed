@@ -5,7 +5,7 @@ import io.vertx.core.Handler
 import kotlin.coroutines.experimental.suspendCoroutine
 
 @JvmName("vxVoid")
-inline suspend fun vx(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit) = run {
+inline suspend fun vx(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit): Unit = run {
     suspendCoroutine<Void?> { cont ->
         cb(Handler { res ->
             if (res.succeeded()) cont.resume(res.result())
@@ -14,7 +14,7 @@ inline suspend fun vx(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit) = r
     }
 }
 
-inline suspend fun <T> vx(crossinline cb: (Handler<AsyncResult<T>>) -> Unit) = run {
+inline suspend fun <T> vx(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T = run {
     suspendCoroutine<T> { cont ->
         cb(Handler { res ->
             if (res.succeeded()) cont.resume(res.result())

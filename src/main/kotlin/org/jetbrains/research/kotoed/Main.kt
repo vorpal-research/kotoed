@@ -2,11 +2,14 @@ package org.jetbrains.research.kotoed
 
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
+import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.vx
+import kotlin.reflect.KProperty
 
 fun main(args: Array<String>) {
     launch(Unconfined) {
@@ -23,15 +26,16 @@ class KotoedServer : io.vertx.core.AbstractVerticle() {
 
             val gsms = vx<AsyncMap<String, String>> { vertx.sharedData().getClusterWideMap("gsms", it) }
 
-            router.route("/").handler({ ctx ->
+            router.route("/").handler { ctx ->
                 ctx.response()
                         .putHeader("content-type", "text/plain")
                         .end("Kotoed online...")
-            })
+            }
 
             router.route("/global/create/:key/:value").handler { ctx ->
-                val key = ctx.request().getParam("key")
-                val value = ctx.request().getParam("value")
+                val key by ctx.request()
+                val value by ctx.request()
+
                 launch(Unconfined) {
                     vx { gsms.put(key, value, it) }
                     ctx.response()
@@ -41,7 +45,8 @@ class KotoedServer : io.vertx.core.AbstractVerticle() {
             }
 
             router.route("/global/read/:key").handler { ctx ->
-                val key = ctx.request().getParam("key")
+                val key by ctx.request()
+
                 launch(Unconfined) {
                     val value = vx<String> { gsms.get(key, it) }
                     ctx.response()
