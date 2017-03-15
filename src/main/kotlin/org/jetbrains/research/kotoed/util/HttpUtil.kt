@@ -1,10 +1,7 @@
 package org.jetbrains.research.kotoed.util
 
-import io.netty.util.AsciiString
 import io.vertx.ext.web.client.HttpRequest
 
-fun <T> HttpRequest<T>.putHeader(name: AsciiString, value: String) =
-        this.putHeader(name.toString(), value)
-
-fun <T> HttpRequest<T>.putHeader(name: AsciiString, value: AsciiString) =
+fun <T> HttpRequest<T>.putHeader(name: CharSequence, value: CharSequence) =
         this.putHeader(name.toString(), value.toString())
+
