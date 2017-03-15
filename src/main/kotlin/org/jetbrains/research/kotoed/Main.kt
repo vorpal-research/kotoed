@@ -5,6 +5,7 @@ import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
@@ -14,6 +15,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
+import org.jetbrains.research.kotoed.util.eventbus.sendAsync
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.vx
 
@@ -105,16 +107,13 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val eb = vertx.eventBus()
 
         launch(Unconfined) {
-            val res = vx<Message<JsonObject>> {
-                eb.send(
-                        Address.TeamCityVerticle,
-                        JsonObject().put(
-                                "payload",
-                                "/app/rest/projects"
-                        ),
-                        it
+            val res = eb.sendAsync<JsonObject>(
+                Address.TeamCityVerticle,
+                JsonObject().put(
+                        "payload",
+                        "/app/rest/projects"
                 )
-            }
+            )
 
             ctx.response()
                     .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
