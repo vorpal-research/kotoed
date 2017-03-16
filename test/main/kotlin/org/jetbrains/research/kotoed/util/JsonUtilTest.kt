@@ -1,22 +1,23 @@
 package org.jetbrains.research.kotoed.util
 
-import org.junit.Test
 import io.vertx.core.json.JsonObject
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-data class ExampleMessage(val p1: Int, val p2: String, val p3: Int?): Message()
-data class ExampleMessage2(val payload: List<ExampleMessage>): Message()
+data class ExampleMessage(val p1: Int, val p2: String, val p3: Int?) : Message()
 
-data class ExampleMessage3(val payload: Map<Int, ExampleMessage?>): Message()
+data class ExampleMessage2(val payload: List<ExampleMessage>) : Message()
 
-data class Tangled(val data: List<Int>, val next: Map<Int, List<Tangled>>): Message()
+data class ExampleMessage3(val payload: Map<Int, ExampleMessage?>) : Message()
+
+data class Tangled(val data: List<Int>, val next: Map<Int, List<Tangled>>) : Message()
 
 class JsonUtilTest {
     @Test
-    fun testToJson(){
+    fun testToJson() {
         assertEquals(
-            JsonObject("""
+                JsonObject("""
                 {
                     "payload" : [
                         {
@@ -27,11 +28,11 @@ class JsonUtilTest {
                     ]
                 }
             """),
-            ExampleMessage2(listOf(ExampleMessage(2, "Hello", null))).toJson()
+                ExampleMessage2(listOf(ExampleMessage(2, "Hello", null))).toJson()
         )
 
         assertEquals(
-            JsonObject("""
+                JsonObject("""
                 {
                     "payload" : [
                         [1, {
@@ -42,7 +43,7 @@ class JsonUtilTest {
                     ]
                 }
             """),
-            ExampleMessage3(mapOf(1 to ExampleMessage(2, "Hello", null))).toJson()
+                ExampleMessage3(mapOf(1 to ExampleMessage(2, "Hello", null))).toJson()
         )
 
         assertEquals(
@@ -55,7 +56,7 @@ class JsonUtilTest {
                         ]
                     }
                 """),
-                Tangled(listOf(1,2,3,4), mapOf(1 to listOf(Tangled(listOf(), mapOf())), 2 to listOf())).toJson()
+                Tangled(listOf(1, 2, 3, 4), mapOf(1 to listOf(Tangled(listOf(), mapOf())), 2 to listOf())).toJson()
         )
     }
 
@@ -139,7 +140,5 @@ class JsonUtilTest {
                     {}
                 """))
         }
-
-
     }
 }

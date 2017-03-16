@@ -11,7 +11,7 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
-inline operator fun<reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
+inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
         this.getValue(property.name) as T?
 
 inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toMap())
@@ -21,7 +21,6 @@ inline operator fun JsonArray.component1(): Any? = this.getValue(0)
 inline operator fun JsonArray.component2(): Any? = this.getValue(1)
 inline operator fun JsonArray.component3(): Any? = this.getValue(2)
 inline operator fun JsonArray.component4(): Any? = this.getValue(3)
-
 
 abstract class Message {
     init {
@@ -33,90 +32,89 @@ fun Message.toJson() =
         JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
 
 private fun Any?.tryToJson(): Any? =
-    when(this) {
-        null -> null
-        is Message -> toJson()
-        is Collection<*> -> JsonArray(this.map { it.tryToJson() })
-        is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
-        is Map.Entry<*, *> -> JsonArray(key.tryToJson() , value.tryToJson() )
-        is Pair<*,*> -> JsonArray(first.tryToJson(), second.tryToJson())
-        is Triple<*,*,*> -> JsonArray(first.tryToJson(), second.tryToJson(), third.tryToJson())
-        is Number, is String -> this
-        else -> throw IllegalArgumentException("Cannot convert $this to json")
-    }
-
-private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
-    when(klass.jvmErasure) {
-        List::class, Collection::class, Iterable::class -> list
-        Set::class -> list.toSet()
-        Map::class -> list.map{ it as Pair<*,*> }.toMap()
-        Sequence::class -> list.asSequence()
-        else -> throw IllegalArgumentException("Cannot convert json array $list to type $klass")
-    }
-
-private fun Any?.tryFromJson(klass: KType): Any? =
-        when(this) {
-            is JsonObject -> fromJson(this, klass.jvmErasure)
-            is JsonArray ->
-                    when{
-                        klass.jvmErasure.isSubclassOf(Collection::class)
-                            || klass.jvmErasure.isSubclassOf(Sequence::class) -> {
-                            val elementType = klass.arguments.first().type ?:
-                                    throw IllegalArgumentException("Class $klass not supported")
-                            makeJsonCollection(klass, this@tryFromJson.map { it.tryFromJson(elementType) })
-                        }
-                        klass.jvmErasure.isSubclassOf(Map::class) -> {
-                            val (keyArg, valueArg) = klass.arguments
-                            val keyType = keyArg.type ?:
-                                    throw IllegalArgumentException("Class $klass not supported")
-                            val valueType = valueArg.type ?:
-                                    throw IllegalArgumentException("Class $klass not supported")
-                            makeJsonCollection(klass, this@tryFromJson.map {
-                                it.tryFromJson(
-                                        Pair::class.createType(
-                                                listOf(
-                                                        KTypeProjection.invariant(keyType),
-                                                        KTypeProjection.invariant(valueType)
-                                                )
-                                        )
-                                )
-                            })
-                        }
-                        klass.jvmErasure == Pair::class -> {
-                            val (firstArg, secondArg) = klass.arguments
-                            val (first, second) = this
-                            Pair(
-                                first.tryFromJson(firstArg.type!!),
-                                second.tryFromJson(secondArg.type!!)
-                            )
-                        }
-                        klass.jvmErasure == Triple::class -> {
-                            val (firstArg, secondArg, thirdArg) = klass.arguments
-                            val (first, second, third) = this
-                            Triple(
-                                 first.tryFromJson(firstArg.type!!),
-                                 second.tryFromJson(secondArg.type!!),
-                                 third.tryFromJson(thirdArg.type!!)
-                            )
-                        }
-                        else -> throw IllegalArgumentException("Class $klass not supported")
-                    }
+        when (this) {
+            null -> null
+            is Message -> toJson()
+            is Collection<*> -> JsonArray(this.map { it.tryToJson() })
+            is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
+            is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
+            is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())
+            is Triple<*, *, *> -> JsonArray(first.tryToJson(), second.tryToJson(), third.tryToJson())
             is Number, is String -> this
-            else -> throw IllegalArgumentException("Cannot convert $this from json")
+            else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
 
+private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
+        when (klass.jvmErasure) {
+            List::class, Collection::class, Iterable::class -> list
+            Set::class -> list.toSet()
+            Map::class -> list.map { it as Pair<*, *> }.toMap()
+            Sequence::class -> list.asSequence()
+            else -> throw IllegalArgumentException("Cannot convert json array $list to type $klass")
+        }
 
-fun<T: Any> fromJson(data: JsonObject, klass: KClass<T>): T {
+private fun Any?.tryFromJson(klass: KType): Any? {
+    val die = { throw IllegalArgumentException("Class $klass not supported") }
+    return when (this) {
+        is JsonObject -> fromJson(this, klass.jvmErasure)
+        is JsonArray ->
+            when {
+                klass.jvmErasure.isSubclassOf(Collection::class)
+                        || klass.jvmErasure.isSubclassOf(Sequence::class) -> {
+                    val elementType = klass.arguments.first().type ?: die()
+                    makeJsonCollection(klass, this@tryFromJson.map { it.tryFromJson(elementType) })
+                }
+                klass.jvmErasure.isSubclassOf(Map::class) -> {
+                    val (keyArg, valueArg) = klass.arguments
+                    val keyType = keyArg.type ?: die()
+                    val valueType = valueArg.type ?: die()
+                    makeJsonCollection(klass, this@tryFromJson.map {
+                        it.tryFromJson(
+                                Pair::class.createType(
+                                        listOf(
+                                                KTypeProjection.invariant(keyType),
+                                                KTypeProjection.invariant(valueType)
+                                        )
+                                )
+                        )
+                    })
+                }
+                klass.jvmErasure == Pair::class -> {
+                    val (firstArg, secondArg) = klass.arguments
+                    val (first, second) = this
+                    Pair(
+                            first.tryFromJson(firstArg.type ?: die()),
+                            second.tryFromJson(secondArg.type ?: die())
+                    )
+                }
+                klass.jvmErasure == Triple::class -> {
+                    val (firstArg, secondArg, thirdArg) = klass.arguments
+                    val (first, second, third) = this
+                    Triple(
+                            first.tryFromJson(firstArg.type ?: die()),
+                            second.tryFromJson(secondArg.type ?: die()),
+                            third.tryFromJson(thirdArg.type ?: die())
+                    )
+                }
+                else -> die()
+            }
+        is Number, is String -> this
+        else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
+    }
+}
+
+fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
+    if (klass.constructors.isEmpty())
+        throw IllegalArgumentException("Cannot convert \"$data\" to class $klass: no constructors found")
+
     val asArray = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
-        if(value == null && !it.returnType.isMarkedNullable)
-            throw IllegalArgumentException("Cannot convert \"$data\" to class ${klass}: required field ${it.name} is missing")
+        if (value == null && !it.returnType.isMarkedNullable)
+            throw IllegalArgumentException("Cannot convert \"$data\" to class $klass: required field ${it.name} is missing")
         else value?.tryFromJson(it.returnType)
-    }.toTypedArray<Any?>()
+    }.toTypedArray()
 
     return klass.constructors.first().call(*asArray)
 }
 
-inline fun <reified T: Any> fromJson(data: JsonObject) = fromJson(data, T::class)
-
-
+inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)

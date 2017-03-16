@@ -6,6 +6,7 @@ object Config {
     object TeamCity {
         val Host = "localhost"
         val Port = 8111
+        val EndpointRoot = "/app/rest"
 
         val User = "kotoed"
         val Password = "0xDEADCOFFEE"
