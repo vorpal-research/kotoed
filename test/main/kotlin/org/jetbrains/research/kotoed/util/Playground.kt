@@ -9,18 +9,4 @@ import kotlin.reflect.KProperty
 // not really tests, but whatever
 
 class Playground {
-
-    object Whatever {
-        operator fun getValue(thisRef: Any?, prop: KProperty<*>) = "Whatever"
-    }
-
-    @Test
-    fun testStuff() {
-        val key by Whatever
-
-        launch(Unconfined) {
-            val value = suspendCoroutine<Int> { cont -> cont.resume(42) }
-            val key2 = key
-        }
-    }
 }
