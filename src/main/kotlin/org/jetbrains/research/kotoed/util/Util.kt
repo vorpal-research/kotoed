@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.util
 
+import com.hazelcast.util.Base64
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
@@ -63,3 +64,5 @@ interface Loggable {
     val log
         get() = LoggerFactory.getLogger(javaClass)
 }
+
+inline fun base64Encode(v: CharSequence): String = String(Base64.encode(v.toString().toByteArray()))
