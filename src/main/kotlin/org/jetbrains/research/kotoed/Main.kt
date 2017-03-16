@@ -46,6 +46,9 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/")
                     .handler(this@RootVerticle::handleIndex)
 
+            router.route("/debug/settings")
+                    .handler(this@RootVerticle::handleSettings)
+
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
             router.route("/global/read/:key")
@@ -74,6 +77,12 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
                         this.putButton()
                     }
                 })
+    }
+
+    // XXX: testing, remove in production
+    fun handleSettings(ctx: RoutingContext) {
+        ctx.jsonResponse()
+                .end(Config.toString())
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
