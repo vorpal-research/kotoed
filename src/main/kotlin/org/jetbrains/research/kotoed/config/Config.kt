@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.config
 
 import com.hazelcast.util.Base64
+import org.jetbrains.research.kotoed.util.base64Encode
 
 class GlobalConfig: Configuration() {
     class TeamCityConfig: Configuration() {
@@ -10,7 +11,7 @@ class GlobalConfig: Configuration() {
 
         val User by "kotoed"
         val Password: String by Uninitialized
-        val AuthString by { "Basic ${String(Base64.encode("$User:$Password".toByteArray()))}" }
+        val AuthString by { "Basic ${base64Encode("$User:$Password")}" }
     }
     val TeamCity by TeamCityConfig()
 
