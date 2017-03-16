@@ -132,3 +132,4 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
+

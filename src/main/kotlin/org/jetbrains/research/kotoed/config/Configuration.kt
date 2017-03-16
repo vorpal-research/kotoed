@@ -75,6 +75,8 @@ fun <T : Configuration> loadConfiguration(base: T, vararg json: JsonObject): T {
     return base
 }
 
+fun <T: Configuration> T.mergeIn(override: T) = loadConfiguration(this, internalData, override.internalData)
+
 fun fromResource(path: String): JsonObject {
     val file = Configuration::class.java.classLoader.getResource(path)
     return JsonObject(file.readText())
