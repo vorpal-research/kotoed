@@ -3,12 +3,13 @@ syntax: glob
 logs
 target
 
-./.g8
+.g8
+.vertx
 
-./.idea
-./.idea_modules
-./.classpath
-./.project
-./.settings
+.idea
+.idea_modules
+.classpath
+.project
+.settings
 
-./RUNNING_PID
+RUNNING_PID
