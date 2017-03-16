@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -46,6 +47,9 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/")
                     .handler(this@RootVerticle::handleIndex)
 
+            router.route("/debug/settings")
+                    .handler(this@RootVerticle::handleSettings)
+
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
             router.route("/global/read/:key")
@@ -74,6 +78,13 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
                         this.putButton()
                     }
                 })
+    }
+
+    // XXX: testing, remove
+    fun handleSettings(ctx: RoutingContext) {
+        ctx.response()
+                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+                .end(Config.toString())
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
