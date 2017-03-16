@@ -94,7 +94,17 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 else -> die()
             }
-        is Number, is String -> this
+        is String -> this
+        is Number ->
+                when(klass.jvmErasure) {
+                    Int::class -> toInt()
+                    Long::class -> toLong()
+                    Short::class -> toShort()
+                    Byte::class -> toByte()
+                    Float::class -> toFloat()
+                    Double::class -> toDouble()
+                    else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
+                }
         else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
     }
 }
@@ -112,6 +122,13 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
     }
+}
+
+fun JsonObject.getValueByType(name: String, type: KType): Any? {
+    val value = getValue(name)
+    if (value == null && !type.isMarkedNullable)
+        throw IllegalArgumentException("Field $name is missing in \"${this}\"")
+    return value?.tryFromJson(type)
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
