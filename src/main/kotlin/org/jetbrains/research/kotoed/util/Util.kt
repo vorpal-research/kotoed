@@ -2,6 +2,8 @@ package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
+import io.vertx.core.logging.Logger
+import io.vertx.core.logging.LoggerFactory
 import kotlin.coroutines.experimental.suspendCoroutine
 
 @JvmName("vxVoid")
@@ -21,4 +23,8 @@ inline suspend fun <T> vx(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T 
             else cont.resumeWithException(res.cause())
         })
     }
+}
+
+interface Loggable {
+    val log get() = LoggerFactory.getLogger(javaClass)
 }
