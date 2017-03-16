@@ -22,19 +22,15 @@ inline operator fun JsonArray.component2(): Any? = this.getValue(1)
 inline operator fun JsonArray.component3(): Any? = this.getValue(2)
 inline operator fun JsonArray.component4(): Any? = this.getValue(3)
 
-abstract class Message {
-    init {
-        assert(this.javaClass.kotlin.isData)
-    }
-}
+interface Jsonable
 
-fun Message.toJson() =
+fun Jsonable.toJson() =
         JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
 
 private fun Any?.tryToJson(): Any? =
         when (this) {
             null -> null
-            is Message -> toJson()
+            is Jsonable -> toJson()
             is Collection<*> -> JsonArray(this.map { it.tryToJson() })
             is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
             is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
@@ -54,7 +50,7 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         }
 
 private fun Any?.tryFromJson(klass: KType): Any? {
-    val die = { throw IllegalArgumentException("Class $klass not supported") }
+    val die = { throw IllegalArgumentException("Type $klass not supported") }
     return when (this) {
         is JsonObject -> fromJson(this, klass.jvmErasure)
         is JsonArray ->
@@ -104,17 +100,18 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 }
 
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
-    if (klass.constructors.isEmpty())
-        throw IllegalArgumentException("Cannot convert \"$data\" to class $klass: no constructors found")
-
     val asArray = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
         if (value == null && !it.returnType.isMarkedNullable)
-            throw IllegalArgumentException("Cannot convert \"$data\" to class $klass: required field ${it.name} is missing")
+            throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
         else value?.tryFromJson(it.returnType)
     }.toTypedArray()
 
-    return klass.constructors.first().call(*asArray)
+    return try {
+        klass.constructors.first().call(*asArray)
+    } catch (ex: Exception) {
+        throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
+    }
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
