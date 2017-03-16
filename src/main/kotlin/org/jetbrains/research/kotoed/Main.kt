@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -46,12 +47,15 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/")
                     .handler(this@RootVerticle::handleIndex)
 
+            router.route("/debug/settings")
+                    .handler(this@RootVerticle::handleSettings)
+
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
             router.route("/global/read/:key")
                     .handler(this@RootVerticle::handleGsmsRead)
 
-            router.route("/teamcity/:address")
+            router.route(HttpMethod.POST, "/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
 
             vertx.createHttpServer()
@@ -74,6 +78,13 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
                         this.putButton()
                     }
                 })
+    }
+
+    // XXX: testing, remove
+    fun handleSettings(ctx: RoutingContext) {
+        ctx.response()
+                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+                .end(Config.toString())
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
@@ -119,11 +130,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val address by ctx.request()
 
         launch(Unconfined) {
-            val body = if (ctx.request().method() == HttpMethod.POST) {
-                vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
-            } else {
-                JsonObject()
-            }
+            val body = vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
             val res = eb.sendAsync<JsonObject>(
                     address,
                     body

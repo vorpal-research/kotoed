@@ -39,7 +39,7 @@ class TeamCityVerticle : AbstractVerticle() {
         launch(UnconfinedWithExceptions(msg)) {
             val res = vxa<HttpResponse<Buffer>> {
                 wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.Basic)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
                         .send(it)
             }
@@ -55,7 +55,7 @@ class TeamCityVerticle : AbstractVerticle() {
         launch(UnconfinedWithExceptions(msg)) {
             val res = vxa<HttpResponse<Buffer>> {
                 wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.Basic)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
                         .sendBuffer(Buffer.buffer(create.name), it)
             }
