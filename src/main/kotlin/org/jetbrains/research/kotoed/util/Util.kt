@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
+import io.vertx.core.logging.LoggerFactory
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
@@ -41,3 +42,8 @@ fun <T> UnconfinedWithExceptions(msg: Message<T>) =
                 )
             }
         } + Unconfined
+
+interface Loggable {
+    val log
+        get() = LoggerFactory.getLogger(javaClass)
+}

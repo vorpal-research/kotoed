@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed
 
+import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -11,10 +12,13 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
+import java.util.*
 
 fun main(args: Array<String>) {
     launch(Unconfined) {
@@ -57,12 +61,19 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
     }
 
     fun handleIndex(ctx: RoutingContext) {
-        ctx.jsonResponse()
-                .end(
-                        JsonObject(
-                                "data" to "Kotoed online..."
-                        )
-                )
+        ctx.response()
+                .putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
+                .end(createHTML().html {
+                    head { title("The awesome kotoed") }
+                    body {
+                        h2 { +"Kotoed here"; +Entities.copy }
+                        p { a(href = "/global/create/kotoed/${Random().nextInt()}") { +"Create stuff" } }
+                        p { a(href = "/global/read/kotoed") { +"Read stuff" } }
+                        p { a(href = "/teamcity") { +"Teamcity bindings" } }
+
+                        this.putButton()
+                    }
+                })
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
