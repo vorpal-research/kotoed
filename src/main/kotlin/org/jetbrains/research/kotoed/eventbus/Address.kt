@@ -1,5 +1,8 @@
 package org.jetbrains.research.kotoed.eventbus
 
 object Address {
-    const val TeamCityVerticle = "kotoed.teamcity"
+    object TeamCity {
+        const val Test = "kotoed.teamcity.test"
+        const val Create = "kotoed.teamcity.create"
+    }
 }

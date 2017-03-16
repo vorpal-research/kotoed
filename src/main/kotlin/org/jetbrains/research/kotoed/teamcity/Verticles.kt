@@ -8,33 +8,57 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
-import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.teamcity.project.Create
+import org.jetbrains.research.kotoed.data.teamcity.project.Test
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.putHeader
-import org.jetbrains.research.kotoed.util.vx
+import org.jetbrains.research.kotoed.util.vxa
 
 class TeamCityVerticle : AbstractVerticle() {
     override fun start() {
         val eb = vertx.eventBus()
 
         eb.consumer<JsonObject>(
-                Address.TeamCityVerticle,
-                this@TeamCityVerticle::consumeKotoedTeamcity
+                Address.TeamCity.Test,
+                this@TeamCityVerticle::consumeTeamCityTest
+        )
+
+        eb.consumer<JsonObject>(
+                Address.TeamCity.Create,
+                this@TeamCityVerticle::consumeTeamCityCreate
         )
     }
 
-    fun consumeKotoedTeamcity(msg: Message<JsonObject>) {
+    fun consumeTeamCityTest(msg: Message<JsonObject>) {
         val wc = WebClient.create(vertx)
 
-        launch(Unconfined) {
-            val res = vx<HttpResponse<Buffer>> {
-                val payload = msg.body().getValue("payload")
-                wc.get(Config.TeamCity.Port, Config.TeamCity.Host, payload.toString())
+        val test = Test.fromJson(msg.body())
+
+        launch(UnconfinedWithExceptions(msg)) {
+            val res = vxa<HttpResponse<Buffer>> {
+                wc.get(Config.TeamCity.Port, Config.TeamCity.Host, test.endpoint)
                         .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.Basic)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
                         .send(it)
+            }
+            msg.reply(res.bodyAsJsonObject())
+        }
+    }
+
+    fun consumeTeamCityCreate(msg: Message<JsonObject>) {
+        val wc = WebClient.create(vertx)
+
+        val create = Create(msg.body().getString("name"))
+
+        launch(UnconfinedWithExceptions(msg)) {
+            val res = vxa<HttpResponse<Buffer>> {
+                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, create.endpoint)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.Basic)
+                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .sendBuffer(Buffer.buffer(create.name), it)
             }
             msg.reply(res.bodyAsJsonObject())
         }

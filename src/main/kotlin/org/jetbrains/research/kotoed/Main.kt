@@ -1,10 +1,11 @@
 package org.jetbrains.research.kotoed
 
-import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpHeaderValues
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
+import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
@@ -12,22 +13,20 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
-import org.jetbrains.research.kotoed.util.getValue
-import org.jetbrains.research.kotoed.util.vx
+import org.jetbrains.research.kotoed.util.*
 
 fun main(args: Array<String>) {
     launch(Unconfined) {
-        val vertx = vx<Vertx> { Vertx.clusteredVertx(VertxOptions(), it) }
+        val vertx = vxa<Vertx> { Vertx.clusteredVertx(VertxOptions(), it) }
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
     }
 }
 
-typealias GSMS_TYPE = AsyncMap<String, String>
-const val GSMS_ID = "gsms"
+private typealias GSMS_TYPE = AsyncMap<String, String>
+private const val GSMS_ID = "gsms"
 
 class RootVerticle : io.vertx.core.AbstractVerticle() {
 
@@ -35,9 +34,10 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         launch(Unconfined) {
             val router = Router.router(vertx)
 
-            val gsms = vx<GSMS_TYPE> { vertx.sharedData().getClusterWideMap("gsms", it) }
+            val gsms = vxa<GSMS_TYPE> { vertx.sharedData().getClusterWideMap("gsms", it) }
             router.route()
                     .handler { ctx -> ctx.put(GSMS_ID, gsms).next() }
+                    .failureHandler(this@RootVerticle::handleFailure)
 
             router.route("/")
                     .handler(this@RootVerticle::handleIndex)
@@ -47,7 +47,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/global/read/:key")
                     .handler(this@RootVerticle::handleGsmsRead)
 
-            router.route("/teamcity")
+            router.route(HttpMethod.POST, "/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
 
             vertx.createHttpServer()
@@ -57,9 +57,12 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
     }
 
     fun handleIndex(ctx: RoutingContext) {
-        ctx.response()
-                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
-                .end("Kotoed online...")
+        ctx.jsonResponse()
+                .end(
+                        JsonObjectOf(
+                                "data" to "Kotoed online..."
+                        )
+                )
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
@@ -69,15 +72,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val value by ctx.request()
 
         launch(Unconfined) {
-            vx { gsms.put(key, value, it) }
-            ctx.response()
-                    .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
+            vxu { gsms.put(key, value, it) }
+            ctx.jsonResponse()
                     .end(
-                            JsonObject()
-                                    .put("type", "created")
-                                    .put("key", key)
-                                    .put("value", value)
-                                    .encodePrettily()
+                            JsonObjectOf(
+                                    "type" to "create",
+                                    "key" to key,
+                                    "value" to value
+                            )
                     )
         }
     }
@@ -88,15 +90,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val key by ctx.request()
 
         launch(Unconfined) {
-            val value = vx<String> { gsms.get(key, it) }
-            ctx.response()
-                    .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
+            val value = vxa<String> { gsms.get(key, it) }
+            ctx.jsonResponse()
                     .end(
-                            JsonObject()
-                                    .put("type", "read")
-                                    .put("key", key)
-                                    .put("value", value)
-                                    .encodePrettily()
+                            JsonObjectOf(
+                                    "type" to "read",
+                                    "key" to key,
+                                    "value" to value
+                            )
                     )
         }
     }
@@ -104,21 +105,31 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
     fun handleTeamcity(ctx: RoutingContext) {
         val eb = vertx.eventBus()
 
+        val address by ctx.request()
+
         launch(Unconfined) {
-            val res = vx<Message<JsonObject>> {
+            val body = vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
+            val res = vxa<Message<JsonObject>> {
                 eb.send(
-                        Address.TeamCityVerticle,
-                        JsonObject().put(
-                                "payload",
-                                "/app/rest/projects"
-                        ),
+                        address,
+                        body,
                         it
                 )
             }
 
-            ctx.response()
-                    .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
-                    .end(res.body().encodePrettily())
+            ctx.jsonResponse()
+                    .end(res.body())
         }
+    }
+
+    fun handleFailure(ctx: RoutingContext) {
+        val ex = ctx.failure()
+        ctx.jsonResponse()
+                .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
+                .end(
+                        JsonObjectOf(
+                                "error" to ex.message
+                        )
+                )
     }
 }
