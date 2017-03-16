@@ -32,6 +32,8 @@ private fun Any?.tryToJson(): Any? =
             null -> null
             is Jsonable -> toJson()
             is Collection<*> -> JsonArray(this.map { it.tryToJson() })
+            is Iterable<*> -> JsonArray(this.map { it.tryToJson() })
+            is Sequence<*> -> JsonArray(this.map { it.tryToJson() }.toList())
             is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
             is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
             is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())

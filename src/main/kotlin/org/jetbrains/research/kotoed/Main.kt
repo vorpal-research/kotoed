@@ -51,6 +51,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .handler(this@RootVerticle::handleDebug)
             router.route("/debug/settings")
                     .handler(this@RootVerticle::handleSettings)
+            router.route("/debug/request")
+                    .handler(this@RootVerticle::handleDebugRequest)
 
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
@@ -66,9 +68,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         }
     }
 
-    fun handleIndex(ctx: RoutingContext) {
-        ctx.response()
-                .putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
+    fun handleIndex(ctx: RoutingContext) = with(ctx.response()) {
+        putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
                 .end(createHTML().html {
                     head { title("The awesome kotoed") }
                     body {
@@ -76,17 +77,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                         p { a(href = "/global/create/kotoed/${Random().nextInt()}") { +"Create stuff" } }
                         p { a(href = "/global/read/kotoed") { +"Read stuff" } }
                         p { a(href = "/teamcity") { +"Teamcity bindings" } }
-
-                        this.putButton()
                     }
                 })
     }
 
     // XXX: testing, remove in production
     fun handleDebug(ctx: RoutingContext) {
-        if(ctx.request().connection().run{ localAddress().host() == remoteAddress().host() }) ctx.next()
-        else ctx.response()
-                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+        if (ctx.request().connection().run { localAddress().host() == remoteAddress().host() }) ctx.next()
+        else ctx.jsonResponse()
                 .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
                 .setStatusMessage("Forbidden")
                 .end(JsonObject("code" to 403, "message" to "forbidden"))
@@ -95,6 +93,21 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleSettings(ctx: RoutingContext) {
         ctx.jsonResponse()
                 .end(Config.toString())
+    }
+
+    fun handleDebugRequest(ctx: RoutingContext) {
+        val req = ctx.request()
+        val result = object: Jsonable {
+            val headers = req.headers()
+            val uri = req.absoluteURI()
+            val method = req.rawMethod()
+            val form = req.formAttributes()
+            val connection = object: Jsonable {
+                val localAddress = req.connection().localAddress().toString()
+                val remoteAddress = req.connection().remoteAddress().toString()
+            }
+        }
+        ctx.jsonResponse().end(result.toJson())
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
