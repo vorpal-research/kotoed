@@ -51,7 +51,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/global/read/:key")
                     .handler(this@RootVerticle::handleGsmsRead)
 
-            router.route(HttpMethod.POST, "/teamcity/:address")
+            router.route("/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
 
             vertx.createHttpServer()
@@ -119,7 +119,11 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val address by ctx.request()
 
         launch(Unconfined) {
-            val body = vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
+            val body = if (ctx.request().method() == HttpMethod.POST) {
+                vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
+            } else {
+                JsonObject()
+            }
             val res = eb.sendAsync<JsonObject>(
                     address,
                     body

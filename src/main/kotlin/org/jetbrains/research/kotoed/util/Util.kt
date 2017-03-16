@@ -31,7 +31,7 @@ inline suspend fun <T> vxa(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T
             })
         }
 
-fun <T> UnconfinedWithExceptions(msg: Message<T>) =
+inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
         object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler {
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 exception.printStackTrace()
@@ -42,6 +42,22 @@ fun <T> UnconfinedWithExceptions(msg: Message<T>) =
                 )
             }
         } + Unconfined
+
+inline fun <T> defaultWrapperHandlerWithExceptions(crossinline handler: (Message<T>) -> Unit) = { msg: Message<T> ->
+    try {
+        handler(msg)
+    } catch (ex: Exception) {
+        ex.printStackTrace()
+        msg.reply(
+                JsonObject(
+                        "error" to ex.message
+                )
+        )
+    }
+}
+
+inline fun <T> ((Message<T>) -> Unit).withExceptions() =
+        defaultWrapperHandlerWithExceptions(this)
 
 interface Loggable {
     val log

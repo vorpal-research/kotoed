@@ -14,10 +14,7 @@ import org.jetbrains.research.kotoed.data.teamcity.project.Create
 import org.jetbrains.research.kotoed.data.teamcity.project.Test
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
-import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
-import org.jetbrains.research.kotoed.util.fromJson
-import org.jetbrains.research.kotoed.util.putHeader
-import org.jetbrains.research.kotoed.util.vxa
+import org.jetbrains.research.kotoed.util.*
 
 class TeamCityVerticle : AbstractVerticle() {
     override fun start() {
@@ -25,12 +22,12 @@ class TeamCityVerticle : AbstractVerticle() {
 
         eb.consumer<JsonObject>(
                 Address.TeamCity.Test,
-                this@TeamCityVerticle::consumeTeamCityTest
+                this@TeamCityVerticle::consumeTeamCityTest.withExceptions()
         )
 
         eb.consumer<JsonObject>(
                 Address.TeamCity.Create,
-                this@TeamCityVerticle::consumeTeamCityCreate
+                this@TeamCityVerticle::consumeTeamCityCreate.withExceptions()
         )
     }
 
