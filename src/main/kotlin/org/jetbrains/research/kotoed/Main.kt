@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -32,7 +33,7 @@ fun main(args: Array<String>) {
 private typealias GSMS_TYPE = AsyncMap<String, String>
 private const val GSMS_ID = "gsms"
 
-class RootVerticle : io.vertx.core.AbstractVerticle() {
+class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     override fun start() {
         launch(Unconfined) {
@@ -46,6 +47,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
             router.route("/")
                     .handler(this@RootVerticle::handleIndex)
 
+            router.route("/debug/*")
+                    .handler(this@RootVerticle::handleDebug)
             router.route("/debug/settings")
                     .handler(this@RootVerticle::handleSettings)
 
@@ -80,6 +83,15 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
     }
 
     // XXX: testing, remove in production
+    fun handleDebug(ctx: RoutingContext) {
+        if(ctx.request().connection().run{ localAddress().host() == remoteAddress().host() }) ctx.next()
+        else ctx.response()
+                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+                .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
+                .setStatusMessage("Forbidden")
+                .end(JsonObject("code" to 403, "message" to "forbidden"))
+    }
+
     fun handleSettings(ctx: RoutingContext) {
         ctx.jsonResponse()
                 .end(Config.toString())
