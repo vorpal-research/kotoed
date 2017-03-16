@@ -12,12 +12,14 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
-import org.jetbrains.research.kotoed.util.getValue
-import org.jetbrains.research.kotoed.util.vx
+import java.util.*
 
 fun main(args: Array<String>) {
     launch(Unconfined) {
@@ -31,7 +33,7 @@ fun main(args: Array<String>) {
 typealias GSMS_TYPE = AsyncMap<String, String>
 const val GSMS_ID = "gsms"
 
-class RootVerticle : io.vertx.core.AbstractVerticle() {
+class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     override fun start() {
         launch(Unconfined) {
@@ -60,8 +62,18 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
 
     fun handleIndex(ctx: RoutingContext) {
         ctx.response()
-                .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
-                .end("Kotoed online...")
+                .putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
+                .end(createHTML().html{
+                    head { title("The awesome kotoed") }
+                    body {
+                        h2{ +"Kotoed here"; +Entities.copy }
+                        p{ a(href = "/global/create/kotoed/${Random().nextInt()}"){ +"Create stuff" } }
+                        p{ a(href = "/global/read/kotoed"){ +"Read stuff" } }
+                        p{ a(href = "/teamcity"){ +"Teamcity bindings" } }
+
+                        this.putButton()
+                    }
+                })
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
@@ -70,36 +82,33 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val key by ctx.request()
         val value by ctx.request()
 
+        data class Display(val type: String, val key: String, val value: String): Jsonable
+
         launch(Unconfined) {
             vx { gsms.put(key, value, it) }
             ctx.response()
                     .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
-                    .end(
-                            JsonObject()
-                                    .put("type", "created")
-                                    .put("key", key)
-                                    .put("value", value)
-                                    .encodePrettily()
-                    )
+                    .end(Display("created", key, value).toJson().encodePrettily())
         }
     }
 
     fun handleGsmsRead(ctx: RoutingContext) {
         val gsms = ctx.get<GSMS_TYPE>(GSMS_ID)
 
-        val key by ctx.request()
-
         launch(Unconfined) {
+            val key by ctx.request() // moving this line above launch crashes Kotlin runtime :)
+                                     // https://youtrack.jetbrains.com/issue/KT-16864
             val value = vx<String> { gsms.get(key, it) }
+
+            val response = object: Jsonable {
+                val type = "read"
+                val key = key.toString()
+                val value = value.toString()
+            }
+
             ctx.response()
                     .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
-                    .end(
-                            JsonObject()
-                                    .put("type", "read")
-                                    .put("key", key)
-                                    .put("value", value)
-                                    .encodePrettily()
-                    )
+                    .end(response.toJson().encodePrettily())
         }
     }
 
@@ -107,7 +116,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle() {
         val eb = vertx.eventBus()
 
         launch(Unconfined) {
-            val res = eb.sendAsync<JsonObject>(
+            val res = eb.sendAsync(
                 Address.TeamCityVerticle,
                 JsonObject().put(
                         "payload",

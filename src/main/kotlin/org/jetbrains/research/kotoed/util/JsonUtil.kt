@@ -23,19 +23,15 @@ inline operator fun JsonArray.component3(): Any? = this.getValue(2)
 inline operator fun JsonArray.component4(): Any? = this.getValue(3)
 
 
-abstract class Message {
-    init {
-        assert(this.javaClass.kotlin.isData)
-    }
-}
+interface Jsonable {}
 
-fun Message.toJson() =
+fun Jsonable.toJson() =
         JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
 
 private fun Any?.tryToJson(): Any? =
     when(this) {
         null -> null
-        is Message -> toJson()
+        is Jsonable -> toJson()
         is Collection<*> -> JsonArray(this.map { it.tryToJson() })
         is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
         is Map.Entry<*, *> -> JsonArray(key.tryToJson() , value.tryToJson() )
@@ -114,7 +110,11 @@ fun<T: Any> fromJson(data: JsonObject, klass: KClass<T>): T {
         else value?.tryFromJson(it.returnType)
     }.toTypedArray<Any?>()
 
-    return klass.constructors.first().call(*asArray)
+    return try {
+        klass.constructors.first().call(*asArray)
+    } catch (ex: Exception) {
+        throw IllegalArgumentException("fromJson(): Cannot construct type $klass. Please use only datatype-like classes", ex)
+    }
 }
 
 inline fun <reified T: Any> fromJson(data: JsonObject) = fromJson(data, T::class)
