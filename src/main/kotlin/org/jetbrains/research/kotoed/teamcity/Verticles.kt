@@ -25,12 +25,12 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
         val eb = vertx.eventBus()
 
         eb.consumer<JsonObject>(
-                Address.TeamCity.Create,
-                this@TeamCityVerticle::consumeTeamCityCreate.withExceptions()
+                Address.TeamCity.Project.Create,
+                this@TeamCityVerticle::consumeTeamCityProjectCreate.withExceptions()
         )
     }
 
-    fun consumeTeamCityCreate(msg: Message<JsonObject>) {
+    fun consumeTeamCityProjectCreate(msg: Message<JsonObject>) {
         val wc = WebClient.create(vertx)
 
         val createProject = fromJson<CreateProject>(msg.body())
