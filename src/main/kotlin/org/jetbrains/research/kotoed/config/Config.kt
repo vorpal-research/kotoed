@@ -16,7 +16,7 @@ class GlobalConfig : Configuration() {
     val TeamCity by TeamCityConfig()
 
     class RootConfig : Configuration() {
-        val Port = 9000
+        val Port by 9000
     }
 
     val Root by RootConfig()
