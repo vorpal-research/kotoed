@@ -23,4 +23,6 @@ data class CreateProject(
         val project: Project,
         val vcsRoot: VcsRoot,
         val buildConfig: BuildConfig
-) : EventBusDatum<BuildConfig>()
+) : EventBusDatum<CreateProject>()
+
+data class TriggerBuild(val id: String) : EventBusDatum<TriggerBuild>()

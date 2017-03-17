@@ -115,7 +115,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         val key by ctx.request()
         val value by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             vxu { gsms.put(key, value, it) }
             ctx.jsonResponse()
                     .end(
@@ -133,7 +133,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         val key by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val value = vxa<String> { gsms.get(key, it) }
             ctx.jsonResponse()
                     .end(
@@ -151,7 +151,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         val address by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val body = if (ctx.request().method() == HttpMethod.POST) {
                 vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
             } else {
@@ -172,6 +172,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                 .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
                 .end(
                         JsonObject(
+                                "result" to "failed",
                                 "error" to ex.message
                         )
                 )
