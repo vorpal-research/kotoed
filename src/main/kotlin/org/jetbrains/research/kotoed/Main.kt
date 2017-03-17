@@ -22,9 +22,11 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.PostgresDataTypeEx
 import org.jetbrains.research.kotoed.util.database.executeKAsync
 import org.jetbrains.research.kotoed.util.database.fetchKAsync
+import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.*
+import org.jooq.tools.jdbc.JDBCUtils
 import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
@@ -131,7 +133,10 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     }
 
     fun handleDebugDatabaseCreate(ctx: RoutingContext) {
-        val q = DSL.using("jdbc:postgresql://localhost/kotoed", "kotoed", "kotoed").use {
+        val db = "jdbc:postgresql://localhost/kotoed"
+        val ds = vertx.getSharedDataSource("debug.db", db, "kotoed", "kotoed")
+
+        val q = DSL.using(ds, JDBCUtils.dialect(db)).use {
             it.createTableIfNotExists("debug")
                     .column("id", PostgresDataType.SERIAL)
                     .column("payload", PostgresDataType.JSON)
@@ -152,8 +157,10 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebugDatabaseFill(ctx: RoutingContext) {
 
         launch(Unconfined) {
+            val db = "jdbc:postgresql://localhost/kotoed"
+            val ds = vertx.getSharedDataSource("debug.db", db, "kotoed", "kotoed")
 
-            DSL.using("jdbc:postgresql://localhost/kotoed", "kotoed", "kotoed").use {
+            DSL.using(ds, JDBCUtils.dialect(db)).use {
 
                 it.createTableIfNotExists("debug")
                         .column("id", PostgresDataType.SERIAL)
@@ -179,7 +186,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             data class DebugType(val id: Int, val payload: Any?) : Jsonable
 
-            val res = DSL.using("jdbc:postgresql://localhost/kotoed", "kotoed", "kotoed").use {
+            val res = DSL.using(ds, JDBCUtils.dialect(db)).use {
                 it.select(field("id", PostgresDataType.INT), field("payload", PostgresDataTypeEx.JSONB))
                         .from(table("debug"))
                         .fetchKAsync()
