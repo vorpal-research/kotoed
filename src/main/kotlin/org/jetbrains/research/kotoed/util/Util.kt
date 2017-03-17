@@ -11,6 +11,7 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.reflect.full.isSubclassOf
 
 inline suspend fun vxu(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit): Void? =
         suspendCoroutine { cont ->
@@ -35,8 +36,8 @@ inline suspend fun <T> vxa(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T
 
 inline suspend fun <reified T> Loggable.vxal(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T {
     val res = vxa(cb)
-    if (res is HttpResponse<*>) {
-        log.info(res.bodyAsString())
+    if (T::class.isSubclassOf(HttpResponse::class)) {
+        log.info((res as HttpResponse<*>).bodyAsString())
     } else {
         log.info(res)
     }

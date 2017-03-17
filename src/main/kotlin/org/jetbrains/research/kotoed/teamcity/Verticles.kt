@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.teamcity
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
@@ -67,7 +68,7 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                 )
             }
 
-            vxal<HttpResponse<Buffer>> {
+            val projectRes = vxa<HttpResponse<Buffer>> {
                 wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects)
                         .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
@@ -75,7 +76,7 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                         .sendBuffer(projectBody, it)
             }
 
-            vxal<HttpResponse<Buffer>> {
+            val vcsRootRes = vxa<HttpResponse<Buffer>> {
                 wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.VcsRoots)
                         .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
@@ -83,7 +84,7 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                         .sendBuffer(vcsRootBody, it)
             }
 
-            vxal<HttpResponse<Buffer>> {
+            val buildConfigRes = vxa<HttpResponse<Buffer>> {
                 wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildTypes)
                         .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
@@ -91,7 +92,31 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                         .sendBuffer(buildConfigBody, it)
             }
 
-            msg.reply(JsonObject("result" to "success"))
+            val results = listOf(
+                    "project" to projectRes,
+                    "vcsRoot" to vcsRootRes,
+                    "buildConfig" to buildConfigRes
+            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
+
+            if (results[false] == null) {
+                msg.reply(
+                        JsonObject(
+                                results[true]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsJsonObject() }
+                                        + ("result" to "success")
+                        )
+                )
+            } else {
+                msg.reply(
+                        JsonObject(
+                                results[false]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsString() }
+                                        + ("result" to "failed")
+                        )
+                )
+            }
         }
     }
 }
