@@ -100,15 +100,16 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 }
 
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
-    val asArray = klass.declaredMemberProperties.map {
+    val asMap = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
         if (value == null && !it.returnType.isMarkedNullable)
             throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
-        else value?.tryFromJson(it.returnType)
-    }.toTypedArray()
+        else Pair(it.name, value?.tryFromJson(it.returnType))
+    }.toMap()
 
     return try {
-        klass.constructors.first().call(*asArray)
+        val ctor = klass.constructors.first()
+        ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
     }
