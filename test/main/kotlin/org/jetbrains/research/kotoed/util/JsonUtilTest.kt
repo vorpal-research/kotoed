@@ -1,6 +1,10 @@
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.teamcity.project.BuildConfig
+import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
+import org.jetbrains.research.kotoed.data.teamcity.project.Project
+import org.jetbrains.research.kotoed.data.teamcity.project.VcsRoot
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -124,6 +128,35 @@ class JsonUtilTest {
                     }
                 """)),
                 ExampleMessage3(mapOf(1 to ExampleMessage(2, "Hello", null)))
+        )
+
+        assertEquals(
+                fromJson(JsonObject("""
+                    {
+                        "project": {
+                            "id": "Test",
+                            "name": "Test project",
+                            "rootProjectId": "_Root"
+                        },
+                        "vcsRoot": {
+                            "id": "Test_VCS",
+                            "name": "Test project VCS",
+                            "type": "mercurial",
+                            "url": "https://bitbucket.org/vorpal-research/kotoed",
+                            "projectId": "Test"
+                        },
+                        "buildConfig": {
+                            "id": "Test_Build",
+                            "name": "Test project build config",
+                            "templateId": "Test_Default_Build_Template"
+                        }
+                    }
+                """)),
+                CreateProject(
+                        Project("Test", "Test project", "_Root"),
+                        VcsRoot("Test_VCS", "Test project VCS", "mercurial", "https://bitbucket.org/vorpal-research/kotoed", "Test"),
+                        BuildConfig("Test_Build", "Test project build config", "Test_Default_Build_Template")
+                )
         )
 
         assertFailsWith(IllegalArgumentException::class) {

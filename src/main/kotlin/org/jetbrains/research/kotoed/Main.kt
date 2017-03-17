@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -11,6 +12,7 @@ import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.Unconfined
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
@@ -62,6 +64,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .handler(this@RootVerticle::handleDebug)
             router.route("/debug/settings")
                     .handler(this@RootVerticle::handleSettings)
+            router.route("/debug/crash")
+                    .handler(this@RootVerticle::handleDebugCrash)
             router.route("/debug/request")
                     .handler(this@RootVerticle::handleDebugRequest)
             router.route("/debug/database/create")
@@ -139,6 +143,13 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         ctx.jsonResponse().end(ret.toJson())
     }
 
+    fun handleDebugCrash(ctx: RoutingContext) {
+        launch(UnconfinedWithExceptions(ctx)) {
+            vertx.delayAsync(500)
+            throw IllegalStateException("Forced crash")
+        }
+    }
+
     fun handleDebugDatabaseFill(ctx: RoutingContext) {
 
         launch(Unconfined) {
@@ -189,7 +200,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         val key by ctx.request()
         val value by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             vxu { gsms.put(key, value, it) }
             ctx.jsonResponse()
                     .end(
@@ -207,7 +218,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         val key by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val value = vxa<String> { gsms.get(key, it) }
             ctx.jsonResponse()
                     .end(
@@ -225,7 +236,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         val address by ctx.request()
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val body = if (ctx.request().method() == HttpMethod.POST) {
                 vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
             } else {
@@ -246,6 +257,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                 .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
                 .end(
                         JsonObject(
+                                "result" to "failed",
                                 "error" to ex.message
                         )
                 )

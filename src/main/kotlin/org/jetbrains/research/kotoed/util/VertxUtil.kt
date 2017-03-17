@@ -14,10 +14,10 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import kotlin.reflect.KProperty
 
-operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>) =
+operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String =
         this.getParam(prop.name)
 
-fun RoutingContext.jsonResponse() =
+fun RoutingContext.jsonResponse(): HttpServerResponse =
         this.response()
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
 
@@ -37,3 +37,10 @@ suspend fun Vertx.goToEventLoop(): Void =
 
 suspend fun clusteredVertxAsync(opts: VertxOptions = VertxOptions()): Vertx =
         vxa { Vertx.clusteredVertx(opts, it) }
+
+suspend fun Vertx.delayAsync(delay: Long): Long =
+    vxt { this.setTimer(delay, it) }
+
+object HttpHeaderValuesEx {
+    const val APPLICATION_XML = "application/xml"
+}

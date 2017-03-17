@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.teamcity
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
@@ -10,56 +11,169 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.teamcity.project.Create
-import org.jetbrains.research.kotoed.data.teamcity.project.Test
+import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
+import org.jetbrains.research.kotoed.data.teamcity.project.TriggerBuild
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
 import org.jetbrains.research.kotoed.util.*
 
-class TeamCityVerticle : AbstractVerticle() {
+class TeamCityVerticle : AbstractVerticle(), Loggable {
+
+    val ftlEngine = FreeMarkerTemplateEngineImplEx()
+
     override fun start() {
         val eb = vertx.eventBus()
 
         eb.consumer<JsonObject>(
-                Address.TeamCity.Test,
-                this@TeamCityVerticle::consumeTeamCityTest.withExceptions()
+                Address.TeamCity.Project.Create,
+                this@TeamCityVerticle::consumeTeamCityProjectCreate.withExceptions()
         )
 
         eb.consumer<JsonObject>(
-                Address.TeamCity.Create,
-                this@TeamCityVerticle::consumeTeamCityCreate.withExceptions()
+                Address.TeamCity.Build.Trigger,
+                this@TeamCityVerticle::consumeTeamCityBuildTrigger.withExceptions()
         )
     }
 
-    fun consumeTeamCityTest(msg: Message<JsonObject>) {
+    fun consumeTeamCityProjectCreate(msg: Message<JsonObject>) {
+
         val wc = WebClient.create(vertx)
 
-        val test = fromJson<Test>(msg.body())
+        val createProject = fromJson<CreateProject>(msg.body())
 
         launch(UnconfinedWithExceptions(msg)) {
-            val res = vxa<HttpResponse<Buffer>> {
-                wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .send(it)
+
+            val projectBody = vxa<Buffer> {
+                ftlEngine.render(
+                        vertx,
+                        "org/jetbrains/research/kotoed/teamcity/requests/createProject.ftl",
+                        mapOf("project" to createProject.project),
+                        it
+                )
             }
-            msg.reply(res.bodyAsJsonObject())
-        }
-    }
 
-    fun consumeTeamCityCreate(msg: Message<JsonObject>) {
-        val wc = WebClient.create(vertx)
+            val vcsRootBody = vxa<Buffer> {
+                ftlEngine.render(
+                        vertx,
+                        "org/jetbrains/research/kotoed/teamcity/requests/createHgVcsRoot.ftl",
+                        mapOf("vcs" to createProject.vcsRoot),
+                        it
+                )
+            }
 
-        val create = fromJson<Create>(msg.body())
+            val buildConfigBody = vxa<Buffer> {
+                ftlEngine.render(
+                        vertx,
+                        "org/jetbrains/research/kotoed/teamcity/requests/createBuildConfig.ftl",
+                        mapOf(
+                                "project" to createProject.project,
+                                "vcs" to createProject.vcsRoot,
+                                "build" to createProject.buildConfig
+                        ),
+                        it
+                )
+            }
 
-        launch(UnconfinedWithExceptions(msg)) {
-            val res = vxa<HttpResponse<Buffer>> {
+            val projectRes = vxa<HttpResponse<Buffer>> {
                 wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects)
                         .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .sendBuffer(Buffer.buffer(create.name), it)
+                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+                        .sendBuffer(projectBody, it)
             }
-            msg.reply(res.bodyAsJsonObject())
+
+            val vcsRootRes = vxa<HttpResponse<Buffer>> {
+                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.VcsRoots)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
+                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+                        .sendBuffer(vcsRootBody, it)
+            }
+
+            val buildConfigRes = vxa<HttpResponse<Buffer>> {
+                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildTypes)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
+                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+                        .sendBuffer(buildConfigBody, it)
+            }
+
+            val results = listOf(
+                    "project" to projectRes,
+                    "vcsRoot" to vcsRootRes,
+                    "buildConfig" to buildConfigRes
+            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
+
+            if (results[false] == null) {
+                msg.reply(
+                        JsonObject(
+                                results[true]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsJsonObject() }
+                                        + ("result" to "success")
+                        )
+                )
+            } else {
+                msg.reply(
+                        JsonObject(
+                                results[false]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsString() }
+                                        + ("result" to "failed")
+                        )
+                )
+            }
+        }
+    }
+
+    fun consumeTeamCityBuildTrigger(msg: Message<JsonObject>) {
+
+        val wc = WebClient.create(vertx)
+
+        val triggerBuild = fromJson<TriggerBuild>(msg.body())
+
+        launch(UnconfinedWithExceptions(msg)) {
+            val triggerBuildBody = vxa<Buffer> {
+                ftlEngine.render(
+                        vertx,
+                        "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",
+                        mapOf("trigger" to triggerBuild),
+                        it
+                )
+            }
+
+            val triggerBuildRes = vxa<HttpResponse<Buffer>> {
+                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildQueue)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
+                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+                        .sendBuffer(triggerBuildBody, it)
+            }
+
+            val results = listOf(
+                    "triggerBuild" to triggerBuildRes
+            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
+
+            if (results[false] == null) {
+                msg.reply(
+                        JsonObject(
+                                results[true]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsJsonObject() }
+                                        + ("result" to "success")
+                        )
+                )
+            } else {
+                msg.reply(
+                        JsonObject(
+                                results[false]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsString() }
+                                        + ("result" to "failed")
+                        )
+                )
+            }
         }
     }
 }
