@@ -32,6 +32,8 @@ private fun Any?.tryToJson(): Any? =
             null -> null
             is Jsonable -> toJson()
             is Collection<*> -> JsonArray(this.map { it.tryToJson() })
+            is Iterable<*> -> JsonArray(this.map { it.tryToJson() })
+            is Sequence<*> -> JsonArray(this.map { it.tryToJson() }.toList())
             is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
             is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
             is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())
@@ -50,7 +52,7 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         }
 
 private fun Any?.tryFromJson(klass: KType): Any? {
-    val die = { throw IllegalArgumentException("Type $klass not supported") }
+    val die = { throw IllegalArgumentException("Cannot convert $this from json as $klass") }
     return when (this) {
         is JsonObject -> fromJson(this, klass.jvmErasure)
         is JsonArray ->
@@ -94,8 +96,18 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 else -> die()
             }
-        is Number, is String -> this
-        else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
+        is String -> this
+        is Number ->
+            when (klass.jvmErasure) {
+                Int::class -> toInt()
+                Long::class -> toLong()
+                Short::class -> toShort()
+                Byte::class -> toByte()
+                Float::class -> toFloat()
+                Double::class -> toDouble()
+                else -> die()
+            }
+        else -> die()
     }
 }
 
@@ -116,3 +128,10 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
+
+fun JsonObject.getValueByType(name: String, type: KType): Any? {
+    val value = getValue(name)
+    if (value == null && !type.isMarkedNullable)
+        throw IllegalArgumentException("Field $name is missing in \"${this}\"")
+    return value?.tryFromJson(type)
+}
