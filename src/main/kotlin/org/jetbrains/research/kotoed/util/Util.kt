@@ -4,6 +4,7 @@ import com.hazelcast.util.Base64
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
+import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpResponse
@@ -89,7 +90,7 @@ inline fun <T> ((Message<T>) -> Unit).withExceptions() =
         defaultWrapperHandlerWithExceptions(this)
 
 interface Loggable {
-    val log
+    val log: Logger
         get() = LoggerFactory.getLogger(javaClass)
 }
 

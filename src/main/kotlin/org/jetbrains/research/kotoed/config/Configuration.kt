@@ -21,25 +21,25 @@ abstract class Configuration : Jsonable {
             data = value
         }
 
-    operator fun String.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun String.getValue(thisRef: Configuration, prop: KProperty<*>): String =
             data.getString(prop.name, this)
 
-    operator fun Int.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun Int.getValue(thisRef: Configuration, prop: KProperty<*>): Int =
             data.getInteger(prop.name, this)
 
-    operator fun Long.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun Long.getValue(thisRef: Configuration, prop: KProperty<*>): Long =
             data.getLong(prop.name, this)
 
-    operator fun Double.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun Double.getValue(thisRef: Configuration, prop: KProperty<*>): Double =
             data.getDouble(prop.name, this)
 
-    operator fun Float.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun Float.getValue(thisRef: Configuration, prop: KProperty<*>): Float =
             data.getFloat(prop.name, this)
 
-    operator fun JsonObject.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun JsonObject.getValue(thisRef: Configuration, prop: KProperty<*>): JsonObject =
             data.getJsonObject(prop.name, this)
 
-    operator fun JsonArray.getValue(thisRef: Configuration, prop: KProperty<*>) =
+    operator fun JsonArray.getValue(thisRef: Configuration, prop: KProperty<*>): JsonArray =
             data.getJsonArray(prop.name, this)
 
     // Nothing? does not work for some reason
