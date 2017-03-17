@@ -16,3 +16,7 @@ fun RoutingContext.jsonResponse() =
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
 
 fun HttpServerResponse.end(json: JsonObject) = this.end(json.encode())
+
+object HttpHeaderValuesEx {
+    const val APPLICATION_XML = "application/xml"
+}

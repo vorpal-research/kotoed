@@ -5,6 +5,7 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.core.logging.LoggerFactory
+import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
@@ -31,6 +32,16 @@ inline suspend fun <T> vxa(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T
                 else cont.resumeWithException(res.cause())
             })
         }
+
+inline suspend fun <reified T> Loggable.vxal(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T {
+    val res = vxa(cb)
+    if (res is HttpResponse<*>) {
+        log.info(res.bodyAsString())
+    } else {
+        log.info(res)
+    }
+    return res
+}
 
 inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
         object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler {
