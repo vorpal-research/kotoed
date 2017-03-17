@@ -12,6 +12,7 @@ import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
+import org.jetbrains.research.kotoed.data.teamcity.project.TriggerBuild
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
@@ -28,9 +29,15 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                 Address.TeamCity.Project.Create,
                 this@TeamCityVerticle::consumeTeamCityProjectCreate.withExceptions()
         )
+
+        eb.consumer<JsonObject>(
+                Address.TeamCity.Build.Trigger,
+                this@TeamCityVerticle::consumeTeamCityBuildTrigger.withExceptions()
+        )
     }
 
     fun consumeTeamCityProjectCreate(msg: Message<JsonObject>) {
+
         val wc = WebClient.create(vertx)
 
         val createProject = fromJson<CreateProject>(msg.body())
@@ -96,6 +103,56 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                     "project" to projectRes,
                     "vcsRoot" to vcsRootRes,
                     "buildConfig" to buildConfigRes
+            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
+
+            if (results[false] == null) {
+                msg.reply(
+                        JsonObject(
+                                results[true]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsJsonObject() }
+                                        + ("result" to "success")
+                        )
+                )
+            } else {
+                msg.reply(
+                        JsonObject(
+                                results[false]!!
+                                        .toMap()
+                                        .mapValues { e -> e.value.bodyAsString() }
+                                        + ("result" to "failed")
+                        )
+                )
+            }
+        }
+    }
+
+    fun consumeTeamCityBuildTrigger(msg: Message<JsonObject>) {
+
+        val wc = WebClient.create(vertx)
+
+        val triggerBuild = fromJson<TriggerBuild>(msg.body())
+
+        launch(UnconfinedWithExceptions(msg)) {
+            val triggerBuildBody = vxa<Buffer> {
+                ftlEngine.render(
+                        vertx,
+                        "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",
+                        mapOf("trigger" to triggerBuild),
+                        it
+                )
+            }
+
+            val triggerBuildRes = vxa<HttpResponse<Buffer>> {
+                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildQueue)
+                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
+                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+                        .sendBuffer(triggerBuildBody, it)
+            }
+
+            val results = listOf(
+                    "triggerBuild" to triggerBuildRes
             ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
 
             if (results[false] == null) {

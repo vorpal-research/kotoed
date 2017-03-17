@@ -7,5 +7,9 @@ object Address {
         object Project {
             const val Create = "kotoed.teamcity.project.create"
         }
+
+        object Build {
+            const val Trigger = "kotoed.teamcity.build.trigger"
+        }
     }
 }

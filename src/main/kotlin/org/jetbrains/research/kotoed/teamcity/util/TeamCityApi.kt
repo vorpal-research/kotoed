@@ -8,4 +8,5 @@ object TeamCityApi {
     val Projects = +"projects"
     val VcsRoots = +"vcs-roots"
     val BuildTypes = +"buildTypes"
+    val BuildQueue = +"buildQueue"
 }

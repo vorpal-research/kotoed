@@ -5,6 +5,7 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.core.logging.LoggerFactory
+import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
@@ -50,6 +51,20 @@ inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
                 exception.printStackTrace()
                 msg.reply(
                         JsonObject(
+                                "result" to "failed",
+                                "error" to exception.message
+                        )
+                )
+            }
+        } + Unconfined
+
+inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler {
+            override fun handleException(context: CoroutineContext, exception: Throwable) {
+                exception.printStackTrace()
+                ctx.jsonResponse().end(
+                        JsonObject(
+                                "result" to "failed",
                                 "error" to exception.message
                         )
                 )
@@ -63,6 +78,7 @@ inline fun <T> defaultWrapperHandlerWithExceptions(crossinline handler: (Message
         ex.printStackTrace()
         msg.reply(
                 JsonObject(
+                        "result" to "failed",
                         "error" to ex.message
                 )
         )
