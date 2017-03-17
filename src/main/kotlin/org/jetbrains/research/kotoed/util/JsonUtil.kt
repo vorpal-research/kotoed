@@ -54,7 +54,7 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         }
 
 private fun Any?.tryFromJson(klass: KType): Any? {
-    val die = { throw IllegalArgumentException("Type $klass not supported") }
+    val die = { throw IllegalArgumentException("Cannot convert $this from json as $klass") }
     return when (this) {
         is JsonObject ->
             when {
@@ -106,33 +106,36 @@ private fun Any?.tryFromJson(klass: KType): Any? {
             }
         is String -> this
         is Number ->
-                when(klass.jvmErasure) {
-                    Int::class -> toInt()
-                    Long::class -> toLong()
-                    Short::class -> toShort()
-                    Byte::class -> toByte()
-                    Float::class -> toFloat()
-                    Double::class -> toDouble()
-                    else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
-                }
-        else -> throw IllegalArgumentException("Cannot convert $this from json as $klass")
+            when (klass.jvmErasure) {
+                Int::class -> toInt()
+                Long::class -> toLong()
+                Short::class -> toShort()
+                Byte::class -> toByte()
+                Float::class -> toFloat()
+                Double::class -> toDouble()
+                else -> die()
+            }
+        else -> die()
     }
 }
 
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
-    val asArray = klass.declaredMemberProperties.map {
+    val asMap = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
         if (value == null && !it.returnType.isMarkedNullable)
             throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
-        else value?.tryFromJson(it.returnType)
-    }.toTypedArray()
+        else Pair(it.name, value?.tryFromJson(it.returnType))
+    }.toMap()
 
     return try {
-        klass.constructors.first().call(*asArray)
+        val ctor = klass.constructors.first()
+        ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
     }
 }
+
+inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
 
 fun JsonObject.getValueByType(name: String, type: KType): Any? {
     val value = getValue(name)
@@ -140,6 +143,3 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
         throw IllegalArgumentException("Field $name is missing in \"${this}\"")
     return value?.tryFromJson(type)
 }
-
-inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
-

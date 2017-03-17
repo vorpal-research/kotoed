@@ -7,15 +7,15 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class BigConfig : Configuration() {
-    val Splendidness by 9001
-    val Stupidity by 0xDEADBEEF
+    val Splendidness: Int by 9001
+    val Stupidity: Long by 0xDEADBEEF
 
     class SubConfig0 : Configuration() {
-        val MaidenName by "Hertz"
+        val MaidenName: String by "Hertz"
 
         class PlayInfo : Configuration() {
-            val Author by "Shakespeare"
-            val Name by "Romeo and Juliet"
+            val Author: String by "Shakespeare"
+            val Name: String by "Romeo and Juliet"
             val ScreenTitle by { "\"$Name\", by $Author" }
         }
 
