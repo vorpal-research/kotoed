@@ -104,15 +104,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     // XXX: testing, remove in production
     fun handleDebug(ctx: RoutingContext) {
         if (ctx.request().connection().run { localAddress().host() == remoteAddress().host() }) ctx.next()
-        else ctx.jsonResponse()
+        else ctx.response()
                 .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
                 .setStatusMessage("Forbidden")
                 .end(JsonObject("code" to 403, "message" to "forbidden"))
     }
 
     fun handleSettings(ctx: RoutingContext) {
-        ctx.jsonResponse()
-                .end(Config.toString())
+        ctx.response().end(Config)
     }
 
     fun handleDebugRequest(ctx: RoutingContext) {
@@ -128,7 +127,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                 val remoteAddress = req.connection().remoteAddress().toString()
             }
         }
-        ctx.jsonResponse().end(result.toJson())
+        ctx.response().end(result)
     }
 
     fun handleDebugDatabaseCreate(ctx: RoutingContext) {

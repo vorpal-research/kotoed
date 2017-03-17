@@ -21,7 +21,10 @@ fun RoutingContext.jsonResponse(): HttpServerResponse =
         this.response()
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
 
-fun HttpServerResponse.end(json: JsonObject) = this.end(json.encode())
+fun HttpServerResponse.end(json: JsonObject) =
+        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.encode())
+fun HttpServerResponse.end(json: Jsonable) =
+        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.toJson())
 
 suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> T): T  =
         vxa{
