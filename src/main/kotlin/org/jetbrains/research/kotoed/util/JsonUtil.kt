@@ -31,6 +31,8 @@ private fun Any?.tryToJson(): Any? =
         when (this) {
             null -> null
             is Jsonable -> toJson()
+            is JsonObject -> this
+            is JsonArray -> this
             is Collection<*> -> JsonArray(this.map { it.tryToJson() })
             is Iterable<*> -> JsonArray(this.map { it.tryToJson() })
             is Sequence<*> -> JsonArray(this.map { it.tryToJson() }.toList())
@@ -54,10 +56,16 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
 private fun Any?.tryFromJson(klass: KType): Any? {
     val die = { throw IllegalArgumentException("Type $klass not supported") }
     return when (this) {
-        is JsonObject -> fromJson(this, klass.jvmErasure)
+        is JsonObject ->
+            when {
+                klass.jvmErasure.isSubclassOf(JsonObject::class) -> this
+                else -> fromJson(this, klass.jvmErasure)
+            }
         is JsonArray ->
             when {
+                klass.jvmErasure.isSubclassOf(JsonArray::class) -> this
                 klass.jvmErasure.isSubclassOf(Collection::class)
+                        || klass.jvmErasure.isSubclassOf(Iterable::class)
                         || klass.jvmErasure.isSubclassOf(Sequence::class) -> {
                     val elementType = klass.arguments.first().type ?: die()
                     makeJsonCollection(klass, this@tryFromJson.map { it.tryFromJson(elementType) })
