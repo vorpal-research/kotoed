@@ -3,5 +3,9 @@ package org.jetbrains.research.kotoed.teamcity.util
 object TeamCityApi {
     private val endpointRoot = "/app/rest"
 
-    val Projects = "$endpointRoot/projects"
+    private operator fun String.unaryPlus() = "$endpointRoot/$this"
+
+    val Projects = +"projects"
+    val VcsRoots = +"vcs-roots"
+    val BuildTypes = +"buildTypes"
 }
