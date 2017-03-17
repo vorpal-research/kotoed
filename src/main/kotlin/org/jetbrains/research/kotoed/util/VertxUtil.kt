@@ -8,10 +8,10 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import kotlin.reflect.KProperty
 
-operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>) =
+operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String =
         this.getParam(prop.name)
 
-fun RoutingContext.jsonResponse() =
+fun RoutingContext.jsonResponse(): HttpServerResponse =
         this.response()
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
 

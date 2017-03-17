@@ -4,11 +4,11 @@ import org.jetbrains.research.kotoed.util.base64Encode
 
 class GlobalConfig : Configuration() {
     class TeamCityConfig : Configuration() {
-        val Host by "localhost"
-        val Port by 8111
-        val EndpointRoot by "/app/rest"
+        val Host: String by "localhost"
+        val Port: Int by 8111
+        val EndpointRoot: String by "/app/rest"
 
-        val User by "kotoed"
+        val User: String by "kotoed"
         val Password: String by Uninitialized
         val AuthString by { "Basic ${base64Encode("$User:$Password")}" }
     }
@@ -16,7 +16,7 @@ class GlobalConfig : Configuration() {
     val TeamCity by TeamCityConfig()
 
     class RootConfig : Configuration() {
-        val Port by 9000
+        val Port: Int by 9000
     }
 
     val Root by RootConfig()
