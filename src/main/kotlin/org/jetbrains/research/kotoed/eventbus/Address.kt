@@ -12,4 +12,8 @@ object Address {
             const val Trigger = "kotoed.teamcity.build.trigger"
         }
     }
+
+    object Code {
+        const val Download = "kotoed.code.download"
+    }
 }

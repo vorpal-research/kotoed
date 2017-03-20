@@ -130,6 +130,17 @@
             <version>${psqldriver.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.vcsreader</groupId>
+            <artifactId>vcsreader</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wickedsource</groupId>
+            <artifactId>diffparser</artifactId>
+            <version>1.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
