@@ -12,13 +12,20 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <kotlin.version>1.1.0</kotlin.version>
+        <kotlin.version>1.1.1</kotlin.version>
         <vertx.version>3.4.0</vertx.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.0.13</logback.version>
-        <org.jooq.version>3.9.1</org.jooq.version>
+        <jooq.version>3.9.1</jooq.version>
+        <freemarker.version>2.3.22</freemarker.version>
+        <psqldriver.version>42.0.0</psqldriver.version>
+        <hikari.version>2.6.1</hikari.version>
+        <junit.version>4.12</junit.version>
+        <kotlinx.html.version>0.6.2</kotlinx.html.version>
+        <kotlinx.coroutines.version>0.12</kotlinx.coroutines.version>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
+
     </properties>
 
     <dependencies>
@@ -57,7 +64,7 @@
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <version>2.3.22</version>
+            <version>${freemarker.version}</version>
         </dependency>
 
         <dependency>
@@ -80,12 +87,12 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>0.12</version>
+            <version>${kotlinx.coroutines.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-html-jvm</artifactId>
-            <version>0.6.2</version>
+            <version>${kotlinx.html.version}</version>
         </dependency>
 
         <dependency>
@@ -102,7 +109,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -110,17 +117,17 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>2.6.1</version>
+            <version>${hikari.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
-            <version>${org.jooq.version}</version>
+            <version>${jooq.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.0.0</version>
+            <version>${psqldriver.version}</version>
         </dependency>
 
     </dependencies>

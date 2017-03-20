@@ -13,6 +13,7 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
 inline suspend fun vxu(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit): Void? =
@@ -95,3 +96,9 @@ interface Loggable {
 }
 
 inline fun base64Encode(v: CharSequence): String = String(Base64.encode(v.toString().toByteArray()))
+
+fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
+        klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
+
+inline fun<reified E: Enum<E>> Enum.Companion.valueOf(value: String) =
+        valueOf(value, E::class) as E
