@@ -10,6 +10,7 @@ object Address {
 
         object Build {
             const val Trigger = "kotoed.teamcity.build.trigger"
+            const val Info = "kotoed.teamcity.build.info"
         }
     }
 

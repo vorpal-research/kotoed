@@ -40,7 +40,7 @@ private fun Any?.tryToJson(): Any? =
             is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
             is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())
             is Triple<*, *, *> -> JsonArray(first.tryToJson(), second.tryToJson(), third.tryToJson())
-            is Number, is String -> this
+            is Number, is String, is Boolean -> this
             is Enum<*> -> toString()
             else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
@@ -105,6 +105,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 else -> die()
             }
+        is Boolean -> this
         is String ->
             when {
                 klass.jvmErasure.isSubclassOf(Enum::class) -> Enum.valueOf(this, klass.jvmErasure)
