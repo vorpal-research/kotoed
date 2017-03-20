@@ -3,8 +3,6 @@ package org.jetbrains.research.kotoed
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.Vertx
-import io.vertx.core.VertxOptions
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
@@ -12,7 +10,6 @@ import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.Unconfined
-import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
@@ -24,8 +21,8 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
 import org.jooq.impl.DSL
-import org.jooq.impl.DSL.*
-import org.jooq.tools.jdbc.JDBCUtils
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.table
 import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
@@ -150,7 +147,9 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .constraint(DSL.constraint("PK_DEBUG").primaryKey("id"))
                     .execute()
         }
-        val ret = object: Jsonable { val query = q.toString() }
+        val ret = object : Jsonable {
+            val query = q.toString()
+        }
         ctx.jsonResponse().end(ret.toJson())
     }
 
@@ -190,7 +189,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
                 it.insertInto(table("debug"))
                         .columns(field("payload", PostgresDataTypeEx.JSONB))
-                        .values(JsonObject("k" to 2, "f" to listOf(1,2,3)))
+                        .values(JsonObject("k" to 2, "f" to listOf(1, 2, 3)))
                         .executeKAsync()
             }
 

@@ -10,9 +10,6 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.Shareable
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.Unconfined
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
@@ -26,21 +23,26 @@ fun RoutingContext.jsonResponse(): HttpServerResponse =
 
 fun HttpServerResponse.end(json: JsonObject) =
         this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.encode())
+
 fun HttpServerResponse.end(json: Jsonable) =
         this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.toJson())
 
-suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> T): T  =
-        vxa{
+suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> T): T =
+        vxa {
             this.executeBlocking<T>(
-                    Handler{
-                        fut -> try { fut.complete(body()) } catch (ex: Throwable) { fut.fail(ex) }
+                    Handler { fut ->
+                        try {
+                            fut.complete(body())
+                        } catch (ex: Throwable) {
+                            fut.fail(ex)
+                        }
                     },
                     ordered,
                     it)
         }
 
 suspend fun Vertx.goToEventLoop(): Void =
-        vxt<Void> { this.runOnContext(it) }
+        vxt { this.runOnContext(it) }
 
 suspend fun clusteredVertxAsync(opts: VertxOptions = VertxOptions()): Vertx =
         vxa { Vertx.clusteredVertx(opts, it) }
@@ -55,13 +57,13 @@ object HttpHeaderValuesEx {
 
 data class ShareableHolder<T>(val value: T, val vertx: Vertx) : Shareable
 
-fun<T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
+fun <T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
     synchronized(this) {
         val map = sharedData().getLocalMap<String, ShareableHolder<T>>(
                 "${construct.reflect()?.returnType?.jvmErasure?.qualifiedName}.shared_map"
         )
         var get = map[name]
-        if(get == null) {
+        if (get == null) {
             get = ShareableHolder(construct(), this)
             map.putIfAbsent(name, get)
         }

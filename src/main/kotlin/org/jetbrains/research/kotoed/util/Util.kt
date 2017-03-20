@@ -48,7 +48,7 @@ inline suspend fun <reified T> Loggable.vxal(crossinline cb: (Handler<AsyncResul
 }
 
 inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler {
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 exception.printStackTrace()
                 msg.reply(
@@ -100,5 +100,5 @@ inline fun base64Encode(v: CharSequence): String = String(Base64.encode(v.toStri
 fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
         klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
 
-inline fun<reified E: Enum<E>> Enum.Companion.valueOf(value: String) =
+inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
         valueOf(value, E::class) as E
