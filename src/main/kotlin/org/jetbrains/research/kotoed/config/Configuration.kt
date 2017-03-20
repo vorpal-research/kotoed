@@ -6,7 +6,9 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.getValueByType
 import org.jetbrains.research.kotoed.util.toJson
+import org.jetbrains.research.kotoed.util.valueOf
 import kotlin.reflect.KProperty
+import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.reflect
 
@@ -41,6 +43,9 @@ abstract class Configuration : Jsonable {
 
     operator fun JsonArray.getValue(thisRef: Configuration, prop: KProperty<*>): JsonArray =
             data.getJsonArray(prop.name, this)
+
+    inline operator fun<reified E: Enum<E>> E.getValue(thisRef: Configuration, prop: KProperty<*>): E =
+            internalData.getString(prop.name)?.let { Enum.valueOf<E>(it) } ?: this
 
     // Nothing? does not work for some reason
     inline operator fun <reified T> Null.getValue(thisRef: Configuration, prop: KProperty<*>): T? =

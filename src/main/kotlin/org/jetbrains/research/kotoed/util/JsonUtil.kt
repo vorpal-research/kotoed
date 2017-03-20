@@ -41,6 +41,7 @@ private fun Any?.tryToJson(): Any? =
             is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())
             is Triple<*, *, *> -> JsonArray(first.tryToJson(), second.tryToJson(), third.tryToJson())
             is Number, is String -> this
+            is Enum<*> -> toString()
             else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
 
@@ -104,7 +105,12 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 else -> die()
             }
-        is String -> this
+        is String ->
+            when {
+                klass.jvmErasure.isSubclassOf(Enum::class) -> Enum.valueOf(this, klass.jvmErasure)
+                klass.jvmErasure.isSubclassOf(String::class) -> this
+                else -> die()
+            }
         is Number ->
             when (klass.jvmErasure) {
                 Int::class -> toInt()
