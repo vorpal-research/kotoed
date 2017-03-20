@@ -10,9 +10,6 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
-import java.io.PrintWriter
-import java.io.StringBufferInputStream
-import java.io.StringWriter
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine

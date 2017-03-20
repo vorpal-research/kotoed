@@ -35,6 +35,7 @@ suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> 
                     Handler{
                         fut -> try { fut.complete(body()) } catch (ex: Throwable) { fut.fail(ex) }
                     },
+                    ordered,
                     it)
         }
 
