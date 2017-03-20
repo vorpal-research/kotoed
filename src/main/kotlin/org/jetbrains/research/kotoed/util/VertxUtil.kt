@@ -46,10 +46,11 @@ suspend fun clusteredVertxAsync(opts: VertxOptions = VertxOptions()): Vertx =
         vxa { Vertx.clusteredVertx(opts, it) }
 
 suspend fun Vertx.delayAsync(delay: Long): Long =
-    vxt { this.setTimer(delay, it) }
+        vxt { this.setTimer(delay, it) }
 
 object HttpHeaderValuesEx {
     const val APPLICATION_XML = "application/xml"
+    const val HTML = "text/html"
 }
 
 data class ShareableHolder<T>(val value: T, val vertx: Vertx) : Shareable

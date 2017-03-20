@@ -88,7 +88,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     }
 
     fun handleIndex(ctx: RoutingContext) = with(ctx.response()) {
-        putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
+        putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
                 .end(createHTML().html {
                     head { title("The awesome kotoed") }
                     body {
@@ -130,10 +130,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     }
 
     fun handleDebugDatabaseCreate(ctx: RoutingContext) {
-        val db = "jdbc:postgresql://localhost/kotoed"
-        val ds = vertx.getSharedDataSource("debug.db", db, "kotoed", "kotoed")
+        val ds = vertx.getSharedDataSource(
+                "debug.db",
+                Config.Debug.DB.Url,
+                Config.Debug.DB.User,
+                Config.Debug.DB.Password
+        )
 
-        val q = DSL.using(ds, JDBCUtils.dialect(db)).use {
+        val q = jooq(ds).use {
             it.createTableIfNotExists("debug")
                     .column("id", PostgresDataType.SERIAL)
                     .column("payload", PostgresDataType.JSON)
@@ -161,7 +165,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     Config.Debug.DB.Password
             )
 
-            DSL.using(ds, Config.Debug.DB.Dialect).use {
+            jooq(ds).use {
 
                 it.createTableIfNotExists("debug")
                         .column("id", PostgresDataType.SERIAL)
@@ -186,7 +190,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             data class DebugType(val id: Int, val payload: Any?) : Jsonable
 
-            val res = DSL.using(ds, Config.Debug.DB.Dialect).use {
+            val res = jooq(ds).use {
                 it.select(field("id", PostgresDataType.INT), field("payload", PostgresDataTypeEx.JSONB))
                         .from(table("debug"))
                         .fetchKAsync()
