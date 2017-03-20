@@ -12,6 +12,7 @@ import kotlin.test.assertFailsWith
 data class ExampleMessage(val p1: Int, val p2: String, val p3: Int?) : Jsonable
 data class ExampleMessage2(val payload: List<ExampleMessage>) : Jsonable
 data class ExampleMessage3(val payload: Map<Int, ExampleMessage?>) : Jsonable
+data class ExampleMessage4(val p1: Boolean, val p2: Boolean?) : Jsonable
 data class Tangled(val data: List<Int>, val next: Map<Int, List<Tangled>>) : Jsonable
 
 class JsonUtilTest {
@@ -45,6 +46,16 @@ class JsonUtilTest {
                 }
             """),
                 ExampleMessage3(mapOf(1 to ExampleMessage(2, "Hello", null))).toJson()
+        )
+
+        assertEquals(
+                JsonObject("""
+                {
+                    "p1": true,
+                    "p2": null
+                }
+            """),
+                ExampleMessage4(true, null).toJson()
         )
 
         assertEquals(
@@ -128,6 +139,16 @@ class JsonUtilTest {
                     }
                 """)),
                 ExampleMessage3(mapOf(1 to ExampleMessage(2, "Hello", null)))
+        )
+
+        assertEquals(
+                fromJson(JsonObject("""
+                    {
+                        "p1": false,
+                        "p2": false
+                    }
+                """)),
+                ExampleMessage4(false, false)
         )
 
         assertEquals(
