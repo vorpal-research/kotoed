@@ -19,10 +19,7 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.database.PostgresDataTypeEx
-import org.jetbrains.research.kotoed.util.database.executeKAsync
-import org.jetbrains.research.kotoed.util.database.fetchKAsync
-import org.jetbrains.research.kotoed.util.database.getSharedDataSource
+import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.*
@@ -157,15 +154,18 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebugDatabaseFill(ctx: RoutingContext) {
 
         launch(Unconfined) {
-            val db = "jdbc:postgresql://localhost/kotoed"
-            val ds = vertx.getSharedDataSource("debug.db", db, "kotoed", "kotoed")
+            val ds = vertx.getSharedDataSource(
+                    "debug.db",
+                    Config.Debug.DB.Url,
+                    Config.Debug.DB.User,
+                    Config.Debug.DB.Password
+            )
 
-            DSL.using(ds, JDBCUtils.dialect(db)).use {
+            DSL.using(ds, Config.Debug.DB.Dialect).use {
 
                 it.createTableIfNotExists("debug")
                         .column("id", PostgresDataType.SERIAL)
                         .column("payload", PostgresDataTypeEx.JSONB)
-                        .constraint(constraint("PK_DEBUG").primaryKey("id"))
                         .executeKAsync()
 
                 it.insertInto(table("debug"))
@@ -186,7 +186,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             data class DebugType(val id: Int, val payload: Any?) : Jsonable
 
-            val res = DSL.using(ds, JDBCUtils.dialect(db)).use {
+            val res = DSL.using(ds, Config.Debug.DB.Dialect).use {
                 it.select(field("id", PostgresDataType.INT), field("payload", PostgresDataTypeEx.JSONB))
                         .from(table("debug"))
                         .fetchKAsync()
