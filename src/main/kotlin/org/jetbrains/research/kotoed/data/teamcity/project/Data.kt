@@ -26,3 +26,11 @@ data class CreateProject(
 ) : EventBusDatum<CreateProject>()
 
 data class TriggerBuild(val id: String) : EventBusDatum<TriggerBuild>()
+
+data class BuildInfo(
+        val id: String?,
+        val projectId: String?,
+        val number: String?,
+        val revision: String?,
+        val all: Boolean?
+) : EventBusDatum<BuildInfo>()
