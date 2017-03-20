@@ -16,7 +16,9 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
@@ -37,6 +39,7 @@ fun main(args: Array<String>) {
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
+        vertx.deployVerticle(CodeVerticle::class.qualifiedName)
     }
 }
 
@@ -80,6 +83,9 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             router.route("/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
+
+            router.route("/vcs/clone/:type")
+                    .handler(this@RootVerticle::handleVCSClone)
 
             vertx.createHttpServer()
                     .requestHandler({ router.accept(it) })
@@ -202,6 +208,26 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             ctx.jsonResponse().end(JsonArray(res).encodePrettily())
         }
+    }
+
+    fun handleVCSClone(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val url by req
+            val type by req
+
+            val eb = vertx.eventBus()
+            val message = object: Jsonable {
+                val vcs = type
+                val url = url
+            }
+            val res = eb.sendAsync(Address.Code.Download, message.toJson())
+
+            ctx.response().end(res.body())
+        }
+
+
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
