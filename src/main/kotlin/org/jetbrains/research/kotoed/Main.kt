@@ -2,8 +2,6 @@ package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.Vertx
-import io.vertx.core.VertxOptions
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
@@ -17,12 +15,21 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.eventbus.sendAsync
+import org.jooq.impl.DSL
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.table
+import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
 fun main(args: Array<String>) {
+    Thread.currentThread().contextClassLoader.getResourceAsStream("system.properties").use {
+        System.getProperties().load(it)
+    }
+
     launch(Unconfined) {
-        val vertx = vxa<Vertx> { Vertx.clusteredVertx(VertxOptions(), it) }
+        val vertx = clusteredVertxAsync()
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
@@ -38,6 +45,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         launch(Unconfined) {
             val router = Router.router(vertx)
 
+            log.info("Alive and standing")
+
             val gsms = vxa<GSMS_TYPE> { vertx.sharedData().getClusterWideMap("gsms", it) }
             router.route()
                     .handler { ctx -> ctx.put(GSMS_ID, gsms).next() }
@@ -50,8 +59,15 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .handler(this@RootVerticle::handleDebug)
             router.route("/debug/settings")
                     .handler(this@RootVerticle::handleSettings)
+            router.route("/debug/crash")
+                    .handler(this@RootVerticle::handleDebugCrash)
             router.route("/debug/request")
                     .handler(this@RootVerticle::handleDebugRequest)
+            router.route("/debug/database/create")
+                    .handler(this@RootVerticle::handleDebugDatabaseCreate)
+            router.route("/debug/database/fill")
+                    .handler(this@RootVerticle::handleDebugDatabaseFill)
+
 
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
@@ -68,7 +84,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     }
 
     fun handleIndex(ctx: RoutingContext) = with(ctx.response()) {
-        putHeader(HttpHeaderNames.CONTENT_TYPE, "text/html")
+        putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
                 .end(createHTML().html {
                     head { title("The awesome kotoed") }
                     body {
@@ -83,15 +99,14 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     // XXX: testing, remove in production
     fun handleDebug(ctx: RoutingContext) {
         if (ctx.request().connection().run { localAddress().host() == remoteAddress().host() }) ctx.next()
-        else ctx.jsonResponse()
+        else ctx.response()
                 .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
                 .setStatusMessage("Forbidden")
                 .end(JsonObject("code" to 403, "message" to "forbidden"))
     }
 
     fun handleSettings(ctx: RoutingContext) {
-        ctx.jsonResponse()
-                .end(Config.toString())
+        ctx.response().end(Config)
     }
 
     fun handleDebugRequest(ctx: RoutingContext) {
@@ -101,12 +116,90 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             val uri = req.absoluteURI()
             val method = req.rawMethod()
             val form = req.formAttributes()
+            val params = req.params()
             val connection = object : Jsonable {
                 val localAddress = req.connection().localAddress().toString()
                 val remoteAddress = req.connection().remoteAddress().toString()
             }
         }
-        ctx.jsonResponse().end(result.toJson())
+        ctx.response().end(result)
+    }
+
+    fun handleDebugDatabaseCreate(ctx: RoutingContext) {
+        val ds = vertx.getSharedDataSource(
+                "debug.db",
+                Config.Debug.DB.Url,
+                Config.Debug.DB.User,
+                Config.Debug.DB.Password
+        )
+
+        val q = jooq(ds).use {
+            it.createTableIfNotExists("debug")
+                    .column("id", PostgresDataType.SERIAL)
+                    .column("payload", PostgresDataType.JSON)
+                    .constraint(DSL.constraint("PK_DEBUG").primaryKey("id"))
+                    .execute()
+        }
+        val ret = object : Jsonable {
+            val query = q.toString()
+        }
+        ctx.jsonResponse().end(ret.toJson())
+    }
+
+    fun handleDebugCrash(ctx: RoutingContext) {
+        launch(UnconfinedWithExceptions(ctx)) {
+            vertx.delayAsync(500)
+            throw IllegalStateException("Forced crash")
+        }
+    }
+
+    fun handleDebugDatabaseFill(ctx: RoutingContext) {
+
+        launch(Unconfined) {
+            val ds = vertx.getSharedDataSource(
+                    "debug.db",
+                    Config.Debug.DB.Url,
+                    Config.Debug.DB.User,
+                    Config.Debug.DB.Password
+            )
+
+            jooq(ds).use {
+
+                it.createTableIfNotExists("debug")
+                        .column("id", PostgresDataType.SERIAL)
+                        .column("payload", PostgresDataTypeEx.JSONB)
+                        .executeKAsync()
+
+                it.insertInto(table("debug"))
+                        .columns(field("payload", PostgresDataTypeEx.JSONB))
+                        .values(2)
+                        .executeKAsync()
+
+                it.insertInto(table("debug"))
+                        .columns(field("payload", PostgresDataTypeEx.JSONB))
+                        .values("Hello")
+                        .executeKAsync()
+
+                it.insertInto(table("debug"))
+                        .columns(field("payload", PostgresDataTypeEx.JSONB))
+                        .values(JsonObject("k" to 2, "f" to listOf(1, 2, 3)))
+                        .executeKAsync()
+            }
+
+            data class DebugType(val id: Int, val payload: Any?) : Jsonable
+
+            val res = jooq(ds).use {
+                it.select(field("id", PostgresDataType.INT), field("payload", PostgresDataTypeEx.JSONB))
+                        .from(table("debug"))
+                        .fetchKAsync()
+                        .into(DebugType::class.java)
+                        .map { it.toJson() }
+            }
+
+            vertx.goToEventLoop()
+
+            ctx.jsonResponse().end(JsonArray(res).encodePrettily())
+        }
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
