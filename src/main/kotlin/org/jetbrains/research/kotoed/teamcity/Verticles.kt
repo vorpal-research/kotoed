@@ -17,6 +17,7 @@ import org.jetbrains.research.kotoed.data.teamcity.project.TriggerBuild
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.*
+import org.jetbrains.research.kotoed.teamcity.verticles.BuildPollerVerticle
 import org.jetbrains.research.kotoed.util.*
 
 class TeamCityVerticle : AbstractVerticle(), Loggable {
@@ -155,6 +156,13 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                         .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
                         .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
                         .sendBuffer(triggerBuildBody, it)
+            }
+
+            if (HttpResponseStatus.OK.code() == triggerBuildRes.statusCode()) {
+                triggerBuildRes.bodyAsJsonObject().getInteger("id")?.let {
+                    log.trace("Starting polling for build $it")
+                    vertx.deployVerticle(BuildPollerVerticle(it))
+                }
             }
 
             val results = listOf(
