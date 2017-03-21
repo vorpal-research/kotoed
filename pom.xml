@@ -26,6 +26,7 @@
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
 
+        <guava.version>21.0</guava.version>
     </properties>
 
     <dependencies>
@@ -139,6 +140,11 @@
             <groupId>org.wickedsource</groupId>
             <artifactId>diffparser</artifactId>
             <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
 
     </dependencies>

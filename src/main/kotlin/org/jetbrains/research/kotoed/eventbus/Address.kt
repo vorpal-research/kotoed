@@ -16,5 +16,6 @@ object Address {
 
     object Code {
         const val Download = "kotoed.code.download"
+        const val Read = "kotoed.code.read"
     }
 }

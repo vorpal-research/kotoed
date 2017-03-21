@@ -24,6 +24,8 @@ import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.table
 import org.jooq.util.postgres.PostgresDataType
+import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 fun main(args: Array<String>) {
@@ -83,6 +85,9 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             router.route("/vcs/clone/:type")
                     .handler(this@RootVerticle::handleVCSClone)
+            router.routeWithRegex("/vcs/read/.*")
+                    .pathRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
+                    .handler(this@RootVerticle::handleVCSRead)
 
             vertx.createHttpServer()
                     .requestHandler({ router.accept(it) })
@@ -219,7 +224,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             val eb = vertx.eventBus()
             val message = object: Jsonable {
                 val vcs = type
-                val url = url
+                val url = url.unquote()
             }
             val res = eb.sendAsync(Address.Code.Download, message.toJson())
 
@@ -227,6 +232,30 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         }
 
 
+    }
+
+    fun handleVCSRead(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val param0 by req
+            val uid = param0
+            val param1 by req
+            val path = param1
+
+            val eb = vertx.eventBus()
+            val message = object: Jsonable {
+                val uid = uid
+                val path = path
+            }
+            val res = eb.sendAsync(Address.Code.Read, message.toJson())
+
+            if(res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
+            else ctx.jsonResponse()
+                    .setStatusCode(HttpResponseStatus.NOT_FOUND.code())
+                    .setStatusMessage("Resource not found")
+                    .end(res.body())
+        }
     }
 
     fun handleGsmsCreate(ctx: RoutingContext) {
