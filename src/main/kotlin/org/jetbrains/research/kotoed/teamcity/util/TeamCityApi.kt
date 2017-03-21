@@ -20,6 +20,9 @@ data class DimensionLocator(val dimension: String, val value: String) : Locator 
     companion object {
         fun from(dimension: String, value: String?) =
                 if (value == null) EmptyLocator else DimensionLocator(dimension, value)
+
+        fun from(dimension: String, value: Int?) =
+                if (value == null) EmptyLocator else DimensionLocator(dimension, value.toString())
     }
 }
 

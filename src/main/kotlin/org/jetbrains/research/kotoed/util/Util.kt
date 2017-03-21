@@ -47,10 +47,18 @@ inline suspend fun <reified T> Loggable.vxal(crossinline cb: (Handler<AsyncResul
     return res
 }
 
+inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
+            override fun handleException(context: CoroutineContext, exception: Throwable) {
+                log.error(exception)
+                handler(exception)
+            }
+        } + Unconfined
+
 inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
         object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
             override fun handleException(context: CoroutineContext, exception: Throwable) {
-                exception.printStackTrace()
+                log.error(exception)
                 msg.reply(
                         JsonObject(
                                 "result" to "failed",
@@ -63,7 +71,7 @@ inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
 inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
         object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
             override fun handleException(context: CoroutineContext, exception: Throwable) {
-                exception.printStackTrace()
+                log.error(exception)
                 ctx.jsonResponse().end(
                         JsonObject(
                                 "result" to "failed",
