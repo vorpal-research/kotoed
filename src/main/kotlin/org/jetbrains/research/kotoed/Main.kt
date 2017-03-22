@@ -14,7 +14,9 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
 import org.jetbrains.research.kotoed.util.*
@@ -43,6 +45,7 @@ fun main(args: Array<String>) {
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
+        vertx.deployVerticle(CodeVerticle::class.qualifiedName)
         vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
     }
 }
@@ -87,6 +90,12 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
             router.route("/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
+
+            router.route("/vcs/clone/:type")
+                    .handler(this@RootVerticle::handleVCSClone)
+            router.routeWithRegex("/vcs/read/.*")
+                    .pathRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
+                    .handler(this@RootVerticle::handleVCSRead)
 
             vertx.createHttpServer()
                     .requestHandler({ router.accept(it) })
@@ -210,6 +219,50 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             vertx.goToEventLoop()
 
             ctx.jsonResponse().end(JsonArray(res).encodePrettily())
+        }
+    }
+
+    fun handleVCSClone(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val url by req
+            val type by req
+
+            val eb = vertx.eventBus()
+            val message = object : Jsonable {
+                val vcs = type
+                val url = url.unquote()
+            }
+            val res = eb.sendAsync(Address.Code.Download, message.toJson())
+
+            ctx.response().end(res.body())
+        }
+
+
+    }
+
+    fun handleVCSRead(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val param0 by req
+            val uid = param0
+            val param1 by req
+            val path = param1
+
+            val eb = vertx.eventBus()
+            val message = object : Jsonable {
+                val uid = uid
+                val path = path
+            }
+            val res = eb.sendAsync(Address.Code.Read, message.toJson())
+
+            if (res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
+            else ctx.jsonResponse()
+                    .setStatusCode(HttpResponseStatus.NOT_FOUND.code())
+                    .setStatusMessage("Resource not found")
+                    .end(res.body())
         }
     }
 

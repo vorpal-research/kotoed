@@ -36,6 +36,12 @@ class GlobalConfig : Configuration() {
 
     val TeamCity by TeamCityConfig()
 
+    class VCSConfig : Configuration() {
+        val PendingTimeout by 2000L
+    }
+
+    val VCS by VCSConfig()
+
     class RootConfig : Configuration() {
         val Port: Int by 9000
     }

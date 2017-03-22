@@ -110,3 +110,12 @@ fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
 
 inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
         valueOf(value, E::class) as E
+
+fun String.unquote() =
+        when {
+            startsWith("\"") && endsWith("\"") -> drop(1).dropLast(1)
+            startsWith("'") && endsWith("'") -> drop(1).dropLast(1)
+            else -> this
+        }
+
+fun <T> T?.ignore(): Unit = Unit
