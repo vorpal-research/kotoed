@@ -2,12 +2,14 @@ package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.VertxOptions
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
@@ -29,7 +31,14 @@ fun main(args: Array<String>) {
     }
 
     launch(Unconfined) {
-        val vertx = clusteredVertxAsync()
+        val vertx = clusteredVertxAsync(
+                VertxOptions().also {
+                    it.metricsOptions = DropwizardMetricsOptions(
+                            enabled = Config.Debug.Metrics.Enabled,
+                            jmxEnabled = Config.Debug.Metrics.Enabled
+                    )
+                }
+        )
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
