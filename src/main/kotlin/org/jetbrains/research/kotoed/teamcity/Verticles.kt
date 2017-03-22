@@ -11,9 +11,9 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.teamcity.project.BuildInfo
+import org.jetbrains.research.kotoed.data.teamcity.build.BuildInfo
+import org.jetbrains.research.kotoed.data.teamcity.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
-import org.jetbrains.research.kotoed.data.teamcity.project.TriggerBuild
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.*

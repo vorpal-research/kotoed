@@ -33,6 +33,11 @@ operator infix fun Locator.times(locator: Locator) =
         else if (locator is EmptyLocator) this
         else StringLocator("$this,$locator")
 
+operator infix fun Locator.div(locator: Locator) =
+        if (this is EmptyLocator) locator
+        else if (locator is EmptyLocator) this
+        else StringLocator("$this/$locator")
+
 fun Locator.all() =
         if (this is EmptyLocator) this else StringLocator("?locator=$this")
 
@@ -40,10 +45,13 @@ object TeamCityApi {
     private val endpointRoot = "/app/rest"
 
     private operator fun String.unaryPlus() = ApiEndpoint("$endpointRoot/$this")
+    private operator fun String.unaryMinus() = StringLocator(this)
 
     val Projects = +"projects"
     val VcsRoots = +"vcs-roots"
     val BuildTypes = +"buildTypes"
     val BuildQueue = +"buildQueue"
     val Builds = +"builds"
+
+    val Artifacts = -"artifacts"
 }

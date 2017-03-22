@@ -8,16 +8,21 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactCrawl
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
 import org.jetbrains.research.kotoed.teamcity.util.plus
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
+import org.jetbrains.research.kotoed.util.eventbus.sendJsonable
 import org.jetbrains.research.kotoed.util.putHeader
 import org.jetbrains.research.kotoed.util.vxa
 import java.time.Duration
 
 class BuildPollerVerticle(val id: Int) : AbstractVerticle(), Loggable {
+
+    // FIXME akhin Stale verticle detection?
 
     private val ERROR_LIMIT = 5
 
@@ -30,6 +35,8 @@ class BuildPollerVerticle(val id: Int) : AbstractVerticle(), Loggable {
             log.trace("Stopping polling for build $id: too many errors")
             return
         }
+
+        val eb = vertx.eventBus()
 
         val wc = WebClient.create(vertx)
 
@@ -50,9 +57,18 @@ class BuildPollerVerticle(val id: Int) : AbstractVerticle(), Loggable {
 
             if ("finished" == json.getString("state", "none")) {
                 log.trace("Build $id finished")
+
+                eb.sendJsonable(
+                        Address.TeamCity.Build.Crawl,
+                        ArtifactCrawl(
+                                json.getJsonObject("artifacts")
+                                        .getString("href")
+                        )
+                )
+
                 vertx.undeploy(deploymentID())
             } else {
-                vertx.setTimer(Duration.ofSeconds(5).toMillis()) { id ->
+                vertx.setTimer(Duration.ofSeconds(5).toMillis()) {
                     poll(errorCount)
                 }
             }
