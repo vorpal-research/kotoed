@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.json.JsonArray
