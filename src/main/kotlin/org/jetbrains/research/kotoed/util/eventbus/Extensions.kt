@@ -4,7 +4,6 @@ import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
-import org.jetbrains.research.kotoed.util.toJson
 import org.jetbrains.research.kotoed.util.vxa
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
