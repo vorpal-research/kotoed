@@ -24,10 +24,10 @@ inline operator fun JsonArray.component2(): Any? = this.getValue(1)
 inline operator fun JsonArray.component3(): Any? = this.getValue(2)
 inline operator fun JsonArray.component4(): Any? = this.getValue(3)
 
-interface Jsonable
-
-fun Jsonable.toJson() =
-        JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
+interface Jsonable {
+    fun toJson(): JsonObject =
+            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
+}
 
 private fun Any?.tryToJson(): Any? =
         when (this) {
@@ -57,12 +57,13 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         }
 
 private fun Any?.tryFromJson(klass: KType): Any? {
-    val die = { throw IllegalArgumentException("Cannot convert $this from json as $klass") }
+    fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json as $klass")
     return when (this) {
         is JsonObject ->
             when {
                 klass.jvmErasure.isSubclassOf(JsonObject::class) -> this
-                else -> fromJson(this, klass.jvmErasure)
+                klass.jvmErasure.isSubclassOf(Jsonable::class) -> fromJson(this, klass.jvmErasure)
+                else -> die()
             }
         is JsonArray ->
             when {

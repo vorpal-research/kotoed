@@ -37,7 +37,12 @@ class GlobalConfig : Configuration() {
     val TeamCity by TeamCityConfig()
 
     class VCSConfig : Configuration() {
-        val PendingTimeout by 2000L
+        val PendingTimeout: Long by 2000L
+        val CloneExpire: Long by 86400000L
+        val CloneCapacity: Int by 100
+        val StoragePath: String by "vcs"
+
+        val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
     }
 
     val VCS by VCSConfig()

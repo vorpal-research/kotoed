@@ -2,7 +2,6 @@ package org.jetbrains.research.kotoed.config
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.JsonObject
-import org.jetbrains.research.kotoed.util.toJson
 import org.junit.Test
 import kotlin.test.assertEquals
 

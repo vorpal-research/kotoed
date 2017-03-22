@@ -5,7 +5,6 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.getValueByType
-import org.jetbrains.research.kotoed.util.toJson
 import org.jetbrains.research.kotoed.util.valueOf
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.withNullability
