@@ -14,6 +14,12 @@ class GlobalConfig : Configuration() {
         }
 
         val DB by DBConfig()
+
+        class MetricsConfig : Configuration() {
+            val Enabled by true
+        }
+
+        val Metrics by MetricsConfig()
     }
 
     val Debug by DebugConfig()
