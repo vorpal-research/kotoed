@@ -5,6 +5,8 @@ import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
+import io.vertx.core.buffer.Buffer
+import io.vertx.core.file.FileSystem
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
@@ -70,3 +72,9 @@ fun <T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
         return get.value
     }
 }
+
+suspend fun FileSystem.readFileAsync(path: String): Buffer =
+        vxa { readFile(path, it) }
+
+suspend fun FileSystem.deleteRecursiveAsync(path: String, recursive: Boolean = true): Unit =
+        vxa<Void> { deleteRecursive(path, recursive, it) }.ignore()

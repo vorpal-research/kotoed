@@ -15,4 +15,9 @@ object Address {
             const val Artifact = "kotoed.teamcity.build.artifact"
         }
     }
+
+    object Code {
+        const val Download = "kotoed.code.download"
+        const val Read = "kotoed.code.read"
+    }
 }
