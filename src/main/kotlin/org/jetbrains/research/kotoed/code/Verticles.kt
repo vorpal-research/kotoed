@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.code
 
+import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
 import com.hazelcast.nio.Bits.UTF_8
@@ -22,19 +23,25 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 class CodeVerticle: AbstractVerticle(), Loggable {
-    val dir = File(System.getProperty("user.dir"), "vcs")
-    val ee by lazy {
-        newFixedThreadPoolContext(2 * Runtime.getRuntime().availableProcessors(), "codeVerticle.${deploymentID()}.dispatcher")
+    val dir by lazy {
+        File(System.getProperty("user.dir"), Config.VCS.StoragePath)
     }
-
-    val procs = CacheBuilder.newBuilder()
-            .maximumSize(1000)
-            .expireAfterAccess(24, TimeUnit.HOURS)
-            .removalListener(this::onCacheRemove)
-            .build<CloneRequest, CloneResponse>()
+    val ee by lazy {
+        newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
+    }
+    val procs by lazy<Cache<CloneRequest, CloneResponse>> {
+        CacheBuilder
+                .newBuilder()
+                .maximumSize(Config.VCS.CloneCapacity.toLong())
+                .expireAfterAccess(Config.VCS.CloneExpire, TimeUnit.MILLISECONDS)
+                .removalListener(this::onCacheRemove)
+                .build()
+    }
 
     fun onCacheRemove(removalNotification: RemovalNotification<CloneRequest, CloneResponse>) =
             launch {
+                if(removalNotification.value.status == CloneStatus.pending) return@launch
+
                 vertx.goToEventLoop()
                 val fs = vertx.fileSystem()
                 val uid = removalNotification.value.uid
@@ -134,7 +141,8 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                 randomName.mkdirs()
             }
 
-            procs[message] = CloneResponse(status = CloneStatus.pending, uid = "$uid", url = url)
+            val pendingResp = CloneResponse(status = CloneStatus.pending, uid = "$uid", url = url)
+            procs[message] = pendingResp
 
             val root: VcsRoot =
                     when(message.vcs) {
@@ -143,34 +151,73 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                         VCS.svn -> SvnVcsRoot(url)
                     }
 
-            var answered = false
+            vertx.timedOut(Config.VCS.PendingTimeout) {
+                run {
 
-            val timerID = vertx.setTimer(Config.VCS.PendingTimeout) {
-                answered = true
-                mes.reply(procs[message]?.toJson())
-                log.info("Cloning request for $url timed out: sending 'pending' reply")
-            }
+                    val res = run(ee) {
+                        VcsProject(root).cloneToLocal().also {
+                            log.info("Cloning finished for $url in directory $randomName")
+                        }
+                    }
+                    vertx.goToEventLoop()
 
-            val res = run(ee){
-                VcsProject(root).cloneToLocal().also {
-                    log.info("Cloning finished for $url in directory $randomName")
+                    log.info("Cloning request for $url successful")
+                    val resp =
+                            pendingResp.copy(
+                                    status = CloneStatus.done,
+                                    success = res.isSuccessful,
+                                    errors = res.vcsErrors(),
+                                    exceptions = res.exceptions().map{ it.message ?: "" }
+                            )
+
+                    procs[message] = resp
+                }
+
+                onTimeout {
+                    mes.reply(procs[message]?.toJson())
+                    log.info("Cloning request for $url timed out: sending 'pending' reply")
+                }
+
+                onSuccess {
+                    mes.reply(procs[message]?.toJson())
+                    log.info("Cloning request for $url timed out: sending 'successful' reply")
                 }
             }
 
-            vertx.goToEventLoop()
-            vertx.cancelTimer(timerID)
-            // there is no race here, as both handlers are guaranteed to run in event loop
-            log.info("Cloning request for $url successful")
-            val resp =
-                    procs[message]!!.copy(
-                            status = CloneStatus.done,
-                            success = res.isSuccessful,
-                            errors = res.vcsErrors(),
-                            exceptions = res.exceptions().map{ it.message ?: "" }
-                    )
-
-            procs[message] = resp
-
-            if(!answered)  mes.reply(resp.toJson())
+//            var timedOut = false
+//
+//            val timerID = vertx.setTimer(Config.VCS.PendingTimeout) {
+//                timedOut = true
+//
+//            }
+//
+//            val res = run(ee){
+//                VcsProject(root).cloneToLocal().also {
+//                    log.info("Cloning finished for $url in directory $randomName")
+//                }
+//            }
+//
+//            vertx.goToEventLoop()
+//            vertx.cancelTimer(timerID)
+//            // there is no race here, as both handlers are guaranteed to run in event loop
+//            log.info("Cloning request for $url successful")
+//            val resp =
+//                    procs[message]!!.copy(
+//                            status = CloneStatus.done,
+//                            success = res.isSuccessful,
+//                            errors = res.vcsErrors(),
+//                            exceptions = res.exceptions().map{ it.message ?: "" }
+//                    )
+//
+//            procs[message] = resp
+//
+//            if(!timedOut)  mes.reply(resp.toJson())
         }.ignore()
+
+    data class DiffRequest(val from: String, val to: String): Jsonable
+
+    fun handleDiff(mes: Message<JsonObject>) {
+
+    }
+
 }

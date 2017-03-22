@@ -10,8 +10,10 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
+import java.io.BufferedReader
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.buildSequence
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
@@ -111,3 +113,12 @@ fun String.unquote() =
         }
 
 fun<T> T?.ignore(): Unit = Unit
+
+fun BufferedReader.allLines() = buildSequence {
+    var line: String? = this@allLines.readLine()
+    while (line != null) {
+        line = this@allLines.readLine()
+        if(line != null) yield(line!!)
+    }
+    close()
+}
