@@ -9,15 +9,14 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
+import org.jetbrains.research.kotoed.code.vcs.Git
+import org.jetbrains.research.kotoed.code.vcs.Mercurial
+import org.jetbrains.research.kotoed.code.vcs.VcsResult
+import org.jetbrains.research.kotoed.code.vcs.VcsRoot
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.coroutines.launch
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.vcsreader.VcsProject
-import org.vcsreader.VcsRoot
-import org.vcsreader.vcs.git.GitVcsRoot
-import org.vcsreader.vcs.hg.HgVcsRoot
-import org.vcsreader.vcs.svn.SvnVcsRoot
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -29,7 +28,7 @@ class CodeVerticle: AbstractVerticle(), Loggable {
     val ee by lazy {
         newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
     }
-    val procs by lazy<Cache<CloneRequest, CloneResponse>> {
+    val procs by lazy<Cache<CloneRequest, RepositoryInfo>> {
         CacheBuilder
                 .newBuilder()
                 .maximumSize(Config.VCS.CloneCapacity.toLong())
@@ -37,14 +36,16 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                 .removalListener(this::onCacheRemove)
                 .build()
     }
+    val info = mutableMapOf<String, CloneRequest>()
 
-    fun onCacheRemove(removalNotification: RemovalNotification<CloneRequest, CloneResponse>) =
+    fun onCacheRemove(removalNotification: RemovalNotification<CloneRequest, RepositoryInfo>) =
             launch {
                 if(removalNotification.value.status == CloneStatus.pending) return@launch
 
                 vertx.goToEventLoop()
                 val fs = vertx.fileSystem()
                 val uid = removalNotification.value.uid
+                info.remove(uid)
                 val cat = File(dir, uid)
                 log.info("The entry for repository $uid expired, deleting the files...")
                 if(cat.exists()) fs.deleteRecursiveAsync(cat.absolutePath)
@@ -61,6 +62,7 @@ class CodeVerticle: AbstractVerticle(), Loggable {
 
         eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
         eb.consumer<JsonObject>(Address.Code.Read, this@CodeVerticle::handleRead)
+        eb.consumer<JsonObject>(Address.Code.List, this@CodeVerticle::handleList)
     }
 
     override fun stop() = launch {
@@ -71,23 +73,35 @@ class CodeVerticle: AbstractVerticle(), Loggable {
         super.stop()
     }
 
-    enum class VCS{ git, mercurial, svn }
+    enum class VCS{ git, mercurial }
     enum class CloneStatus{ done, pending }
 
     data class CloneRequest(val vcs: VCS, val url: String): Jsonable
-    data class CloneResponse(
+    data class RepositoryInfo(
         val status: CloneStatus,
         val uid: String,
         val url: String,
+        val type: VCS,
         val success: Boolean = true,
-        val errors: List<String> = listOf(),
-        val exceptions: List<String>  = listOf()
+        val errors: List<String> = listOf()
     ): Jsonable
 
-    data class ReadRequest(val uid: String, val path: String): Jsonable
+    val RepositoryInfo.root get() = when(type) {
+        VCS.git -> Git(url, File(dir, uid).absolutePath)
+        VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath)
+    }
+
+    data class ReadRequest(val uid: String, val path: String, val revision: String?): Jsonable
     data class ReadResponse(
             val success: Boolean = true,
             val contents: String,
+            val errors: List<String>
+    ): Jsonable
+
+    data class ListRequest(val uid: String, val revision: String?): Jsonable
+    data class ListResponse(
+            val success: Boolean = true,
+            val files: List<String>,
             val errors: List<String>
     ): Jsonable
 
@@ -103,20 +117,72 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                     return@launch
                 }
 
-                val catalog = File(dir, message.uid).canonicalFile
-                val canPath = File(catalog, message.path).canonicalFile
-                if(!canPath.exists() || !canPath.isFile ) {
-                    mes.reply(ReadResponse(false, "", listOf("File not found")).toJson())
-                    return@launch
-                }
-                if(!canPath.canRead() || !canPath.path.startsWith(catalog.path)) {
-                    mes.reply(ReadResponse(false, "", listOf("Permission denied")).toJson())
+                val path = message.path
+
+                val inf = info[message.uid]
+                if(inf == null) {
+                    mes.reply(ReadResponse(false, "", listOf("Repository not found")).toJson())
                     return@launch
                 }
 
-                val fs = vertx.fileSystem()
-                val buf = fs.readFileAsync(canPath.absolutePath)
-                mes.reply(ReadResponse(true, buf.toString(UTF_8), listOf()).toJson())
+                val root = procs[inf]?.root
+
+                if(root == null) {
+                    mes.reply(ReadResponse(false, "", listOf("Unknown error")).toJson())
+                    return@launch
+                }
+
+                val catRes = run(ee) {
+                    val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+                    root.cat(path, rev)
+                }
+
+                val response = ReadResponse(
+                        success = catRes is VcsResult.Success,
+                        errors = (catRes as? VcsResult.Failure)?.output?.toList().orEmpty(),
+                        contents = (catRes as? VcsResult.Success)?.v?.joinToString("\n").orEmpty()
+                )
+
+                mes.reply(response.toJson())
+            }
+
+    fun handleList(mes: Message<JsonObject>) =
+            launch {
+                val message: ListRequest = fromJson(mes.body())
+
+                log.info("Requested list: $message")
+
+                try{ UUID.fromString(message.uid) }
+                catch (ex: Exception) {
+                    mes.reply(ReadResponse(false, "", listOf("Illegal path")).toJson())
+                    return@launch
+                }
+
+                val inf = info[message.uid]
+                if(inf == null) {
+                    mes.reply(ReadResponse(false, "", listOf("Repository not found")).toJson())
+                    return@launch
+                }
+
+                val root = procs[inf]?.root
+
+                if(root == null) {
+                    mes.reply(ListResponse(false, listOf(), listOf("Unknown error")).toJson())
+                    return@launch
+                }
+
+                val catRes = run(ee) {
+                    val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+                    root.ls(rev)
+                }
+
+                val response = ListResponse(
+                        success = catRes is VcsResult.Success,
+                        errors = (catRes as? VcsResult.Failure)?.output?.toList().orEmpty(),
+                        files = (catRes as? VcsResult.Success)?.v?.toList().orEmpty()
+                )
+
+                mes.reply(response.toJson())
             }
 
     fun handleClone(mes: Message<JsonObject>) =
@@ -141,21 +207,17 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                 randomName.mkdirs()
             }
 
-            val pendingResp = CloneResponse(status = CloneStatus.pending, uid = "$uid", url = url)
+            val pendingResp = RepositoryInfo(status = CloneStatus.pending, uid = "$uid", url = url, type = message.vcs)
             procs[message] = pendingResp
+            info["$uid"] = message
 
-            val root: VcsRoot =
-                    when(message.vcs) {
-                        VCS.git -> GitVcsRoot(randomName.absolutePath, url)
-                        VCS.mercurial -> HgVcsRoot(randomName.absolutePath, url)
-                        VCS.svn -> SvnVcsRoot(url)
-                    }
+            val root = pendingResp.root
 
             vertx.timedOut(Config.VCS.PendingTimeout) {
                 run {
 
                     val res = run(ee) {
-                        VcsProject(root).cloneToLocal().also {
+                        root.clone().also {
                             log.info("Cloning finished for $url in directory $randomName")
                         }
                     }
@@ -165,9 +227,8 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                     val resp =
                             pendingResp.copy(
                                     status = CloneStatus.done,
-                                    success = res.isSuccessful,
-                                    errors = res.vcsErrors(),
-                                    exceptions = res.exceptions().map{ it.message ?: "" }
+                                    success = res is VcsResult.Success,
+                                    errors = (res as? VcsResult.Failure)?.output?.toList().orEmpty()
                             )
 
                     procs[message] = resp

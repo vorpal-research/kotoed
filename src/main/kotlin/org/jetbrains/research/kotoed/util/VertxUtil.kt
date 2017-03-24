@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.util
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -19,12 +20,20 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
 
-operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String =
+operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String? =
         this.getParam(prop.name)
 
 fun RoutingContext.jsonResponse(): HttpServerResponse =
         this.response()
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+
+fun HttpResponseStatus.toJson(): JsonObject = JsonObject("code" to code(), "message" to reasonPhrase())
+
+fun HttpServerResponse.setStatus(status: HttpResponseStatus): HttpServerResponse =
+    setStatusCode(status.code()).setStatusMessage(status.reasonPhrase())
+
+fun HttpServerResponse.end(status: HttpResponseStatus): Unit =
+    setStatus(status).end(status.toJson())
 
 fun HttpServerResponse.end(json: JsonObject) =
         this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.encode())

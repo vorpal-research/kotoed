@@ -51,8 +51,12 @@ inline suspend fun <reified T> Loggable.vxal(crossinline cb: (Handler<AsyncResul
     return res
 }
 
+object UnconfinedWithExceptions
+
 inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, DelegateLoggable {
+            override val loggingClass = UnconfinedWithExceptions::class.java
+
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
                 handler(exception)
@@ -60,7 +64,9 @@ inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
         } + Unconfined
 
 inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, DelegateLoggable {
+            override val loggingClass = UnconfinedWithExceptions::class.java
+
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
                 msg.reply(
@@ -73,7 +79,9 @@ inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
         } + Unconfined
 
 inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, Loggable {
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key), CoroutineExceptionHandler, DelegateLoggable {
+            override val loggingClass = UnconfinedWithExceptions::class.java
+
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
                 ctx.jsonResponse().end(
@@ -107,6 +115,12 @@ interface Loggable {
         get() = LoggerFactory.getLogger(javaClass)
 }
 
+interface DelegateLoggable: Loggable {
+    val loggingClass: Class<*>
+
+    override val log get() = LoggerFactory.getLogger(loggingClass)
+}
+
 inline fun base64Encode(v: CharSequence): String = String(Base64.encode(v.toString().toByteArray()))
 
 fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
@@ -128,7 +142,7 @@ fun BufferedReader.allLines() = buildSequence {
     var line = this@allLines.readLine()
     while(line != null) {
         yield(line)
-        this@allLines.readLine()
+        line = this@allLines.readLine()
     }
     this@allLines.close()
 }

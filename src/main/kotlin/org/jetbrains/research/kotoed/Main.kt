@@ -96,6 +96,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             router.routeWithRegex("/vcs/read/.*")
                     .pathRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
                     .handler(this@RootVerticle::handleVCSRead)
+            router.route("/vcs/list/:uid")
+                    .handler(this@RootVerticle::handleVCSList)
 
             vertx.createHttpServer()
                     .requestHandler({ router.accept(it) })
@@ -120,9 +122,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebug(ctx: RoutingContext) {
         if (ctx.request().connection().run { localAddress().host() == remoteAddress().host() }) ctx.next()
         else ctx.response()
-                .setStatusCode(HttpResponseStatus.FORBIDDEN.code())
-                .setStatusMessage("Forbidden")
-                .end(JsonObject("code" to 403, "message" to "forbidden"))
+                .end(HttpResponseStatus.FORBIDDEN)
     }
 
     fun handleSettings(ctx: RoutingContext) {
@@ -232,7 +232,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             val eb = vertx.eventBus()
             val message = object : Jsonable {
                 val vcs = type
-                val url = url.unquote()
+                val url = url.orEmpty().unquote()
             }
             val res = eb.sendAsync(Address.Code.Download, message.toJson())
 
@@ -250,19 +250,39 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             val uid = param0
             val param1 by req
             val path = param1
+            val revision by req
 
             val eb = vertx.eventBus()
             val message = object : Jsonable {
                 val uid = uid
                 val path = path
+                val revision = revision
             }
             val res = eb.sendAsync(Address.Code.Read, message.toJson())
 
             if (res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
-            else ctx.jsonResponse()
-                    .setStatusCode(HttpResponseStatus.NOT_FOUND.code())
-                    .setStatusMessage("Resource not found")
-                    .end(res.body())
+            else ctx.response().setStatus(HttpResponseStatus.NOT_FOUND)
+                    .end(HttpResponseStatus.NOT_FOUND.toJson().mergeIn(res.body()))
+        }
+    }
+
+    fun handleVCSList(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val uid by req
+            val revision by req
+
+            val eb = vertx.eventBus()
+            val message = object : Jsonable {
+                val uid = uid
+                val revision = revision
+            }
+            val res = eb.sendAsync(Address.Code.List, message.toJson())
+
+            if (res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
+            else ctx.response().setStatus(HttpResponseStatus.NOT_FOUND)
+                    .end(HttpResponseStatus.NOT_FOUND.toJson().mergeIn(res.body()))
         }
     }
 
@@ -315,7 +335,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                 JsonObject()
             }
             val res = eb.sendAsync<JsonObject>(
-                    address,
+                    address.orEmpty(),
                     body
             )
             ctx.jsonResponse()
@@ -326,7 +346,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleFailure(ctx: RoutingContext) {
         val ex = ctx.failure()
         ctx.jsonResponse()
-                .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
+                .setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR)
                 .end(
                         JsonObject(
                                 "result" to "failed",
