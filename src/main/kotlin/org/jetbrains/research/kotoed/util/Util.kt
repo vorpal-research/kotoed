@@ -136,7 +136,7 @@ fun String.unquote() =
             else -> this
         }
 
-fun <T> T?.ignore(): Unit = Unit
+inline fun <T> T?.ignore(): Unit = Unit
 
 fun BufferedReader.allLines() = buildSequence {
     var line = this@allLines.readLine()
