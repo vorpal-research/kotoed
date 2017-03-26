@@ -2,11 +2,10 @@ package org.jetbrains.research.kotoed.code.vcs
 
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.allLines
+import org.jetbrains.research.kotoed.util.futureDone
+import org.jetbrains.research.kotoed.util.futureExitCode
 import java.io.File
-import java.util.concurrent.CancellationException
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 data class CommandLine(val args: List<String>): Loggable {
     constructor(vararg vargs: String): this(vargs.asList())
@@ -16,14 +15,7 @@ data class CommandLine(val args: List<String>): Loggable {
             val memoOut = cout.toList().asSequence()
             val memoErr = cerr.toList().asSequence()
             val exitCode = rcode.get()
-            val ecFuture = object : Future<Int> {
-                override fun isCancelled(): Boolean = false
-                override fun cancel(mayInterruptIfRunning: Boolean) = false
-                override fun get() = exitCode
-                override fun get(timeout: Long, unit: TimeUnit?)= exitCode
-                override fun isDone() = true
-            }
-            return Output(ecFuture, memoOut, memoErr)
+            return Output(futureDone(exitCode), memoOut, memoErr)
         }
     }
 
@@ -38,23 +30,7 @@ data class CommandLine(val args: List<String>): Loggable {
 
         val cout = pb.inputStream.bufferedReader().allLines()
         val cerr = pb.errorStream.bufferedReader().allLines()
-        val returnCode = object: Future<Int> {
-            var cancelled = false
-
-            override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
-                if(isDone) return false else return true.also { cancelled = true }
-            }
-
-            override fun get(timeout: Long, unit: TimeUnit?): Int {
-                if(cancelled) throw CancellationException()
-                if(pb.waitFor(timeout, unit)) return pb.exitValue()
-                else throw TimeoutException()
-            }
-            override fun get() = if(cancelled) throw CancellationException() else pb.waitFor()
-            override fun isDone() = pb.isAlive
-            override fun isCancelled() = cancelled
-        }
-        return Output(returnCode, cout, cerr)
+        return Output(pb.futureExitCode, cout, cerr)
     }
 
 }
@@ -74,12 +50,11 @@ abstract class VcsRoot(val remote: String, val local: String) {
     abstract fun update(): VcsResult<Unit>
     abstract fun cat(path: String, revision: Revision): VcsResult<Sequence<String>>
     abstract fun diff(path: String, from: Revision, to: Revision): VcsResult<Sequence<String>>
-
     abstract fun ls(rev: Revision): VcsResult<Sequence<String>>
 }
 
 class Git(remote: String, local: String): VcsRoot(remote, local) {
-    private final val git = "git"
+    private val git = "git"
 
     private val Revision.rep get() =
         when(this) {
@@ -95,7 +70,7 @@ class Git(remote: String, local: String): VcsRoot(remote, local) {
     }
 
     override fun update(): VcsResult<Unit> {
-        val res = CommandLine(git, "update").execute(File(local)).complete()
+        val res = CommandLine(git, "pull").execute(File(local)).complete()
         if(res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
@@ -120,7 +95,7 @@ class Git(remote: String, local: String): VcsRoot(remote, local) {
 }
 
 class Mercurial(remote: String, local: String): VcsRoot(remote, local) {
-    private final val mercurial = "hg"
+    private val mercurial = "hg"
 
     private val Revision.rep get() =
     when(this) {
@@ -136,7 +111,7 @@ class Mercurial(remote: String, local: String): VcsRoot(remote, local) {
     }
 
     override fun update(): VcsResult<Unit> {
-        val res = CommandLine(mercurial, "update").execute(File(local)).complete()
+        val res = CommandLine(mercurial, "pull").execute(File(local)).complete()
         if(res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
