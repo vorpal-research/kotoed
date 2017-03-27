@@ -259,7 +259,7 @@ class CodeVerticle: AbstractVerticle(), Loggable {
 
         log.info(diffOutput.joinToString("\n"))
 
-        val divided = diffOutput.splitBy { it.startsWith("diff") }.filterNot { it.isEmpty() }.map { it + "\n" }
+        val divided = diffOutput.splitBy { it.startsWith("diff") }.filterNot { it.isEmpty() }
 
         val res = divided.map {
             log.info("Parsing:")
