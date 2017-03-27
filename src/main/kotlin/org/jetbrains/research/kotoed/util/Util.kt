@@ -2,6 +2,7 @@
 
 package org.jetbrains.research.kotoed.util
 
+import com.google.common.primitives.Chars
 import com.hazelcast.util.Base64
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
@@ -13,6 +14,7 @@ import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.Unconfined
 import java.io.BufferedReader
+import java.io.InputStream
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
@@ -146,3 +148,20 @@ fun BufferedReader.allLines() = buildSequence {
     }
     this@allLines.close()
 }
+
+fun Sequence<String>.linesAsByteSequence(): Sequence<Byte> =
+        flatMap { "$it\n".asSequence() }
+                .flatMap { Chars.toByteArray(it).asSequence() }
+
+fun Sequence<Byte>.asInputStream(): InputStream =
+        object: InputStream() {
+            val it = iterator()
+            override fun read(): Int {
+                if(!it.hasNext()) return -1
+                return it.next().toInt()
+            }
+
+            override fun close() = forEach {}
+        }
+
+
