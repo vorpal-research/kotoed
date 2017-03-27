@@ -96,6 +96,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             router.routeWithRegex("/vcs/read/.*")
                     .pathRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
                     .handler(this@RootVerticle::handleVCSRead)
+            router.route("/vcs/diff/:uid/:from::to")
+                    .handler(this@RootVerticle::handleVCSDiff)
             router.route("/vcs/list/:uid")
                     .handler(this@RootVerticle::handleVCSList)
 
@@ -259,6 +261,30 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                 val revision = revision
             }
             val res = eb.sendAsync(Address.Code.Read, message.toJson())
+
+            if (res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
+            else ctx.response().setStatus(HttpResponseStatus.NOT_FOUND)
+                    .end(HttpResponseStatus.NOT_FOUND.toJson().mergeIn(res.body()))
+        }
+    }
+
+    fun handleVCSDiff(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val uid by req
+            val path by req
+            val from by req
+            val to by req
+
+            val eb = vertx.eventBus()
+            val message = object : Jsonable {
+                val uid = uid
+                val path = path
+                val from = from
+                val to = to
+            }
+            val res = eb.sendAsync(Address.Code.Diff, message.toJson())
 
             if (res.body().getBoolean("success")) ctx.jsonResponse().end(res.body())
             else ctx.response().setStatus(HttpResponseStatus.NOT_FOUND)
