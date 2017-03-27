@@ -149,11 +149,10 @@ fun BufferedReader.allLines() = buildSequence {
     this@allLines.close()
 }
 
-fun Sequence<String>.linesAsByteSequence(): Sequence<Byte> =
+fun Sequence<String>.linesAsCharSequence(): Sequence<Char> =
         flatMap { "$it\n".asSequence() }
-                .flatMap { Chars.toByteArray(it).asSequence() }
 
-fun Sequence<Byte>.asInputStream(): InputStream =
+fun Sequence<Char>.asInputStream(): InputStream =
         object: InputStream() {
             val it = iterator()
             override fun read(): Int {
@@ -164,4 +163,15 @@ fun Sequence<Byte>.asInputStream(): InputStream =
             override fun close() = forEach {}
         }
 
-
+fun<T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
+        buildSequence {
+            var mut = mutableListOf<T>()
+            for(e in this@splitBy) {
+                if(predicate(e)) {
+                    yield(mut)
+                    mut = mutableListOf()
+                }
+                mut.add(e)
+            }
+            yield(mut)
+        }

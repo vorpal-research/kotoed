@@ -3,12 +3,12 @@ package org.jetbrains.research.kotoed.code
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
-import com.hazelcast.nio.Bits.UTF_8
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
+import org.jetbrains.research.kotoed.code.diff.toJson
 import org.jetbrains.research.kotoed.code.vcs.Git
 import org.jetbrains.research.kotoed.code.vcs.Mercurial
 import org.jetbrains.research.kotoed.code.vcs.VcsResult
@@ -17,6 +17,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.coroutines.launch
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.wickedsource.diffparser.api.UnifiedDiffParser
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -63,6 +64,7 @@ class CodeVerticle: AbstractVerticle(), Loggable {
         eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
         eb.consumer<JsonObject>(Address.Code.Read, this@CodeVerticle::handleRead)
         eb.consumer<JsonObject>(Address.Code.List, this@CodeVerticle::handleList)
+        eb.consumer<JsonObject>(Address.Code.Diff, this@CodeVerticle::handleDiff)
     }
 
     override fun stop() = launch {
@@ -244,41 +246,72 @@ class CodeVerticle: AbstractVerticle(), Loggable {
                     log.info("Cloning request for $url timed out: sending 'successful' reply")
                 }
             }
-
-//            var timedOut = false
-//
-//            val timerID = vertx.setTimer(Config.VCS.PendingTimeout) {
-//                timedOut = true
-//
-//            }
-//
-//            val res = run(ee){
-//                VcsProject(root).cloneToLocal().also {
-//                    log.info("Cloning finished for $url in directory $randomName")
-//                }
-//            }
-//
-//            vertx.goToEventLoop()
-//            vertx.cancelTimer(timerID)
-//            // there is no race here, as both handlers are guaranteed to run in event loop
-//            log.info("Cloning request for $url successful")
-//            val resp =
-//                    procs[message]!!.copy(
-//                            status = CloneStatus.done,
-//                            success = res.isSuccessful,
-//                            errors = res.vcsErrors(),
-//                            exceptions = res.exceptions().map{ it.message ?: "" }
-//                    )
-//
-//            procs[message] = resp
-//
-//            if(!timedOut)  mes.reply(resp.toJson())
         }.ignore()
 
-    data class DiffRequest(val from: String, val to: String): Jsonable
+    data class DiffRequest(val uid: String, val from: String, val to: String? = null, val path: String? = null): Jsonable
+    data class DiffResponse(
+            val success: Boolean = true,
+            val contents: List<JsonObject>,
+            val errors: List<String>
+    ): Jsonable
 
-    fun handleDiff(mes: Message<JsonObject>) {
+    private fun parseDiff(diffOutput: Sequence<String>): List<JsonObject> {
 
+        log.info(diffOutput.joinToString("\n"))
+
+        val divided = diffOutput.splitBy { it.startsWith("diff") }.filterNot { it.isEmpty() }.map { it + "\n" }
+
+        val res = divided.map {
+            log.info("Parsing:")
+            log.info(it.joinToString("\n"))
+            val parser = UnifiedDiffParser()
+            val pres = parser.parse(it.asSequence().linesAsCharSequence().asInputStream())
+            log.warn(pres.map { it.toJson() })
+            pres.firstOrNull()
+        }
+
+        return res.map { diff -> diff?.toJson() ?: JsonObject() }.toList()
     }
+
+    fun handleDiff(mes: Message<JsonObject>) =
+            launch {
+                val message: DiffRequest = fromJson(mes.body())
+
+                log.info("Requested read: $message")
+
+                try{ UUID.fromString(message.uid) }
+                catch (ex: Exception) {
+                    mes.reply(DiffResponse(false, listOf(), listOf("Illegal path")).toJson())
+                    return@launch
+                }
+
+                val inf = info[message.uid]
+                if(inf == null) {
+                    mes.reply(DiffResponse(false, listOf(), listOf("Repository not found")).toJson())
+                    return@launch
+                }
+
+                val root = procs[inf]?.root
+
+                if(root == null) {
+                    mes.reply(DiffResponse(false, listOf(), listOf("Unknown error")).toJson())
+                    return@launch
+                }
+
+                val diffRes = run(ee) {
+                    val from = message.from.let { VcsRoot.Revision.Id(it) }
+                    val to = message.to?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+                    if(message.path != null) root.diff(message.path, from, to)
+                    else root.diffAll(from, to)
+                }
+
+                val response = DiffResponse(
+                        success = diffRes is VcsResult.Success,
+                        errors = (diffRes as? VcsResult.Failure)?.output?.toList().orEmpty(),
+                        contents = (diffRes as? VcsResult.Success)?.v?.let{ parseDiff(it) }.orEmpty()
+                )
+
+                mes.reply(response.toJson())
+            }
 
 }
