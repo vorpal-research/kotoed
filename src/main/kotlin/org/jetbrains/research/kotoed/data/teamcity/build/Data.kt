@@ -15,3 +15,7 @@ data class BuildInfo(
 data class ArtifactCrawl(
         val path: String
 ) : EventBusDatum<ArtifactCrawl>()
+
+data class ArtifactContent(
+        val path: String
+) : EventBusDatum<ArtifactContent>()
