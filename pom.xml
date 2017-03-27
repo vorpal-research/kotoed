@@ -25,7 +25,7 @@
         <kotlinx.coroutines.version>0.12</kotlinx.coroutines.version>
         <guava.version>21.0</guava.version>
         <vcsreader.version>1.0.0</vcsreader.version>
-        <diffparser.version>1.1</diffparser.version>
+        <diffparser.version>1.2</diffparser.version>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
     </properties>

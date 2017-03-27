@@ -14,11 +14,11 @@ fun Hunk.toJson() = JsonObject(
         "lines" to lines.map { it.toJson() }
 )
 fun Diff.toJson() = JsonObject(
-        "fromFile" to fromFileName.split('\t').let {
-            JsonObject("name" to it[0], "time" to it[1])
+        "fromFile" to fromFileName.split('\t', limit = 2).let {
+            JsonObject("name" to it[0], "str" to "$it")
         },
-        "toFile" to toFileName.split('\t').let {
-            JsonObject("name" to it[0], "time" to it[1])
+        "toFile" to toFileName.split('\t', limit = 2).let {
+            JsonObject("name" to it[0], "str" to "$it")
         },
         "changes" to hunks.map { it.toJson() }
 )
