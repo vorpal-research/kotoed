@@ -11,6 +11,7 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactCrawl
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -59,7 +60,12 @@ class ArtifactCrawlerVerticle : AbstractVerticle(), Loggable {
 
                 for ((content, children) in artifactData.file) {
                     if (content != null) {
-                        log.trace(content.href)
+                        log.trace("New build result: ${content.href}")
+
+                        eb.sendJsonable(
+                                Address.TeamCity.Build.Artifact,
+                                ArtifactContent(content.href)
+                        )
                     }
 
                     if (children != null) {
