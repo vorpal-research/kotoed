@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.code.vcs
 
-import org.jetbrains.research.kotoed.util.splitBy
 import java.io.File
 
 sealed class VcsResult<out T> {
@@ -122,9 +121,3 @@ class Mercurial(remote: String, local: String): VcsRoot(remote, local) {
     }
 
 }
-
-
-
-
-
-

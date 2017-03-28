@@ -8,6 +8,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
@@ -24,9 +25,20 @@ inline operator fun JsonArray.component2(): Any? = this.getValue(1)
 inline operator fun JsonArray.component3(): Any? = this.getValue(2)
 inline operator fun JsonArray.component4(): Any? = this.getValue(3)
 
+inline operator fun JsonArray.get(index: Int): Any? = this.getValue(index)
+inline operator fun JsonArray.set(index: Int, value: Any?) = this.list.set(index, value)
+inline operator fun JsonObject.get(key: String): Any? = this.getValue(key)
+inline operator fun JsonObject.set(key: String, value: Any?) = this.put(key, value)
+
 interface Jsonable {
     fun toJson(): JsonObject =
             JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
+}
+
+interface JsonableCompanion<T: Any> {
+    val dataklass: KClass<T>
+
+    fun fromJson(json: JsonObject): T? = objectFromJson(json, dataklass)
 }
 
 private fun Any?.tryToJson(): Any? =
@@ -58,23 +70,27 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
 
 private fun Any?.tryFromJson(klass: KType): Any? {
     fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json as $klass")
+    val erasure = klass.jvmErasure
+    val companion = erasure.companionObjectInstance
     return when (this) {
-        is JsonObject ->
+        is JsonObject -> {
             when {
-                klass.jvmErasure.isSubclassOf(JsonObject::class) -> this
-                klass.jvmErasure.isSubclassOf(Jsonable::class) -> fromJson(this, klass.jvmErasure)
+                erasure.isSubclassOf(JsonObject::class) -> this
+                companion is JsonableCompanion<*> -> companion.fromJson(this)
+                klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
                 else -> die()
             }
+        }
         is JsonArray ->
             when {
-                klass.jvmErasure.isSubclassOf(JsonArray::class) -> this
-                klass.jvmErasure.isSubclassOf(Collection::class)
-                        || klass.jvmErasure.isSubclassOf(Iterable::class)
-                        || klass.jvmErasure.isSubclassOf(Sequence::class) -> {
+                erasure.isSubclassOf(JsonArray::class) -> this
+                erasure.isSubclassOf(Collection::class)
+                        || erasure.isSubclassOf(Iterable::class)
+                        || erasure.isSubclassOf(Sequence::class) -> {
                     val elementType = klass.arguments.first().type ?: die()
                     makeJsonCollection(klass, this@tryFromJson.map { it.tryFromJson(elementType) })
                 }
-                klass.jvmErasure.isSubclassOf(Map::class) -> {
+                erasure.isSubclassOf(Map::class) -> {
                     val (keyArg, valueArg) = klass.arguments
                     val keyType = keyArg.type ?: die()
                     val valueType = valueArg.type ?: die()
@@ -89,7 +105,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                         )
                     })
                 }
-                klass.jvmErasure == Pair::class -> {
+                erasure == Pair::class -> {
                     val (firstArg, secondArg) = klass.arguments
                     val (first, second) = this
                     Pair(
@@ -97,7 +113,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                             second.tryFromJson(secondArg.type ?: die())
                     )
                 }
-                klass.jvmErasure == Triple::class -> {
+                erasure == Triple::class -> {
                     val (firstArg, secondArg, thirdArg) = klass.arguments
                     val (first, second, third) = this
                     Triple(
@@ -111,12 +127,12 @@ private fun Any?.tryFromJson(klass: KType): Any? {
         is Boolean -> this
         is String ->
             when {
-                klass.jvmErasure.isSubclassOf(Enum::class) -> Enum.valueOf(this, klass.jvmErasure)
-                klass.jvmErasure.isSubclassOf(String::class) -> this
+                erasure.isSubclassOf(Enum::class) -> Enum.valueOf(this, erasure)
+                erasure.isSubclassOf(String::class) -> this
                 else -> die()
             }
         is Number ->
-            when (klass.jvmErasure) {
+            when (erasure) {
                 Int::class -> toInt()
                 Long::class -> toLong()
                 Short::class -> toShort()
@@ -129,7 +145,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
     }
 }
 
-fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
+private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     val asMap = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
         if (value == null && !it.returnType.isMarkedNullable)
@@ -142,6 +158,18 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
         ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
+    if(klass.isSubclassOf(JsonObject::class)) return data as T
+
+    val companion = klass.companionObjectInstance
+    return when(companion) {
+        is JsonableCompanion<*> -> companion.fromJson(data) as? T
+            ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
+        else -> objectFromJson(data, klass)
     }
 }
 

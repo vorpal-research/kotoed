@@ -1,8 +1,8 @@
 package org.jetbrains.research.kotoed.code
 
-sealed class Filename
-data class NormalFile(val path: String) : Filename()
-object NonExistent : Filename()
-object Unknown : Filename()
+import org.jetbrains.research.kotoed.util.Jsonable
 
-data class Location(val filename: Filename, val line: Int, val col: Int)
+enum class FileLocType{ NORMAL, NON_EXISTENT, UNKNOWN }
+data class Filename(val type: FileLocType, val path: String): Jsonable
+
+data class Location(val filename: Filename, val line: Int, val col: Int): Jsonable
