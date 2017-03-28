@@ -83,11 +83,13 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
             }
         } + Unconfined
 
-inline fun <T> defaultWrapperHandlerWithExceptions(crossinline handler: (Message<T>) -> Unit) = { msg: Message<T> ->
+inline fun <T> defaultWrapperHandlerWithExceptions(
+        loggable: Loggable?,
+        crossinline handler: (Message<T>) -> Unit) = { msg: Message<T> ->
     try {
         handler(msg)
     } catch (ex: Exception) {
-        ex.printStackTrace()
+        loggable?.apply { log.error(ex) } ?: ex.printStackTrace()
         msg.reply(
                 JsonObject(
                         "result" to "failed",
@@ -97,8 +99,8 @@ inline fun <T> defaultWrapperHandlerWithExceptions(crossinline handler: (Message
     }
 }
 
-inline fun <T> ((Message<T>) -> Unit).withExceptions() =
-        defaultWrapperHandlerWithExceptions(this)
+inline fun <T> ((Message<T>) -> Unit).withExceptions(loggable: Loggable? = null) =
+        defaultWrapperHandlerWithExceptions(loggable, this)
 
 interface Loggable {
     val log: Logger
