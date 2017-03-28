@@ -16,8 +16,8 @@ import kotlin.reflect.jvm.jvmErasure
 inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
         this.getValue(property.name) as T?
 
-inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toMap())
-inline fun JsonArray(vararg elements: Any?) = JsonArray(elements.asList())
+inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toMap().toMutableMap())
+inline fun JsonArray(vararg elements: Any?) = JsonArray(elements.toMutableList())
 
 inline operator fun JsonArray.component1(): Any? = this.getValue(0)
 inline operator fun JsonArray.component2(): Any? = this.getValue(1)
