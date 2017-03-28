@@ -14,16 +14,17 @@
 
         <kotlin.version>1.1.1</kotlin.version>
         <vertx.version>3.4.0</vertx.version>
+        <guava.version>21.0</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.0.13</logback.version>
-        <jooq.version>3.9.1</jooq.version>
-        <freemarker.version>2.3.22</freemarker.version>
         <psqldriver.version>42.0.0</psqldriver.version>
+        <jooq.version>3.9.1</jooq.version>
         <hikari.version>2.6.1</hikari.version>
+        <flyway.version>4.1.2</flyway.version>
+        <freemarker.version>2.3.22</freemarker.version>
         <junit.version>4.12</junit.version>
         <kotlinx.html.version>0.6.2</kotlinx.html.version>
         <kotlinx.coroutines.version>0.12</kotlinx.coroutines.version>
-        <guava.version>21.0</guava.version>
         <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.1</diffparser.version>
 
@@ -86,7 +87,7 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
+            <artifactId>kotlin-test-junit</artifactId>
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
@@ -135,6 +136,11 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${psqldriver.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
 
         <dependency>
