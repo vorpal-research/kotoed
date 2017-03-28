@@ -6,6 +6,8 @@ import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
 import org.jetbrains.research.kotoed.data.teamcity.project.Project
 import org.jetbrains.research.kotoed.data.teamcity.project.VcsRoot
 import org.junit.Test
+import java.io.File
+import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -14,6 +16,23 @@ data class ExampleMessage2(val payload: List<ExampleMessage>) : Jsonable
 data class ExampleMessage3(val payload: Map<Int, ExampleMessage?>) : Jsonable
 data class ExampleMessage4(val p1: Boolean, val p2: Boolean?) : Jsonable
 data class Tangled(val data: List<Int>, val next: Map<Int, List<Tangled>>) : Jsonable
+
+data class Custom(val contents: List<File>): Jsonable {
+    override fun toJson(): JsonObject {
+        return JsonObject("contents" to contents.map { it.name })
+    }
+
+    companion object: JsonableCompanion<Custom> {
+        override val dataklass: KClass<Custom> = klassOf()
+        override fun fromJson(json: JsonObject): Custom? {
+            try {
+                return Custom(json.getJsonArray("contents").map { File(it as String) })
+            } catch (ex: Exception){
+                return null
+            }
+        }
+    }
+}
 
 class JsonUtilTest {
     @Test
@@ -215,4 +234,23 @@ class JsonUtilTest {
                 """))
         }
     }
+
+    @Test
+    fun testCustom() {
+        assertEquals(Custom(listOf(File("a"), File("b"), File("c"))), fromJson(JsonObject("""
+            { "contents" : ["a", "b", "c"] }
+        """)))
+
+        assertEquals(Custom(listOf(File("a"), File("b"), File("c"))).toJson(), JsonObject("""
+            { "contents" : ["a", "b", "c"] }
+        """))
+
+        data class Custom2(val inner: List<Custom>): Jsonable
+
+        val custom = Custom2(listOf(Custom(listOf(File("a"), File("b"), File("c"), File("d")))))
+
+        assertEquals(custom, fromJson(custom.toJson()))
+
+    }
+
 }

@@ -2,7 +2,6 @@
 
 package org.jetbrains.research.kotoed.util
 
-import com.google.common.primitives.Chars
 import com.hazelcast.util.Base64
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
@@ -21,6 +20,8 @@ import kotlin.coroutines.experimental.buildSequence
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
+
+inline fun<reified T: Any> klassOf() = T::class
 
 inline suspend fun vxu(crossinline cb: (Handler<AsyncResult<Void?>>) -> Unit): Void? =
         suspendCoroutine { cont ->
