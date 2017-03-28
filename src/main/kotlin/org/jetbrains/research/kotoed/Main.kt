@@ -17,6 +17,7 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
 import org.jetbrains.research.kotoed.util.*
@@ -47,6 +48,7 @@ fun main(args: Array<String>) {
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
         vertx.deployVerticle(CodeVerticle::class.qualifiedName)
         vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
+        vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
     }
 }
 
