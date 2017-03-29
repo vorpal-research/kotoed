@@ -1,7 +1,10 @@
-image: maven:3.3.3
+image: kopppcappp/archlinux-maven-postgres:latest
 
 pipelines:
   default:
     - step:
         script:
+          - start_postgresql.sh
+          - createuser kotoed -U postgres
+          - createdb kotoed -U postgres -O kotoed
           - mvn clean compile test
