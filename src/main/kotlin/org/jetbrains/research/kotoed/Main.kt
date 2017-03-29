@@ -17,7 +17,6 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.flyway.FlywayInit
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
@@ -44,8 +43,6 @@ fun main(args: Array<String>) {
                     )
                 }
         )
-
-        FlywayInit.doit(vertx)
 
         vertx.deployVerticle(RootVerticle::class.qualifiedName)
         vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
