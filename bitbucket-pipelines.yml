@@ -4,4 +4,6 @@ pipelines:
   default:
     - step:
         script:
+          - createuser kotoed -U postgres
+          - createdb kotoed -U postgres -O kotoed
           - mvn clean compile test
