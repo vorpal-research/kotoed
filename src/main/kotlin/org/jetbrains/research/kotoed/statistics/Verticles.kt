@@ -13,17 +13,37 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.PostgresDataTypeEx
+import org.jetbrains.research.kotoed.util.database.executeKAsync
+import org.jetbrains.research.kotoed.util.database.getSharedDataSource
+import org.jetbrains.research.kotoed.util.database.jooq
+import org.jooq.Field
+import org.jooq.impl.DSL.field
+import org.jooq.impl.DSL.table
 import java.io.ByteArrayInputStream
-import java.io.InputStream
+import kotlin.reflect.KFunction
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.isSubtypeOf
 
 class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
 
     private val template = "TEST-.*\\.xml".toRegex()
 
-    private val handlers = listOf(
+    private val handlers = listOf<KFunction<Any>>(
+            JUnit::buildId,
+            JUnit::artifactName,
+            JUnit::artifactBody,
             JUnit::totalTestCount,
             JUnit::failedTestCount
     )
+
+    fun field(handler: KFunction<Any>): Field<Any?> {
+        return if (handler.returnType.isSubtypeOf(JsonObject::class.createType())) {
+            field(handler.name, PostgresDataTypeEx.JSONB)
+        } else {
+            field(handler.name)
+        }
+    }
 
     override fun start(startFuture: Future<Void>) {
         val eb = vertx.eventBus()
@@ -54,26 +74,57 @@ class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
 
             val xmlStream = ByteArrayInputStream(artifactContentRes.body().bytes)
 
-            log.trace(xml2json(xmlStream)).also { xmlStream.reset() }
+            val artifactBody = xml2json(xmlStream)
 
-            for (handler in handlers) {
-                log.trace(handler.name)
-                log.trace(handler(xmlStream)).also { xmlStream.reset() }
+            val data = handlers.map { handler ->
+                Pair(handler, handler.call(artifactContent.path, artifactBody))
+            }
+
+            val ds = vertx.getSharedDataSource(
+                    "debug.db",
+                    Config.Debug.DB.Url,
+                    Config.Debug.DB.User,
+                    Config.Debug.DB.Password
+            )
+
+            jooq(ds).use {
+                it.insertInto(table("JUnitStatistics"))
+                        .columns(
+                                data.map { field(it.first) }
+                        )
+                        .values(
+                                data.map { it.second }
+                        )
+                        .executeKAsync()
             }
         }
     }
 }
 
 internal object JUnit {
-    fun totalTestCount(xmlStream: InputStream): String {
-        val nodes = evaluateXPath("/testsuite/@tests", xmlStream)
-        assert(1 == nodes.size)
-        return nodes.first().nodeValue
+    private val buildIdRegex = "(?<=id:)\\d+".toRegex()
+
+    fun buildId(path: String, json: JsonObject): Int {
+        return buildIdRegex.find(path)?.run { value.toInt() } ?: -1
     }
 
-    fun failedTestCount(xmlStream: InputStream): String {
-        val nodes = evaluateXPath("/testsuite/@failures", xmlStream)
-        assert(1 == nodes.size)
-        return nodes.first().nodeValue
+    fun artifactName(path: String, json: JsonObject): String {
+        return path.split("/").last()
+    }
+
+    fun artifactBody(path: String, json: JsonObject): JsonObject {
+        return json
+    }
+
+    fun totalTestCount(path: String, json: JsonObject): Int {
+        return json.getJsonObject("testsuite")
+                .getString("tests")
+                .toInt()
+    }
+
+    fun failedTestCount(path: String, json: JsonObject): Int {
+        return json.getJsonObject("testsuite")
+                .getString("failures")
+                .toInt()
     }
 }
