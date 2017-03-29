@@ -4,6 +4,7 @@ pipelines:
   default:
     - step:
         script:
+          - start_postgresql.sh
           - createuser kotoed -U postgres
           - createdb kotoed -U postgres -O kotoed
           - mvn clean compile test
