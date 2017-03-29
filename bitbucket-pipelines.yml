@@ -1,4 +1,4 @@
-image: adrienpessu/docker-maven-postgres:latest
+image: kopppcappp/archlinux-maven-postgres:latest
 
 pipelines:
   default:
