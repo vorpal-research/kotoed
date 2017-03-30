@@ -7,7 +7,6 @@ import org.jetbrains.research.kotoed.util.futureExitCode
 import java.io.File
 import java.util.concurrent.Future
 
-
 data class CommandLine(val args: List<String>): Loggable {
     constructor(vararg vargs: String): this(vargs.asList())
 
