@@ -1,0 +1,4 @@
+CREATE TABLE Debug (
+  id      SERIAL  NOT NULL PRIMARY KEY,
+  payload JSONB   NOT NULL
+);
