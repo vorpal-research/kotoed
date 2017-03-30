@@ -35,7 +35,9 @@ object JsonConverter : Converter<Any?, Any?> {
     }
 }
 
-object PostgresJSONBinding : Binding<Any?, Any?> {
+interface PostgresJSONBindingBase: Binding<Any?, Any?> {
+    val typename: String
+
     override fun converter() = JsonConverter
 
     override fun get(ctx: BindingGetStatementContext<Any?>) {
@@ -51,7 +53,7 @@ object PostgresJSONBinding : Binding<Any?, Any?> {
     }
 
     override fun sql(ctx: BindingSQLContext<Any?>) {
-        ctx.render().visit(DSL.`val`(ctx.convert(converter()).value())).sql("::jsonb")
+        ctx.render().visit(DSL.`val`(ctx.convert(converter()).value())).sql("::$typename")
     }
 
     override fun set(ctx: BindingSetSQLOutputContext<Any?>?) {
@@ -65,6 +67,14 @@ object PostgresJSONBinding : Binding<Any?, Any?> {
     override fun register(ctx: BindingRegisterContext<Any?>) {
         ctx.statement().registerOutParameter(ctx.index(), Types.VARCHAR)
     }
+}
+
+class PostgresJSONBBinding : PostgresJSONBindingBase {
+    override val typename = "jsonb"
+}
+
+class PostgresJSONBinding : PostgresJSONBindingBase {
+    override val typename = "json"
 }
 
 val jsonRecordMappers: RecordMapperProvider =
@@ -84,7 +94,7 @@ val jsonRecordMappers: RecordMapperProvider =
         }
 
 object PostgresDataTypeEx {
-    val JSONB = SQLDataType.VARCHAR.asConvertedDataType(PostgresJSONBinding)
+    val JSONB = SQLDataType.VARCHAR.asConvertedDataType(PostgresJSONBinding())
 }
 
 fun jooq(ds: KotoedDataSource) = DSL.using(ds, JDBCUtils.dialect(ds.url)).apply { configuration().set(jsonRecordMappers) }

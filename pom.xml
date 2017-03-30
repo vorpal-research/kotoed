@@ -29,6 +29,7 @@
         <diffparser.version>1.2</diffparser.version>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
+        <compiler-plugin.version>3.5.1</compiler-plugin.version>
     </properties>
 
     <dependencies>
@@ -217,6 +218,13 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/target/generated-sources/jooq</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -227,7 +235,31 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>java-compile</id>
+                        <phase>compile</phase>
+                        <goals> <goal>compile</goal> </goals>
+                    </execution>
+                    <execution>
+                        <id>java-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals> <goal>testCompile</goal> </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -344,6 +376,20 @@
                             <includes>.*</includes>
                             <excludes></excludes>
                             <inputSchema>public</inputSchema>
+                            <forcedTypes>
+                                <forcedType>
+                                    <userType>Object</userType>
+                                    <binding>org.jetbrains.research.kotoed.util.database.PostgresJSONBBinding</binding>
+                                    <expression>.*</expression>
+                                    <types>.*jsonb.*</types>
+                                </forcedType>
+                                <forcedType>
+                                    <userType>Object</userType>
+                                    <binding>org.jetbrains.research.kotoed.util.database.PostgresJSONBinding</binding>
+                                    <expression>.*</expression>
+                                    <types>.*json[^b]*</types>
+                                </forcedType>
+                            </forcedTypes>
                         </database>
                         <target>
                             <packageName>

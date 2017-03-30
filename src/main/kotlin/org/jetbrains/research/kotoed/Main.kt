@@ -5,6 +5,7 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.VertxOptions
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
@@ -16,6 +17,7 @@ import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
@@ -83,6 +85,10 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .handler(this@RootVerticle::handleDebugDatabaseCreate)
             router.route("/debug/database/fill")
                     .handler(this@RootVerticle::handleDebugDatabaseFill)
+            router.route("/debug/database/clear")
+                    .handler(this@RootVerticle::handleDebugDatabaseClear)
+            router.route("/debug/database/read/:id")
+                    .handler(this@RootVerticle::handleDebugDatabaseRead)
 
 
             router.route("/global/create/:key/:value")
@@ -194,20 +200,23 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                         .column("payload", PostgresDataTypeEx.JSONB)
                         .executeKAsync()
 
-                it.insertInto(table("debug"))
-                        .columns(field("payload", PostgresDataTypeEx.JSONB))
-                        .values(2)
-                        .executeKAsync()
+                with(Tables.DEBUG) {
+                    it.insertInto(this)
+                            .columns(PAYLOAD)
+                            .values(2)
+                            .executeKAsync()
 
-                it.insertInto(table("debug"))
-                        .columns(field("payload", PostgresDataTypeEx.JSONB))
-                        .values("Hello")
-                        .executeKAsync()
+                    it.insertInto(this)
+                            .columns(PAYLOAD)
+                            .values("Hello")
+                            .executeKAsync()
 
-                it.insertInto(table("debug"))
-                        .columns(field("payload", PostgresDataTypeEx.JSONB))
-                        .values(JsonObject("k" to 2, "f" to listOf(1, 2, 3)))
-                        .executeKAsync()
+                    it.insertInto(this)
+                            .columns(PAYLOAD)
+                            .values(JsonObject("k" to 2, "f" to listOf(1, 2, 3)))
+                            .executeKAsync()
+                }
+
             }
 
             data class DebugType(val id: Int, val payload: Any?) : Jsonable
@@ -223,6 +232,68 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             vertx.goToEventLoop()
 
             ctx.jsonResponse().end(JsonArray(res).encodePrettily())
+        }
+    }
+
+    fun handleDebugDatabaseRead(ctx: RoutingContext) {
+
+        launch(Unconfined) {
+            val ds = vertx.getSharedDataSource(
+                    "debug.db",
+                    Config.Debug.DB.Url,
+                    Config.Debug.DB.User,
+                    Config.Debug.DB.Password
+            )
+
+            val id by ctx.request()
+
+            val jsons =
+                    jooq(ds).use {
+                        it.createTableIfNotExists("debug")
+                                .column("id", PostgresDataType.SERIAL)
+                                .column("payload", PostgresDataTypeEx.JSONB)
+                                .executeKAsync()
+
+                        with(Tables.DEBUG) {
+                            it.select(PAYLOAD)
+                                    .from(this)
+                                    .where(ID.eq(id?.toInt()))
+                                    .fetchKAsync()
+                                    .map{ it[PAYLOAD] }
+                                    .firstOrNull()
+                        }
+
+                    }
+
+            vertx.goToEventLoop()
+
+            ctx.jsonResponse().end(Json.encode(jsons))
+        }
+    }
+
+    fun handleDebugDatabaseClear(ctx: RoutingContext) {
+
+        launch(Unconfined) {
+            val ds = vertx.getSharedDataSource(
+                    "debug.db",
+                    Config.Debug.DB.Url,
+                    Config.Debug.DB.User,
+                    Config.Debug.DB.Password
+            )
+
+            jooq(ds).use {
+                it.createTableIfNotExists("debug")
+                        .column("id", PostgresDataType.SERIAL)
+                        .column("payload", PostgresDataTypeEx.JSONB)
+                        .executeKAsync()
+
+                it.truncate(Tables.DEBUG)
+                        .executeKAsync()
+            }
+
+            vertx.goToEventLoop()
+
+            ctx.jsonResponse().end(JsonObject("success" to true))
         }
     }
 
