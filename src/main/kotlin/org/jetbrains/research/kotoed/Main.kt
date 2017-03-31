@@ -24,7 +24,6 @@ import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
-import org.jetbrains.research.kotoed.util.eventbus.sendAsync
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.field
 import org.jooq.impl.DSL.table
@@ -259,7 +258,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                                     .from(this)
                                     .where(ID.eq(id?.toInt()))
                                     .fetchKAsync()
-                                    .map{ it[PAYLOAD] }
+                                    .map { it[PAYLOAD] }
                                     .firstOrNull()
                         }
 

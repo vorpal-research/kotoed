@@ -1,4 +1,4 @@
-package org.jetbrains.research.kotoed.util.eventbus
+package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message

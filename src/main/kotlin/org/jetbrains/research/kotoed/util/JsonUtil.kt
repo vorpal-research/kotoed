@@ -14,11 +14,16 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
+/******************************************************************************/
+
 inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
         this.getValue(property.name) as T?
 
-inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toMap().toMutableMap())
+inline fun JsonObject(entries: List<Pair<String, Any?>>) = JsonObject(entries.toMap().toMutableMap())
+inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toList())
 inline fun JsonArray(vararg elements: Any?) = JsonArray(elements.toMutableList())
+
+/******************************************************************************/
 
 inline operator fun JsonArray.component1(): Any? = this.getValue(0)
 inline operator fun JsonArray.component2(): Any? = this.getValue(1)
@@ -30,16 +35,20 @@ inline operator fun JsonArray.set(index: Int, value: Any?) = this.list.set(index
 inline operator fun JsonObject.get(key: String): Any? = this.getValue(key)
 inline operator fun JsonObject.set(key: String, value: Any?) = this.put(key, value)
 
+/******************************************************************************/
+
 interface Jsonable {
     fun toJson(): JsonObject =
-            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) }.toMap())
+            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) })
 }
 
-interface JsonableCompanion<T: Any> {
+interface JsonableCompanion<T : Any> {
     val dataklass: KClass<T>
 
     fun fromJson(json: JsonObject): T? = objectFromJson(json, dataklass)
 }
+
+/******************************************************************************/
 
 private fun Any?.tryToJson(): Any? =
         when (this) {
@@ -62,14 +71,16 @@ private fun Any?.tryToJson(): Any? =
 private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         when (klass.jvmErasure) {
             List::class, Collection::class, Iterable::class -> list
+            Sequence::class -> list.asSequence()
             Set::class -> list.toSet()
             Map::class -> list.map { it as Pair<*, *> }.toMap()
-            Sequence::class -> list.asSequence()
             else -> throw IllegalArgumentException("Cannot convert json array $list to type $klass")
         }
 
+/******************************************************************************/
+
 private fun Any?.tryFromJson(klass: KType): Any? {
-    fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json as $klass")
+    fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json to type $klass")
     val erasure = klass.jvmErasure
     val companion = erasure.companionObjectInstance
     return when (this) {
@@ -157,23 +168,27 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
         val ctor = klass.constructors.first()
         ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
-        throw IllegalArgumentException("Cannot construct type $klass from \"$data\"; please use only datatype-like classes", ex)
+        throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
     }
 }
 
+/******************************************************************************/
+
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
-    if(klass.isSubclassOf(JsonObject::class)) return data as T
+    if (klass.isSubclassOf(JsonObject::class)) return data as T
 
     val companion = klass.companionObjectInstance
-    return when(companion) {
+    return when (companion) {
         is JsonableCompanion<*> -> companion.fromJson(data) as? T
-            ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
+                ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
         else -> objectFromJson(data, klass)
     }
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
+
+/******************************************************************************/
 
 fun JsonObject.getValueByType(name: String, type: KType): Any? {
     val value = getValue(name)
@@ -181,3 +196,5 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
         throw IllegalArgumentException("Field $name is missing in \"${this}\"")
     return value?.tryFromJson(type)
 }
+
+/******************************************************************************/

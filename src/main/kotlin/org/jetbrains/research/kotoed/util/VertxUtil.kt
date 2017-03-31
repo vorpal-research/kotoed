@@ -13,33 +13,53 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.Shareable
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.client.HttpRequest
+import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
-import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
 
-operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String? =
-        this.getParam(prop.name)
+/******************************************************************************/
 
 fun RoutingContext.jsonResponse(): HttpServerResponse =
         this.response()
                 .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
 
-fun HttpResponseStatus.toJson(): JsonObject = JsonObject("code" to code(), "message" to reasonPhrase())
+/******************************************************************************/
+
+fun <T> HttpRequest<T>.putHeader(name: CharSequence, value: CharSequence): HttpRequest<T> =
+        this.putHeader(name.toString(), value.toString())
+
+operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String? =
+        this.getParam(prop.name)
+
+/******************************************************************************/
+
+fun HttpResponseStatus.toJson(): JsonObject =
+        JsonObject("code" to code(), "message" to reasonPhrase())
 
 fun HttpServerResponse.setStatus(status: HttpResponseStatus): HttpServerResponse =
-    setStatusCode(status.code()).setStatusMessage(status.reasonPhrase())
+        setStatusCode(status.code()).setStatusMessage(status.reasonPhrase())
 
 fun HttpServerResponse.end(status: HttpResponseStatus): Unit =
-    setStatus(status).end(status.toJson())
+        setStatus(status).end(status.toJson())
 
 fun HttpServerResponse.end(json: JsonObject) =
         this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.encode())
 
 fun HttpServerResponse.end(json: Jsonable) =
-        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.toJson())
+        this.end(json.toJson())
+
+/******************************************************************************/
+
+object HttpHeaderValuesEx {
+    const val APPLICATION_XML = "application/xml"
+    const val HTML = "text/html"
+}
+
+/******************************************************************************/
 
 suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> T): T =
         vxa {
@@ -52,7 +72,8 @@ suspend fun <T> Vertx.executeBlockingAsync(ordered: Boolean = true, body: () -> 
                         }
                     },
                     ordered,
-                    it)
+                    it
+            )
         }
 
 suspend fun Vertx.goToEventLoop(): Void =
@@ -64,17 +85,14 @@ suspend fun clusteredVertxAsync(opts: VertxOptions = VertxOptions()): Vertx =
 suspend fun Vertx.delayAsync(delay: Long): Long =
         vxt { this.setTimer(delay, it) }
 
-object HttpHeaderValuesEx {
-    const val APPLICATION_XML = "application/xml"
-    const val HTML = "text/html"
-}
+/******************************************************************************/
 
-data class ShareableHolder<T>(val value: T, val vertx: Vertx) : Shareable
+data class ShareableHolder<out T>(val value: T, val vertx: Vertx) : Shareable
 
 fun <T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
     synchronized(this) {
         val map = sharedData().getLocalMap<String, ShareableHolder<T>>(
-                "${construct.reflect()?.returnType?.jvmErasure?.qualifiedName}.shared_map"
+                "${construct.reflect()?.run { returnType.jvmErasure.qualifiedName }}.sharedMap"
         )
         var get = map[name]
         if (get == null) {
@@ -85,20 +103,25 @@ fun <T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
     }
 }
 
+/******************************************************************************/
+
 suspend fun FileSystem.readFileAsync(path: String): Buffer =
         vxa { readFile(path, it) }
 
 suspend fun FileSystem.deleteRecursiveAsync(path: String, recursive: Boolean = true): Unit =
-        vxa<Void> { deleteRecursive(path, recursive, it) }.ignore()
+        vxu { deleteRecursive(path, recursive, it) }.ignore()
+
+/******************************************************************************/
 
 data class VertxTimeoutProcessing(val vertx: Vertx,
                                   val time: Long,
                                   var onTimeoutSusp: suspend () -> Unit = {},
                                   var onSuccessSusp: suspend () -> Unit = {},
                                   var bodySusp: suspend () -> Unit = {}) {
+
     suspend fun execute() {
         var timedOut = false
-        val timerId = vertx.setTimer(time){
+        val timerId = vertx.setTimer(time) {
             launch(Unconfined) {
                 vertx.goToEventLoop()
                 timedOut = true
@@ -107,15 +130,25 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
         }
 
         bodySusp()
+
         vertx.goToEventLoop()
         vertx.cancelTimer(timerId)
-        if(timedOut) return
+
+        if (timedOut) return
         else onSuccessSusp()
     }
 
-    fun onTimeout(susp: suspend () -> Unit){ onTimeoutSusp = susp }
-    fun onSuccess(susp: suspend () -> Unit){ onSuccessSusp = susp }
-    fun run(susp: suspend () -> Unit){ bodySusp = susp }
+    fun onTimeout(susp: suspend () -> Unit) {
+        onTimeoutSusp = susp
+    }
+
+    fun onSuccess(susp: suspend () -> Unit) {
+        onSuccessSusp = susp
+    }
+
+    fun run(susp: suspend () -> Unit) {
+        bodySusp = susp
+    }
 }
 
 suspend fun Vertx.timedOut(time: Long, builder: VertxTimeoutProcessing.() -> Unit) {
@@ -123,3 +156,5 @@ suspend fun Vertx.timedOut(time: Long, builder: VertxTimeoutProcessing.() -> Uni
     vtop.builder()
     vtop.execute()
 }
+
+/******************************************************************************/
