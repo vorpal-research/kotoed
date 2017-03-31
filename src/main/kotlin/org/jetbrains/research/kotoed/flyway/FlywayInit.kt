@@ -9,7 +9,7 @@ object FlywayInit {
     fun doit(vertx: Vertx) {
         Flyway().run {
             dataSource = vertx.getSharedDataSource(
-                    "debug.db",
+                    Config.Debug.DB.DataSourceId,
                     Config.Debug.DB.Url,
                     Config.Debug.DB.User,
                     Config.Debug.DB.Password

@@ -11,6 +11,8 @@ class GlobalConfig : Configuration() {
             val Password by "kotoed"
 
             val Dialect get() = JDBCUtils.dialect(Url)
+
+            val DataSourceId by "debug.db"
         }
 
         val DB by DBConfig()
@@ -39,7 +41,7 @@ class GlobalConfig : Configuration() {
     class VCSConfig : Configuration() {
         val PendingTimeout: Long by 2000L
         val CloneExpire: Long by 86400000L
-        val CloneCapacity: Int by 100
+        val CloneCapacity: Long by 100L
         val StoragePath: String by "vcs"
 
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }

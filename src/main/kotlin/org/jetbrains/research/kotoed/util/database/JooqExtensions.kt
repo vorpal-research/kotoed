@@ -8,7 +8,7 @@ import kotlin.coroutines.experimental.suspendCoroutine
 
 suspend fun Query.executeKAsync(): Int =
         suspendCoroutine { cont ->
-            this.executeAsync().whenComplete { v, ex ->
+            executeAsync().whenComplete { v, ex ->
                 if (ex == null) cont.resume(v)
                 else cont.resumeWithException(ex)
             }
@@ -16,7 +16,7 @@ suspend fun Query.executeKAsync(): Int =
 
 suspend fun <T : Record> ResultQuery<T>.fetchKAsync(): Result<T> =
         suspendCoroutine { cont ->
-            this.fetchAsync().whenComplete { v, ex ->
+            fetchAsync().whenComplete { v, ex ->
                 if (ex == null) cont.resume(v)
                 else cont.resumeWithException(ex)
             }

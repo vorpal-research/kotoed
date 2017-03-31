@@ -1,8 +1,6 @@
 package org.jetbrains.research.kotoed.statistics
 
-import io.netty.handler.codec.http.HttpHeaderNames
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.Future
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -11,7 +9,9 @@ import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.teamcity.util.putAuthTCHeaders
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.PostgresDataTypeEx
 import org.jetbrains.research.kotoed.util.database.executeKAsync
@@ -19,7 +19,6 @@ import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
 import org.jooq.Field
 import org.jooq.impl.DSL.field
-import org.jooq.impl.DSL.table
 import java.io.ByteArrayInputStream
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.createType
@@ -45,30 +44,29 @@ class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
         }
     }
 
-    override fun start(startFuture: Future<Void>) {
+    override fun start() {
         val eb = vertx.eventBus()
 
         eb.consumer(
                 Address.TeamCity.Build.Artifact,
                 this@JUnitStatisticsVerticle::consumeTeamCityArtifact.withExceptions()
         )
-
-        startFuture.complete()
     }
 
     fun consumeTeamCityArtifact(msg: Message<JsonObject>) {
-        val wc = WebClient.create(vertx)
-
-        val artifactContent = fromJson<ArtifactContent>(msg.body())
-
-        if (template !in artifactContent.path) return
-
-        log.trace("Processing artifact ${artifactContent.path}")
-
         launch(UnconfinedWithExceptions(msg)) {
+
+            val wc = WebClient.create(vertx)
+
+            val artifactContent = fromJson<ArtifactContent>(msg.body())
+
+            if (template !in artifactContent.path) return@launch
+
+            log.trace("Processing artifact ${artifactContent.path}")
+
             val artifactContentRes = vxa<HttpResponse<Buffer>> {
                 wc.get(Config.TeamCity.Port, Config.TeamCity.Host, artifactContent.path)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
+                        .putAuthTCHeaders()
                         .send(it)
             }
 
@@ -81,14 +79,14 @@ class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
             }
 
             val ds = vertx.getSharedDataSource(
-                    "debug.db",
+                    Config.Debug.DB.DataSourceId,
                     Config.Debug.DB.Url,
                     Config.Debug.DB.User,
                     Config.Debug.DB.Password
             )
 
             jooq(ds).use {
-                it.insertInto(table("JUnitStatistics"))
+                it.insertInto(Tables.JUNITSTATISTICS)
                         .columns(
                                 data.map { field(it.first) }
                         )
@@ -101,6 +99,7 @@ class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 internal object JUnit {
     private val buildIdRegex = "(?<=id:)\\d+".toRegex()
 

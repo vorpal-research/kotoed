@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.teamcity.util
 
+import org.jetbrains.research.kotoed.config.Config
+
 data class ApiEndpoint(val path: String) {
     operator fun invoke(): String = path
 }
@@ -42,7 +44,7 @@ fun Locator.all() =
         if (this is EmptyLocator) this else StringLocator("?locator=$this")
 
 object TeamCityApi {
-    private val endpointRoot = "/app/rest"
+    private val endpointRoot = Config.TeamCity.EndpointRoot
 
     private operator fun String.unaryPlus() = ApiEndpoint("$endpointRoot/$this")
     private operator fun String.unaryMinus() = StringLocator(this)
@@ -52,6 +54,4 @@ object TeamCityApi {
     val BuildTypes = +"buildTypes"
     val BuildQueue = +"buildQueue"
     val Builds = +"builds"
-
-    val Artifacts = -"artifacts"
 }

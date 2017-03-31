@@ -1,7 +1,5 @@
 package org.jetbrains.research.kotoed.teamcity.verticles
 
-import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
@@ -14,8 +12,8 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactCrawl
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.teamcity.util.putDefaultTCHeaders
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.eventbus.sendJsonable
 
 internal data class ArtifactData(
         val file: List<ArtifactFile>
@@ -50,8 +48,7 @@ class ArtifactCrawlerVerticle : AbstractVerticle(), Loggable {
 
             val artifactCrawlRes = vxa<HttpResponse<Buffer>> {
                 wc.get(Config.TeamCity.Port, Config.TeamCity.Host, artifactCrawl.path)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putDefaultTCHeaders()
                         .send(it)
             }
 
@@ -62,14 +59,14 @@ class ArtifactCrawlerVerticle : AbstractVerticle(), Loggable {
                     if (content != null) {
                         log.trace("New build result: ${content.href}")
 
-                        eb.sendJsonable(
+                        eb.publish(
                                 Address.TeamCity.Build.Artifact,
                                 ArtifactContent(content.href)
                         )
                     }
 
                     if (children != null) {
-                        eb.sendJsonable(
+                        eb.publish(
                                 Address.TeamCity.Build.Crawl,
                                 ArtifactCrawl(children.href)
                         )

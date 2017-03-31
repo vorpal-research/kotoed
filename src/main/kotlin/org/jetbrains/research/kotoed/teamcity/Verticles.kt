@@ -1,7 +1,5 @@
 package org.jetbrains.research.kotoed.teamcity
 
-import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
@@ -19,6 +17,8 @@ import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineI
 import org.jetbrains.research.kotoed.teamcity.util.*
 import org.jetbrains.research.kotoed.teamcity.verticles.BuildPollerVerticle
 import org.jetbrains.research.kotoed.util.*
+
+// FIXME akhin Split into separate verticles
 
 class TeamCityVerticle : AbstractVerticle(), Loggable {
 
@@ -43,120 +43,107 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
         )
     }
 
-    fun consumeTeamCityProjectCreate(msg: Message<JsonObject>) {
+    suspend fun postToTeamCity(
+            template: String,
+            templateContext: Map<String, Any>,
+            endpoint: ApiEndpoint
+    ): HttpResponse<Buffer> {
 
         val wc = WebClient.create(vertx)
 
-        val createProject = fromJson<CreateProject>(msg.body())
+        val payload = vxa<Buffer> {
+            ftlEngine.render(
+                    vertx,
+                    template,
+                    templateContext,
+                    it
+            )
+        }
 
+        val res = vxa<HttpResponse<Buffer>> {
+            wc.post(Config.TeamCity.Port, Config.TeamCity.Host, endpoint())
+                    .putDefaultTCHeaders()
+                    .isXml()
+                    .sendBuffer(payload, it)
+        }
+
+        return res
+    }
+
+    suspend fun processResults(
+            msg: Message<JsonObject>,
+            results: List<Pair<String, HttpResponse<Buffer>>>
+    ) {
+        val groups = results.groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
+
+        if (groups[false] == null) {
+            msg.reply(
+                    JsonObject(
+                            groups[true]!!
+                                    .toMap()
+                                    .mapValues { e -> e.value.bodyAsJsonObject() }
+                                    + ("result" to "success")
+                    )
+            )
+        } else {
+            msg.fail(
+                    0xB00B5,
+                    groups[false]!!
+                            .toMap()
+                            .map { e -> "${e.key} -> ${e.value.bodyAsString()}" }
+                            .joinToString("\n")
+            )
+        }
+    }
+
+    fun consumeTeamCityProjectCreate(msg: Message<JsonObject>) {
         launch(UnconfinedWithExceptions(msg)) {
 
-            val projectBody = vxa<Buffer> {
-                ftlEngine.render(
-                        vertx,
-                        "org/jetbrains/research/kotoed/teamcity/requests/createProject.ftl",
-                        mapOf("project" to createProject.project),
-                        it
-                )
-            }
+            val createProject = fromJson<CreateProject>(msg.body())
 
-            val vcsRootBody = vxa<Buffer> {
-                ftlEngine.render(
-                        vertx,
-                        "org/jetbrains/research/kotoed/teamcity/requests/createHgVcsRoot.ftl",
-                        mapOf("vcs" to createProject.vcsRoot),
-                        it
-                )
-            }
+            val projectRes = postToTeamCity(
+                    "org/jetbrains/research/kotoed/teamcity/requests/createProject.ftl",
+                    mapOf("project" to createProject.project),
+                    TeamCityApi.Projects
+            )
 
-            val buildConfigBody = vxa<Buffer> {
-                ftlEngine.render(
-                        vertx,
-                        "org/jetbrains/research/kotoed/teamcity/requests/createBuildConfig.ftl",
-                        mapOf(
-                                "project" to createProject.project,
-                                "vcs" to createProject.vcsRoot,
-                                "build" to createProject.buildConfig
-                        ),
-                        it
-                )
-            }
+            val vcsRootRes = postToTeamCity(
+                    "org/jetbrains/research/kotoed/teamcity/requests/createHgVcsRoot.ftl",
+                    mapOf("vcs" to createProject.vcsRoot),
+                    TeamCityApi.VcsRoots
+            )
 
-            val projectRes = vxa<HttpResponse<Buffer>> {
-                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Projects())
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
-                        .sendBuffer(projectBody, it)
-            }
+            val buildConfigRes = postToTeamCity(
+                    "org/jetbrains/research/kotoed/teamcity/requests/createBuildConfig.ftl",
+                    mapOf(
+                            "project" to createProject.project,
+                            "vcs" to createProject.vcsRoot,
+                            "build" to createProject.buildConfig
+                    ),
+                    TeamCityApi.BuildTypes
+            )
 
-            val vcsRootRes = vxa<HttpResponse<Buffer>> {
-                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.VcsRoots())
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
-                        .sendBuffer(vcsRootBody, it)
-            }
-
-            val buildConfigRes = vxa<HttpResponse<Buffer>> {
-                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildTypes())
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
-                        .sendBuffer(buildConfigBody, it)
-            }
-
-            val results = listOf(
-                    "project" to projectRes,
-                    "vcsRoot" to vcsRootRes,
-                    "buildConfig" to buildConfigRes
-            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
-
-            if (results[false] == null) {
-                msg.reply(
-                        JsonObject(
-                                results[true]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsJsonObject() }
-                                        + ("result" to "success")
-                        )
-                )
-            } else {
-                msg.reply(
-                        JsonObject(
-                                results[false]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsString() }
-                                        + ("result" to "failed")
-                        )
-                )
-            }
+            processResults(
+                    msg,
+                    listOf(
+                            "project" to projectRes,
+                            "vcsRoot" to vcsRootRes,
+                            "buildConfig" to buildConfigRes
+                    )
+            )
         }
     }
 
     fun consumeTeamCityBuildTrigger(msg: Message<JsonObject>) {
-
-        val wc = WebClient.create(vertx)
-
-        val triggerBuild = fromJson<TriggerBuild>(msg.body())
-
         launch(UnconfinedWithExceptions(msg)) {
-            val triggerBuildBody = vxa<Buffer> {
-                ftlEngine.render(
-                        vertx,
-                        "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",
-                        mapOf("trigger" to triggerBuild),
-                        it
-                )
-            }
 
-            val triggerBuildRes = vxa<HttpResponse<Buffer>> {
-                wc.post(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.BuildQueue())
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
-                        .putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
-                        .sendBuffer(triggerBuildBody, it)
-            }
+            val triggerBuild = fromJson<TriggerBuild>(msg.body())
+
+            val triggerBuildRes = postToTeamCity(
+                    "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",
+                    mapOf("trigger" to triggerBuild),
+                    TeamCityApi.BuildQueue
+            )
 
             if (HttpResponseStatus.OK.code() == triggerBuildRes.statusCode()) {
                 triggerBuildRes.bodyAsJsonObject().getInteger("id")?.let {
@@ -165,78 +152,43 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
                 }
             }
 
-            val results = listOf(
-                    "triggerBuild" to triggerBuildRes
-            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
-
-            if (results[false] == null) {
-                msg.reply(
-                        JsonObject(
-                                results[true]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsJsonObject() }
-                                        + ("result" to "success")
-                        )
-                )
-            } else {
-                msg.reply(
-                        JsonObject(
-                                results[false]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsString() }
-                                        + ("result" to "failed")
-                        )
-                )
-            }
+            processResults(
+                    msg,
+                    listOf(
+                            "triggerBuild" to triggerBuildRes
+                    )
+            )
         }
     }
 
     fun consumeTeamCityBuildInfo(msg: Message<JsonObject>) {
-
-        val wc = WebClient.create(vertx)
-
-        val buildInfo = fromJson<BuildInfo>(msg.body())
-
-        val buildLocator = EmptyLocator *
-                DimensionLocator.from("id", buildInfo.id) *
-                DimensionLocator.from("project:id", buildInfo.projectId) *
-                DimensionLocator.from("number", buildInfo.number) *
-                DimensionLocator.from("revision", buildInfo.revision)
-
-        val allBuildLocator =
-                if (buildInfo.all ?: false) buildLocator.all() else buildLocator
-
         launch(UnconfinedWithExceptions(msg)) {
+
+            val wc = WebClient.create(vertx)
+
+            val buildInfo = fromJson<BuildInfo>(msg.body())
+
+            val buildLocator = EmptyLocator *
+                    DimensionLocator.from("id", buildInfo.id) *
+                    DimensionLocator.from("project:id", buildInfo.projectId) *
+                    DimensionLocator.from("number", buildInfo.number) *
+                    DimensionLocator.from("revision", buildInfo.revision)
+
+            val allBuildLocator =
+                    if (buildInfo.all ?: false) buildLocator.all() else buildLocator
+
             val buildInfoRes = vxa<HttpResponse<Buffer>> {
                 wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Builds + allBuildLocator)
-                        .putHeader(HttpHeaderNames.AUTHORIZATION, Config.TeamCity.AuthString)
-                        .putHeader(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                        .putDefaultTCHeaders()
                         .send(it)
             }
 
-            val results = listOf(
-                    "buildInfo" to buildInfoRes
-            ).groupBy { it.second.statusCode() == HttpResponseStatus.OK.code() }
-
-            if (results[false] == null) {
-                msg.reply(
-                        JsonObject(
-                                results[true]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsJsonObject() }
-                                        + ("result" to "success")
-                        )
-                )
-            } else {
-                msg.reply(
-                        JsonObject(
-                                results[false]!!
-                                        .toMap()
-                                        .mapValues { e -> e.value.bodyAsString() }
-                                        + ("result" to "failed")
-                        )
-                )
-            }
+            processResults(
+                    msg,
+                    listOf(
+                            "buildInfo" to buildInfoRes
+                    )
+            )
         }
     }
 
