@@ -28,6 +28,8 @@
         <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.2</diffparser.version>
 
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
     </properties>
