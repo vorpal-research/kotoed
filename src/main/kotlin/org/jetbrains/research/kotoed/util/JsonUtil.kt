@@ -21,7 +21,7 @@ inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KPr
 
 inline fun JsonObject(entries: List<Pair<String, Any?>>) = JsonObject(entries.toMap().toMutableMap())
 inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toList())
-inline fun JsonArray(vararg elements: Any?) = JsonArray(elements.toMutableList())
+inline fun jsonArrayOf(vararg elements: Any?) = JsonArray(elements.toMutableList())
 
 /******************************************************************************/
 
@@ -60,9 +60,9 @@ private fun Any?.tryToJson(): Any? =
             is Iterable<*> -> JsonArray(this.map { it.tryToJson() })
             is Sequence<*> -> JsonArray(this.map { it.tryToJson() }.toList())
             is Map<*, *> -> JsonArray(this.map { it.tryToJson() })
-            is Map.Entry<*, *> -> JsonArray(key.tryToJson(), value.tryToJson())
-            is Pair<*, *> -> JsonArray(first.tryToJson(), second.tryToJson())
-            is Triple<*, *, *> -> JsonArray(first.tryToJson(), second.tryToJson(), third.tryToJson())
+            is Map.Entry<*, *> -> jsonArrayOf(key.tryToJson(), value.tryToJson())
+            is Pair<*, *> -> jsonArrayOf(first.tryToJson(), second.tryToJson())
+            is Triple<*, *, *> -> jsonArrayOf(first.tryToJson(), second.tryToJson(), third.tryToJson())
             is Number, is String, is Boolean -> this
             is Enum<*> -> toString()
             else -> throw IllegalArgumentException("Cannot convert $this to json")

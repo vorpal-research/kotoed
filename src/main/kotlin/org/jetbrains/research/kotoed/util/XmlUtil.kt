@@ -65,7 +65,7 @@ class Xml2JsonContentHandler : DefaultHandler() {
             if (prev is JsonArray) {
                 prev.add(me)
             } else {
-                parent.put(qName, JsonArray(prev, me))
+                parent.put(qName, jsonArrayOf(prev, me))
             }
         } else {
             parent.put(qName, me)
