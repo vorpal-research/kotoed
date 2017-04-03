@@ -56,4 +56,5 @@ class GlobalConfig : Configuration() {
     val Root by RootConfig()
 }
 
-val Config: GlobalConfig = loadConfiguration(GlobalConfig(), fromResource("defaultSettings.json"))
+val Config: GlobalConfig = loadConfiguration(GlobalConfig(),
+        fromResource(System.getProperty("kotoed.settingsFile", "defaultSettings.json")))

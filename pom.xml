@@ -24,7 +24,7 @@
         <freemarker.version>2.3.22</freemarker.version>
         <junit.version>4.12</junit.version>
         <kotlinx.html.version>0.6.2</kotlinx.html.version>
-        <kotlinx.coroutines.version>0.12</kotlinx.coroutines.version>
+        <kotlinx.coroutines.version>0.14</kotlinx.coroutines.version>
         <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.2</diffparser.version>
 
@@ -100,6 +100,11 @@
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-jdk8</artifactId>
+            <version>${kotlinx.coroutines.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-html-jvm</artifactId>
             <version>${kotlinx.html.version}</version>
         </dependency>
@@ -119,6 +124,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.8</version>
             <scope>test</scope>
         </dependency>
 
@@ -320,16 +331,78 @@
             </plugin>
 
             <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <includes>
+                        <include>**/*TestIntegration.*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>${flyway.version}</version>
 
                 <executions>
                     <execution>
+                        <id>0</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>migrate</goal>
                         </goals>
+                    </execution>
+
+                    <execution>
+                        <id>1</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>migrate</goal>
+                        </goals>
+                        <configuration>
+                            <url>${testdb.url}</url>
+                            <user>${testdb.user}</user>
+                            <password>${testdb.password}</password>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>2</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <url>${testdb.url}</url>
+                            <user>${testdb.user}</user>
+                            <password>${testdb.password}</password>
+                        </configuration>
                     </execution>
                 </executions>
 

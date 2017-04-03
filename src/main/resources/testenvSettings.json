@@ -1,0 +1,13 @@
+{
+  "TeamCity": {
+    "Password": "0xDEADC0FFEE"
+  },
+
+  "Debug": {
+    "DB": {
+      "Url": "jdbc:postgresql://localhost/kotoed-test",
+      "User": "kotoed",
+      "Password": "kotoed"
+    }
+  }
+}

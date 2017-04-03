@@ -2,10 +2,12 @@ package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.AsyncMap
 import io.vertx.ext.web.Router
@@ -30,27 +32,30 @@ import org.jooq.impl.DSL.table
 import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
-fun main(args: Array<String>) {
-    Thread.currentThread().contextClassLoader.getResourceAsStream("system.properties").use {
+fun main(args: Array<String>) =  launch(Unconfined) { startApplication(args) }
+
+suspend fun startApplication(args: Array<String>): Vertx {
+    Thread.currentThread().contextClassLoader.getResourceAsStream(
+            System.getProperty("kotoed.systemPropertiesFile", "system.properties")
+    ).use {
         System.getProperties().load(it)
     }
 
-    launch(Unconfined) {
-        val vertx = clusteredVertxAsync(
-                VertxOptions().also {
-                    it.metricsOptions = DropwizardMetricsOptions(
-                            enabled = Config.Debug.Metrics.Enabled,
-                            jmxEnabled = Config.Debug.Metrics.Enabled
-                    )
-                }
-        )
+    val vertx = clusteredVertxAsync(
+            VertxOptions().also {
+                it.metricsOptions = DropwizardMetricsOptions(
+                        enabled = Config.Debug.Metrics.Enabled,
+                        jmxEnabled = Config.Debug.Metrics.Enabled
+                )
+            }
+    )
 
-        vertx.deployVerticle(RootVerticle::class.qualifiedName)
-        vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
-        vertx.deployVerticle(CodeVerticle::class.qualifiedName)
-        vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
-        vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
-    }
+    vertx.deployVerticle(RootVerticle::class.qualifiedName)
+    vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
+    vertx.deployVerticle(CodeVerticle::class.qualifiedName)
+    vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
+    vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
+    return vertx
 }
 
 private typealias GSMS_TYPE = AsyncMap<String, String>
