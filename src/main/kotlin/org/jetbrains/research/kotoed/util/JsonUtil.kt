@@ -198,3 +198,18 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
 }
 
 /******************************************************************************/
+
+object AnyAsJson {
+    operator fun Any?.get(key: String) = (this as? JsonObject)?.getValue(key)
+    operator fun Any?.get(index: Int) = (this as? JsonArray)?.getValue(index)
+}
+
+data class JsonDelegate(val obj: JsonObject) {
+    @Suppress("UNCHECKED_CAST")
+    operator fun<T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
+    operator fun<T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
+}
+
+val JsonObject.delegate get() = JsonDelegate(this)
+
+/******************************************************************************/

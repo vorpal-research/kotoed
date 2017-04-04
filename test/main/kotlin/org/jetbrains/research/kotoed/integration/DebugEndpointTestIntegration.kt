@@ -7,6 +7,7 @@ import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.util.AnyAsJson
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.get
 import org.junit.AfterClass
@@ -57,16 +58,19 @@ class DebugEndpointTestIntegration: Loggable {
 
     @Test
     fun debugDb() {
-        val res = io.vertx.core.json.JsonArray(wget("debug/database/fill"))
+        val res = JsonArray(wget("debug/database/fill"))
         log.info(res.encodePrettily())
         assertEquals(3, res.size())
 
-        assertEquals(Json.encode((res[0] as JsonObject)["payload"]),
-                wget("debug/database/read/${(res[0] as JsonObject)["id"]}"))
-        assertEquals(Json.encode((res[1] as JsonObject)["payload"]),
-                wget("debug/database/read/${(res[1] as JsonObject)["id"]}"))
-        assertEquals(Json.encode((res[2] as JsonObject)["payload"]),
-                wget("debug/database/read/${(res[2] as JsonObject)["id"]}"))
+        with(AnyAsJson) {
+            assertEquals(Json.encode(res[0]["payload"]),
+                    wget("debug/database/read/${res[0]["id"]}"))
+            assertEquals(Json.encode(res[1]["payload"]),
+                    wget("debug/database/read/${res[1]["id"]}"))
+            assertEquals(Json.encode(res[2]["payload"]),
+                    wget("debug/database/read/${res[2]["id"]}"))
+        }
+
 
         wget("debug/database/clear")
     }
