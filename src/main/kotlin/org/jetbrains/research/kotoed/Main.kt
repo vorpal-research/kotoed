@@ -20,6 +20,8 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.db.DebugVerticle
+import org.jetbrains.research.kotoed.db.DenizenVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
@@ -32,7 +34,9 @@ import org.jooq.impl.DSL.table
 import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
-fun main(args: Array<String>) =  launch(Unconfined) { startApplication(args) }
+fun main(args: Array<String>) {
+    launch(Unconfined) { startApplication(args) }
+}
 
 suspend fun startApplication(args: Array<String>): Vertx {
     Thread.currentThread().contextClassLoader.getResourceAsStream(
@@ -55,6 +59,8 @@ suspend fun startApplication(args: Array<String>): Vertx {
     vertx.deployVerticle(CodeVerticle::class.qualifiedName)
     vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
     vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
+    vertx.deployVerticle(DebugVerticle::class.qualifiedName)
+    vertx.deployVerticle(DenizenVerticle::class.qualifiedName)
     return vertx
 }
 
@@ -93,7 +99,8 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                     .handler(this@RootVerticle::handleDebugDatabaseClear)
             router.route("/debug/database/read/:id")
                     .handler(this@RootVerticle::handleDebugDatabaseRead)
-
+            router.route("/debug/eventbus/:address")
+                    .handler(this@RootVerticle::handleDebugEventBus)
 
             router.route("/global/create/:key/:value")
                     .handler(this@RootVerticle::handleGsmsCreate)
@@ -275,6 +282,22 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         }
     }
 
+    fun handleDebugEventBus(ctx: RoutingContext) {
+        launch(UnconfinedWithExceptions(ctx)) {
+            val eb = vertx.eventBus()
+            val req = ctx.request()
+            val address by req
+            address!!
+
+            val body =
+                    if (req.method() == HttpMethod.POST) {
+                        req.bodyAsync().toJsonObject()
+                    } else JsonObject()
+            val res = eb.sendAsync(address, body).body()
+            ctx.jsonResponse().end("$res")
+        }
+    }
+
     fun handleDebugDatabaseClear(ctx: RoutingContext) {
 
         launch(UnconfinedWithExceptions(ctx)) {
@@ -433,7 +456,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         launch(UnconfinedWithExceptions(ctx)) {
             val body = if (ctx.request().method() == HttpMethod.POST) {
-                vxt<Buffer> { ctx.request().bodyHandler(it) }.toJsonObject()
+                ctx.request().bodyAsync()
             } else {
                 JsonObject()
             }

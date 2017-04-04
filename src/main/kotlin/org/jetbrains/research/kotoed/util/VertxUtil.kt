@@ -37,6 +37,11 @@ operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): 
 
 /******************************************************************************/
 
+suspend fun HttpServerRequest.bodyAsync(): Buffer =
+    vxt { bodyHandler(it) }
+
+/******************************************************************************/
+
 fun HttpResponseStatus.toJson(): JsonObject =
         JsonObject("code" to code(), "message" to reasonPhrase())
 
