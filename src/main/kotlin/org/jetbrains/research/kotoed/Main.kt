@@ -189,7 +189,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     fun handleDebugDatabaseFill(ctx: RoutingContext) {
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val ds = vertx.getSharedDataSource(
                     "debug.db",
                     Config.Debug.DB.Url,
@@ -241,7 +241,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     fun handleDebugDatabaseRead(ctx: RoutingContext) {
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val ds = vertx.getSharedDataSource(
                     "debug.db",
                     Config.Debug.DB.Url,
@@ -277,7 +277,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     fun handleDebugDatabaseClear(ctx: RoutingContext) {
 
-        launch(Unconfined) {
+        launch(UnconfinedWithExceptions(ctx)) {
             val ds = vertx.getSharedDataSource(
                     "debug.db",
                     Config.Debug.DB.Url,
