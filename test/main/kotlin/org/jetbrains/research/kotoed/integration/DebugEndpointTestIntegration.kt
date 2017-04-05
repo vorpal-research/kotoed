@@ -17,7 +17,7 @@ import javax.ws.rs.core.UriBuilder
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class DebugEndpointTestIntegration: Loggable {
+class DebugEndpointTestIntegration : Loggable {
 
     companion object {
         lateinit var server: Future<Vertx>
@@ -90,25 +90,25 @@ class DebugEndpointTestIntegration: Loggable {
     fun debugDb2() {
         val data = listOf(2, "Hello", JsonArray((0..3).toList()), JsonObject(), JsonObject("value" to null))
 
-        val ids = data.map{ datum ->
+        val ids = data.map { datum ->
             val res = wpost("debug/eventbus/kotoed.debug.create", payload = JsonObject("payload" to datum).encodePrettily())
             log.info(res)
             JsonObject(res)["id"]
         }
 
         with(AnyAsJson) {
-            for(i in 0..data.size - 1) {
+            for (i in 0..data.size - 1) {
                 val id = ids[i]
                 val lhv = JsonObject(wget("debug/eventbus/kotoed.debug.read", params = listOf("id" to id)))["payload"]
                 val rhv = data[i]
                 // not using assertEquals here, because ordering is important!
                 assertTrue(
-                    lhv == rhv, "$lhv != $rhv"
+                        lhv == rhv, "$lhv != $rhv"
                 )
             }
         }
 
-        for(id in ids) {
+        for (id in ids) {
             wget("debug/eventbus/kotoed.debug.delete", params = listOf("id" to id))
         }
     }
