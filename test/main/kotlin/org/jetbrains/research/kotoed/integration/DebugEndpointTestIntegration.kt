@@ -111,6 +111,11 @@ class DebugEndpointTestIntegration : Loggable {
         for (id in ids) {
             wget("debug/eventbus/kotoed.debug.delete", params = listOf("id" to id))
         }
+
+        for (id in ids) {
+            assertEquals("null", wget("debug/eventbus/kotoed.debug.read", params = listOf("id" to id)))
+            assertEquals("null", wget("debug/eventbus/kotoed.debug.delete", params = listOf("id" to id)))
+        }
     }
 
 }
