@@ -37,6 +37,13 @@ inline operator fun JsonObject.set(key: String, value: Any?) = this.put(key, val
 
 /******************************************************************************/
 
+inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
+        if (containsKey(oldName)) {
+            put(newName, remove(oldName))
+        } else this
+
+/******************************************************************************/
+
 interface Jsonable {
     fun toJson(): JsonObject =
             JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) })
@@ -206,8 +213,9 @@ object AnyAsJson {
 
 data class JsonDelegate(val obj: JsonObject) {
     @Suppress("UNCHECKED_CAST")
-    operator fun<T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
-    operator fun<T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
+    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
+
+    operator fun <T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
