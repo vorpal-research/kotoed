@@ -292,7 +292,12 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             val body =
                     if (req.method() == HttpMethod.POST) {
                         req.bodyAsync().toJsonObject()
-                    } else JsonObject()
+                    } else {
+                        req.params()
+                                .filterNot { (k, v) -> k == "address" }
+                                .map { (k, v) -> Pair(k, JsonEx.decode(v)) }
+                                .let{ JsonObject(it.toMap(mutableMapOf<String, Any?>())) }
+                    }
             val res = eb.sendAsync(address, body).body()
             ctx.jsonResponse().end("$res")
         }

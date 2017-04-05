@@ -4,6 +4,8 @@ package org.jetbrains.research.kotoed.util.database
 
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.util.JsonEx
+import org.jetbrains.research.kotoed.util.decode
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultRecordMapper
@@ -25,8 +27,7 @@ object JsonConverter : Converter<Any?, Any?> {
         // this is not very good, but vertx json api sucks
         databaseObject ?: return null
 
-        val fakeElement = "fakeElement"
-        return JsonObject("""{ "$fakeElement" : $databaseObject }""").getValue(fakeElement)
+        return JsonEx.decode("$databaseObject")
     }
 
     override fun to(userObject: Any?): Any? {

@@ -7,9 +7,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
-import org.jetbrains.research.kotoed.util.database.executeKAsync
 import org.jetbrains.research.kotoed.util.database.fetchKAsync
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
@@ -42,28 +40,28 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
     private suspend fun DSLContext.selectById(id: Any) =
         select().from(table).where(pk.eq(id)).fetchKAsync().into(JsonObject::class.java).firstOrNull()
 
-    fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
+    open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
+        val id = message.body().getValue(pk.name)
         jooq(dataSource).use {
-            val id = message.body().getValue(pk.name)
-            jooq(dataSource).use {
-                val resp = it
-                        .delete(table)
-                        .where(pk.eq(id))
-                        .returning()
-                        .fetchOne()
-                        ?.into(JsonObject::class.java)
-                message.reply(resp)
-            }
+            val resp = it
+                    .delete(table)
+                    .where(pk.eq(id))
+                    .returning()
+                    .fetchOne()
+                    ?.into(JsonObject::class.java)
+            message.reply(resp)
         }
     }
-    fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
+
+    open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
         jooq(dataSource).use {
             val resp = it.selectById(id)
             message.reply(resp)
         }
     }
-    fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
+
+    open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
         jooq(dataSource).use {
             val resp = it
@@ -77,6 +75,7 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
             message.reply(resp)
         }
     }
+
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         jooq(dataSource).use {
             val resp = it

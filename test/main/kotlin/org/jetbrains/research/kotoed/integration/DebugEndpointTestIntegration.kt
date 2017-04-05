@@ -7,9 +7,7 @@ import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.util.AnyAsJson
-import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.get
+import org.jetbrains.research.kotoed.util.*
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
@@ -17,6 +15,7 @@ import java.util.concurrent.Future
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.UriBuilder
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class DebugEndpointTestIntegration: Loggable {
 
@@ -36,12 +35,23 @@ class DebugEndpointTestIntegration: Loggable {
         }
     }
 
-    fun wget(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE): String {
+    fun wget(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
+             params: Iterable<Pair<String, Any?>> = listOf()): String {
         val config = DefaultClientConfig()
         val client = Client.create(config)
         val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
 
-        return resource.path(path).accept(mediaType).get(String::class.java)
+        return resource.path(path).let {
+            params.fold(it) { res, (k, v) -> res.queryParam(k, "$v") }
+        }.accept(mediaType).get(String::class.java)
+    }
+
+    fun wpost(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE, payload: String = ""): String {
+        val config = DefaultClientConfig()
+        val client = Client.create(config)
+        val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
+
+        return resource.path(path).accept(mediaType).post(String::class.java, payload)
     }
 
     @Test
@@ -58,8 +68,10 @@ class DebugEndpointTestIntegration: Loggable {
 
     @Test
     fun debugDb() {
+        wget("debug/database/clear")
         val res = JsonArray(wget("debug/database/fill"))
         log.info(res.encodePrettily())
+
         assertEquals(3, res.size())
 
         with(AnyAsJson) {
@@ -71,9 +83,34 @@ class DebugEndpointTestIntegration: Loggable {
                     wget("debug/database/read/${res[2]["id"]}"))
         }
 
-
         wget("debug/database/clear")
     }
 
+    @Test
+    fun debugDb2() {
+        val data = listOf(2, "Hello", JsonArray((0..3).toList()), JsonObject(), JsonObject("value" to null))
+
+        val ids = data.map{ datum ->
+            val res = wpost("debug/eventbus/kotoed.debug.create", payload = JsonObject("payload" to datum).encodePrettily())
+            log.info(res)
+            JsonObject(res)["id"]
+        }
+
+        with(AnyAsJson) {
+            for(i in 0..data.size - 1) {
+                val id = ids[i]
+                val lhv = JsonObject(wget("debug/eventbus/kotoed.debug.read", params = listOf("id" to id)))["payload"]
+                val rhv = data[i]
+                // not using assertEquals here, because ordering is important!
+                assertTrue(
+                    lhv == rhv, "$lhv != $rhv"
+                )
+            }
+        }
+
+        for(id in ids) {
+            wget("debug/eventbus/kotoed.debug.delete", params = listOf("id" to id))
+        }
+    }
 
 }
