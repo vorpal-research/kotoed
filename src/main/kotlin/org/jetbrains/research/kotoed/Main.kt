@@ -167,12 +167,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     }
 
     fun handleDebugDatabaseCreate(ctx: RoutingContext) {
-        val ds = vertx.getSharedDataSource(
-                "debug.db",
-                Config.Debug.DB.Url,
-                Config.Debug.DB.User,
-                Config.Debug.DB.Password
-        )
+        val ds = vertx.getSharedDataSource()
 
         val q = jooq(ds).use {
             it.createTableIfNotExists("debug")
@@ -197,12 +192,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebugDatabaseFill(ctx: RoutingContext) {
 
         launch(UnconfinedWithExceptions(ctx)) {
-            val ds = vertx.getSharedDataSource(
-                    "debug.db",
-                    Config.Debug.DB.Url,
-                    Config.Debug.DB.User,
-                    Config.Debug.DB.Password
-            )
+            val ds = vertx.getSharedDataSource()
 
             jooq(ds).use {
 
@@ -249,12 +239,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebugDatabaseRead(ctx: RoutingContext) {
 
         launch(UnconfinedWithExceptions(ctx)) {
-            val ds = vertx.getSharedDataSource(
-                    "debug.db",
-                    Config.Debug.DB.Url,
-                    Config.Debug.DB.User,
-                    Config.Debug.DB.Password
-            )
+            val ds = vertx.getSharedDataSource()
 
             val id by ctx.request()
 
@@ -306,12 +291,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
     fun handleDebugDatabaseClear(ctx: RoutingContext) {
 
         launch(UnconfinedWithExceptions(ctx)) {
-            val ds = vertx.getSharedDataSource(
-                    "debug.db",
-                    Config.Debug.DB.Url,
-                    Config.Debug.DB.User,
-                    Config.Debug.DB.Password
-            )
+            val ds = vertx.getSharedDataSource()
 
             jooq(ds).use {
                 it.createTableIfNotExists("debug")
