@@ -294,7 +294,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                         req.bodyAsync().toJsonObject()
                     } else {
                         req.params()
-                                .filterNot { (k, v) -> k == "address" }
+                                .filterNot { (k, _) -> k == "address" }
                                 .map { (k, v) -> Pair(k, JsonEx.decode(v)) }
                                 .let{ JsonObject(it.toMap(mutableMapOf<String, Any?>())) }
                     }
