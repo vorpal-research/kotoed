@@ -2,6 +2,7 @@
 
 package org.jetbrains.research.kotoed.util
 
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlin.reflect.KClass
@@ -211,5 +212,11 @@ data class JsonDelegate(val obj: JsonObject) {
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
+
+
+/******************************************************************************/
+
+object JsonEx
+fun JsonEx.decode(enc: String): Any? = JsonArray("""[$enc]""").getValue(0)
 
 /******************************************************************************/
