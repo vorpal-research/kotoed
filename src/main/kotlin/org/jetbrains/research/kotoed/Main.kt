@@ -456,6 +456,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
     fun handleFailure(ctx: RoutingContext) {
         val ex = ctx.failure()
+        log.error("", ex)
         ctx.jsonResponse()
                 .setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR)
                 .end(

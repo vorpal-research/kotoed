@@ -4,6 +4,9 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
+import kotlinx.coroutines.experimental.run
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
@@ -20,6 +23,12 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
             val table: Table<R>,
             val entityName: String = table.name.toLowerCase()
         ): AbstractVerticle() {
+
+    companion object {
+        val DBPool =
+            newFixedThreadPoolContext(Config.Debug.DB.PoolSize, "dbVerticles.dispatcher")
+    }
+
     val dataSource get() = vertx.getSharedDataSource()
     val pk get() = table.primaryKey.fields.first() as Field<Any>
 
@@ -37,56 +46,52 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
         eb.consumer<JsonObject>(deleteAddress){ handleDelete(it) }
     }
 
-    private suspend fun DSLContext.selectById(id: Any) =
-        select().from(table).where(pk.eq(id)).fetchKAsync().into(JsonObject::class.java).firstOrNull()
+    private suspend fun<T> db(body: DSLContext.() -> T) =
+        run(DBPool){ jooq(dataSource).use(body) }
+
+    private fun DSLContext.selectById(id: Any) =
+        select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
 
     open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
-        jooq(dataSource).use {
-            val resp = it
-                    .delete(table)
+        val resp = db {
+            delete(table)
                     .where(pk.eq(id))
                     .returning()
                     .fetchOne()
                     ?.into(JsonObject::class.java)
-            message.reply(resp)
         }
+        message.reply(resp)
     }
 
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
-        jooq(dataSource).use {
-            val resp = it.selectById(id)
-            message.reply(resp)
-        }
+        val resp = db { selectById(id) }
+        message.reply(resp)
     }
 
     open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
-        jooq(dataSource).use {
-            val resp = it
-                    .update(table)
-                    .set(it.newRecord(table, message.body().map))
+        val resp = db {
+            update(table)
+                    .set(newRecord(table, message.body().map))
                     .where(pk.eq(id))
                     .returning()
                     .fetchOne()
                     ?.into(JsonObject::class.java)
-
-            message.reply(resp)
         }
+        message.reply(resp)
     }
 
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
-        jooq(dataSource).use {
-            val resp = it
-                    .insertInto(table)
-                    .set(it.newRecord(table, message.body().map))
+        val resp = db {
+            insertInto(table)
+                    .set(newRecord(table, message.body().map))
                     .returning()
                     .fetchOne()
                     ?.into(JsonObject::class.java)
-
-            message.reply(resp)
         }
+        message.reply(resp)
     }
 
 }

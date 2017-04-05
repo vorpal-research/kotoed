@@ -13,6 +13,7 @@ class GlobalConfig : Configuration() {
             val Dialect get() = JDBCUtils.dialect(Url)
 
             val DataSourceId by "debug.db"
+            val PoolSize by 10
         }
 
         val DB by DBConfig()
