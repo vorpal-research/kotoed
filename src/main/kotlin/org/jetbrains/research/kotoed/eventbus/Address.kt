@@ -22,4 +22,12 @@ object Address {
         const val List = "kotoed.code.list"
         const val Diff = "kotoed.code.diff"
     }
+
+    object User {
+        object Auth {
+            const val SignUp = "kotoed.user.auth.signup"
+            const val Login = "kotoed.user.auth.login"
+            const val Info = "kotoed.user.auth.info"
+        }
+    }
 }
