@@ -26,23 +26,12 @@ class UserAuthVerticle : AbstractVerticle() {
                 }
 
     override fun start() {
-        val eb = vertx.eventBus()
-        eb.consumer<JsonObject>(
-                Address.User.Auth.SignUp,
-                this@UserAuthVerticle::consumeSignUp.withExceptions()
-        )
-        eb.consumer<JsonObject>(
-                Address.User.Auth.Login,
-                this@UserAuthVerticle::consumeLogin.withExceptions()
-        )
-        eb.consumer<JsonObject>(
-                Address.User.Auth.Info,
-                this@UserAuthVerticle::consumeInfo.withExceptions()
-        )
+        registerAllConsumers()
     }
 
     data class SignUpMsg(val denizenId: String, val password: String) : Jsonable
 
+    @EventBusConsumerFor(Address.User.Auth.SignUp)
     fun consumeSignUp(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
         val signUpMsg = fromJson<SignUpMsg>(msg.body())
 
@@ -68,6 +57,7 @@ class UserAuthVerticle : AbstractVerticle() {
 
     data class LoginMsg(val denizenId: String, val password: String) : Jsonable
 
+    @EventBusConsumerFor(Address.User.Auth.Login)
     fun consumeLogin(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
         fromJson<LoginMsg>(msg.body())
 
@@ -80,6 +70,7 @@ class UserAuthVerticle : AbstractVerticle() {
 
     data class InfoMsg(val denizenId: String) : Jsonable
 
+    @EventBusConsumerFor(Address.User.Auth.Info)
     fun consumeInfo(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
         val infoMsg = fromJson<InfoMsg>(msg.body())
 
