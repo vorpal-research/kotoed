@@ -4,7 +4,6 @@ import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
@@ -22,6 +21,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.db.DebugVerticle
 import org.jetbrains.research.kotoed.db.DenizenVerticle
+import org.jetbrains.research.kotoed.db.UserAuthVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
@@ -61,6 +61,7 @@ suspend fun startApplication(args: Array<String>): Vertx {
     vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
     vertx.deployVerticle(DebugVerticle::class.qualifiedName)
     vertx.deployVerticle(DenizenVerticle::class.qualifiedName)
+    vertx.deployVerticle(UserAuthVerticle::class.qualifiedName)
     return vertx
 }
 
