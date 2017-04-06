@@ -91,7 +91,7 @@ class DebugEndpointTestIntegration : Loggable {
         val data = listOf(2, "Hello", JsonArray((0..3).toList()), JsonObject(), JsonObject("value" to null))
 
         val ids = data.map { datum ->
-            val res = wpost("debug/eventbus/kotoed.debug.create", payload = JsonObject("payload" to datum).encodePrettily())
+            val res = wpost("debug/eventbus/kotoed.db.debug.create", payload = JsonObject("payload" to datum).encodePrettily())
             log.info(res)
             JsonObject(res)["id"]
         }
@@ -99,7 +99,7 @@ class DebugEndpointTestIntegration : Loggable {
         with(AnyAsJson) {
             for (i in 0..data.size - 1) {
                 val id = ids[i]
-                val lhv = JsonObject(wget("debug/eventbus/kotoed.debug.read", params = listOf("id" to id)))["payload"]
+                val lhv = JsonObject(wget("debug/eventbus/kotoed.db.debug.read", params = listOf("id" to id)))["payload"]
                 val rhv = data[i]
                 // not using assertEquals here, because ordering is important!
                 assertTrue(
@@ -113,8 +113,8 @@ class DebugEndpointTestIntegration : Loggable {
         }
 
         for (id in ids) {
-            assertEquals("null", wget("debug/eventbus/kotoed.debug.read", params = listOf("id" to id)))
-            assertEquals("null", wget("debug/eventbus/kotoed.debug.delete", params = listOf("id" to id)))
+            assertEquals("null", wget("debug/eventbus/kotoed.db.debug.read", params = listOf("id" to id)))
+            assertEquals("null", wget("debug/eventbus/kotoed.db.debug.delete", params = listOf("id" to id)))
         }
     }
 

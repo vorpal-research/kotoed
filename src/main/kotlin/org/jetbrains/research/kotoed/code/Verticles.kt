@@ -31,7 +31,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
     val ee by lazy {
         newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
     }
-    val procs by lazy<Cache<CloneRequest, RepositoryInfo>> {
+    val procs by lazy<Cache<RemoteRequest, RepositoryInfo>> {
         CacheBuilder
                 .newBuilder()
                 .maximumSize(Config.VCS.CloneCapacity)
@@ -39,14 +39,14 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                 .removalListener(this::onCacheRemove)
                 .build()
     }
-    val info = mutableMapOf<String, CloneRequest>()
+    val info = mutableMapOf<String, RemoteRequest>()
 
-    val RepositoryInfo.root get() = when (type) {
+    val RepositoryInfo.root get() = when (vcs) {
         VCS.git -> Git(url, File(dir, uid).absolutePath)
         VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath)
     }
 
-    fun onCacheRemove(removalNotification: RemovalNotification<CloneRequest, RepositoryInfo>) =
+    fun onCacheRemove(removalNotification: RemovalNotification<RemoteRequest, RepositoryInfo>) =
             launch {
                 if (removalNotification.value.status == CloneStatus.pending) return@launch
 
@@ -67,6 +67,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
         val eb = vertx.eventBus()
 
+        eb.consumer<JsonObject>(Address.Code.Ping, this@CodeVerticle::handlePing)
         eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
         eb.consumer<JsonObject>(Address.Code.Read, this@CodeVerticle::handleRead)
         eb.consumer<JsonObject>(Address.Code.List, this@CodeVerticle::handleList)
@@ -137,9 +138,29 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
             }.ignore()
 
+    fun handlePing(mes: Message<JsonObject>): Unit =
+            launch(UnconfinedWithExceptions(mes)) {
+                val message: RemoteRequest = fromJson(mes.body())
+                log.info("Pinging repository: $message")
+
+                val url = message.url
+                val pendingResp = RepositoryInfo(
+                        status = CloneStatus.pending,
+                        uid = "",
+                        url = url,
+                        vcs = message.vcs
+                )
+
+                val exists = run(ee) { pendingResp.root.ping() }
+
+                val response = PingResponse(success = exists is VcsResult.Success)
+
+                mes.reply(response.toJson())
+            }.ignore()
+
     fun handleClone(mes: Message<JsonObject>): Unit =
             launch(UnconfinedWithExceptions(mes)) {
-                val message: CloneRequest = fromJson(mes.body())
+                val message: RemoteRequest = fromJson(mes.body())
 
                 log.info("Requested clone: $message")
 
@@ -163,7 +184,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                         status = CloneStatus.pending,
                         uid = "$uid",
                         url = url,
-                        type = message.vcs
+                        vcs = message.vcs
                 )
                 procs[message] = pendingResp
                 info["$uid"] = message

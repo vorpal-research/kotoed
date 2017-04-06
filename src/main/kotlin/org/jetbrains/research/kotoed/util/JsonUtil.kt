@@ -75,13 +75,13 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
             Sequence::class -> list.asSequence()
             Set::class -> list.toSet()
             Map::class -> list.map { it as Pair<*, *> }.toMap()
-            else -> throw IllegalArgumentException("Cannot convert json array $list to type $klass")
+            else -> throw IllegalArgumentException("Cannot convert json array $list to vcs $klass")
         }
 
 /******************************************************************************/
 
 private fun Any?.tryFromJson(klass: KType): Any? {
-    fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json to type $klass")
+    fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json to vcs $klass")
     val erasure = klass.jvmErasure
     val companion = erasure.companionObjectInstance
     return when (this) {
@@ -161,7 +161,7 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     val asMap = klass.declaredMemberProperties.map {
         val value = data.getValue(it.name)
         if (value == null && !it.returnType.isMarkedNullable)
-            throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
+            throw IllegalArgumentException("Cannot convert \"$data\" to vcs $klass: required field ${it.name} is missing")
         else Pair(it.name, value?.tryFromJson(it.returnType))
     }.toMap()
 
@@ -169,7 +169,7 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
         val ctor = klass.constructors.first()
         ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
-        throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
+        throw IllegalArgumentException("Cannot convert \"$data\" to vcs $klass: please use only datatype-like classes", ex)
     }
 }
 
@@ -182,7 +182,7 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
     val companion = klass.companionObjectInstance
     return when (companion) {
         is JsonableCompanion<*> -> companion.fromJson(data) as? T
-                ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
+                ?: throw IllegalArgumentException("Cannot convert \"$data\" to vcs $klass: companion method failed")
         else -> objectFromJson(data, klass)
     }
 }

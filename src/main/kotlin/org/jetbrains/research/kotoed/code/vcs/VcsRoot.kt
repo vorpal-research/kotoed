@@ -19,6 +19,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
     abstract fun diff(path: String, from: Revision, to: Revision): VcsResult<Sequence<String>>
     abstract fun diffAll(from: Revision, to: Revision): VcsResult<Sequence<String>>
     abstract fun ls(rev: Revision): VcsResult<Sequence<String>>
+    abstract fun ping(): VcsResult<Unit>
 }
 
 class Git(remote: String, local: String) : VcsRoot(remote, local) {
@@ -65,6 +66,12 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
         val res = CommandLine(git, "ls-tree", rev.rep, "-r", "--name-only").execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
+    }
+
+    override fun ping(): VcsResult<Unit> {
+        val res = CommandLine(git, "ls-remote", "-h", remote).execute(File(local)).complete()
+        if(res.rcode.get() == 0) return VcsResult.Success(Unit)
+        else return VcsResult.Failure(sequenceOf())
     }
 }
 
@@ -120,4 +127,9 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
         else return VcsResult.Failure(res.cerr)
     }
 
+    override fun ping(): VcsResult<Unit> {
+        val res = CommandLine(mercurial, "identify", remote).execute(File(local)).complete()
+        if(res.rcode.get() == 0) return VcsResult.Success(Unit)
+        else return VcsResult.Failure(sequenceOf())
+    }
 }
