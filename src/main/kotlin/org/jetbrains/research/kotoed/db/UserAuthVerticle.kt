@@ -7,6 +7,9 @@ import io.vertx.ext.auth.User
 import io.vertx.ext.auth.jdbc.JDBCAuth
 import io.vertx.ext.jdbc.JDBCClient
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.data.db.InfoMsg
+import org.jetbrains.research.kotoed.data.db.LoginMsg
+import org.jetbrains.research.kotoed.data.db.SignUpMsg
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -28,8 +31,6 @@ class UserAuthVerticle : AbstractVerticle() {
     override fun start() {
         registerAllConsumers()
     }
-
-    data class SignUpMsg(val denizenId: String, val password: String) : Jsonable
 
     @EventBusConsumerFor(Address.User.Auth.SignUp)
     fun consumeSignUp(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
@@ -55,8 +56,6 @@ class UserAuthVerticle : AbstractVerticle() {
         }
     }.ignore()
 
-    data class LoginMsg(val denizenId: String, val password: String) : Jsonable
-
     @EventBusConsumerFor(Address.User.Auth.Login)
     fun consumeLogin(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
         fromJson<LoginMsg>(msg.body())
@@ -67,8 +66,6 @@ class UserAuthVerticle : AbstractVerticle() {
 
         msg.reply(user.principal().rename("username", "denizenId"))
     }.ignore()
-
-    data class InfoMsg(val denizenId: String) : Jsonable
 
     @EventBusConsumerFor(Address.User.Auth.Info)
     fun consumeInfo(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {

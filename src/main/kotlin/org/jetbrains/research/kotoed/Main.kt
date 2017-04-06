@@ -4,6 +4,7 @@ import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
+import io.vertx.core.eventbus.Message
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
@@ -21,6 +22,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.db.DebugVerticle
 import org.jetbrains.research.kotoed.db.DenizenVerticle
+import org.jetbrains.research.kotoed.db.ProjectVerticle
 import org.jetbrains.research.kotoed.db.UserAuthVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
@@ -62,6 +64,7 @@ suspend fun startApplication(args: Array<String>): Vertx {
     vertx.deployVerticle(DebugVerticle::class.qualifiedName)
     vertx.deployVerticle(DenizenVerticle::class.qualifiedName)
     vertx.deployVerticle(UserAuthVerticle::class.qualifiedName)
+    vertx.deployVerticle(ProjectVerticle::class.qualifiedName)
     return vertx
 }
 
@@ -282,10 +285,10 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
                         req.params()
                                 .filterNot { (k, _) -> k == "address" }
                                 .map { (k, v) -> Pair(k, JsonEx.decode(v)) }
-                                .let{ JsonObject(it.toMap(mutableMapOf<String, Any?>())) }
+                                .let { JsonObject(it.toMap(mutableMapOf<String, Any?>())) }
                     }
-            val res = eb.sendAsync(address, body).body()
-            ctx.jsonResponse().end("$res")
+            val res = vxa<Message<Any>> { eb.send(address, body, it) }
+            ctx.jsonResponse().end("${res.body()}")
         }
     }
 
