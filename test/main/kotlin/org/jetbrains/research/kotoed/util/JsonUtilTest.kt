@@ -181,7 +181,7 @@ class JsonUtilTest {
                         "vcsRoot": {
                             "id": "Test_VCS",
                             "name": "Test project VCS",
-                            "vcs": "mercurial",
+                            "type": "mercurial",
                             "url": "https://bitbucket.org/vorpal-research/kotoed",
                             "projectId": "Test"
                         },
