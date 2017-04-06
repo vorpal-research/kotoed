@@ -6,12 +6,14 @@ import org.jetbrains.research.kotoed.util.Jsonable
 enum class VCS { git, mercurial }
 enum class CloneStatus { done, pending }
 
-data class CloneRequest(val vcs: VCS, val url: String) : Jsonable
+data class PingResponse(val success: Boolean): Jsonable
+
+data class RemoteRequest(val vcs: VCS, val url: String) : Jsonable
 data class RepositoryInfo(
         val status: CloneStatus,
         val uid: String,
         val url: String,
-        val type: VCS,
+        val vcs: VCS,
         val success: Boolean = true,
         val errors: List<String> = listOf()
 ) : Jsonable

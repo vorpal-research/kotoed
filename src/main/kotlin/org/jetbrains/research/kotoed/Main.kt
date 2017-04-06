@@ -110,10 +110,11 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             router.route("/teamcity/:address")
                     .handler(this@RootVerticle::handleTeamcity)
 
-            router.route("/vcs/clone/:type")
+            router.route("/vcs/ping/:vcs")
+                    .handler(this@RootVerticle::handleVCSPing)
+            router.route("/vcs/clone/:vcs")
                     .handler(this@RootVerticle::handleVCSClone)
-            router.routeWithRegex("/vcs/read/.*")
-                    .pathRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
+            router.routeWithRegex("""\/vcs\/read\/([^\/]+)\/(.+)""")
                     .handler(this@RootVerticle::handleVCSRead)
             router.route("/vcs/diff/:uid/:from::to")
                     .handler(this@RootVerticle::handleVCSDiff)
@@ -309,16 +310,34 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
         }
     }
 
+    fun handleVCSPing(ctx: RoutingContext) {
+        val req = ctx.request()
+
+        launch(UnconfinedWithExceptions(ctx)) {
+            val url by req
+            val vcs by req
+
+            val eb = vertx.eventBus()
+            val message = object : Jsonable {
+                val vcs = vcs
+                val url = url.orEmpty().unquote()
+            }
+            val res = eb.sendAsync(Address.Code.Ping, message.toJson())
+
+            ctx.response().end(res.body())
+        }
+    }
+
     fun handleVCSClone(ctx: RoutingContext) {
         val req = ctx.request()
 
         launch(UnconfinedWithExceptions(ctx)) {
             val url by req
-            val type by req
+            val vcs by req
 
             val eb = vertx.eventBus()
             val message = object : Jsonable {
-                val vcs = type
+                val vcs = vcs
                 val url = url.orEmpty().unquote()
             }
             val res = eb.sendAsync(Address.Code.Download, message.toJson())
@@ -408,7 +427,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             ctx.jsonResponse()
                     .end(
                             JsonObject(
-                                    "type" to "create",
+                                    "vcs" to "create",
                                     "key" to key,
                                     "value" to value
                             )
@@ -426,7 +445,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
             ctx.jsonResponse()
                     .end(
                             JsonObject(
-                                    "type" to "read",
+                                    "vcs" to "read",
                                     "key" to key,
                                     "value" to value
                             )

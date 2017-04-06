@@ -6,7 +6,7 @@ import org.wickedsource.diffparser.api.model.Hunk
 import org.wickedsource.diffparser.api.model.Line
 import org.wickedsource.diffparser.api.model.Range
 
-fun Line.toJson() = JsonObject("type" to "$lineType", "contents" to content)
+fun Line.toJson() = JsonObject("vcs" to "$lineType", "contents" to content)
 
 fun Range.toJson() = JsonObject("start" to lineStart, "count" to lineCount)
 

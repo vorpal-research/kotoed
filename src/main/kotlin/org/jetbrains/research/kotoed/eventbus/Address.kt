@@ -17,9 +17,17 @@ object Address {
     }
 
     object Code {
+        const val Ping = "kotoed.code.ping"
         const val Download = "kotoed.code.download"
         const val Read = "kotoed.code.read"
         const val List = "kotoed.code.list"
         const val Diff = "kotoed.code.diff"
+    }
+
+    object DB {
+        fun create(entity: String) = "kotoed.db.$entity.create"
+        fun delete(entity: String) = "kotoed.db.$entity.delete"
+        fun read(entity: String)   = "kotoed.db.$entity.read"
+        fun update(entity: String) = "kotoed.db.$entity.update"
     }
 }

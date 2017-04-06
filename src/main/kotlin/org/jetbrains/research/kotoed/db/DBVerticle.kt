@@ -10,10 +10,12 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.database.fetchKAsync
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
+import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.DSLContext
 import org.jooq.Field
 import org.jooq.Table
@@ -32,10 +34,10 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
     val dataSource get() = vertx.getSharedDataSource()
     val pk get() = table.primaryKey.fields.first() as Field<Any>
 
-    val createAddress = "kotoed.$entityName.create"
-    val updateAddress = "kotoed.$entityName.update"
-    val readAddress   = "kotoed.$entityName.read"
-    val deleteAddress = "kotoed.$entityName.delete"
+    val createAddress = Address.DB.create(entityName)
+    val updateAddress = Address.DB.update(entityName)
+    val readAddress   = Address.DB.read(entityName)
+    val deleteAddress = Address.DB.delete(entityName)
 
 
     override fun start() {
@@ -62,13 +64,13 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
                     ?.into(JsonObject::class.java)
         }
         message.reply(resp)
-    }
+    }.ignore()
 
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
         val resp = db { selectById(id) }
         message.reply(resp)
-    }
+    }.ignore()
 
     open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val id = message.body().getValue(pk.name)
@@ -81,7 +83,7 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
                     ?.into(JsonObject::class.java)
         }
         message.reply(resp)
-    }
+    }.ignore()
 
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)){
         val resp = db {
@@ -92,7 +94,7 @@ abstract class DatabaseVerticle<R: UpdatableRecord<R>>(
                     ?.into(JsonObject::class.java)
         }
         message.reply(resp)
-    }
+    }.ignore()
 
 }
 

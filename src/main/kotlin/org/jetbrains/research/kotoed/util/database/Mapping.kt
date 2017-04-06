@@ -78,18 +78,19 @@ class PostgresJSONBinding : PostgresJSONBindingBase {
     override val typename = "json"
 }
 
+fun<R: Record> R.toJson(): JsonObject =
+        JsonObject().apply {
+            for (field in fields()) {
+                put(field.name, field.getValue(this@toJson))
+            }
+        }
+
 val jsonRecordMappers: RecordMapperProvider =
         object : RecordMapperProvider {
             override fun <R : Record, E : Any> provide(recordType: RecordType<R>, clazz: Class<out E>): RecordMapper<R, E> =
                     run {
                         if (clazz == JsonObject::class.java)
-                            RecordMapper { record: R ->
-                                JsonObject().apply {
-                                    for (field in record.fields()) {
-                                        put(field.name, field.getValue(record))
-                                    }
-                                } as E
-                            }
+                            RecordMapper { record: R -> record.toJson() as E }
                         else DefaultRecordMapper(recordType, clazz)
                     }
         }
