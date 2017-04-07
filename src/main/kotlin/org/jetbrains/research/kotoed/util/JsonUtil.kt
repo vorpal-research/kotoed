@@ -188,6 +188,7 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
 }
 
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
+inline fun <reified T: Jsonable> JsonObject.toJsonable() = fromJson(this, T::class)
 
 /******************************************************************************/
 
