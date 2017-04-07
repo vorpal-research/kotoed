@@ -28,7 +28,8 @@
         <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.2</diffparser.version>
 
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.reporting.outputEncoding>UTF-8
+        </project.reporting.outputEncoding>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
@@ -58,6 +59,11 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-hazelcast</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-auth-jdbc</artifactId>
             <version>${vertx.version}</version>
         </dependency>
 
@@ -233,8 +239,11 @@
                         </goals>
                         <configuration>
                             <sourceDirs>
-                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                                <sourceDir>${project.basedir}/target/generated-sources/jooq</sourceDir>
+                                <sourceDir>${project.basedir}/src/main/kotlin
+                                </sourceDir>
+                                <sourceDir>
+                                    ${project.basedir}/target/generated-sources/jooq
+                                </sourceDir>
                             </sourceDirs>
                         </configuration>
 
@@ -264,12 +273,16 @@
                     <execution>
                         <id>java-compile</id>
                         <phase>compile</phase>
-                        <goals> <goal>compile</goal> </goals>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
                     </execution>
                     <execution>
                         <id>java-test-compile</id>
                         <phase>test-compile</phase>
-                        <goals> <goal>testCompile</goal> </goals>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -454,13 +467,17 @@
                             <forcedTypes>
                                 <forcedType>
                                     <userType>Object</userType>
-                                    <binding>org.jetbrains.research.kotoed.util.database.PostgresJSONBBinding</binding>
+                                    <binding>
+                                        org.jetbrains.research.kotoed.util.database.PostgresJSONBBinding
+                                    </binding>
                                     <expression>.*</expression>
                                     <types>.*jsonb.*</types>
                                 </forcedType>
                                 <forcedType>
                                     <userType>Object</userType>
-                                    <binding>org.jetbrains.research.kotoed.util.database.PostgresJSONBinding</binding>
+                                    <binding>
+                                        org.jetbrains.research.kotoed.util.database.PostgresJSONBinding
+                                    </binding>
                                     <expression>.*</expression>
                                     <types>.*json[^b]*</types>
                                 </forcedType>

@@ -1,10 +1,10 @@
 package org.jetbrains.research.kotoed.util
 
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.util.Jsonable
-import org.jetbrains.research.kotoed.util.vxa
+import kotlin.reflect.full.declaredMemberFunctions
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
         vxa { send(address, message, it) }
@@ -15,3 +15,22 @@ suspend fun EventBus.sendAsync(address: String, message: Any): Message<JsonObjec
 
 fun EventBus.sendJsonable(address: String, message: Jsonable) =
         send(address, message.toJson())
+
+annotation class EventBusConsumerFor(val address: String)
+
+fun AbstractVerticle.registerAllConsumers() {
+    val klass = this::class
+
+    val eb = vertx.eventBus()
+
+    for (function in klass.declaredMemberFunctions) {
+        function.annotations
+                .find { it.annotationClass == EventBusConsumerFor::class }
+                ?.also {
+                    eb.consumer<JsonObject>(
+                            (it as EventBusConsumerFor).address,
+                            { msg -> function.call(this, msg) }
+                    )
+                }
+    }
+}
