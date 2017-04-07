@@ -24,10 +24,18 @@ object Address {
         const val Diff = "kotoed.code.diff"
     }
 
+    object User {
+        object Auth {
+            const val SignUp = "kotoed.user.auth.signup"
+            const val Login = "kotoed.user.auth.login"
+            const val Info = "kotoed.user.auth.info"
+        }
+    }
+
     object DB {
         fun create(entity: String) = "kotoed.db.$entity.create"
         fun delete(entity: String) = "kotoed.db.$entity.delete"
-        fun read(entity: String)   = "kotoed.db.$entity.read"
+        fun read(entity: String) = "kotoed.db.$entity.read"
         fun update(entity: String) = "kotoed.db.$entity.update"
     }
 }

@@ -2,7 +2,6 @@
 
 package org.jetbrains.research.kotoed.util
 
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlin.reflect.KClass
@@ -35,6 +34,13 @@ inline operator fun JsonArray.get(index: Int): Any? = this.getValue(index)
 inline operator fun JsonArray.set(index: Int, value: Any?) = this.list.set(index, value)
 inline operator fun JsonObject.get(key: String): Any? = this.getValue(key)
 inline operator fun JsonObject.set(key: String, value: Any?) = this.put(key, value)
+
+/******************************************************************************/
+
+inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
+        if (containsKey(oldName)) {
+            put(newName, remove(oldName))
+        } else this
 
 /******************************************************************************/
 
@@ -207,16 +213,17 @@ object AnyAsJson {
 
 data class JsonDelegate(val obj: JsonObject) {
     @Suppress("UNCHECKED_CAST")
-    operator fun<T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
-    operator fun<T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
+    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
+
+    operator fun <T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
 
-
 /******************************************************************************/
 
 object JsonEx
+
 fun JsonEx.decode(enc: String): Any? = JsonArray("""[$enc]""").getValue(0)
 
 /******************************************************************************/
