@@ -13,6 +13,7 @@ import org.jooq.impl.SQLDataType
 import org.jooq.tools.jdbc.JDBCUtils
 import java.sql.SQLFeatureNotSupportedException
 import java.sql.Types
+import kotlin.reflect.full.createInstance
 
 object JsonConverter : Converter<Any?, Any?> {
     override fun toType(): Class<Any?> {
@@ -84,6 +85,9 @@ fun<R: Record> R.toJson(): JsonObject =
                 put(field.name, field.getValue(this@toJson))
             }
         }
+
+inline fun<reified R: Record> JsonObject.toRecord(): R =
+        R::class.createInstance().apply { from(this@toRecord.map) }
 
 val jsonRecordMappers: RecordMapperProvider =
         object : RecordMapperProvider {
