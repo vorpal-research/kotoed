@@ -9,8 +9,6 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.get
-import org.jetbrains.research.kotoed.util.jsonArrayOf
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
@@ -19,7 +17,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.UriBuilder
 import kotlin.test.assertEquals
 
-class UserEndpointTestIntegration : Loggable {
+class UserDatabaseTestIntegration : Loggable {
 
     companion object {
         lateinit var server: Future<Vertx>
@@ -95,7 +93,6 @@ class UserEndpointTestIntegration : Loggable {
                 params = listOf("denizenid" to petya.id)).let(::JsonArray)
 
         assertEquals(setOf(petyasProject1, petyasProject2), refs.toSet())
-
 
     }
 }
