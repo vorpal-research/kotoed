@@ -8,4 +8,4 @@ pipelines:
           - createuser kotoed -U postgres
           - createdb kotoed -U postgres -O kotoed
           - createdb kotoed-test -U postgres -O kotoed
-          - mvn clean compile test integration-test
+          - mvn clean compile test verify
