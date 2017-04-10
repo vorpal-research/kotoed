@@ -75,10 +75,12 @@ class UserEndpointTestIntegration : Loggable {
                             "repourl" to repourl
                     ).encodePrettily())
 
+    val JsonObject.id get() = getInteger("id")
+
     @Test
     fun basic() {
 
-        val course = JsonObject(makeStupidCourse("Transmogrification 101"))
+        val course = makeStupidCourse("Transmogrification 101").let(::JsonObject)
 
         // let's make sum users, shall we?
 
@@ -86,13 +88,13 @@ class UserEndpointTestIntegration : Loggable {
         val vasya = makeStupidUser("Vasya").let(::JsonObject)
         val masha = makeStupidUser("Masha").let(::JsonObject)
 
-        val petyasProject1 = makeStupidProject(petya.getInteger("id"), course.getInteger("id")).let(::JsonObject)
-        val petyasProject2 = makeStupidProject(petya.getInteger("id"), course.getInteger("id")).let(::JsonObject)
+        val petyasProject1 = makeStupidProject(petya.id, course.id).let(::JsonObject)
+        val petyasProject2 = makeStupidProject(petya.id, course.id).let(::JsonObject)
 
         val refs = wget("debug/eventbus/${Address.DB.read("project")}.for.denizen",
-                params = listOf("denizenid" to petya.getInteger("id"))).let(::JsonArray)
+                params = listOf("denizenid" to petya.id)).let(::JsonArray)
 
-        assertEquals(jsonArrayOf(petyasProject1, petyasProject2), refs)
+        assertEquals(setOf(petyasProject1, petyasProject2), refs.toSet())
 
 
     }
