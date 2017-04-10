@@ -36,6 +36,7 @@ class DebugEndpointTestIntegration : Loggable {
         }
     }
 
+
     fun wget(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
              params: Iterable<Pair<String, Any?>> = listOf()): String {
         val config = DefaultClientConfig()

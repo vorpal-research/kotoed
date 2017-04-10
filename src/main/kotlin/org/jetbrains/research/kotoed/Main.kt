@@ -20,10 +20,7 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.db.DebugVerticle
-import org.jetbrains.research.kotoed.db.DenizenVerticle
-import org.jetbrains.research.kotoed.db.ProjectVerticle
-import org.jetbrains.research.kotoed.db.UserAuthVerticle
+import org.jetbrains.research.kotoed.db.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
@@ -65,6 +62,7 @@ suspend fun startApplication(args: Array<String>): Vertx {
     vertx.deployVerticle(DenizenVerticle::class.qualifiedName)
     vertx.deployVerticle(UserAuthVerticle::class.qualifiedName)
     vertx.deployVerticle(ProjectVerticle::class.qualifiedName)
+    vertx.deployVerticle(CourseVerticle::class.qualifiedName)
     return vertx
 }
 

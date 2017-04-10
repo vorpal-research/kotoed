@@ -48,8 +48,10 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
         eb.consumer<JsonObject>(deleteAddress) { handleDelete(it) }
     }
 
-    private suspend fun <T> db(body: DSLContext.() -> T) =
+    protected suspend fun <T> db(body: DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use(body) }
+    protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
+            launch(DBPool) { jooq(dataSource).use{ it.body() } }
 
     private fun DSLContext.selectById(id: Any) =
             select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
@@ -125,9 +127,10 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 
             val id = msg.body().getValue(fkField.name)
 
-            jooq(dataSource).use {
+            dbAsync {
                 val res =
-                        it.selectFrom(table.join(fk.key.table).onKey())
+                        select(*table.fields())
+                                .from(table.join(fk.key.table).onKey())
                                 .where(fkField.eq(id))
                                 .fetchKAsync()
                                 .into(JsonObject::class.java)
