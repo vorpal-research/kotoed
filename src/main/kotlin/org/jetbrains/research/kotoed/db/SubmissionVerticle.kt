@@ -84,6 +84,10 @@ class SubmissionVerticle : AbstractVerticle() {
                     }
                     expect(parent?.getValue("id") == record.parentsubmissionid, "Illegal parentsubmissionid")
                     val parentRecord: SubmissionRecord? = parent?.toRecord()
+                    parentRecord?.apply {
+                        expect(projectid == projectRecord.id)
+                        expect(state != Submissionstate.obsolete)
+                    }
 
                     val ret = eb.sendAsync(Address.DB.create("submission"), record.toJson()).body()
                     expect(ret["id"] is Int)
@@ -106,6 +110,10 @@ class SubmissionVerticle : AbstractVerticle() {
                                 comment.submissionid = sub.id
                                 eb.sendAsync(Address.DB.create("submissioncomment"), comment.toJson())
                             }
+
+                    parent.state = Submissionstate.obsolete
+
+                    eb.sendAsync(Address.DB.update("submission"), parent.toJson())
                 }
 
                 val revision = sub.revision
