@@ -155,30 +155,26 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
 
             val triggerBuild = fromJson<TriggerBuild>(msg.body())
 
-            val changeId = if (triggerBuild.revision != null) {
-                val changeLocator = EmptyLocator *
-                        DimensionLocator.from("project", triggerBuild.projectId) *
-                        DimensionLocator.from("version", triggerBuild.revision)
+            val changeLocator = EmptyLocator *
+                    DimensionLocator.from("buildType", triggerBuild.buildTypeId) *
+                    DimensionLocator.from("version", triggerBuild.revision)
 
-                val changes = vxa<HttpResponse<Buffer>> {
-                    wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Changes + changeLocator)
-                            .putDefaultTCHeaders()
-                            .send(it)
-                }
+            val changes = vxa<HttpResponse<Buffer>> {
+                wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Changes + changeLocator)
+                        .putDefaultTCHeaders()
+                        .send(it)
+            }
 
-                if (HttpResponseStatus.OK.code() == changes.statusCode()) {
+            val changeId = if (HttpResponseStatus.OK.code() == changes.statusCode()) {
 
-                    val changeData = fromJson<Change>(changes.bodyAsJsonObject())
+                fromJson<Change>(changes.bodyAsJsonObject()).id
 
-                    changeData.id
-
-                } else {
-                    throw IllegalArgumentException(
-                            "Build trigger info invalid\n" +
-                                    changes.bodyAsString()
-                    )
-                }
-            } else null
+            } else {
+                throw IllegalArgumentException(
+                        "Build trigger info invalid\n" +
+                                changes.bodyAsString()
+                )
+            }
 
             val triggerBuildRes = postToTeamCity(
                     "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",

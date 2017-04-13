@@ -6,9 +6,8 @@ import org.jetbrains.research.kotoed.util.JsonableCompanion
 import kotlin.reflect.KClass
 
 data class TriggerBuild(
-        val id: String,
-        val projectId: String,
-        val revision: String?
+        val buildTypeId: String,
+        val revision: String
 ) : EventBusDatum<TriggerBuild>() {
     companion object : JsonableCompanion<TriggerBuild> {
         override val dataklass: KClass<TriggerBuild>
@@ -16,7 +15,7 @@ data class TriggerBuild(
 
         override fun fromJson(json: JsonObject): TriggerBuild? =
                 super.fromJson(json)?.apply {
-                    if (revision != null && revision.length < 12) {
+                    if (revision.length < 12) {
                         throw IllegalArgumentException(
                                 "Revision descriptor $revision is too short"
                         )
