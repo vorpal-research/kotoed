@@ -54,4 +54,5 @@ object TeamCityApi {
     val BuildTypes = +"buildTypes"
     val BuildQueue = +"buildQueue"
     val Builds = +"builds"
+    val Changes = +"changes"
 }

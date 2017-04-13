@@ -23,8 +23,8 @@ import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.db.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
-import org.jetbrains.research.kotoed.teamcity.TeamCityVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
+import org.jetbrains.research.kotoed.teamcity.verticles.TeamCityVerticle
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.impl.DSL
@@ -462,7 +462,7 @@ class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
 
         launch(UnconfinedWithExceptions(ctx)) {
             val body = if (ctx.request().method() == HttpMethod.POST) {
-                ctx.request().bodyAsync()
+                ctx.request().bodyAsync().toJsonObject()
             } else {
                 JsonObject()
             }
