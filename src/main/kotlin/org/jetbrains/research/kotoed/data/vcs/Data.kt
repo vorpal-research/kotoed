@@ -4,10 +4,12 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.util.Jsonable
 
-enum class VCS { git, mercurial }
-enum class CloneStatus { done, pending }
+data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
 
-data class PingResponse(val success: Boolean): Jsonable
+enum class VCS { git, mercurial }
+enum class CloneStatus { done, failed, pending }
+
+object PingResponse: Jsonable
 
 data class RemoteRequest(val vcs: VCS, val url: String) : Jsonable
 data class RepositoryInfo(
@@ -15,33 +17,27 @@ data class RepositoryInfo(
         val uid: String,
         val url: String,
         val vcs: VCS,
-        val success: Boolean = true,
         val errors: List<String> = listOf()
 ) : Jsonable
 
-data class ReadRequest(val uid: String, val path: String, val revision: String?) : Jsonable
-data class ReadResponse(
-        val success: Boolean = true,
-        val contents: String,
-        val errors: List<String>
-) : Jsonable
+data class ReadRequest(val uid: String, val path: String, val revision: String? = null) : Jsonable
+data class ReadResponse(val contents: String) : Jsonable
 
 data class ListRequest(val uid: String, val revision: String?) : Jsonable
-data class ListResponse(
-        val success: Boolean = true,
-        val files: List<String>,
-        val errors: List<String>
-) : Jsonable
+data class ListResponse(val files: List<String>) : Jsonable
 
-data class DiffRequest(val uid: String, val from: String, val to: String? = null, val path: String? = null) : Jsonable
-data class DiffResponse(
-        val success: Boolean = true,
-        val contents: List<JsonObject>,
-        val errors: List<String>
+data class DiffRequest(
+        val uid: String,
+        val from: String,
+        val to: String? = null, // null means "tip"
+        val path: String? = null // null means the whole repository
 ) : Jsonable
+data class DiffResponse(val contents: List<JsonObject>) : Jsonable
 
-data class LocationRequest(val uid: String, val loc: Location, val from: String, val to: String) : Jsonable
-data class LocationResponse(
-        val success: Boolean = true,
+data class LocationRequest(
+        val uid: String,
         val location: Location,
-        val errors: List<String>): Jsonable
+        val fromRevision: String,
+        val toRevision: String
+) : Jsonable
+data class LocationResponse(val location: Location): Jsonable

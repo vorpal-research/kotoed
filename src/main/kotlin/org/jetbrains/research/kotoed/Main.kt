@@ -34,10 +34,10 @@ import org.jooq.util.postgres.PostgresDataType
 import java.util.*
 
 fun main(args: Array<String>) {
-    launch(Unconfined) { startApplication(args) }
+    launch(Unconfined) { startApplication() }
 }
 
-suspend fun startApplication(args: Array<String>): Vertx {
+suspend fun startApplication(): Vertx {
     Thread.currentThread().contextClassLoader.getResourceAsStream(
             System.getProperty("kotoed.systemPropertiesFile", "system.properties")
     ).use {
