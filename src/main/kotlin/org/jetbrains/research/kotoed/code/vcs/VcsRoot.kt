@@ -7,6 +7,12 @@ sealed class VcsResult<out T> {
     data class Failure(val output: Sequence<String>) : VcsResult<Nothing>()
 }
 
+inline fun<T, U> VcsResult<T>.map(f: (T) -> U): VcsResult<U> =
+    when(this) {
+        is VcsResult.Success -> VcsResult.Success(f(v))
+        is VcsResult.Failure -> VcsResult.Failure(output)
+    }
+
 abstract class VcsRoot(val remote: String, val local: String) {
     sealed class Revision {
         data class Id(val rep: String) : Revision()

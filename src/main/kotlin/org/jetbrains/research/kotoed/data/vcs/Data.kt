@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.data.vcs
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.util.Jsonable
 
 enum class VCS { git, mercurial }
@@ -38,3 +39,9 @@ data class DiffResponse(
         val contents: List<JsonObject>,
         val errors: List<String>
 ) : Jsonable
+
+data class LocationRequest(val uid: String, val loc: Location, val from: String, val to: String) : Jsonable
+data class LocationResponse(
+        val success: Boolean = true,
+        val location: Location,
+        val errors: List<String>): Jsonable

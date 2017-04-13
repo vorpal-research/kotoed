@@ -9,6 +9,7 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Unconfined
+import kotlinx.coroutines.experimental.future.future
 import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
