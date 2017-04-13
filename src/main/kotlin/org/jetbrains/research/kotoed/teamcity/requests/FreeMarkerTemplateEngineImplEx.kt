@@ -61,7 +61,7 @@ class FreeMarkerTemplateEngineImplEx :
     fun render(
             vertx: Vertx,
             templateFileName: String,
-            variables: Map<String, Any>,
+            variables: Map<String, Any?>,
             handler: Handler<AsyncResult<Buffer>>) {
         try {
             var template = cache[templateFileName]

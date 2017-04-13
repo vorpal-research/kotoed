@@ -1,4 +1,4 @@
-package org.jetbrains.research.kotoed.teamcity
+package org.jetbrains.research.kotoed.teamcity.verticles
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
@@ -15,10 +15,24 @@ import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.*
-import org.jetbrains.research.kotoed.teamcity.verticles.BuildPollerVerticle
 import org.jetbrains.research.kotoed.util.*
 
 // FIXME akhin Split into separate verticles
+
+internal data class Changes(
+        val change: List<Change>,
+        val href: String,
+        val count: Int
+) : Jsonable
+
+internal data class Change(
+        val id: Int,
+        val version: String,
+        val username: String,
+        val date: String,
+        val href: String,
+        val webUrl: String
+) : Jsonable
 
 class TeamCityVerticle : AbstractVerticle(), Loggable {
 
@@ -45,7 +59,7 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
 
     suspend fun postToTeamCity(
             template: String,
-            templateContext: Map<String, Any>,
+            templateContext: Map<String, Any?>,
             endpoint: ApiEndpoint
     ): HttpResponse<Buffer> {
 
@@ -137,11 +151,38 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
     fun consumeTeamCityBuildTrigger(msg: Message<JsonObject>) {
         launch(UnconfinedWithExceptions(msg)) {
 
+            val wc = WebClient.create(vertx)
+
             val triggerBuild = fromJson<TriggerBuild>(msg.body())
+
+            val changeId = if (triggerBuild.revision != null) {
+                val changeLocator = EmptyLocator *
+                        DimensionLocator.from("project", triggerBuild.projectId) *
+                        DimensionLocator.from("version", triggerBuild.revision)
+
+                val changes = vxa<HttpResponse<Buffer>> {
+                    wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Changes + changeLocator)
+                            .putDefaultTCHeaders()
+                            .send(it)
+                }
+
+                if (HttpResponseStatus.OK.code() == changes.statusCode()) {
+
+                    val changeData = fromJson<Change>(changes.bodyAsJsonObject())
+
+                    changeData.id
+
+                } else {
+                    throw IllegalArgumentException(
+                            "Build trigger info invalid\n" +
+                                    changes.bodyAsString()
+                    )
+                }
+            } else null
 
             val triggerBuildRes = postToTeamCity(
                     "org/jetbrains/research/kotoed/teamcity/requests/triggerBuild.ftl",
-                    mapOf("trigger" to triggerBuild),
+                    mapOf("trigger" to triggerBuild, "changeId" to changeId),
                     TeamCityApi.BuildQueue
             )
 
