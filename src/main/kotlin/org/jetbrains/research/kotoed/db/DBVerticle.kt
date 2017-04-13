@@ -50,8 +50,9 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
     protected suspend fun <T> db(body: DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use(body) }
+
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            launch(DBPool) { jooq(dataSource).use{ it.body() } }
+            launch(DBPool) { jooq(dataSource).use { it.body() } }
 
     private fun DSLContext.selectById(id: Any) =
             select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()

@@ -20,6 +20,7 @@ import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.wickedsource.diffparser.api.UnifiedDiffParser
+import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -72,6 +73,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
         eb.consumer<JsonObject>(Address.Code.Read, this@CodeVerticle::handleRead)
         eb.consumer<JsonObject>(Address.Code.List, this@CodeVerticle::handleList)
         eb.consumer<JsonObject>(Address.Code.Diff, this@CodeVerticle::handleDiff)
+        eb.consumer<JsonObject>(Address.Code.LocationDiff, this@CodeVerticle::handleLocation)
 
         startFuture.complete(null)
     }
@@ -226,7 +228,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
             }.ignore()
 
-    private fun parseDiff(diffOutput: Sequence<String>): List<JsonObject> {
+    private fun parseDiff(diffOutput: Sequence<String>): Sequence<Diff> {
 
         log.info(diffOutput.joinToString("\n"))
 
@@ -241,7 +243,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
             pres.firstOrNull()
         }
 
-        return res.map { diff -> diff?.toJson() ?: JsonObject() }.toList()
+        return res.filterNotNull()
     }
 
     fun handleDiff(mes: Message<JsonObject>): Unit =
@@ -266,7 +268,39 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                 val response = DiffResponse(
                         success = diffRes is VcsResult.Success,
                         errors = (diffRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
-                        contents = (diffRes as? VcsResult.Success)?.run { parseDiff(v) }.orEmpty()
+                        contents = (diffRes as? VcsResult.Success)?.run {
+                            parseDiff(v).map { it.toJson() }.toList()
+                        }.orEmpty()
+                )
+
+                mes.reply(response.toJson())
+
+            }.ignore()
+
+    fun handleLocation(mes: Message<JsonObject>): Unit =
+            launch(UnconfinedWithExceptions(mes)) {
+                val message: LocationRequest = mes.body().toJsonable()
+
+                log.info("Requested location adjustment: $message")
+
+                UUID.fromString(message.uid)
+
+                val inf = info[message.uid] ?: throw IllegalArgumentException("Repository not found")
+
+                val root = procs[inf]?.root ?: throw IllegalArgumentException("Inconsistent repo state")
+
+                val diffRes = run(ee) {
+                    val from = message.from.let { VcsRoot.Revision.Id(it) }
+                    val to = message.to.let { VcsRoot.Revision.Id(it) }
+                    root.diffAll(from, to)
+                }
+
+                val response = LocationResponse(
+                        success = diffRes is VcsResult.Success,
+                        errors = (diffRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
+                        location = (diffRes as? VcsResult.Success)?.run {
+                            message.loc.applyDiffs(parseDiff(v))
+                        } ?: Location.Unknown
                 )
 
                 mes.reply(response.toJson())

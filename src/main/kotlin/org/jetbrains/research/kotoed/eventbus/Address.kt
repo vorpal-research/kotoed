@@ -22,6 +22,7 @@ object Address {
         const val Read = "kotoed.code.read"
         const val List = "kotoed.code.list"
         const val Diff = "kotoed.code.diff"
+        const val LocationDiff = "kotoed.code.diff.location"
     }
 
     object User {

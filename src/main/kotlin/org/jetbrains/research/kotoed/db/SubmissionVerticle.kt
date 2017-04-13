@@ -6,10 +6,9 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
-import org.jetbrains.research.kotoed.data.vcs.CloneStatus
-import org.jetbrains.research.kotoed.data.vcs.RemoteRequest
-import org.jetbrains.research.kotoed.data.vcs.RepositoryInfo
-import org.jetbrains.research.kotoed.data.vcs.VCS
+import org.jetbrains.research.kotoed.code.Filename
+import org.jetbrains.research.kotoed.code.Location
+import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -36,6 +35,37 @@ class SubmissionVerticle : AbstractVerticle() {
 
     // FIXME: insert teamcity calls to build the submission
 
+    private suspend fun recreateComments(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
+        val eb = vertx.eventBus()
+        eb.sendAsync<JsonArray>(
+                Address.DB.readFor("submissioncomment", "submission"),
+                JsonObject("submissionid" to parent.id)
+        )
+                .body()
+                .asSequence()
+                .filterIsInstance<JsonObject>()
+                .map { it.toRecord<SubmissioncommentRecord>() }
+                .forEach { comment ->
+                    comment.submissionid = child.id
+                    val adjustedLocation: LocationResponse = eb.sendAsync(
+                            Address.Code.LocationDiff,
+                            LocationRequest(
+                                    vcsUid,
+                                    Location(Filename(path = comment.sourcefile), comment.sourceline),
+                                    parent.revision,
+                                    child.revision
+                            )
+                    ).body().toJsonable()
+                    comment.sourcefile = adjustedLocation.location.filename.path
+                    comment.sourceline = adjustedLocation.location.line
+                    eb.sendAsync(Address.DB.create("submissioncomment"), comment.toJson())
+                }
+
+        parent.state = Submissionstate.obsolete
+
+        eb.sendAsync(Address.DB.update("submission"), parent.toJson())
+    }
+
     fun handleSubmissionRead(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions(message)) {
                 val eb = vertx.eventBus()
@@ -58,6 +88,16 @@ class SubmissionVerticle : AbstractVerticle() {
                         && vcsReq.status != CloneStatus.pending) {
                     if (vcsReq.success) {
                         submission.state = Submissionstate.open
+                        val parent: SubmissionRecord? = submission.parentsubmissionid?.let {
+                            eb.sendAsync(Address.DB.read("submission"), idQuery(it)).body()
+                        }?.toRecord()
+
+                        if (parent != null) {
+                            recreateComments(vcsReq.uid, parent, submission)
+                            parent.state = Submissionstate.obsolete
+                            eb.sendAsync(Address.DB.update("submission"), parent.toJson())
+                        }
+
                     } else {
                         submission.state = Submissionstate.invalid
                     }
@@ -97,26 +137,6 @@ class SubmissionVerticle : AbstractVerticle() {
                     Triple(record, projectRecord, parentRecord)
                 }
 
-                if (parent != null) {
-                    eb.sendAsync<JsonArray>(
-                            Address.DB.readFor("submissioncomment", "submission"),
-                            JsonObject("submissionid" to parent.id)
-                    )
-                            .body()
-                            .asSequence()
-                            .filterIsInstance<JsonObject>()
-                            .map { it.toRecord<SubmissioncommentRecord>() }
-                            .forEach { comment ->
-                                comment.submissionid = sub.id
-                                eb.sendAsync(Address.DB.create("submissioncomment"), comment.toJson())
-                            }
-
-                    parent.state = Submissionstate.obsolete
-
-                    eb.sendAsync(Address.DB.update("submission"), parent.toJson())
-                }
-
-                val revision = sub.revision
                 val vcs = project.repotype
                 val repository = project.repourl
 
