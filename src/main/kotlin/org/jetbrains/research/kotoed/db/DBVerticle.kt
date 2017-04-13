@@ -32,6 +32,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
     }
 
     val dataSource get() = vertx.getSharedDataSource()
+    @Suppress("UNCHECKED_CAST")
     val pk get() = table.primaryKey.fields.first() as Field<Any>
 
     val createAddress = Address.DB.create(entityName)
@@ -124,6 +125,7 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
         launch(UnconfinedWithExceptions(msg)) {
+            @Suppress("UNCHECKED_CAST")
             val fkField = fk.fields.first() as Field<Any>
 
             val id = msg.body().getValue(fkField.name)

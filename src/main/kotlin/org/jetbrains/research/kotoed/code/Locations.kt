@@ -13,6 +13,13 @@ data class Location(val filename: Filename, val line: Int, val col: Int = 0) : J
     }
 }
 
+private const val NonExistentFile = "/dev/null"
+private fun String.asFilename() =
+        when(this) {
+            NonExistentFile -> Filename(FileLocType.NON_EXISTENT, NonExistentFile)
+            else -> Filename(FileLocType.NORMAL, this)
+        }
+
 fun Location.applyDiffs(diffs: Sequence<Diff>): Location {
     val relevant = diffs.find { it.fromFileName == filename.path }
     relevant ?: return this
@@ -21,13 +28,13 @@ fun Location.applyDiffs(diffs: Sequence<Diff>): Location {
     var curLine: Int = 0
     for(hunk in relevant.hunks) {
         if(curLine > line) {
-            return Location(Filename(FileLocType.NORMAL, relevant.toFileName), line + adj, col)
+            return Location(relevant.toFileName.asFilename(), line + adj, col)
         }
 
         curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
         adj += (hunk.toFileRange.lineCount - hunk.fromFileRange.lineCount)
     }
 
-    return Location(Filename(FileLocType.NORMAL, relevant.toFileName), line + adj, col)
+    return Location(relevant.toFileName.asFilename(), line + adj, col)
 
 }

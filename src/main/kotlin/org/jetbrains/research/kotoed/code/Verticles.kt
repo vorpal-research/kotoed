@@ -26,13 +26,13 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 class CodeVerticle : AbstractVerticle(), Loggable {
-    val dir by lazy {
+    private val dir by lazy {
         File(System.getProperty("user.dir"), Config.VCS.StoragePath)
     }
-    val ee by lazy {
+    private val ee by lazy {
         newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
     }
-    val procs by lazy<Cache<RemoteRequest, RepositoryInfo>> {
+    private val procs by lazy<Cache<RemoteRequest, RepositoryInfo>> {
         CacheBuilder
                 .newBuilder()
                 .maximumSize(Config.VCS.CloneCapacity)
@@ -40,9 +40,9 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                 .removalListener(this::onCacheRemove)
                 .build()
     }
-    val info = mutableMapOf<String, RemoteRequest>()
+    private val info = mutableMapOf<String, RemoteRequest>()
 
-    val RepositoryInfo.root get() = when (vcs) {
+    private val RepositoryInfo.root get() = when (vcs) {
         VCS.git -> Git(url, File(dir, uid).absolutePath)
         VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath)
     }
@@ -84,6 +84,12 @@ class CodeVerticle : AbstractVerticle(), Loggable {
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
     }
 
+    private val<T> VcsResult<T>.result
+        get() = when(this) {
+            is VcsResult.Success -> v
+            is VcsResult.Failure -> throw VcsException(output.toList())
+        }
+
     fun handleRead(mes: Message<JsonObject>): Unit =
             launch(UnconfinedWithExceptions(mes)) {
                 val message: ReadRequest = fromJson(mes.body())
@@ -94,20 +100,15 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
                 val path = message.path
 
-                val inf = info[message.uid] ?: throw IllegalArgumentException("Repository not found")
-
-                val root = procs[inf]?.root ?: throw IllegalArgumentException("Inconsistent repo state")
+                val inf = expectNotNull(info[message.uid], "Repository not found")
+                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
                 val catRes = run(ee) {
                     val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
                     root.cat(path, rev)
-                }
+                }.result
 
-                val response = ReadResponse(
-                        success = catRes is VcsResult.Success,
-                        errors = (catRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
-                        contents = (catRes as? VcsResult.Success)?.run { v.joinToString("\n") }.orEmpty()
-                )
+                val response = ReadResponse(contents = catRes.joinToString("\n"))
 
                 mes.reply(response.toJson())
 
@@ -121,20 +122,16 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
                 UUID.fromString(message.uid)
 
-                val inf = info[message.uid] ?: throw IllegalArgumentException("Repository not found")
+                val inf = expectNotNull(info[message.uid], "Repository not found")
 
-                val root = procs[inf]?.root ?: throw IllegalArgumentException("Inconsistent repo state")
+                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
-                val catRes = run(ee) {
+                val lsRes = run(ee) {
                     val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
                     root.ls(rev)
-                }
+                }.result
 
-                val response = ListResponse(
-                        success = catRes is VcsResult.Success,
-                        errors = (catRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
-                        files = (catRes as? VcsResult.Success)?.run { v.toList() }.orEmpty()
-                )
+                val response = ListResponse(files = lsRes.toList())
 
                 mes.reply(response.toJson())
 
@@ -153,11 +150,9 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                         vcs = message.vcs
                 )
 
-                val exists = run(ee) { pendingResp.root.ping() }
+                run(ee) { pendingResp.root.ping() }.result
 
-                val response = PingResponse(success = exists is VcsResult.Success)
-
-                mes.reply(response.toJson())
+                mes.reply(PingResponse.toJson())
             }.ignore()
 
     fun handleClone(mes: Message<JsonObject>): Unit =
@@ -178,7 +173,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                 log.info("Generated uid: $uid")
                 log.info("Using directory: $randomName")
 
-                vertx.executeBlockingAsync(ordered = false) {
+                run(ee) {
                     randomName.mkdirs()
                 }
 
@@ -207,8 +202,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
                         val resp =
                                 pendingResp.copy(
-                                        status = CloneStatus.done,
-                                        success = res is VcsResult.Success,
+                                        status = if(res is VcsResult.Success) CloneStatus.done else CloneStatus.failed,
                                         errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
                                 )
 
@@ -254,25 +248,17 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
                 UUID.fromString(message.uid)
 
-                val inf = info[message.uid] ?: throw IllegalArgumentException("Repository not found")
-
-                val root = procs[inf]?.root ?: throw IllegalArgumentException("Inconsistent repo state")
+                val inf = expectNotNull(info[message.uid], "Repository not found")
+                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
                 val diffRes = run(ee) {
                     val from = message.from.let { VcsRoot.Revision.Id(it) }
                     val to = message.to?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
                     if (message.path != null) root.diff(message.path, from, to)
                     else root.diffAll(from, to)
-                }
+                }.result
 
-                val response = DiffResponse(
-                        success = diffRes is VcsResult.Success,
-                        errors = (diffRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
-                        contents = (diffRes as? VcsResult.Success)?.run {
-                            parseDiff(v).map { it.toJson() }.toList()
-                        }.orEmpty()
-                )
-
+                val response = DiffResponse(contents = parseDiff(diffRes).map { it.toJson() }.toList())
                 mes.reply(response.toJson())
 
             }.ignore()
@@ -285,23 +271,17 @@ class CodeVerticle : AbstractVerticle(), Loggable {
 
                 UUID.fromString(message.uid)
 
-                val inf = info[message.uid] ?: throw IllegalArgumentException("Repository not found")
+                val inf = expectNotNull(info[message.uid], "Repository not found")
 
-                val root = procs[inf]?.root ?: throw IllegalArgumentException("Inconsistent repo state")
+                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
                 val diffRes = run(ee) {
-                    val from = message.from.let { VcsRoot.Revision.Id(it) }
-                    val to = message.to.let { VcsRoot.Revision.Id(it) }
+                    val from = message.fromRevision.let { VcsRoot.Revision.Id(it) }
+                    val to = message.toRevision.let { VcsRoot.Revision.Id(it) }
                     root.diffAll(from, to)
-                }
+                }.result
 
-                val response = LocationResponse(
-                        success = diffRes is VcsResult.Success,
-                        errors = (diffRes as? VcsResult.Failure)?.run { output.toList() }.orEmpty(),
-                        location = (diffRes as? VcsResult.Success)?.run {
-                            message.loc.applyDiffs(parseDiff(v))
-                        } ?: Location.Unknown
-                )
+                val response = LocationResponse(location = message.location.applyDiffs(parseDiff(diffRes)))
 
                 mes.reply(response.toJson())
 

@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
+import org.jetbrains.research.kotoed.database.tables.Submission
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissioncommentRecord
@@ -18,6 +19,8 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jooq.Table
+import org.jooq.UpdatableRecord
 
 class SubmissionDatabaseVerticle : DatabaseVerticle<SubmissionRecord>(Tables.SUBMISSION) {
     override fun handleDelete(message: Message<JsonObject>) =
@@ -35,6 +38,18 @@ class SubmissionVerticle : AbstractVerticle() {
 
     // FIXME: insert teamcity calls to build the submission
 
+    private val SubmissioncommentRecord.location
+        get() = Location(Filename(path = sourcefile), sourceline)
+
+    private inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
+            vertx.eventBus().sendAsync(Address.DB.update(table.name), toJson()).body().toRecord()
+
+    private inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
+            vertx.eventBus().sendAsync(Address.DB.create(table.name), toJson()).body().toRecord()
+
+    private inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
+            vertx.eventBus().sendAsync(Address.DB.read(instance.name), JsonObject("id" to id)).body().toRecord()
+
     private suspend fun recreateComments(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
         val eb = vertx.eventBus()
         eb.sendAsync<JsonArray>(
@@ -51,19 +66,19 @@ class SubmissionVerticle : AbstractVerticle() {
                             Address.Code.LocationDiff,
                             LocationRequest(
                                     vcsUid,
-                                    Location(Filename(path = comment.sourcefile), comment.sourceline),
+                                    comment.location,
                                     parent.revision,
                                     child.revision
-                            )
+                            ).toJson()
                     ).body().toJsonable()
                     comment.sourcefile = adjustedLocation.location.filename.path
                     comment.sourceline = adjustedLocation.location.line
-                    eb.sendAsync(Address.DB.create("submissioncomment"), comment.toJson())
+                    comment.persistAsCopy()
                 }
 
         parent.state = Submissionstate.obsolete
 
-        eb.sendAsync(Address.DB.update("submission"), parent.toJson())
+        parent.persist()
     }
 
     fun handleSubmissionRead(message: Message<JsonObject>) =
@@ -73,7 +88,6 @@ class SubmissionVerticle : AbstractVerticle() {
                 val body = message.body()
                 val vcs: String by body.delegate
                 val repourl: String by body.delegate
-                val path: String by body.delegate
 
                 val vcsReq: RepositoryInfo =
                         eb.sendAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repourl).toJson())
@@ -86,7 +100,7 @@ class SubmissionVerticle : AbstractVerticle() {
 
                 if (submission.state == Submissionstate.pending
                         && vcsReq.status != CloneStatus.pending) {
-                    if (vcsReq.success) {
+                    if (vcsReq.status != CloneStatus.failed) {
                         submission.state = Submissionstate.open
                         val parent: SubmissionRecord? = submission.parentsubmissionid?.let {
                             eb.sendAsync(Address.DB.read("submission"), idQuery(it)).body()
@@ -95,13 +109,13 @@ class SubmissionVerticle : AbstractVerticle() {
                         if (parent != null) {
                             recreateComments(vcsReq.uid, parent, submission)
                             parent.state = Submissionstate.obsolete
-                            eb.sendAsync(Address.DB.update("submission"), parent.toJson())
+                            parent.persist()
                         }
 
                     } else {
                         submission.state = Submissionstate.invalid
                     }
-                    submission = eb.sendAsync(Address.DB.update("project"), submission.toJson()).body().toRecord()
+                    submission = submission.persist()
                 }
 
                 message.reply(submission)
@@ -110,31 +124,27 @@ class SubmissionVerticle : AbstractVerticle() {
     fun handleSubmissionCreate(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions {}) {
                 val eb = vertx.eventBus()
-                val (sub, project, parent) = run(UnconfinedWithExceptions(message)) {
+                val (_, project, _) = run(UnconfinedWithExceptions(message)) {
                     val record: SubmissionRecord = message.body().toRecord()
                     record.state = Submissionstate.pending
 
-                    val project = eb.sendAsync(Address.DB.read("project"), idQuery(record.projectid)).body()
+                    val project = selectById(Tables.PROJECT, record.projectid)
                     expect(project["id"] == record.projectid, "Illegal projectId")
 
-                    val projectRecord: ProjectRecord = project.toRecord()
-
-                    val parent = record.parentsubmissionid?.let {
-                        eb.sendAsync(Address.DB.read("submission"), idQuery(it)).body()
-                    }
+                    val parent = record.parentsubmissionid?.let { selectById(Tables.SUBMISSION, it) }
                     expect(parent?.getValue("id") == record.parentsubmissionid, "Illegal parentsubmissionid")
-                    val parentRecord: SubmissionRecord? = parent?.toRecord()
-                    parentRecord?.apply {
-                        expect(projectid == projectRecord.id)
+
+                    parent?.apply {
+                        expect(projectid == project.id)
                         expect(state != Submissionstate.obsolete)
                     }
 
-                    val ret = eb.sendAsync(Address.DB.create("submission"), record.toJson()).body()
+                    val ret = record.persistAsCopy()
                     expect(ret["id"] is Int)
 
                     record.apply { from(ret) }
                     message.reply(ret)
-                    Triple(record, projectRecord, parentRecord)
+                    Triple(record, project, parent)
                 }
 
                 val vcs = project.repotype
