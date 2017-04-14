@@ -136,6 +136,6 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
     override fun ping(): VcsResult<Unit> {
         val res = CommandLine(mercurial, "identify", remote).execute(File(local)).complete()
         if(res.rcode.get() == 0) return VcsResult.Success(Unit)
-        else return VcsResult.Failure(sequenceOf())
+        else return VcsResult.Failure(res.cerr)
     }
 }

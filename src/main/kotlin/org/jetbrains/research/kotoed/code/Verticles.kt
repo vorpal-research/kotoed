@@ -61,20 +61,12 @@ class CodeVerticle : AbstractVerticle(), Loggable {
                 log.info("Repository $uid deleted")
             }
 
-    override fun start(startFuture: Future<Void>) = launch {
-
+    override fun start(startFuture: Future<Void?>) = launch {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
-
-        val eb = vertx.eventBus()
-
-        eb.consumer<JsonObject>(Address.Code.Ping, this@CodeVerticle::handlePing)
-        eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
-        eb.consumer<JsonObject>(Address.Code.Read, this@CodeVerticle::handleRead)
-        eb.consumer<JsonObject>(Address.Code.List, this@CodeVerticle::handleList)
-        eb.consumer<JsonObject>(Address.Code.Diff, this@CodeVerticle::handleDiff)
-        eb.consumer<JsonObject>(Address.Code.LocationDiff, this@CodeVerticle::handleLocation)
-
+        dir.mkdir()
+        registerAllConsumers()
+        //eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
         startFuture.complete(null)
     }
 
@@ -90,137 +82,125 @@ class CodeVerticle : AbstractVerticle(), Loggable {
             is VcsResult.Failure -> throw VcsException(output.toList())
         }
 
-    fun handleRead(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: ReadRequest = fromJson(mes.body())
+    @JsonableEventBusConsumerFor(Address.Code.Read)
+    suspend fun handleRead(message: ReadRequest): ReadResponse {
+        log.info("Requested read: $message")
 
-                log.info("Requested read: $message")
+        UUID.fromString(message.uid)
 
-                UUID.fromString(message.uid)
+        val path = message.path
 
-                val path = message.path
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
-                val inf = expectNotNull(info[message.uid], "Repository not found")
-                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val catRes = run(ee) {
+            val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            root.cat(path, rev)
+        }.result
 
-                val catRes = run(ee) {
-                    val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
-                    root.cat(path, rev)
-                }.result
+        return ReadResponse(contents = catRes.joinToString("\n"))
+    }
 
-                val response = ReadResponse(contents = catRes.joinToString("\n"))
+    @JsonableEventBusConsumerFor(Address.Code.List)
+    suspend fun handleList(message: ListRequest): ListResponse {
+        log.info("Requested list: $message")
 
-                mes.reply(response.toJson())
+        UUID.fromString(message.uid)
 
-            }.ignore()
+        val inf = expectNotNull(info[message.uid], "Repository not found")
 
-    fun handleList(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: ListRequest = fromJson(mes.body())
+        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
-                log.info("Requested list: $message")
+        val lsRes = run(ee) {
+            val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            root.ls(rev)
+        }.result
 
-                UUID.fromString(message.uid)
+        return ListResponse(files = lsRes.toList())
+    }
 
-                val inf = expectNotNull(info[message.uid], "Repository not found")
+    @JsonableEventBusConsumerFor(Address.Code.Ping)
+    suspend fun handlePing(message: RemoteRequest): PingResponse {
+        log.info("Pinging repository: $message")
 
-                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val url = message.url
+        val pendingResp = RepositoryInfo(
+                status = CloneStatus.pending,
+                uid = "",
+                url = url,
+                vcs = message.vcs
+        )
 
-                val lsRes = run(ee) {
-                    val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
-                    root.ls(rev)
-                }.result
+        val vcsRes = run(ee) { pendingResp.root.ping() }
 
-                val response = ListResponse(files = lsRes.toList())
+        return PingResponse(vcsRes is VcsResult.Success)
+    }
 
-                mes.reply(response.toJson())
+    @EventBusConsumerFor(Address.Code.Download)
+    suspend fun handleClone(mes: Message<JsonObject>) {
+        val message: RemoteRequest = fromJson(mes.body())
 
-            }.ignore()
+        log.info("Requested clone: $message")
 
-    fun handlePing(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: RemoteRequest = fromJson(mes.body())
-                log.info("Pinging repository: $message")
+        val url = message.url
+        if (message in procs) {
+            log.info("Cloning request for $url: repository already cloned")
+            mes.reply(procs[message]?.toJson())
+            return
+        }
 
-                val url = message.url
-                val pendingResp = RepositoryInfo(
-                        status = CloneStatus.pending,
-                        uid = "",
-                        url = url,
-                        vcs = message.vcs
-                )
+        val uid = UUID.randomUUID()
+        val randomName = File(dir, "$uid")
+        log.info("Generated uid: $uid")
+        log.info("Using directory: $randomName")
 
-                run(ee) { pendingResp.root.ping() }.result
+        run(ee) {
+            randomName.mkdirs()
+        }
 
-                mes.reply(PingResponse.toJson())
-            }.ignore()
+        val pendingResp = RepositoryInfo(
+                status = CloneStatus.pending,
+                uid = "$uid",
+                url = url,
+                vcs = message.vcs
+        )
+        procs[message] = pendingResp
+        info["$uid"] = message
 
-    fun handleClone(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: RemoteRequest = fromJson(mes.body())
+        val root = pendingResp.root
 
-                log.info("Requested clone: $message")
-
-                val url = message.url
-                if (message in procs) {
-                    log.info("Cloning request for $url: repository already cloned")
-                    mes.reply(procs[message]?.toJson())
-                    return@launch
-                }
-
-                val uid = UUID.randomUUID()
-                val randomName = File(dir, "$uid")
-                log.info("Generated uid: $uid")
-                log.info("Using directory: $randomName")
-
-                run(ee) {
-                    randomName.mkdirs()
-                }
-
-                val pendingResp = RepositoryInfo(
-                        status = CloneStatus.pending,
-                        uid = "$uid",
-                        url = url,
-                        vcs = message.vcs
-                )
-                procs[message] = pendingResp
-                info["$uid"] = message
-
-                val root = pendingResp.root
-
-                vertx.timedOut(Config.VCS.PendingTimeout) {
-
-                    run {
-                        val res = run(ee) {
-                            root.clone().also {
-                                log.info("Cloning finished for $url in directory $randomName")
-                            }
-                        }
-                        vertx.goToEventLoop()
-
-                        log.info("Cloning request for $url successful")
-
-                        val resp =
-                                pendingResp.copy(
-                                        status = if(res is VcsResult.Success) CloneStatus.done else CloneStatus.failed,
-                                        errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
-                                )
-
-                        procs[message] = resp
-                    }
-
-                    onTimeout {
-                        mes.reply(procs[message]?.toJson())
-                        log.info("Cloning request for $url timed out: sending 'pending' reply")
-                    }
-
-                    onSuccess {
-                        mes.reply(procs[message]?.toJson())
-                        log.info("Cloning request for $url timed out: sending 'successful' reply")
+        vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = UnconfinedWithExceptions(mes)) {
+            run {
+                val res = run(ee) {
+                    root.clone().also {
+                        log.info("Cloning finished for $url in directory $randomName")
                     }
                 }
+                vertx.goToEventLoop()
 
-            }.ignore()
+                log.info("Cloning request for $url successful")
+
+                val resp =
+                        pendingResp.copy(
+                                status = if(res is VcsResult.Success) CloneStatus.done else CloneStatus.failed,
+                                errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
+                        )
+
+                procs[message] = resp
+            }
+
+            onTimeout {
+                mes.reply(procs[message]?.toJson())
+                log.info("Cloning request for $url timed out: sending 'pending' reply")
+            }
+
+            onSuccess {
+                mes.reply(procs[message]?.toJson())
+                log.info("Cloning request for $url timed out: sending 'successful' reply")
+            }
+        }
+
+    }
 
     private fun parseDiff(diffOutput: Sequence<String>): Sequence<Diff> {
 
@@ -240,51 +220,41 @@ class CodeVerticle : AbstractVerticle(), Loggable {
         return res.filterNotNull()
     }
 
-    fun handleDiff(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: DiffRequest = fromJson(mes.body())
+    @JsonableEventBusConsumerFor(Address.Code.Diff)
+    suspend fun handleDiff(message: DiffRequest): DiffResponse {
+        log.info("Requested diff: $message")
 
-                log.info("Requested diff: $message")
+        UUID.fromString(message.uid)
 
-                UUID.fromString(message.uid)
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
-                val inf = expectNotNull(info[message.uid], "Repository not found")
-                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val diffRes = run(ee) {
+            val from = message.from.let { VcsRoot.Revision.Id(it) }
+            val to = message.to?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            if (message.path != null) root.diff(message.path, from, to)
+            else root.diffAll(from, to)
+        }.result
 
-                val diffRes = run(ee) {
-                    val from = message.from.let { VcsRoot.Revision.Id(it) }
-                    val to = message.to?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
-                    if (message.path != null) root.diff(message.path, from, to)
-                    else root.diffAll(from, to)
-                }.result
+        return DiffResponse(contents = parseDiff(diffRes).map { it.toJson() }.toList())
+    }
 
-                val response = DiffResponse(contents = parseDiff(diffRes).map { it.toJson() }.toList())
-                mes.reply(response.toJson())
+    @JsonableEventBusConsumerFor(Address.Code.LocationDiff)
+    suspend fun handleLocation(message: LocationRequest): LocationResponse {
+        log.info("Requested location adjustment: $message")
 
-            }.ignore()
+        UUID.fromString(message.uid)
 
-    fun handleLocation(mes: Message<JsonObject>): Unit =
-            launch(UnconfinedWithExceptions(mes)) {
-                val message: LocationRequest = mes.body().toJsonable()
+        val inf = expectNotNull(info[message.uid], "Repository not found")
 
-                log.info("Requested location adjustment: $message")
+        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
-                UUID.fromString(message.uid)
+        val diffRes = run(ee) {
+            val from = message.fromRevision.let { VcsRoot.Revision.Id(it) }
+            val to = message.toRevision.let { VcsRoot.Revision.Id(it) }
+            root.diffAll(from, to)
+        }.result
 
-                val inf = expectNotNull(info[message.uid], "Repository not found")
-
-                val root = expectNotNull(procs[inf], "Inconsistent repo state").root
-
-                val diffRes = run(ee) {
-                    val from = message.fromRevision.let { VcsRoot.Revision.Id(it) }
-                    val to = message.toRevision.let { VcsRoot.Revision.Id(it) }
-                    root.diffAll(from, to)
-                }.result
-
-                val response = LocationResponse(location = message.location.applyDiffs(parseDiff(diffRes)))
-
-                mes.reply(response.toJson())
-
-            }.ignore()
-
+        return LocationResponse(location = message.location.applyDiffs(parseDiff(diffRes)))
+    }
 }
