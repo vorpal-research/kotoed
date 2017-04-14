@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -27,7 +28,7 @@ suspend fun EventBus.sendAsync(address: String, message: Jsonable): Unit = Unit
         level = DeprecationLevel.ERROR,
         replaceWith = ReplaceWith("reply(message.toJson())"))
 @Suppress("UNUSED_PARAMETER")
-suspend fun<T> Message<T>.reply(message: Jsonable): Unit = Unit
+suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 
 fun EventBus.sendJsonable(address: String, message: Jsonable) =
         send(address, message.toJson())
@@ -44,13 +45,13 @@ fun AbstractVerticle.registerAllConsumers() {
     val eb = vertx.eventBus()
 
     for (function in klass.declaredMemberFunctions) {
-        for(annotation in function.annotations)
-            when(annotation){
+        for (annotation in function.annotations)
+            when (annotation) {
                 is EventBusConsumerFor ->
-                    if(function.isSuspend) {
+                    if (function.isSuspend) {
                         eb.consumer<JsonObject>(annotation.address)
                         { msg ->
-                            launch(UnconfinedWithExceptions(msg)){
+                            launch(UnconfinedWithExceptions(msg)) {
                                 function.callAsync(this@registerAllConsumers, msg)
                             }
                         }
@@ -59,14 +60,14 @@ fun AbstractVerticle.registerAllConsumers() {
                         { msg -> function.call(this, msg) }
                     }
                 is JsonableEventBusConsumerFor ->
-                    if(function.isSuspend) {
+                    if (function.isSuspend) {
                         // first parameter is the receiver, we need the second one
                         val parameterClass = function.parameters[1].type.jvmErasure
                         assert(parameterClass.isSubclassOf(Jsonable::class))
 
                         eb.consumer<JsonObject>(annotation.address)
                         { msg ->
-                            launch(UnconfinedWithExceptions(msg)){
+                            launch(UnconfinedWithExceptions(msg)) {
                                 val argument = fromJson(msg.body(), parameterClass)
                                 val res = function.callAsync(this@registerAllConsumers, argument) as Jsonable
                                 msg.reply(res.toJson())
@@ -84,6 +85,10 @@ fun AbstractVerticle.registerAllConsumers() {
                             msg.reply(res.toJson())
                         }
                     }
-        }
+            }
     }
+}
+
+open class AbstractKotoedVerticle: AbstractVerticle() {
+    override fun start() { registerAllConsumers() }
 }

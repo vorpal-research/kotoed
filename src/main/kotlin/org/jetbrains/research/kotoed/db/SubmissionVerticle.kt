@@ -29,9 +29,10 @@ class SubmissionDatabaseVerticle : DatabaseVerticle<SubmissionRecord>(Tables.SUB
             }.ignore()
 }
 
-class SubmissionVerticle : AbstractVerticle() {
+class SubmissionVerticle : AbstractKotoedVerticle() {
     override fun start() {
         vertx.deployVerticle(SubmissionDatabaseVerticle())
+        super.start()
     }
 
     internal fun idQuery(id: Int) = JsonObject("id" to id)
@@ -81,45 +82,43 @@ class SubmissionVerticle : AbstractVerticle() {
         parent.persist()
     }
 
-    fun handleSubmissionRead(message: Message<JsonObject>) =
-            launch(UnconfinedWithExceptions(message)) {
-                val eb = vertx.eventBus()
+    @EventBusConsumerFor(Address.Submission.Read)
+    suspend fun handleSubmissionRead(message: Message<JsonObject>) {
+        val eb = vertx.eventBus()
 
-                val body = message.body()
-                val vcs: String by body.delegate
-                val repourl: String by body.delegate
+        val id: Int by message.body().delegate
+        var submission: SubmissionRecord = selectById(Tables.SUBMISSION, id)
+        val project: ProjectRecord = selectById(Tables.PROJECT, submission.projectid)
 
-                val vcsReq: RepositoryInfo =
-                        eb.sendAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repourl).toJson())
-                                .body()
-                                .toJsonable()
+        val vcsReq: RepositoryInfo =
+                eb.sendAsync(
+                        Address.Code.Download,
+                        RemoteRequest(VCS.valueOf(project.repotype), project.repourl).toJson()
+                )
+                        .body()
+                        .toJsonable()
 
-
-                val id: Int by body.delegate
-                var submission: SubmissionRecord = eb.sendAsync(Address.DB.read("project"), idQuery(id)).body().toRecord()
-
-                if (submission.state == Submissionstate.pending
-                        && vcsReq.status != CloneStatus.pending) {
-                    if (vcsReq.status != CloneStatus.failed) {
-                        submission.state = Submissionstate.open
-                        val parent: SubmissionRecord? = submission.parentsubmissionid?.let {
-                            eb.sendAsync(Address.DB.read("submission"), idQuery(it)).body()
-                        }?.toRecord()
-
-                        if (parent != null) {
-                            recreateComments(vcsReq.uid, parent, submission)
-                            parent.state = Submissionstate.obsolete
-                            parent.persist()
-                        }
-
-                    } else {
-                        submission.state = Submissionstate.invalid
-                    }
-                    submission = submission.persist()
+        if (submission.state == Submissionstate.pending
+                && vcsReq.status != CloneStatus.pending) {
+            if (vcsReq.status != CloneStatus.failed) {
+                submission.state = Submissionstate.open
+                val parent: SubmissionRecord? = submission.parentsubmissionid?.let {
+                    selectById(Tables.SUBMISSION, it)
                 }
 
-                message.reply(submission)
-            }.ignore()
+                if (parent != null) {
+                    recreateComments(vcsReq.uid, parent, submission)
+                    parent.state = Submissionstate.obsolete
+                    parent.persist()
+                }
+            } else {
+                submission.state = Submissionstate.invalid
+            }
+            submission = submission.persist()
+        }
+
+        message.reply(submission.toJson())
+    }
 
     fun handleSubmissionCreate(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions {}) {
