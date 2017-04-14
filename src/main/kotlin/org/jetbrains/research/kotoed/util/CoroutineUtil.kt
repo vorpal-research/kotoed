@@ -9,11 +9,12 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Unconfined
-import kotlinx.coroutines.experimental.future.future
 import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
+import kotlin.reflect.KCallable
 
 /******************************************************************************/
 
@@ -86,5 +87,8 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
                 ctx.fail(exception)
             }
         } + Unconfined
+
+inline suspend fun<R> KCallable<R>.callAsync(vararg args: Any?) =
+        suspendCoroutineOrReturn<R> { call(*args, it) }
 
 /******************************************************************************/

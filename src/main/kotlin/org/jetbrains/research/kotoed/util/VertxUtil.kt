@@ -16,6 +16,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
@@ -123,10 +124,10 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
                                   var onSuccessSusp: suspend () -> Unit = {},
                                   var bodySusp: suspend () -> Unit = {}) {
 
-    suspend fun execute() {
+    suspend fun execute(timeoutCtx: CoroutineContext = Unconfined) {
         var timedOut = false
         val timerId = vertx.setTimer(time) {
-            launch(Unconfined) {
+            launch(timeoutCtx) {
                 vertx.goToEventLoop()
                 timedOut = true
                 onTimeoutSusp()
@@ -155,10 +156,13 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
     }
 }
 
-suspend fun Vertx.timedOut(time: Long, builder: VertxTimeoutProcessing.() -> Unit) {
+suspend fun Vertx.timedOut(time: Long,
+                           timeoutCtx: CoroutineContext = Unconfined,
+                           builder: VertxTimeoutProcessing.() -> Unit
+) {
     val vtop = VertxTimeoutProcessing(this, time)
     vtop.builder()
-    vtop.execute()
+    vtop.execute(timeoutCtx)
 }
 
 /******************************************************************************/

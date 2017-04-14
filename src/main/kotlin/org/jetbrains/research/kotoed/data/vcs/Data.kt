@@ -7,9 +7,9 @@ import org.jetbrains.research.kotoed.util.Jsonable
 data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
 
 enum class VCS { git, mercurial }
-enum class CloneStatus { done, failed, pending }
+enum class CloneStatus { done, failed, pending, none }
 
-object PingResponse: Jsonable
+data class PingResponse(val status: Boolean): Jsonable
 
 data class RemoteRequest(val vcs: VCS, val url: String) : Jsonable
 data class RepositoryInfo(
