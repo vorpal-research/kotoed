@@ -2,10 +2,8 @@
 
 package org.jetbrains.research.kotoed.util
 
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.apache.poi.ss.formula.functions.T
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
@@ -17,9 +15,6 @@ import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
 /******************************************************************************/
-
-inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
-        this.getValue(property.name) as T?
 
 inline fun JsonObject(entries: List<Pair<String, Any?>>) = JsonObject(entries.toMap().toMutableMap())
 inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toList())
@@ -221,7 +216,6 @@ data class JsonDelegate(val obj: JsonObject) {
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
-
 
 /******************************************************************************/
 
