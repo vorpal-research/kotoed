@@ -23,7 +23,7 @@ data class DimensionLocator(val dimension: String, val value: String) : Locator 
         fun from(dimension: String, value: String?) =
                 if (value == null) EmptyLocator else DimensionLocator(dimension, value)
 
-        fun from(dimension: String, value: Int?) =
+        fun from(dimension: String, value: Any?) =
                 if (value == null) EmptyLocator else DimensionLocator(dimension, value.toString())
     }
 }
