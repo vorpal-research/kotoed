@@ -10,6 +10,7 @@ import java.io.File
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.jetbrains.research.kotoed.util.JavaExampleMessage
 
 data class ExampleMessage(val p1: Int, val p2: String, val p3: Int?) : Jsonable
 data class ExampleMessage2(val payload: List<ExampleMessage>) : Jsonable
@@ -250,6 +251,19 @@ class JsonUtilTest {
         val custom = Custom2(listOf(Custom(listOf(File("a"), File("b"), File("c"), File("d")))))
 
         assertEquals(custom, fromJson(custom.toJson()))
+
+    }
+
+    @Test
+    fun testCustomJava() {
+        val je = JavaExampleMessage()
+        je.bar = 42;
+        je.foo = "hello";
+        je.inner = ExampleMessage(2, "5", null);
+
+        assertEquals(je, fromJson(JsonObject("""
+            { "bar" : 42, "foo" : "hello", "inner" : { "p1" : 2, "p2" : "5"  } }
+        """)))
 
     }
 

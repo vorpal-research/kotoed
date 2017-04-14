@@ -25,7 +25,7 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class CodeVerticle : AbstractVerticle(), Loggable {
+class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     private val dir by lazy {
         File(System.getProperty("user.dir"), Config.VCS.StoragePath)
     }
@@ -65,9 +65,7 @@ class CodeVerticle : AbstractVerticle(), Loggable {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
-        registerAllConsumers()
-        //eb.consumer<JsonObject>(Address.Code.Download, this@CodeVerticle::handleClone)
-        startFuture.complete(null)
+        super.start(startFuture)
     }
 
     override fun stop() = launch {

@@ -40,4 +40,8 @@ object Address {
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
     }
+
+    object Submission {
+        const val Read = "kotoed.submission.read"
+    }
 }

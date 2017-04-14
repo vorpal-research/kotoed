@@ -10,10 +10,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
-import kotlin.reflect.full.companionObjectInstance
-import kotlin.reflect.full.createType
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 /******************************************************************************/
@@ -186,6 +183,9 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
     if (klass.isSubclassOf(JsonObject::class)) return data as T
+    klass.staticFunctions.firstOrNull { it.name == "fromJson" } ?.let {
+        return it.call(data) as T
+    }
 
     val companion = klass.companionObjectInstance
     return when (companion) {
