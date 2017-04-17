@@ -86,7 +86,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     private suspend fun findParentAsync(submission: SubmissionRecord): SubmissionRecord? =
         vertx.eventBus().sendAsync<JsonArray>(
-                Address.DB.readFor(submission.table.name, "parentsubmissionid"),
+                Address.DB.readFor(Tables.SUBMISSION.name, Tables.SUBMISSION.PARENTSUBMISSIONID.name),
                 submission.toJson()
         ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
 
