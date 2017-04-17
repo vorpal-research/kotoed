@@ -13,7 +13,6 @@ import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
-import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
 import kotlin.reflect.KCallable
 
 /******************************************************************************/
@@ -89,6 +88,6 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
         } + Unconfined
 
 inline suspend fun<R> KCallable<R>.callAsync(vararg args: Any?) =
-        suspendCoroutineOrReturn<R> { call(*args, it) }
+        suspendCoroutine<R> { call(*args, it) }
 
 /******************************************************************************/

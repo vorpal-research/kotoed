@@ -29,7 +29,7 @@ class SubmissionDatabaseVerticle : DatabaseVerticle<SubmissionRecord>(Tables.SUB
             }.ignore()
 }
 
-class SubmissionVerticle : AbstractKotoedVerticle() {
+class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     override fun start() {
         vertx.deployVerticle(SubmissionDatabaseVerticle())
         super.start()
@@ -43,15 +43,15 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
         get() = Location(Filename(path = sourcefile), sourceline)
 
     private inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            vertx.eventBus().sendAsync(Address.DB.update(table.name), toJson()).body().toRecord()
+            sendJsonableAsync(Address.DB.update(table.name), this)
 
     private inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            vertx.eventBus().sendAsync(Address.DB.create(table.name), toJson()).body().toRecord()
+            sendJsonableAsync(Address.DB.create(table.name), this)
 
     private inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            vertx.eventBus().sendAsync(Address.DB.read(instance.name), JsonObject("id" to id)).body().toRecord()
+            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id))
 
-    private suspend fun recreateComments(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
+    private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
         val eb = vertx.eventBus()
         eb.sendAsync<JsonArray>(
                 Address.DB.readFor("submissioncomment", "submission"),
@@ -63,17 +63,19 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
                 .map { it.toRecord<SubmissioncommentRecord>() }
                 .forEach { comment ->
                     comment.submissionid = child.id
-                    val adjustedLocation: LocationResponse = eb.sendAsync(
-                            Address.Code.LocationDiff,
-                            LocationRequest(
-                                    vcsUid,
-                                    comment.location,
-                                    parent.revision,
-                                    child.revision
-                            ).toJson()
-                    ).body().toJsonable()
+                    val adjustedLocation: LocationResponse =
+                            sendJsonableAsync(
+                                    Address.Code.LocationDiff,
+                                    LocationRequest(
+                                            vcsUid,
+                                            comment.location,
+                                            parent.revision,
+                                            child.revision
+                                    )
+                            )
                     comment.sourcefile = adjustedLocation.location.filename.path
                     comment.sourceline = adjustedLocation.location.line
+                    comment.id = null
                     comment.persistAsCopy()
                 }
 
@@ -82,21 +84,25 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
         parent.persist()
     }
 
-    @EventBusConsumerFor(Address.Submission.Read)
-    suspend fun handleSubmissionRead(message: Message<JsonObject>) {
+    private suspend fun findParentAsync(submission: SubmissionRecord): SubmissionRecord? =
+        vertx.eventBus().sendAsync<JsonArray>(
+                Address.DB.readFor(submission.table.name, "parentsubmissionid"),
+                submission.toJson()
+        ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
+
+    @JsonableEventBusConsumerFor(Address.Submission.Read)
+    suspend fun handleSubmissionRead(message: JsonObject): SubmissionRecord {
         val eb = vertx.eventBus()
 
-        val id: Int by message.body().delegate
+        val id: Int by message.delegate
         var submission: SubmissionRecord = selectById(Tables.SUBMISSION, id)
         val project: ProjectRecord = selectById(Tables.PROJECT, submission.projectid)
 
         val vcsReq: RepositoryInfo =
-                eb.sendAsync(
+                sendJsonableAsync(
                         Address.Code.Download,
                         RemoteRequest(VCS.valueOf(project.repotype), project.repourl).toJson()
                 )
-                        .body()
-                        .toJsonable()
 
         if (submission.state == Submissionstate.pending
                 && vcsReq.status != CloneStatus.pending) {
@@ -107,7 +113,7 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
                 }
 
                 if (parent != null) {
-                    recreateComments(vcsReq.uid, parent, submission)
+                    recreateCommentsAsync(vcsReq.uid, parent, submission)
                     parent.state = Submissionstate.obsolete
                     parent.persist()
                 }
@@ -117,14 +123,14 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
             submission = submission.persist()
         }
 
-        message.reply(submission.toJson())
+        return submission
     }
 
+    @EventBusConsumerFor(Address.Submission.Create)
     fun handleSubmissionCreate(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions {}) {
-                val eb = vertx.eventBus()
                 val (_, project, _) = run(UnconfinedWithExceptions(message)) {
-                    val record: SubmissionRecord = message.body().toRecord()
+                    var record: SubmissionRecord = message.body().toRecord()
                     record.state = Submissionstate.pending
 
                     val project = selectById(Tables.PROJECT, record.projectid)
@@ -138,18 +144,39 @@ class SubmissionVerticle : AbstractKotoedVerticle() {
                         expect(state != Submissionstate.obsolete)
                     }
 
-                    val ret = record.persistAsCopy()
-                    expect(ret["id"] is Int)
+                    record = record.persistAsCopy()
+                    expect(record.id is Int)
 
-                    record.apply { from(ret) }
-                    message.reply(ret)
+                    message.reply(record.toJson())
                     Triple(record, project, parent)
                 }
 
                 val vcs = project.repotype
                 val repository = project.repourl
 
-                eb.sendAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repository).toJson())
-            }.ignore()
+                sendJsonableAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repository))
+
+            }
+
+    @JsonableEventBusConsumerFor(Address.Submission.Comment.Create)
+    suspend fun handleCommentCreate(message: SubmissioncommentRecord): SubmissioncommentRecord = run {
+        val submission = selectById(Tables.SUBMISSION, message.submissionid)
+        when(submission.state) {
+            Submissionstate.open -> message.persistAsCopy()
+            Submissionstate.obsolete -> {
+                log.warn("Comment request for an obsolete submission received:" +
+                        "Submission id = ${submission.id}")
+                val parentSubmission = expectNotNull(findParentAsync(submission))
+                message.submissionid = parentSubmission.id
+                handleCommentCreate(message)
+            }
+            else -> throw IllegalArgumentException("Applying comment to an incorrect or incomplete submission")
+        }
+    }
+
+    @JsonableEventBusConsumerFor(Address.Submission.Comment.Read)
+    suspend fun handleCommentRead(message: JsonObject): SubmissioncommentRecord =
+            selectById(Tables.SUBMISSIONCOMMENT, message.getInteger("id"))
+
 
 }
