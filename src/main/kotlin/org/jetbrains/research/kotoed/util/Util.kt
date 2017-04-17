@@ -59,7 +59,7 @@ fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
         klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
 
 inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
-        valueOf(value, E::class) as E
+        enumValueOf<E>(value)
 
 /******************************************************************************/
 
@@ -119,4 +119,8 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
             yield(mut)
         }
 
+
 /******************************************************************************/
+
+@Suppress("UNCHECKED_CAST")
+inline fun <D> Any?.cast(): D = this as D

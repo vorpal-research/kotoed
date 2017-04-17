@@ -43,5 +43,12 @@ object Address {
 
     object Submission {
         const val Read = "kotoed.submission.read"
+        const val Create = "kotoed.submission.create"
+
+        object Comment {
+            const val Read = "kotoed.submission.read"
+            const val Create = "kotoed.submission.create"
+        }
+
     }
 }

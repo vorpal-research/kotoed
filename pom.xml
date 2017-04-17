@@ -153,6 +153,11 @@
             <version>${jooq.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta</artifactId>
+            <version>${jooq.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${psqldriver.version}</version>
@@ -178,6 +183,7 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
+
 
     </dependencies>
 

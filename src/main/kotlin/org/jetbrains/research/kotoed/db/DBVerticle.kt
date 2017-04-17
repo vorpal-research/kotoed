@@ -146,7 +146,6 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 }
 
 class DebugVerticle : DatabaseVerticle<DebugRecord>(Tables.DEBUG)
-
 class DenizenVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE)
 class ProjectVerticle : DatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
