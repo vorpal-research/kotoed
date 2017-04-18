@@ -6,6 +6,7 @@ import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.JsonEx
 import org.jetbrains.research.kotoed.util.decode
+import org.jetbrains.research.kotoed.util.jsonValue
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultRecordMapper
@@ -83,7 +84,8 @@ class PostgresJSONBinding : PostgresJSONBindingBase {
 fun<R: Record> R.toJson(): JsonObject =
         JsonObject().apply {
             for (field in fields()) {
-                put(field.name, field.getValue(this@toJson))
+                val fieldVal = field.getValue(this@toJson)
+                fieldVal?.let { put(field.name, jsonValue(it)) }
             }
         }
 

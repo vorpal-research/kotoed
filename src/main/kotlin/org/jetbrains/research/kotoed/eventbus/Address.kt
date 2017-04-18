@@ -37,6 +37,7 @@ object Address {
         fun create(entity: String) = "kotoed.db.$entity.create"
         fun delete(entity: String) = "kotoed.db.$entity.delete"
         fun read(entity: String) = "kotoed.db.$entity.read"
+        fun find(entity: String) = "kotoed.db.$entity.find"
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
     }
@@ -44,10 +45,11 @@ object Address {
     object Submission {
         const val Read = "kotoed.submission.read"
         const val Create = "kotoed.submission.create"
+        const val Comments = "kotoed.submission.comments"
 
         object Comment {
-            const val Read = "kotoed.submission.read"
-            const val Create = "kotoed.submission.create"
+            const val Read = "kotoed.submission.comment.read"
+            const val Create = "kotoed.submission.comment.create"
         }
 
     }

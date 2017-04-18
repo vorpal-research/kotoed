@@ -63,6 +63,8 @@ suspend fun startApplication(): Vertx {
     vertx.deployVerticle(UserAuthVerticle::class.qualifiedName)
     vertx.deployVerticle(ProjectVerticle::class.qualifiedName)
     vertx.deployVerticle(CourseVerticle::class.qualifiedName)
+    vertx.deployVerticle(SubmissionCommentVerticle::class.qualifiedName)
+    vertx.deployVerticle(SubmissionVerticle::class.qualifiedName)
     return vertx
 }
 

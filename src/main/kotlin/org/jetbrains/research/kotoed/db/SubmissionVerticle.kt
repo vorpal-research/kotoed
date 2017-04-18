@@ -22,7 +22,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 
-class SubmissionDatabaseVerticle : DatabaseVerticle<SubmissionRecord>(Tables.SUBMISSION) {
+class SubmissionDatabaseVerticle : DatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION) {
     override fun handleDelete(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions(message)) {
                 throw IllegalArgumentException("Submissions are not deletable")
@@ -84,16 +84,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         parent.persist()
     }
 
-    private suspend fun findParentAsync(submission: SubmissionRecord): SubmissionRecord? =
+    private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord? =
         vertx.eventBus().sendAsync<JsonArray>(
-                Address.DB.readFor(Tables.SUBMISSION.name, Tables.SUBMISSION.PARENTSUBMISSIONID.name),
-                submission.toJson()
+                Address.DB.find(Tables.SUBMISSION.name),
+                JsonObject("parentsubmissionid" to submission.id)
         ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
 
     @JsonableEventBusConsumerFor(Address.Submission.Read)
     suspend fun handleSubmissionRead(message: JsonObject): SubmissionRecord {
-        val eb = vertx.eventBus()
-
         val id: Int by message.delegate
         var submission: SubmissionRecord = selectById(Tables.SUBMISSION, id)
         val project: ProjectRecord = selectById(Tables.PROJECT, submission.projectid)
@@ -166,7 +164,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             Submissionstate.obsolete -> {
                 log.warn("Comment request for an obsolete submission received:" +
                         "Submission id = ${submission.id}")
-                val parentSubmission = expectNotNull(findParentAsync(submission))
+                val parentSubmission = expectNotNull(findSuccessorAsync(submission))
+                log.trace("Newer submission found: id = ${parentSubmission.id}")
                 message.submissionid = parentSubmission.id
                 handleCommentCreate(message)
             }
@@ -178,5 +177,16 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCommentRead(message: JsonObject): SubmissioncommentRecord =
             selectById(Tables.SUBMISSIONCOMMENT, message.getInteger("id"))
 
+    @JsonableEventBusConsumerFor(Address.Submission.Comments)
+    suspend fun handleComments(message: SubmissionRecord): JsonObject {
+        val arr = vertx.eventBus().sendAsync<JsonArray>(Address.DB.find(Tables.SUBMISSIONCOMMENT.name),
+                object: Jsonable {
+                    val submissionid = message.id
+                }.toJson()).body()
+
+        return object: Jsonable {
+            val comments = arr
+        }.toJson()
+    }
 
 }
