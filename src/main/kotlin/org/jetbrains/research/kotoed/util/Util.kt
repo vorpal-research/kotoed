@@ -6,8 +6,7 @@ import com.hazelcast.util.Base64
 import io.vertx.core.eventbus.Message
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
-import java.io.BufferedReader
-import java.io.InputStream
+import java.io.*
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
@@ -124,3 +123,6 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
 
 @Suppress("UNCHECKED_CAST")
 inline fun <D> Any?.cast(): D = this as D
+
+fun usingWriter(body: (Writer) -> Unit) = StringWriter().apply(body).toString()
+fun usingPrintWriter(body: (PrintWriter) -> Unit) = StringWriter().apply { body(PrintWriter(this)) }.toString()

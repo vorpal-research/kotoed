@@ -4,6 +4,8 @@ package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import java.time.Instant
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
@@ -54,7 +56,8 @@ interface JsonableCompanion<T : Any> {
 
 /******************************************************************************/
 
-private fun Any?.tryToJson(): Any? =
+@PublishedApi
+internal fun Any?.tryToJson(): Any? =
         when (this) {
             null -> null
             is Jsonable -> toJson()
@@ -69,8 +72,12 @@ private fun Any?.tryToJson(): Any? =
             is Triple<*, *, *> -> jsonArrayOf(first.tryToJson(), second.tryToJson(), third.tryToJson())
             is Number, is String, is Boolean -> this
             is Enum<*> -> toString()
+            is Date -> time
+            is Instant -> this.toEpochMilli()
             else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
+
+inline fun jsonValue(value: Any?): Any? = value.tryToJson()
 
 private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
         when (klass.jvmErasure) {
@@ -154,6 +161,10 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 Byte::class -> toByte()
                 Float::class -> toFloat()
                 Double::class -> toDouble()
+
+                Instant::class -> Instant.ofEpochMilli(toLong())
+                Date::class -> Date.from(Instant.ofEpochMilli(toLong()))
+
                 else -> die()
             }
         else -> die()

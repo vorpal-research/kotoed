@@ -10,6 +10,8 @@ import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
@@ -56,6 +58,7 @@ inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
 
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
+                log.error(usingPrintWriter { exception.printStackTrace(it) })
                 handler(exception)
             }
         } + Unconfined
@@ -68,6 +71,7 @@ inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
 
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
+                log.error(usingPrintWriter { exception.printStackTrace(it) })
                 msg.fail(
                         0xBEEF,
                         exception.message
@@ -83,6 +87,7 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
 
             override fun handleException(context: CoroutineContext, exception: Throwable) {
                 log.error(exception)
+                log.error(usingPrintWriter { exception.printStackTrace(it) })
                 ctx.fail(exception)
             }
         } + Unconfined

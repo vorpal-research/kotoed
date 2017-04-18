@@ -9,22 +9,18 @@ import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
-import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
-import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
-import org.jetbrains.research.kotoed.util.database.fetchKAsync
-import org.jetbrains.research.kotoed.util.database.getSharedDataSource
-import org.jetbrains.research.kotoed.util.database.jooq
+import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.*
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
         val table: Table<R>,
         val entityName: String = table.name.toLowerCase()
-) : AbstractVerticle() {
+) : AbstractVerticle(), Loggable {
 
     companion object {
         val DBPool =
@@ -38,6 +34,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
     val createAddress = Address.DB.create(entityName)
     val updateAddress = Address.DB.update(entityName)
     val readAddress = Address.DB.read(entityName)
+    val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
 
 
@@ -46,6 +43,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
         eb.consumer<JsonObject>(createAddress) { handleCreate(it) }
         eb.consumer<JsonObject>(updateAddress) { handleUpdate(it) }
         eb.consumer<JsonObject>(readAddress) { handleRead(it) }
+        eb.consumer<JsonObject>(findAddress) { handleFind(it) }
         eb.consumer<JsonObject>(deleteAddress) { handleDelete(it) }
     }
 
@@ -60,6 +58,8 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
     open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
+        log.info("Delete requested for id = $id in table ${table.name}")
+
         val resp = db {
             delete(table)
                     .where(pk.eq(id))
@@ -72,12 +72,32 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
+        log.info("Read requested for id = $id in table ${table.name}")
         val resp = db { selectById(id) }
+        message.reply(resp)
+    }.ignore()
+
+    open fun handleFind(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+        val query = message.body().toRecord(table.recordType.kotlin)
+        log.info("Find requested in table ${table.name}:\n" +
+                query.toJson().encodePrettily())
+
+        val queryFields = table.fields().asSequence().filter { message.body().containsKey(it.name) }
+        val wherePart = queryFields.map { (it as Field<Any?>).eq(query.get(it)) }.reduce(Condition::and)
+        val resp = db {
+            selectFrom(table)
+                    .where(wherePart)
+                    .fetch()
+                    .into(JsonObject::class.java)
+                    .let(::JsonArray)
+        }
         message.reply(resp)
     }.ignore()
 
     open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
+        log.info("Update requested for id = $id in table ${table.name}:\n" +
+                message.body().encodePrettily())
         val resp = db {
             update(table)
                     .set(newRecord(table, message.body().map))
@@ -90,6 +110,8 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
     }.ignore()
 
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+        log.info("Create requested in table ${table.name}:\n" +
+                message.body().encodePrettily())
         val resp = db {
             insertInto(table)
                     .set(newRecord(table, message.body().map))
@@ -130,6 +152,9 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 
             val id = msg.body().getValue(fkField.name)
 
+            log.info("Joined read requested for id = $id in table ${table.name} " +
+                    "on key ${fkField.name}")
+
             dbAsync {
                 val res =
                         select(*table.fields())
@@ -148,4 +173,5 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 class DebugVerticle : DatabaseVerticle<DebugRecord>(Tables.DEBUG)
 class DenizenVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE)
+class SubmissionCommentVerticle : DatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
 class ProjectVerticle : DatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)

@@ -108,7 +108,7 @@ fun AbstractVerticle.registerAllConsumers() {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
                             launch(UnconfinedWithExceptions(msg)) {
                                 val argument = fromJson(msg.body())
-                                val res = function.callAsync(this@registerAllConsumers, argument) as Jsonable
+                                val res = function.callAsync(this@registerAllConsumers, argument)!!
                                 msg.reply(toJson(res))
                             }
                         }
@@ -121,7 +121,7 @@ fun AbstractVerticle.registerAllConsumers() {
 
                         eb.consumer<JsonObject>(annotation.address) { msg ->
                             val argument = fromJson(msg.body())
-                            val res = function.call(this@registerAllConsumers, argument) as Jsonable
+                            val res = function.call(this@registerAllConsumers, argument)!!
                             msg.reply(toJson(res))
                         }
                     }

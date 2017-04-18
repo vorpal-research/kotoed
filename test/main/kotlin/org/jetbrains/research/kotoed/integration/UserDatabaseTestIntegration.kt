@@ -35,27 +35,6 @@ class UserDatabaseTestIntegration : Loggable {
         }
     }
 
-
-    fun wget(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
-             params: Iterable<Pair<String, Any?>> = listOf()): String {
-        val config = DefaultClientConfig()
-        val client = Client.create(config)
-        val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
-
-        return resource.path(path).let {
-            params.fold(it) { res, (k, v) -> res.queryParam(k, "$v") }
-        }.accept(mediaType).get(String::class.java)
-    }
-
-    fun wpost(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE, payload: String = ""): String {
-        val config = DefaultClientConfig()
-        val client = Client.create(config)
-        val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
-
-        return resource.path(path).accept(mediaType).post(String::class.java, payload)
-    }
-
-
     fun makeStupidUser(login: String, password: String = "password", salt: String = "sugar") =
         wpost("debug/eventbus/${Address.DB.create("denizen")}",
                 payload = JsonObject("denizenid" to login, "password" to password, "salt" to salt).encodePrettily())

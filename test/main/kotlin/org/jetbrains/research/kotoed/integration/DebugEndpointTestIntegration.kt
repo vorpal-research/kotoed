@@ -36,26 +36,6 @@ class DebugEndpointTestIntegration : Loggable {
         }
     }
 
-
-    fun wget(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
-             params: Iterable<Pair<String, Any?>> = listOf()): String {
-        val config = DefaultClientConfig()
-        val client = Client.create(config)
-        val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
-
-        return resource.path(path).let {
-            params.fold(it) { res, (k, v) -> res.queryParam(k, "$v") }
-        }.accept(mediaType).get(String::class.java)
-    }
-
-    fun wpost(path: String, mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE, payload: String = ""): String {
-        val config = DefaultClientConfig()
-        val client = Client.create(config)
-        val resource = client.resource(UriBuilder.fromUri("http://localhost:${Config.Root.Port}").build())
-
-        return resource.path(path).accept(mediaType).post(String::class.java, payload)
-    }
-
     @Test
     fun allohaWorld() {
         log.info("Hi, I am a server-aware test!")
