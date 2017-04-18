@@ -4,6 +4,7 @@ pipelines:
   default:
     - step:
         script:
+          - pacman -Syy
           - pacman -S --noconfirm mercurial git
           - start_postgresql.sh
           - createuser kotoed -U postgres
