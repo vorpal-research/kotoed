@@ -1,13 +1,9 @@
 package org.jetbrains.research.kotoed.db
 
-import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.client.HttpResponse
-import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
@@ -15,12 +11,10 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
-import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
-import org.jetbrains.research.kotoed.teamcity.util.plus
-import org.jetbrains.research.kotoed.teamcity.util.putDefaultTCHeaders
-import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.database.*
+import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.*
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
@@ -37,12 +31,27 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
     @Suppress("UNCHECKED_CAST")
     val pk get() = table.primaryKey.fields.first() as Field<Any>
 
+    protected suspend fun <T> db(body: DSLContext.() -> T) =
+            run(DBPool) { jooq(dataSource).use(body) }
+
+    protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
+            launch(DBPool) { jooq(dataSource).use { it.body() } }
+
+    protected fun DSLContext.selectById(id: Any) =
+            select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
+
+}
+
+abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
+        table: Table<R>,
+        entityName: String = table.name.toLowerCase()
+) : DatabaseVerticle<R>(table, entityName) {
+
     val createAddress = Address.DB.create(entityName)
     val updateAddress = Address.DB.update(entityName)
     val readAddress = Address.DB.read(entityName)
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
-
 
     override fun start() {
         val eb = vertx.eventBus()
@@ -52,15 +61,6 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
         eb.consumer<JsonObject>(findAddress) { handleFind(it) }
         eb.consumer<JsonObject>(deleteAddress) { handleDelete(it) }
     }
-
-    protected suspend fun <T> db(body: DSLContext.() -> T) =
-            run(DBPool) { jooq(dataSource).use(body) }
-
-    protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            launch(DBPool) { jooq(dataSource).use { it.body() } }
-
-    private fun DSLContext.selectById(id: Any) =
-            select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
 
     open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
@@ -130,10 +130,10 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
 }
 
-abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
+abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
         table: Table<R>,
         entityName: String = table.name.toLowerCase()
-) : DatabaseVerticle<R>(table, entityName) {
+) : CrudDatabaseVerticle<R>(table, entityName) {
 
     override fun start() {
         super.start()
@@ -176,27 +176,12 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
     }
 }
 
-class DebugVerticle : DatabaseVerticle<DebugRecord>(Tables.DEBUG)
+class DebugVerticle : CrudDatabaseVerticle<DebugRecord>(Tables.DEBUG)
 
-class DenizenVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
+class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
-class SubmissionCommentVerticle : DatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
+class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
 
-class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE) {
+class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
 
-    suspend fun verify(json: JsonObject): Boolean {
-
-        return true
-
-    }
-
-    override fun handleCreate(message: Message<JsonObject>) {
-        launch(UnconfinedWithExceptions(message)) {
-            if (verify(message.body())) {
-                super.handleCreate(message)
-            }
-        }
-    }
-}
-
-class ProjectVerticle : DatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
+class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
