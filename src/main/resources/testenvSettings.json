@@ -1,6 +1,7 @@
 {
   "TeamCity": {
-    "Password": "0xDEADC0FFEE"
+    "User": "admin",
+    "Password": "admin"
   },
 
   "Debug": {
