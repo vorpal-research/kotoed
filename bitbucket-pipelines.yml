@@ -1,12 +1,11 @@
-image: kopppcappp/archlinux-maven-postgres:latest
+image: kopppcappp/kotoed-docker:default
 
 pipelines:
   default:
     - step:
         script:
-          - pacman -Syy
-          - pacman -S --noconfirm mercurial git
           - start_postgresql.sh
+          - start_teamcity.sh
           - createuser kotoed -U postgres
           - createdb kotoed -U postgres -O kotoed
           - createdb kotoed-test -U postgres -O kotoed
