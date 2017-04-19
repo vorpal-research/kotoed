@@ -22,7 +22,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 
-class SubmissionDatabaseVerticle : DatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION) {
+class SubmissionDatabaseVerticle : CrudDatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION) {
     override fun handleDelete(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions(message)) {
                 throw IllegalArgumentException("Submissions are not deletable")

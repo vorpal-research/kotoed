@@ -40,6 +40,9 @@ object Address {
         fun find(entity: String) = "kotoed.db.$entity.find"
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
+
+        fun process(entity: String) = "kotoed.db.$entity.process"
+        fun verify(entity: String) = "kotoed.db.$entity.verify"
     }
 
     object Submission {
