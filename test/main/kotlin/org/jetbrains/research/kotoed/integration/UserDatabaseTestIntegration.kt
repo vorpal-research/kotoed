@@ -57,7 +57,7 @@ class UserDatabaseTestIntegration : Loggable {
     @Test
     fun basic() {
 
-        val course = makeStupidCourse("Transmogrification 101").let(::JsonObject)
+        val course = makeStupidCourse("Transmogrification 102").let(::JsonObject)
 
         // let's make sum users, shall we?
 
