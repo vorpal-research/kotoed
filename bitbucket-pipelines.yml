@@ -1,4 +1,4 @@
-image: kopppcappp/kotoed-docker:latest
+image: kopppcappp/kotoed-docker:default
 
 pipelines:
   default:
