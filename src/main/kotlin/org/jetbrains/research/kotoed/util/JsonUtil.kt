@@ -15,9 +15,6 @@ import kotlin.reflect.jvm.jvmErasure
 
 /******************************************************************************/
 
-inline operator fun <reified T> JsonObject.getValue(thisRef: Any?, property: KProperty<*>): T? =
-        this.getValue(property.name) as T?
-
 inline fun JsonObject(entries: List<Pair<String, Any?>>) = JsonObject(entries.toMap().toMutableMap())
 inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toList())
 inline fun jsonArrayOf(vararg elements: Any?) = JsonArray(elements.toMutableList())
@@ -230,7 +227,6 @@ data class JsonDelegate(val obj: JsonObject) {
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
-
 
 /******************************************************************************/
 

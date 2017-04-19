@@ -122,7 +122,7 @@ class TeamCityVerticle : AbstractVerticle(), Loggable {
             )
 
             val vcsRootRes = postToTeamCity(
-                    "org/jetbrains/research/kotoed/teamcity/requests/createHgVcsRoot.ftl",
+                    "org/jetbrains/research/kotoed/teamcity/requests/createVcsRoot.ftl",
                     mapOf("vcs" to createProject.vcsRoot),
                     TeamCityApi.VcsRoots
             )

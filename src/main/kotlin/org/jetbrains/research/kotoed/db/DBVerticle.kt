@@ -1,20 +1,29 @@
 package org.jetbrains.research.kotoed.db
 
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.ext.web.client.HttpResponse
+import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.tables.records.*
+import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
+import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
+import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
+import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
+import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
+import org.jetbrains.research.kotoed.teamcity.util.plus
+import org.jetbrains.research.kotoed.teamcity.util.putDefaultTCHeaders
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
-import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.*
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
@@ -171,7 +180,46 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 }
 
 class DebugVerticle : DatabaseVerticle<DebugRecord>(Tables.DEBUG)
+
 class DenizenVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
-class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE)
-class SubmissionCommentVerticle : DatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
+
+class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE) {
+
+    suspend fun verify(json: JsonObject): Boolean {
+
+        val wc = WebClient.create(vertx)
+
+        val buildtemplateid: String by json.delegate
+
+        val url = TeamCityApi.BuildTypes +
+                DimensionLocator.from("id", buildtemplateid)
+
+        val res = vxa<HttpResponse<Buffer>> {
+            wc.get(Config.TeamCity.Port, Config.TeamCity.Host, url)
+                    .putDefaultTCHeaders()
+                    .send(it)
+        }
+
+        if (HttpResponseStatus.OK.code() == res.statusCode()) {
+            val baj = res.bodyAsJsonObject()
+
+            val isTemplate = baj.getBoolean("templateFlag", false)
+
+            if (isTemplate) return true
+        }
+
+        throw IllegalArgumentException(
+                "Build template id:$buildtemplateid not found"
+        )
+    }
+
+    override fun handleCreate(message: Message<JsonObject>) {
+        launch(UnconfinedWithExceptions(message)) {
+            if (verify(message.body())) {
+                super.handleCreate(message)
+            }
+        }
+    }
+}
+
 class ProjectVerticle : DatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)

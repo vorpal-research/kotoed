@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<vcs-root id="${vcs.id}" name="${vcs.name}" vcsName="${vcs.type}">
+<vcs-root id="${vcs.id}" name="${vcs.name}" vcsName="mercurial">
     <project id="${vcs.projectId}"/>
     <properties count="4">
         <property name="repositoryPath" value="${vcs.url}"/>
