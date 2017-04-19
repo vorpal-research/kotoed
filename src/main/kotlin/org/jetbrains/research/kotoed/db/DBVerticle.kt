@@ -186,30 +186,8 @@ class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE) {
 
     suspend fun verify(json: JsonObject): Boolean {
 
-        val wc = WebClient.create(vertx)
+        return true
 
-        val buildtemplateid: String by json.delegate
-
-        val url = TeamCityApi.BuildTypes +
-                DimensionLocator.from("id", buildtemplateid)
-
-        val res = vxa<HttpResponse<Buffer>> {
-            wc.get(Config.TeamCity.Port, Config.TeamCity.Host, url)
-                    .putDefaultTCHeaders()
-                    .send(it)
-        }
-
-        if (HttpResponseStatus.OK.code() == res.statusCode()) {
-            val baj = res.bodyAsJsonObject()
-
-            val isTemplate = baj.getBoolean("templateFlag", false)
-
-            if (isTemplate) return true
-        }
-
-        throw IllegalArgumentException(
-                "Build template id:$buildtemplateid not found"
-        )
     }
 
     override fun handleCreate(message: Message<JsonObject>) {
