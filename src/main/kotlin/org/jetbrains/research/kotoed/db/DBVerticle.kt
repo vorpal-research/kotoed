@@ -13,10 +13,7 @@ import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
-import org.jetbrains.research.kotoed.database.tables.records.DebugRecord
-import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
@@ -182,6 +179,8 @@ abstract class DatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 class DebugVerticle : DatabaseVerticle<DebugRecord>(Tables.DEBUG)
 
 class DenizenVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
+
+class SubmissionCommentVerticle : DatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
 
 class CourseVerticle : DatabaseVerticle<CourseRecord>(Tables.COURSE) {
 
