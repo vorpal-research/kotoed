@@ -16,3 +16,9 @@ fun <T> HttpRequest<T>.putDefaultTCHeaders() =
 
 fun <T> HttpRequest<T>.isXml() =
         this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.APPLICATION_XML)
+
+fun name2id(name: String) = "ID[$name]"
+
+fun name2vcs(name: String) = "VCS[$name]"
+
+fun name2build(name: String) = "BUILD[$name]"
