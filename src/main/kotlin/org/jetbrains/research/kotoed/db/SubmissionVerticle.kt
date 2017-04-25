@@ -35,8 +35,6 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         super.start()
     }
 
-    internal fun idQuery(id: Int) = JsonObject("id" to id)
-
     // FIXME: insert teamcity calls to build the submission
 
     private val SubmissioncommentRecord.location
