@@ -21,6 +21,8 @@ import org.jetbrains.research.kotoed.code.CodeVerticle
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.db.*
+import org.jetbrains.research.kotoed.db.processors.CourseProcessorVerticle
+import org.jetbrains.research.kotoed.db.processors.ProjectProcessorVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.statistics.JUnitStatisticsVerticle
 import org.jetbrains.research.kotoed.teamcity.verticles.ArtifactCrawlerVerticle
@@ -65,6 +67,10 @@ suspend fun startApplication(): Vertx {
     vertx.deployVerticle(CourseVerticle::class.qualifiedName)
     vertx.deployVerticle(SubmissionCommentVerticle::class.qualifiedName)
     vertx.deployVerticle(SubmissionVerticle::class.qualifiedName)
+
+    vertx.deployVerticle(CourseProcessorVerticle::class.qualifiedName)
+    vertx.deployVerticle(ProjectProcessorVerticle::class.qualifiedName)
+
     return vertx
 }
 
