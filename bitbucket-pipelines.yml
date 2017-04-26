@@ -9,4 +9,5 @@ pipelines:
           - createuser kotoed -U postgres
           - createdb kotoed -U postgres -O kotoed
           - createdb kotoed-test -U postgres -O kotoed
+          - export MAVEN_OPTS="-Xms256m -Xmx512m"
           - mvn clean compile test verify
