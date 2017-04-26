@@ -137,6 +137,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
 }
 
+@AutoDeployable
 class CourseProcessorVerticle : ProcessorVerticle<CourseRecord>(Tables.COURSE) {
 
     suspend override fun verify(data: JsonObject?): VerificationStatus {
@@ -171,6 +172,7 @@ class CourseProcessorVerticle : ProcessorVerticle<CourseRecord>(Tables.COURSE) {
 
 }
 
+@AutoDeployable
 class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT) {
 
     suspend override fun checkPrereqs(data: JsonObject): List<VerificationStatus> {

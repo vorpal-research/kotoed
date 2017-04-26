@@ -24,6 +24,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 
+@AutoDeployable
 class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
 
     private val template = "TEST-.*\\.xml".toRegex()

@@ -25,6 +25,7 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+@AutoDeployable
 class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     private val dir by lazy {
         File(System.getProperty("user.dir"), Config.VCS.StoragePath)

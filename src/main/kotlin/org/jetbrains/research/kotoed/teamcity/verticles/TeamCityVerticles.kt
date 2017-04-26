@@ -34,6 +34,7 @@ internal data class Change(
         val webUrl: String
 ) : Jsonable
 
+@AutoDeployable
 class TeamCityVerticle : AbstractVerticle(), Loggable {
 
     val ftlEngine = FreeMarkerTemplateEngineImplEx()

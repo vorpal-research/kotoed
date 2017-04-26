@@ -28,6 +28,7 @@ internal data class ArtifactHref(
         val href: String
 ) : Jsonable
 
+@AutoDeployable
 class ArtifactCrawlerVerticle : AbstractVerticle(), Loggable {
     override fun start() {
         val eb = vertx.eventBus()

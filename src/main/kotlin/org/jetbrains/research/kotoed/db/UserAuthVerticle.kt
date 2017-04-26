@@ -17,6 +17,7 @@ import org.jetbrains.research.kotoed.util.database.fetchKAsync
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
 
+@AutoDeployable
 class UserAuthVerticle : AbstractVerticle() {
     val ds get() = vertx.getSharedDataSource()
 
