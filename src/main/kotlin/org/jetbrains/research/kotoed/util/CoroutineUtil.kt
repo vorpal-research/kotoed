@@ -16,6 +16,7 @@ import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KCallable
+import kotlin.reflect.KFunction
 
 /******************************************************************************/
 
@@ -92,7 +93,11 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
             }
         } + Unconfined
 
-inline suspend fun<R> KCallable<R>.callAsync(vararg args: Any?) =
-        suspendCoroutine<R> { call(*args, it) }
+inline suspend fun<R> KFunction<R>.callAsync(vararg args: Any?) =
+    when{
+        isSuspend -> suspendCoroutine<R> { call(*args, it) }
+        else -> throw IllegalArgumentException()
+    }
+
 
 /******************************************************************************/

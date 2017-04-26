@@ -57,7 +57,7 @@ class UserAuthVerticle : AbstractVerticle() {
     }.ignore()
 
     @EventBusConsumerFor(Address.User.Auth.Login)
-    fun consumeLogin(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
+    suspend fun consumeLogin(msg: Message<JsonObject>) {
         fromJson<LoginMsg>(msg.body())
 
         val data = msg.body().rename("denizenId", "username")
@@ -65,10 +65,10 @@ class UserAuthVerticle : AbstractVerticle() {
         val user = vxa<User> { authProvider.authenticate(data, it) }
 
         msg.reply(user.principal().rename("username", "denizenId"))
-    }.ignore()
+    }
 
     @EventBusConsumerFor(Address.User.Auth.Info)
-    fun consumeInfo(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
+    suspend fun consumeInfo(msg: Message<JsonObject>) {
         val infoMsg = fromJson<InfoMsg>(msg.body())
 
         jooq(ds).use {
@@ -80,5 +80,5 @@ class UserAuthVerticle : AbstractVerticle() {
 
             msg.reply(res)
         }
-    }.ignore()
+    }
 }
