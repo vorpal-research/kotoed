@@ -22,6 +22,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 
+@AutoDeployable
 class SubmissionDatabaseVerticle : CrudDatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION) {
     override fun handleDelete(message: Message<JsonObject>) =
             launch(UnconfinedWithExceptions(message)) {
@@ -29,6 +30,7 @@ class SubmissionDatabaseVerticle : CrudDatabaseVerticleWithReferences<Submission
             }.ignore()
 }
 
+@AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     override fun start() {
         vertx.deployVerticle(SubmissionDatabaseVerticle())

@@ -16,6 +16,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import org.reflections.Reflections
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
@@ -163,6 +164,18 @@ suspend fun Vertx.timedOut(time: Long,
     val vtop = VertxTimeoutProcessing(this, time)
     vtop.builder()
     vtop.execute(timeoutCtx)
+}
+
+/******************************************************************************/
+
+annotation class AutoDeployable
+
+fun autoDeploy(vertx: Vertx) {
+    Reflections("org.jetbrains.research.kotoed")
+            .getTypesAnnotatedWith(AutoDeployable::class.java)
+            .forEach {
+                vertx.deployVerticle(it.canonicalName)
+            }
 }
 
 /******************************************************************************/

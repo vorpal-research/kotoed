@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.eventbus.Message
@@ -55,21 +56,7 @@ suspend fun startApplication(): Vertx {
             }
     )
 
-    vertx.deployVerticle(RootVerticle::class.qualifiedName)
-    vertx.deployVerticle(TeamCityVerticle::class.qualifiedName)
-    vertx.deployVerticle(CodeVerticle::class.qualifiedName)
-    vertx.deployVerticle(ArtifactCrawlerVerticle::class.qualifiedName)
-    vertx.deployVerticle(JUnitStatisticsVerticle::class.qualifiedName)
-    vertx.deployVerticle(DebugVerticle::class.qualifiedName)
-    vertx.deployVerticle(DenizenVerticle::class.qualifiedName)
-    vertx.deployVerticle(UserAuthVerticle::class.qualifiedName)
-    vertx.deployVerticle(ProjectVerticle::class.qualifiedName)
-    vertx.deployVerticle(CourseVerticle::class.qualifiedName)
-    vertx.deployVerticle(SubmissionCommentVerticle::class.qualifiedName)
-    vertx.deployVerticle(SubmissionVerticle::class.qualifiedName)
-
-    vertx.deployVerticle(CourseProcessorVerticle::class.qualifiedName)
-    vertx.deployVerticle(ProjectProcessorVerticle::class.qualifiedName)
+    autoDeploy(vertx)
 
     return vertx
 }
@@ -77,7 +64,8 @@ suspend fun startApplication(): Vertx {
 private typealias GSMS_TYPE = AsyncMap<String, String>
 private const val GSMS_ID = "gsms"
 
-class RootVerticle : io.vertx.core.AbstractVerticle(), Loggable {
+@AutoDeployable
+class RootVerticle : AbstractVerticle(), Loggable {
 
     override fun start() {
         launch(Unconfined) {

@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.database.*
@@ -176,12 +177,17 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
     }
 }
 
+@AutoDeployable
 class DebugVerticle : CrudDatabaseVerticle<DebugRecord>(Tables.DEBUG)
 
+@AutoDeployable
 class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
+@AutoDeployable
 class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
 
+@AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
 
+@AutoDeployable
 class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
