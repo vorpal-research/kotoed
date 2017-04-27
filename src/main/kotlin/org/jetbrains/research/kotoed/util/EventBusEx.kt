@@ -7,9 +7,12 @@ import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
+import org.jooq.Table
+import org.jooq.UpdatableRecord
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.isSubclassOf
@@ -146,6 +149,15 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
         val fromJson = getFromJsonConverter(resultClass)
         return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson) as Result
     }
+
+    protected inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
+            sendJsonableAsync(Address.DB.update(table.name), this)
+
+    protected inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
+            sendJsonableAsync(Address.DB.create(table.name), this)
+
+    protected inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
+            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id))
 
 }
 
