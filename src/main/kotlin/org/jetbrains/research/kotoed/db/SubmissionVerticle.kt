@@ -42,15 +42,6 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     private val SubmissioncommentRecord.location
         get() = Location(Filename(path = sourcefile), sourceline)
 
-    private inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            sendJsonableAsync(Address.DB.update(table.name), this)
-
-    private inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            sendJsonableAsync(Address.DB.create(table.name), this)
-
-    private inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id))
-
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
         val eb = vertx.eventBus()
         eb.sendAsync<JsonArray>(
