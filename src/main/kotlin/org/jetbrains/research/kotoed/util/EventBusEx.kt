@@ -2,11 +2,14 @@
 
 package org.jetbrains.research.kotoed.util
 
+import com.sun.xml.internal.bind.v2.schemagen.episode.Klass
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import org.intellij.lang.annotations.Language
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -150,14 +153,16 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
         return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson) as Result
     }
 
-    protected inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            sendJsonableAsync(Address.DB.update(table.name), this)
+    // all this debauchery is here due to a kotlin compiler bug:
+    // https://youtrack.jetbrains.com/issue/KT-17640
+    protected suspend fun <R : UpdatableRecord<R>> persist(v: R, klass: KClass<R>): R =
+            sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
 
-    protected inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            sendJsonableAsync(Address.DB.create(table.name), this)
+    protected suspend fun <R : UpdatableRecord<R>> persistAsCopy(v: R, klass: KClass<R>): R =
+            sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
-    protected inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id))
+    protected suspend fun <R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int, klass: KClass<R>): R =
+            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
 
 }
 
