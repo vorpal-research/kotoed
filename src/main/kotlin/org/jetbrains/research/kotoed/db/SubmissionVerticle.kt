@@ -44,17 +44,20 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     // FIXME: insert teamcity calls to build the submission
 
+    @JvmName("persistExt")
+    protected suspend inline fun <reified R : UpdatableRecord<R>> R.persist(): R =
+            persist(this, R::class)
+
+    @JvmName("persistAsCopyExt")
+    protected suspend inline fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
+            persistAsCopy(this, R::class)
+
+    @JvmName("selectByIdWhatever")
+    protected suspend inline fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
+            selectById(instance, id, R::class)
+
     private val SubmissioncommentRecord.location
         get() = Location(Filename(path = sourcefile), sourceline)
-
-    private inline suspend fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            sendJsonableAsync(Address.DB.update(table.name), this)
-
-    private inline suspend fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            sendJsonableAsync(Address.DB.create(table.name), this)
-
-    private inline suspend fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id))
 
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
         val eb = vertx.eventBus()
@@ -81,12 +84,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     comment.sourcefile = adjustedLocation.location.filename.path
                     comment.sourceline = adjustedLocation.location.line
                     comment.id = null
-                    comment.persistAsCopy()
+                    comment.persistAsCopy<SubmissioncommentRecord>()
                 }
 
         parent.state = Submissionstate.obsolete
 
-        parent.persist()
+        parent.persist<SubmissionRecord>()
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord? =
@@ -118,12 +121,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 if (parent != null) {
                     recreateCommentsAsync(vcsReq.uid, parent, submission)
                     parent.state = Submissionstate.obsolete
-                    parent.persist()
+                    parent.persist<SubmissionRecord>()
                 }
             } else {
                 submission.state = Submissionstate.invalid
             }
-            submission = submission.persist()
+            submission = submission.persist<SubmissionRecord>()
         }
 
         return submission
@@ -147,7 +150,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                         expect(state != Submissionstate.obsolete)
                     }
 
-                    record = record.persistAsCopy()
+                    record = record.persistAsCopy<SubmissionRecord>()
                     expect(record.id is Int)
 
                     message.reply(record.toJson())
@@ -165,7 +168,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCommentCreate(message: SubmissioncommentRecord): SubmissioncommentRecord = run {
         val submission = selectById(Tables.SUBMISSION, message.submissionid)
         when (submission.state) {
-            Submissionstate.open -> message.persistAsCopy()
+            Submissionstate.open -> message.persistAsCopy<SubmissioncommentRecord>()
             Submissionstate.obsolete -> {
                 log.warn("Comment request for an obsolete submission received:" +
                         "Submission id = ${submission.id}")
