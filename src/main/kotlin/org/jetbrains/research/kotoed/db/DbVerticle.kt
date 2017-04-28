@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -54,13 +55,14 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
 
-    override fun start() {
+    override fun start(startFuture: Future<Void>) {
         val eb = vertx.eventBus()
         eb.consumer<JsonObject>(createAddress) { handleCreate(it) }
         eb.consumer<JsonObject>(updateAddress) { handleUpdate(it) }
         eb.consumer<JsonObject>(readAddress) { handleRead(it) }
         eb.consumer<JsonObject>(findAddress) { handleFind(it) }
         eb.consumer<JsonObject>(deleteAddress) { handleDelete(it) }
+        super.start(startFuture)
     }
 
     open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
@@ -136,17 +138,15 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
         entityName: String = table.name.toLowerCase()
 ) : CrudDatabaseVerticle<R>(table, entityName) {
 
-    override fun start() {
-        super.start()
-
+    override fun start(startFuture: Future<Void>) {
         val eb = vertx.eventBus()
 
-        for (reference in table.references) {
-            eb.consumer<JsonObject>(
-                    addressFor(reference),
-                    handlerFor(reference)
-            )
-        }
+        table.references
+                .forEach {
+                    eb.consumer<JsonObject>(addressFor(it), handlerFor(it))
+                }
+
+        super.start(startFuture)
     }
 
     internal fun addressFor(fk: ForeignKey<R, *>) =

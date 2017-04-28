@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.Future
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -52,18 +53,13 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     val cacheMap: ConcurrentMap<Int, VerificationStatus>
         get() = cache.asMap()
 
-    override fun start() {
+    override fun start(startFuture: Future<Void>) {
         val eb = vertx.eventBus()
 
-        eb.consumer<JsonObject>(
-                processAddress,
-                this::handleProcess
-        )
+        eb.consumer<JsonObject>(processAddress, this::handleProcess)
+        eb.consumer<JsonObject>(verifyAddress, this::handleVerify)
 
-        eb.consumer<JsonObject>(
-                verifyAddress,
-                this::handleVerify
-        )
+        super.start(startFuture)
     }
 
     fun handleProcess(msg: Message<JsonObject>) = launch(UnconfinedWithExceptions(msg)) {
