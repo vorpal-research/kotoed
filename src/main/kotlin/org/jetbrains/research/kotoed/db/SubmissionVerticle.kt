@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.AbstractVerticle
+import io.vertx.core.CompositeFuture
+import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -11,7 +12,6 @@ import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
-import org.jetbrains.research.kotoed.database.tables.Submission
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissioncommentRecord
@@ -32,9 +32,14 @@ class SubmissionDatabaseVerticle : CrudDatabaseVerticleWithReferences<Submission
 
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
-    override fun start() {
-        vertx.deployVerticle(SubmissionDatabaseVerticle())
-        super.start()
+    override fun start(startFuture: Future<Void>) {
+        val f = Future.future<String>()
+        val ff = Future.future<Void>()
+
+        vertx.deployVerticle(SubmissionDatabaseVerticle(), f)
+        super.start(ff)
+
+        CompositeFuture.all(f, ff).setHandler { startFuture.complete() }
     }
 
     // FIXME: insert teamcity calls to build the submission
@@ -85,10 +90,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord? =
-        vertx.eventBus().sendAsync<JsonArray>(
-                Address.DB.find(Tables.SUBMISSION.name),
-                JsonObject("parentsubmissionid" to submission.id)
-        ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
+            vertx.eventBus().sendAsync<JsonArray>(
+                    Address.DB.find(Tables.SUBMISSION.name),
+                    JsonObject("parentsubmissionid" to submission.id)
+            ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
 
     @JsonableEventBusConsumerFor(Address.Submission.Read)
     suspend fun handleSubmissionRead(message: JsonObject): SubmissionRecord {
@@ -159,7 +164,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Submission.Comment.Create)
     suspend fun handleCommentCreate(message: SubmissioncommentRecord): SubmissioncommentRecord = run {
         val submission = selectById(Tables.SUBMISSION, message.submissionid)
-        when(submission.state) {
+        when (submission.state) {
             Submissionstate.open -> message.persistAsCopy()
             Submissionstate.obsolete -> {
                 log.warn("Comment request for an obsolete submission received:" +
@@ -180,11 +185,11 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Submission.Comments)
     suspend fun handleComments(message: SubmissionRecord): JsonObject {
         val arr = vertx.eventBus().sendAsync<JsonArray>(Address.DB.find(Tables.SUBMISSIONCOMMENT.name),
-                object: Jsonable {
+                object : Jsonable {
                     val submissionid = message.id
                 }.toJson()).body()
 
-        return object: Jsonable {
+        return object : Jsonable {
             val comments = arr
         }.toJson()
     }

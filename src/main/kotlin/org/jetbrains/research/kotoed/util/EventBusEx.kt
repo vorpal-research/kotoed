@@ -3,6 +3,7 @@
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -130,8 +131,9 @@ fun AbstractVerticle.registerAllConsumers() {
 }
 
 open class AbstractKotoedVerticle : AbstractVerticle() {
-    override fun start() {
+    override fun start(startFuture: Future<Void>) {
         registerAllConsumers()
+        super.start(startFuture)
     }
 
     @PublishedApi

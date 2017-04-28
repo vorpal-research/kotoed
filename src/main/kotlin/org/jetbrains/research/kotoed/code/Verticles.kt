@@ -62,17 +62,18 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 log.info("Repository $uid deleted")
             }
 
-    override fun start(startFuture: Future<Void?>) = launch {
+    override fun start(startFuture: Future<Void>) = launch {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
         super.start(startFuture)
     }
 
-    override fun stop() = launch {
+    override fun stop(stopFuture: Future<Void>) = launch {
         procs.cleanUp()
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
+        super.stop(stopFuture)
     }
 
     private val<T> VcsResult<T>.result

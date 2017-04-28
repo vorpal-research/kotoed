@@ -3,20 +3,23 @@ package org.jetbrains.research.kotoed.util
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.Handler
-import io.vertx.core.Vertx
-import io.vertx.core.VertxOptions
+import io.vertx.core.*
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.file.FileSystem
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.Shareable
+import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.reflections.Reflections
+import org.reflections.scanners.MethodAnnotationsScanner
+import org.reflections.scanners.SubTypesScanner
+import org.reflections.scanners.TypeAnnotationsScanner
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
@@ -170,11 +173,37 @@ suspend fun Vertx.timedOut(time: Long,
 
 annotation class AutoDeployable
 
-fun autoDeploy(vertx: Vertx) {
-    Reflections("org.jetbrains.research.kotoed")
+fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
+    val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoDeploy")
+    val fs = Reflections("org.jetbrains.research.kotoed", TypeAnnotationsScanner(), SubTypesScanner())
             .getTypesAnnotatedWith(AutoDeployable::class.java)
-            .forEach {
-                vertx.deployVerticle(it.canonicalName)
+            .map { klass ->
+                log.trace("Auto-deploying $klass")
+
+                val f = Future.future<String>()
+                vertx.deployVerticle(klass.canonicalName, f)
+                f
+            }
+    CompositeFuture.all(fs).setHandler(handler)
+}
+
+annotation class HandlerFor(val path: String, val isRegex: Boolean = false)
+
+fun autoRegisterHandlers(router: Router) {
+    val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
+    Reflections("org.jetbrains.research.kotoed", MethodAnnotationsScanner())
+            .getMethodsAnnotatedWith(HandlerFor::class.java)
+            .forEach { method ->
+                log.trace("Auto-registering handler $method")
+
+                val anno = method.getAnnotation(HandlerFor::class.java)
+                if (anno.isRegex) {
+                    router.routeWithRegex(anno.path)
+                            .handler { method.invoke(null, it) }
+                } else {
+                    router.route(anno.path)
+                            .handler { method.invoke(null, it) }
+                }
             }
 }
 
