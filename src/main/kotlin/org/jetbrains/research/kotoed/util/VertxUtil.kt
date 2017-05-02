@@ -201,7 +201,11 @@ private fun funToHandler(method: Method): Handler<RoutingContext> {
         method.isKotlinSuspend -> Handler {
             launch(UnconfinedWithExceptions(it)) { unwrapITE{ method.invokeAsync(null, it) } }
         }
-        else -> Handler { unwrapITE { method.invoke(null, it) } }
+        else -> Handler {
+            DelegateLoggable(method.declaringClass).withExceptions(it){
+                unwrapITE { method.invoke(null, it) }
+            }
+        }
     }
 }
 
