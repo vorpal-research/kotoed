@@ -20,6 +20,8 @@ import org.reflections.scanners.MethodAnnotationsScanner
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.scanners.TypeAnnotationsScanner
 import org.slf4j.LoggerFactory
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
@@ -189,6 +191,20 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
 
 annotation class HandlerFor(val path: String, val isRegex: Boolean = false)
 
+private inline fun<T> unwrapITE(body: () -> T) {
+    try { body() } catch (ite: InvocationTargetException) { throw WrappedException(ite.cause) }
+}
+
+private fun funToHandler(method: Method): Handler<RoutingContext> {
+    return when {
+        // method.kotlinFunction.isSuspend does not work due to bug in Kotlin =)
+        method.isKotlinSuspend -> Handler {
+            launch(UnconfinedWithExceptions(it)) { unwrapITE{ method.invokeAsync(null, it) } }
+        }
+        else -> Handler { unwrapITE { method.invoke(null, it) } }
+    }
+}
+
 fun autoRegisterHandlers(router: Router) {
     val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
     Reflections("org.jetbrains.research.kotoed", MethodAnnotationsScanner())
@@ -199,10 +215,10 @@ fun autoRegisterHandlers(router: Router) {
                 val anno = method.getAnnotation(HandlerFor::class.java)
                 if (anno.isRegex) {
                     router.routeWithRegex(anno.path)
-                            .handler { method.invoke(null, it) }
+                            .handler(funToHandler(method))
                 } else {
                     router.route(anno.path)
-                            .handler { method.invoke(null, it) }
+                            .handler(funToHandler(method))
                 }
             }
 }

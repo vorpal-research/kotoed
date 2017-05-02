@@ -46,15 +46,15 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JvmName("persistExt")
     protected suspend inline fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            persist(this, R::class)
+            persist(this, klassOf())
 
     @JvmName("persistAsCopyExt")
     protected suspend inline fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            persistAsCopy(this, R::class)
+            persistAsCopy(this, klassOf())
 
     @JvmName("selectByIdWhatever")
     protected suspend inline fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            selectById(instance, id, R::class)
+            selectById(instance, id, klassOf())
 
     private val SubmissioncommentRecord.location
         get() = Location(Filename(path = sourcefile), sourceline)
@@ -84,12 +84,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     comment.sourcefile = adjustedLocation.location.filename.path
                     comment.sourceline = adjustedLocation.location.line
                     comment.id = null
-                    comment.persistAsCopy<SubmissioncommentRecord>()
+                    comment.persistAsCopy()
                 }
 
         parent.state = Submissionstate.obsolete
 
-        parent.persist<SubmissionRecord>()
+        parent.persist()
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord? =
@@ -126,7 +126,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             } else {
                 submission.state = Submissionstate.invalid
             }
-            submission = submission.persist<SubmissionRecord>()
+            submission = submission.persist()
         }
 
         return submission

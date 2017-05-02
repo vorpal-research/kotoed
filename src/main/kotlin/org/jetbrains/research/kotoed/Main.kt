@@ -59,14 +59,15 @@ class RootVerticle : AbstractVerticle(), Loggable {
     }
 
     fun handleFailure(ctx: RoutingContext) {
-        val ex = ctx.failure()
-        log.error("Oops...", ex)
+        val ex = ctx.failure().unwrapped
+        log.error("Exception caught while handling request to ${ctx.request().uri()}", ex)
         ctx.jsonResponse()
-                .setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR)
+                .setStatus(HttpResponseStatus.valueOf(codeFor(ex)))
                 .end(
                         JsonObject(
                                 "success" to false,
                                 "error" to ex.message,
+                                "code" to codeFor(ex),
                                 "stacktrace" to JsonArray(
                                         ex.stackTrace
                                                 .map { it.toString() }
