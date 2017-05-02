@@ -67,7 +67,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
 
     open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
-        log.info("Delete requested for id = $id in table ${table.name}")
+        log.trace("Delete requested for id = $id in table ${table.name}")
 
         val resp = db {
             delete(table)
@@ -81,14 +81,14 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
 
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
-        log.info("Read requested for id = $id in table ${table.name}")
+        log.trace("Read requested for id = $id in table ${table.name}")
         val resp = db { selectById(id) }
         message.reply(resp)
     }.ignore()
 
     open fun handleFind(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val query = message.body().toRecord(table.recordType.kotlin)
-        log.info("Find requested in table ${table.name}:\n" +
+        log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
         val queryFields = table.fields().asSequence().filter { message.body().containsKey(it.name) }
@@ -105,7 +105,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
 
     open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
-        log.info("Update requested for id = $id in table ${table.name}:\n" +
+        log.trace("Update requested for id = $id in table ${table.name}:\n" +
                 message.body().encodePrettily())
         val resp = db {
             update(table)
@@ -119,7 +119,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
     }.ignore()
 
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
-        log.info("Create requested in table ${table.name}:\n" +
+        log.trace("Create requested in table ${table.name}:\n" +
                 message.body().encodePrettily())
         val resp = db {
             insertInto(table)
@@ -159,7 +159,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 
             val id = msg.body().getValue(fkField.name)
 
-            log.info("Joined read requested for id = $id in table ${table.name} " +
+            log.trace("Joined read requested for id = $id in table ${table.name} " +
                     "on key ${fkField.name}")
 
             dbAsync {

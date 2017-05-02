@@ -2,16 +2,15 @@ package org.jetbrains.research.kotoed.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
 @HandlerFor("/vcs/ping/:vcs")
-fun handleVcsPing(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleVcsPing() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
 
     val url by req
     val vcs by req
@@ -23,15 +22,15 @@ fun handleVcsPing(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
 
     val res = eb.sendAsync(Address.Code.Ping, message.toJson())
 
-    ctx.jsonResponse().end(res.body())
+    jsonResponse().end(res.body())
 }
 
 @HandlerFor("/vcs/clone/:vcs")
-fun handleVcsClone(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleVcsClone() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
 
     val url by req
     val vcs by req
@@ -43,15 +42,15 @@ fun handleVcsClone(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) 
 
     val res = eb.sendAsync(Address.Code.Download, message.toJson())
 
-    ctx.jsonResponse().end(res.body())
+    jsonResponse().end(res.body())
 }
 
 @HandlerFor("""\/vcs\/read\/([^\/]+)\/(.+)""", isRegex = true)
-fun handleVcsRead(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleVcsRead() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
 
     val param0 by req
     val uid = param0
@@ -68,9 +67,9 @@ fun handleVcsRead(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
     val res = eb.sendAsync(Address.Code.Read, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        ctx.jsonResponse().end(res.body())
+        jsonResponse().end(res.body())
     } else {
-        ctx.jsonResponse()
+        jsonResponse()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))
@@ -78,11 +77,11 @@ fun handleVcsRead(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
 }
 
 @HandlerFor("/vcs/list/:uid")
-fun handleVcsList(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleVcsList() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
 
     val uid by req
     val revision by req
@@ -95,9 +94,9 @@ fun handleVcsList(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
     val res = eb.sendAsync(Address.Code.List, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        ctx.jsonResponse().end(res.body())
+        jsonResponse().end(res.body())
     } else {
-        ctx.jsonResponse()
+        jsonResponse()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))
@@ -105,11 +104,11 @@ fun handleVcsList(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
 }
 
 @HandlerFor("/vcs/diff/:uid/:from::to")
-fun handleVcsDiff(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleVcsDiff() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
 
     val uid by req
     val path by req
@@ -126,9 +125,9 @@ fun handleVcsDiff(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
     val res = eb.sendAsync(Address.Code.Diff, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        ctx.jsonResponse().end(res.body())
+        jsonResponse().end(res.body())
     } else {
-        ctx.jsonResponse()
+        jsonResponse()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))

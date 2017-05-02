@@ -6,7 +6,6 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.util.*
@@ -17,23 +16,21 @@ import org.jooq.util.postgres.PostgresDataType
 // XXX: testing, remove in production
 
 @HandlerFor("/debug/*")
-fun handleDebug(ctx: RoutingContext) {
-    if (ctx.request().connection().run { localAddress().host() == remoteAddress().host() }) {
-        ctx.next()
+fun RoutingContext.handleDebug() {
+    if (request().connection().run { localAddress().host() == remoteAddress().host() }) {
+        next()
     } else {
-        ctx.response()
+        response()
                 .end(HttpResponseStatus.FORBIDDEN)
     }
 }
 
 @HandlerFor("/debug/settings")
-fun handleDebugSettings(ctx: RoutingContext) {
-    ctx.jsonResponse().end(Config)
-}
+fun RoutingContext.handleDebugSettings() = jsonResponse().end(Config)
 
 @HandlerFor("/debug/request")
-fun handleDebugRequest(ctx: RoutingContext) {
-    val req = ctx.request()
+fun RoutingContext.handleDebugRequest() {
+    val req = request()
     val result = object : Jsonable {
         val headers = req.headers()
         val uri = req.absoluteURI()
@@ -45,19 +42,25 @@ fun handleDebugRequest(ctx: RoutingContext) {
             val remoteAddress = req.connection().remoteAddress().toString()
         }
     }
-    ctx.jsonResponse().end(result)
+    jsonResponse().end(result)
 }
 
-@HandlerFor("/debug/crash")
-fun handleDebugCrash(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+@HandlerFor("/debug/crash/now")
+fun RoutingContext.handleDebugCrashNow(): Unit = throw IllegalStateException("Forced crash")
+
+@HandlerFor("/debug/crash/suspend")
+suspend fun RoutingContext.handleDebugCrashSuspend(): Unit = throw IllegalStateException("Forced crash")
+
+@HandlerFor("/debug/crash/delay")
+suspend fun RoutingContext.handleDebugCrash() {
+    val vertx = vertx()
     vertx.delayAsync(500)
-    throw IllegalStateException("Forced crash")
+    handleDebugCrashNow()
 }
 
 @HandlerFor("/debug/database/create")
-fun handleDebugDatabaseCreate(ctx: RoutingContext) {
-    val vertx = ctx.vertx()
+fun RoutingContext.handleDebugDatabaseCreate() {
+    val vertx = vertx()
 
     val ds = vertx.getSharedDataSource()
 
@@ -71,12 +74,12 @@ fun handleDebugDatabaseCreate(ctx: RoutingContext) {
     val res = object : Jsonable {
         val query = q.toString()
     }
-    ctx.jsonResponse().end(res)
+    jsonResponse().end(res)
 }
 
 @HandlerFor("/debug/database/fill")
-fun handleDebugDatabaseFill(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleDebugDatabaseFill() {
+    val vertx = vertx()
 
     val ds = vertx.getSharedDataSource()
 
@@ -120,16 +123,16 @@ fun handleDebugDatabaseFill(ctx: RoutingContext) = launch(UnconfinedWithExceptio
 
     vertx.goToEventLoop()
 
-    ctx.jsonResponse().end(JsonArray(res).encodePrettily())
+    jsonResponse().end(JsonArray(res).encodePrettily())
 }
 
 @HandlerFor("/debug/database/read/:id")
-fun handleDebugDatabaseRead(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleDebugDatabaseRead() {
+    val vertx = vertx()
 
     val ds = vertx.getSharedDataSource()
 
-    val id by ctx.request()
+    val id by request()
 
     val res =
             jooq(ds).use {
@@ -150,12 +153,12 @@ fun handleDebugDatabaseRead(ctx: RoutingContext) = launch(UnconfinedWithExceptio
 
     vertx.goToEventLoop()
 
-    ctx.jsonResponse().end(Json.encode(res))
+    jsonResponse().end(Json.encode(res))
 }
 
 @HandlerFor("/debug/database/clear")
-fun handleDebugDatabaseClear(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleDebugDatabaseClear() {
+    val vertx = vertx()
 
     val ds = vertx.getSharedDataSource()
 
@@ -171,15 +174,15 @@ fun handleDebugDatabaseClear(ctx: RoutingContext) = launch(UnconfinedWithExcepti
 
     vertx.goToEventLoop()
 
-    ctx.jsonResponse().end(JsonObject("success" to true))
+    jsonResponse().end(JsonObject("success" to true))
 }
 
 @HandlerFor("/debug/eventbus/:address")
-fun handleDebugEventBus(ctx: RoutingContext) = launch(UnconfinedWithExceptions(ctx)) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleDebugEventBus() {
+    val vertx = vertx()
 
     val eb = vertx.eventBus()
-    val req = ctx.request()
+    val req = request()
     val address by req
     address ?: throw IllegalArgumentException("Missing event bus address in: $req")
 
@@ -192,6 +195,6 @@ fun handleDebugEventBus(ctx: RoutingContext) = launch(UnconfinedWithExceptions(c
                         .map { (k, v) -> Pair(k, JsonEx.decode(v)) }
                         .let(::JsonObject)
             }
-    val res = vxa<Message<Any>> { eb.send(address, body, it) }
-    ctx.jsonResponse().end("${res.body()}")
+    val res = eb.sendAsync<Any>(address, body)
+    jsonResponse().end("${res.body()}")
 }
