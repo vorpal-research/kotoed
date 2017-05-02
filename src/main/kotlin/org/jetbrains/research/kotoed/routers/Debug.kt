@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.eventbus.Message
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray

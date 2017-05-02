@@ -2,15 +2,12 @@
 
 package org.jetbrains.research.kotoed.util
 
-import com.sun.xml.internal.bind.v2.schemagen.episode.Klass
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
-import org.intellij.lang.annotations.Language
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
