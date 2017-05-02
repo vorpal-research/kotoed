@@ -56,11 +56,8 @@ inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
                 DelegateLoggable {
             override val loggingClass = UnconfinedWithExceptions::class.java
 
-            override fun handleException(context: CoroutineContext, t: Throwable) {
-                val exception = t.unwrapped
-                log.error("Exception caught", exception)
-                handler(exception)
-            }
+            override fun handleException(context: CoroutineContext, exception: Throwable) =
+                    handleException(handler, exception)
         } + Unconfined
 
 inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
@@ -69,15 +66,8 @@ inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
                 DelegateLoggable {
             override val loggingClass = UnconfinedWithExceptions::class.java
 
-            override fun handleException(context: CoroutineContext, t: Throwable) {
-                val exception = t.unwrapped
-                log.error("Exception caught while handling message: \n" +
-                        "${msg.body()} sent to ${msg.address()}", exception)
-                msg.fail(
-                        codeFor(exception),
-                        exception.message
-                )
-            }
+            override fun handleException(context: CoroutineContext, exception: Throwable) =
+                    handleException(msg, exception)
         } + Unconfined
 
 inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
@@ -86,11 +76,8 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
                 DelegateLoggable {
             override val loggingClass = UnconfinedWithExceptions::class.java
 
-            override fun handleException(context: CoroutineContext, t: Throwable) {
-                val exception = t.unwrapped
-                log.error("Exception caught while handling request to ${ctx.request().uri()}", exception)
-                ctx.fail(exception)
-            }
+            override fun handleException(context: CoroutineContext, exception: Throwable) =
+                    handleException(ctx, exception)
         } + Unconfined
 
 inline suspend fun <R> KFunction<R>.callAsync(vararg args: Any?) =

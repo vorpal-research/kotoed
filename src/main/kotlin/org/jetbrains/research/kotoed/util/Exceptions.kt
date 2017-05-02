@@ -1,6 +1,9 @@
 package org.jetbrains.research.kotoed.util
 
+import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
+import io.vertx.ext.web.RoutingContext
+import org.jooq.Log
 
 object StatusCodes {
     const val FORBIDDEN = 403
@@ -31,3 +34,37 @@ fun codeFor(ex: Throwable): Int =
             else ->
                 StatusCodes.INTERNAL_ERROR
         }
+
+inline fun Loggable.handleException(handler: (Throwable) -> Unit, t: Throwable) {
+    val exception = t.unwrapped
+    log.error("Exception caught", exception)
+    handler(exception)
+}
+
+inline fun<T> Loggable.withExceptions(handler: (Throwable) -> Unit, body: () -> T) =
+     try{ body() }
+     catch (t: Throwable) { handleException(handler, t) }
+
+fun<U> Loggable.handleException(msg: Message<U>, t: Throwable) {
+    val exception = t.unwrapped
+    log.error("Exception caught while handling message: \n" +
+            "${msg.body()} sent to ${msg.address()}", exception)
+    msg.fail(
+            codeFor(exception),
+            exception.message
+    )
+}
+
+fun<T, U> Loggable.withExceptions(msg: Message<U>, body: () -> T) =
+        try{ body() }
+        catch (t: Throwable) { handleException(msg, t) }
+
+fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
+    val exception = t.unwrapped
+    log.error("Exception caught while handling request to ${ctx.request().uri()}", exception)
+    ctx.fail(exception)
+}
+
+fun<T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
+        try{ body() }
+        catch (t: Throwable) { handleException(ctx, t) }

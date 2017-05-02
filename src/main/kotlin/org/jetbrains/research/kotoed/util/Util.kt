@@ -47,6 +47,10 @@ interface DelegateLoggable : Loggable {
         get() = LoggerFactory.getLogger(loggingClass)
 }
 
+fun DelegateLoggable(loggingClass: Class<*>) = object: DelegateLoggable{
+    override val loggingClass = loggingClass
+}
+
 /******************************************************************************/
 
 inline fun base64Encode(v: CharSequence): String =

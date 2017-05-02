@@ -98,7 +98,9 @@ fun AbstractVerticle.registerAllConsumers() {
                         }
                     } else {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
-                            function.call(this, msg)
+                            DelegateLoggable(javaClass).withExceptions(msg) {
+                                function.call(this, msg)
+                            }
                         }
                     }
                 is JsonableEventBusConsumerFor ->
@@ -124,9 +126,11 @@ fun AbstractVerticle.registerAllConsumers() {
                         val fromJson = getFromJsonConverter(parameterClass)
 
                         eb.consumer<JsonObject>(annotation.address) { msg ->
-                            val argument = fromJson(msg.body())
-                            val res = function.call(this@registerAllConsumers, argument)!!
-                            msg.reply(toJson(res))
+                            DelegateLoggable(javaClass).withExceptions(msg) {
+                                val argument = fromJson(msg.body())
+                                val res = function.call(this@registerAllConsumers, argument)!!
+                                msg.reply(toJson(res))
+                            }
                         }
                     }
             }
