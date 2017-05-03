@@ -1,14 +1,14 @@
 {
-  "TeamCity": {
-    "User": "admin",
-    "Password": "admin"
+  "team_city": {
+    "user": "admin",
+    "password": "admin"
   },
 
-  "Debug": {
-    "DB": {
-      "Url": "jdbc:postgresql://localhost/kotoed-test",
-      "User": "kotoed",
-      "Password": "kotoed"
+  "debug": {
+    "db": {
+      "url": "jdbc:postgresql://localhost/kotoed-test",
+      "user": "kotoed",
+      "password": "kotoed"
     }
   }
 }

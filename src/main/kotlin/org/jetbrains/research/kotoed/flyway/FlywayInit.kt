@@ -9,10 +9,10 @@ object FlywayInit {
     fun doit(vertx: Vertx) {
         Flyway().run {
             dataSource = vertx.getSharedDataSource(
-                    Config.Debug.DB.DataSourceId,
-                    Config.Debug.DB.Url,
-                    Config.Debug.DB.User,
-                    Config.Debug.DB.Password
+                    Config.Debug.Database.DataSourceId,
+                    Config.Debug.Database.Url,
+                    Config.Debug.Database.User,
+                    Config.Debug.Database.Password
             )
             migrate()
         }
