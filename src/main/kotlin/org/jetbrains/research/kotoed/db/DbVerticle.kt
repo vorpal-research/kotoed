@@ -185,7 +185,7 @@ class DebugVerticle : CrudDatabaseVerticle<DebugRecord>(Tables.DEBUG)
 class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
 @AutoDeployable
-class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissioncommentRecord>(Tables.SUBMISSIONCOMMENT)
+class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT)
 
 @AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)

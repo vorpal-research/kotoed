@@ -143,10 +143,10 @@ class CourseProcessorVerticle : ProcessorVerticle<CourseRecord>(Tables.COURSE) {
         data ?: return VerificationStatus.Invalid
         // FIXME akhin Write event info to DB
 
-        val buildtemplateid: String by data.delegate
+        val build_template_id: String by data.delegate
 
         val url = TeamCityApi.BuildTypes +
-                DimensionLocator.from("id", buildtemplateid)
+                DimensionLocator.from("id", build_template_id)
 
         val res = vxa<HttpResponse<Buffer>> {
             wc.get(Config.TeamCity.Port, Config.TeamCity.Host, url)
@@ -175,7 +175,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
     suspend override fun checkPrereqs(data: JsonObject): List<VerificationStatus> {
         val eb = vertx.eventBus()
 
-        val prereqs = listOf(Tables.COURSE to data[Tables.PROJECT.COURSEID])
+        val prereqs = listOf(Tables.COURSE to data[Tables.PROJECT.COURSE_ID])
 
         return prereqs
                 .map { (table, id) ->
@@ -197,11 +197,11 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         val eb = vertx.eventBus()
 
         val projectName = data[Tables.PROJECT.NAME] ?: throw IllegalArgumentException("No project.name found in: $data")
-        val courseId = data[Tables.PROJECT.COURSEID] ?: throw IllegalArgumentException("No project.courseid found in: $data")
+        val courseId = data[Tables.PROJECT.COURSE_ID] ?: throw IllegalArgumentException("No project.courseid found in: $data")
 
         val courseRecord = db {
             with(Tables.COURSE) {
-                select(ROOT_PROJECT_ID, BUILDTEMPLATEID)
+                select(ROOT_PROJECT_ID, BUILD_TEMPLATE_ID)
                         .from(this)
                         .where(ID.eq(courseId))
                         .fetchOne()
@@ -217,14 +217,14 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 VcsRoot(
                         name2vcs(projectName),
                         name2vcs(projectName),
-                        data[Tables.PROJECT.REPOTYPE] ?: throw IllegalArgumentException("No project.repotype found in: $data"),
-                        data[Tables.PROJECT.REPOURL] ?: throw IllegalArgumentException("No project.repourl found in: $data"),
+                        data[Tables.PROJECT.REPO_TYPE] ?: throw IllegalArgumentException("No project.repotype found in: $data"),
+                        data[Tables.PROJECT.REPO_URL] ?: throw IllegalArgumentException("No project.repourl found in: $data"),
                         name2id(projectName)
                 ),
                 BuildConfig(
                         name2build(projectName),
                         name2build(projectName),
-                        courseRecord[Tables.COURSE.BUILDTEMPLATEID]
+                        courseRecord[Tables.COURSE.BUILD_TEMPLATE_ID]
                 )
         )
 

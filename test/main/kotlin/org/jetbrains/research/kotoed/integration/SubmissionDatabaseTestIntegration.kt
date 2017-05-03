@@ -40,21 +40,21 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
     @Test
     fun testSimple() {
-        val user = makeDbNew("denizen", JsonObject("""{ "denizenid": "Vasyatka", "password" : "", "salt" : "" }"""))
-        val course = makeDbNew("course", JsonObject("""{ "name": "Transmogrification 101", "buildtemplateid" : "" }"""))
+        val user = makeDbNew("denizen", JsonObject("""{ "denizen_id": "Vasyatka", "password" : "", "salt" : "" }"""))
+        val course = makeDbNew("course", JsonObject("""{ "name": "Transmogrification 101", "build_template_id" : "" }"""))
         val project = makeDbNew("project",
                 object : Jsonable {
-                    val denizenid = user.id
-                    val courseid = course.id
-                    val repotype = "mercurial"
-                    val repourl = "http://bitbucket.org/vorpal-research/kotoed"
+                    val denizen_id = user.id
+                    val course_id = course.id
+                    val repo_type = "mercurial"
+                    val repo_url = "http://bitbucket.org/vorpal-research/kotoed"
                 }.toJson())
 
 
         var submission = dbPost(
                 Address.Submission.Create,
                 object : Jsonable {
-                    val projectid = project.id
+                    val project_id = project.id
                     val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
                 }.toJson())
 
@@ -73,8 +73,8 @@ class SubmissionDatabaseTestIntegration : Loggable {
         var resubmission = dbPost(
                 Address.Submission.Create,
                 object : Jsonable {
-                    val parentsubmissionid = submission.id
-                    val projectid = project.id
+                    val parent_submission_id = submission.id
+                    val project_id = project.id
                     val revision = "82b75aa179ef4d20b2870df88c37657ecb2b9f6b"
                 }.toJson())
 
@@ -91,19 +91,19 @@ class SubmissionDatabaseTestIntegration : Loggable {
         val comment = dbPost(
                 Address.Submission.Comment.Create,
                 object : Jsonable {
-                    val submissionid = submission.id
+                    val submission_id = submission.id
                     val sourcefile = "pom.xml"
                     val sourceline = 2
                     val text = "tl;dr"
                 }.toJson())
 
-        assertEquals(resubmission.id, comment.getInteger("submissionid"))
+        assertEquals(resubmission.id, comment.getInteger("submission_id"))
 
         var resubmission2 = dbPost(
                 Address.Submission.Create,
                 object : Jsonable {
-                    val parentsubmissionid = resubmission.id
-                    val projectid = project.id
+                    val parent_submission_id = resubmission.id
+                    val project_id = project.id
                     val revision = "9fc0841dcdfaf274fc9b71a790dd6a46d21731d8"
                 }.toJson())
 

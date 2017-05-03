@@ -32,19 +32,19 @@ class UserDatabaseTestIntegration : Loggable {
 
     fun makeStupidUser(login: String, password: String = "password", salt: String = "sugar") =
             wpost("debug/eventbus/${Address.DB.create("denizen")}",
-                    payload = JsonObject("denizenid" to login, "password" to password, "salt" to salt).encodePrettily())
+                    payload = JsonObject("denizen_id" to login, "password" to password, "salt" to salt).encodePrettily())
 
     fun makeStupidCourse(name: String, buildTemplateId: String = "") =
             wpost("debug/eventbus/${Address.DB.create("course")}",
-                    payload = JsonObject("name" to name, "buildtemplateid" to buildTemplateId).encodePrettily())
+                    payload = JsonObject("name" to name, "build_template_id" to buildTemplateId).encodePrettily())
 
     fun makeStupidProject(denizenId: Int, courseId: Int, repo: String = "git", repourl: String = "http://localhost") =
             wpost("debug/eventbus/${Address.DB.create("project")}",
                     payload = JsonObject(
-                            "denizenid" to denizenId,
-                            "courseid" to courseId,
-                            "repotype" to repo,
-                            "repourl" to repourl
+                            "denizen_id" to denizenId,
+                            "course_id" to courseId,
+                            "repo_type" to repo,
+                            "repo_url" to repourl
                     ).encodePrettily())
 
     val JsonObject.id: Int get() = getInteger("id")
@@ -64,7 +64,7 @@ class UserDatabaseTestIntegration : Loggable {
         val petyasProject2 = makeStupidProject(petya.id, course.id).let(::JsonObject)
 
         val refs = wget("debug/eventbus/${Address.DB.read("project")}.for.denizen",
-                params = listOf("denizenid" to petya.id)).let(::JsonArray)
+                params = listOf("denizen_id" to petya.id)).let(::JsonArray)
 
         assertEquals(setOf(petyasProject1, petyasProject2), refs.toSet())
 
