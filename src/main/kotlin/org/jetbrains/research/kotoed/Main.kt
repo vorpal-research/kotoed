@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed
 
-import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.*
 import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.Router
@@ -40,29 +39,27 @@ suspend fun startApplication(): Vertx {
 class RootVerticle : AbstractVerticle(), Loggable {
 
     override fun start(startFuture: Future<Void>) {
-        launch(Unconfined) {
-            val router = Router.router(vertx)
+        val router = Router.router(vertx)
 
-            log.info("Alive and standing")
+        log.info("Alive and standing")
 
-            router.route()
-                    .failureHandler(this@RootVerticle::handleFailure)
+        router.route()
+                .failureHandler(this@RootVerticle::handleFailure)
 
-            autoRegisterHandlers(router)
+        autoRegisterHandlers(router)
 
-            vertx.createHttpServer()
-                    .requestHandler({ router.accept(it) })
-                    .listen(Config.Root.Port)
+        vertx.createHttpServer()
+                .requestHandler({ router.accept(it) })
+                .listen(Config.Root.Port)
 
-            startFuture.complete()
-        }
+        startFuture.complete()
     }
 
     fun handleFailure(ctx: RoutingContext) {
         val ex = ctx.failure().unwrapped
         log.error("Exception caught while handling request to ${ctx.request().uri()}", ex)
         ctx.jsonResponse()
-                .setStatus(HttpResponseStatus.valueOf(codeFor(ex)))
+                .setStatus(ex)
                 .end(
                         JsonObject(
                                 "success" to false,

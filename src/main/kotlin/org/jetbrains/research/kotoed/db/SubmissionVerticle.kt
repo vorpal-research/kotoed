@@ -1,7 +1,5 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.CompositeFuture
-import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -32,15 +30,6 @@ class SubmissionDatabaseVerticle : CrudDatabaseVerticleWithReferences<Submission
 
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
-    override fun start(startFuture: Future<Void>) {
-        val f = Future.future<String>()
-        val ff = Future.future<Void>()
-
-        vertx.deployVerticle(SubmissionDatabaseVerticle(), f)
-        super.start(ff)
-
-        CompositeFuture.all(f, ff).setHandler { startFuture.complete() }
-    }
 
     // FIXME: insert teamcity calls to build the submission
 
@@ -62,8 +51,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
         val eb = vertx.eventBus()
         eb.sendAsync<JsonArray>(
-                Address.DB.readFor("submissioncomment", "submission"),
-                JsonObject("submissionid" to parent.id)
+                Address.DB.readFor(Tables.SUBMISSIONCOMMENT.name, Tables.SUBMISSION.name),
+                JsonObject(Tables.SUBMISSIONCOMMENT.SUBMISSIONID.name to parent.id)
         )
                 .body()
                 .asSequence()
@@ -95,7 +84,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord? =
             vertx.eventBus().sendAsync<JsonArray>(
                     Address.DB.find(Tables.SUBMISSION.name),
-                    JsonObject("parentsubmissionid" to submission.id)
+                    JsonObject(Tables.SUBMISSION.PARENTSUBMISSIONID.name to submission.id)
             ).body().firstOrNull()?.run { cast<JsonObject>().toRecord() }
 
     @JsonableEventBusConsumerFor(Address.Submission.Read)
@@ -134,9 +123,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @EventBusConsumerFor(Address.Submission.Create)
     fun handleSubmissionCreate(message: Message<JsonObject>) =
-            launch(UnconfinedWithExceptions {}) {
+            launch(UnconfinedWithExceptions { log.error("", it) }) {
                 val (_, project, _) = run(UnconfinedWithExceptions(message)) {
                     var record: SubmissionRecord = message.body().toRecord()
+                    // Set record's state to be pending
                     record.state = Submissionstate.pending
 
                     val project = selectById(Tables.PROJECT, record.projectid)
@@ -150,10 +140,11 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                         expect(state != Submissionstate.obsolete)
                     }
 
-                    record = record.persistAsCopy<SubmissionRecord>()
+                    record = record.persistAsCopy()
                     expect(record.id is Int)
 
                     message.reply(record.toJson())
+
                     Triple(record, project, parent)
                 }
 
@@ -168,13 +159,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCommentCreate(message: SubmissioncommentRecord): SubmissioncommentRecord = run {
         val submission = selectById(Tables.SUBMISSION, message.submissionid)
         when (submission.state) {
-            Submissionstate.open -> message.persistAsCopy<SubmissioncommentRecord>()
+            Submissionstate.open -> message.persistAsCopy()
             Submissionstate.obsolete -> {
                 log.warn("Comment request for an obsolete submission received:" +
                         "Submission id = ${submission.id}")
                 val parentSubmission = expectNotNull(findSuccessorAsync(submission))
                 log.trace("Newer submission found: id = ${parentSubmission.id}")
                 message.submissionid = parentSubmission.id
+                // FIXME re-send not re-curse
                 handleCommentCreate(message)
             }
             else -> throw IllegalArgumentException("Applying comment to an incorrect or incomplete submission")
@@ -187,10 +179,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Submission.Comments)
     suspend fun handleComments(message: SubmissionRecord): JsonObject {
-        val arr = vertx.eventBus().sendAsync<JsonArray>(Address.DB.find(Tables.SUBMISSIONCOMMENT.name),
+        val arr = vertx.eventBus().sendAsync<JsonArray>(
+                Address.DB.find(Tables.SUBMISSIONCOMMENT.name),
                 object : Jsonable {
                     val submissionid = message.id
-                }.toJson()).body()
+                }.toJson()
+        ).body()
 
         return object : Jsonable {
             val comments = arr

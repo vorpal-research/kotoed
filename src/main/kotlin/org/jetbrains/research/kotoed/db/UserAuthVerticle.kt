@@ -1,12 +1,10 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.User
 import io.vertx.ext.auth.jdbc.JDBCAuth
 import io.vertx.ext.jdbc.JDBCClient
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.db.InfoMsg
 import org.jetbrains.research.kotoed.data.db.LoginMsg
 import org.jetbrains.research.kotoed.data.db.SignUpMsg
@@ -18,7 +16,7 @@ import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
 
 @AutoDeployable
-class UserAuthVerticle : AbstractVerticle() {
+class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
     val ds get() = vertx.getSharedDataSource()
 
     // FIXME akhin move to extension
@@ -29,33 +27,29 @@ class UserAuthVerticle : AbstractVerticle() {
                     setAuthenticationQuery("SELECT password, salt FROM Denizen WHERE denizenId = ?")
                 }
 
-    override fun start() {
-        registerAllConsumers()
-    }
-
-    @EventBusConsumerFor(Address.User.Auth.SignUp)
-    fun consumeSignUp(msg: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(msg)) {
-        val signUpMsg = fromJson<SignUpMsg>(msg.body())
-
+    @JsonableEventBusConsumerFor(Address.User.Auth.SignUp)
+    suspend fun consumeSignUp(signUpMsg: SignUpMsg): JsonObject {
         val salt = authProvider.generateSalt()
         val password = authProvider.computeHash(signUpMsg.password, salt)
 
-        val dbData = mapOf(
-                Tables.DENIZEN.DENIZENID.name to signUpMsg.denizenId,
-                Tables.DENIZEN.PASSWORD.name to password,
-                Tables.DENIZEN.SALT.name to salt
-        )
-
-        jooq(ds).use {
-            val res = it.insertInto(Tables.DENIZEN)
-                    .set(it.newRecord(Tables.DENIZEN, dbData))
-                    .returning(Tables.DENIZEN.ID, Tables.DENIZEN.DENIZENID)
-                    .fetchOne()
-                    ?.into(JsonObject::class.java)
-
-            msg.reply(res)
+        val dbData = with(Tables.DENIZEN) {
+            mapOf(
+                    DENIZENID.name to signUpMsg.denizenId,
+                    PASSWORD.name to password,
+                    SALT.name to salt
+            )
         }
-    }.ignore()
+
+        return jooq(ds).use {
+            with(Tables.DENIZEN) {
+                it.insertInto(this)
+                        .set(it.newRecord(this, dbData))
+                        .returning(ID, DENIZENID)
+                        .fetchOne()
+                        ?.into(JsonObject::class.java)
+            }
+        } ?: JsonObject()
+    }
 
     @EventBusConsumerFor(Address.User.Auth.Login)
     suspend fun consumeLogin(msg: Message<JsonObject>) {
@@ -68,18 +62,16 @@ class UserAuthVerticle : AbstractVerticle() {
         msg.reply(user.principal().rename("username", "denizenId"))
     }
 
-    @EventBusConsumerFor(Address.User.Auth.Info)
-    suspend fun consumeInfo(msg: Message<JsonObject>) {
-        val infoMsg = fromJson<InfoMsg>(msg.body())
-
-        jooq(ds).use {
-            val res = it.selectFrom(Tables.DENIZEN)
-                    .where(Tables.DENIZEN.DENIZENID.eq(infoMsg.denizenId))
-                    .fetchKAsync()
-                    .into(JsonObject::class.java)
-                    .firstOrNull()
-
-            msg.reply(res)
-        }
+    @JsonableEventBusConsumerFor(Address.User.Auth.Info)
+    suspend fun consumeInfo(infoMsg: InfoMsg): JsonObject {
+        return jooq(ds).use {
+            with(Tables.DENIZEN) {
+                it.selectFrom(this)
+                        .where(DENIZENID.eq(infoMsg.denizenId))
+                        .fetchKAsync()
+                        .into(JsonObject::class.java)
+                        .firstOrNull()
+            }
+        } ?: JsonObject()
     }
 }

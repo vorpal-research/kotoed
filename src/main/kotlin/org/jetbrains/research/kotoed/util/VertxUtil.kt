@@ -54,11 +54,15 @@ fun HttpResponseStatus.toJson(): JsonObject =
 fun HttpServerResponse.setStatus(status: HttpResponseStatus): HttpServerResponse =
         setStatusCode(status.code()).setStatusMessage(status.reasonPhrase())
 
+fun HttpServerResponse.setStatus(ex: Throwable): HttpServerResponse =
+        setStatus(HttpResponseStatus.valueOf(codeFor(ex)))
+
 fun HttpServerResponse.end(status: HttpResponseStatus): Unit =
         setStatus(status).end(status.toJson())
 
 fun HttpServerResponse.end(json: JsonObject) =
-        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON).end(json.encode())
+        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+                .end(json.encode())
 
 fun HttpServerResponse.end(json: Jsonable) =
         this.end(json.toJson())
@@ -191,18 +195,22 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
 
 annotation class HandlerFor(val path: String, val isRegex: Boolean = false)
 
-private inline fun<T> unwrapITE(body: () -> T) {
-    try { body() } catch (ite: InvocationTargetException) { throw WrappedException(ite.cause) }
+private inline fun <T> unwrapITE(body: () -> T) {
+    try {
+        body()
+    } catch (ite: InvocationTargetException) {
+        throw WrappedException(ite.cause)
+    }
 }
 
 private fun funToHandler(method: Method): Handler<RoutingContext> {
     return when {
-        // method.kotlinFunction.isSuspend does not work due to bug in Kotlin =)
+        // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
         method.isKotlinSuspend -> Handler {
-            launch(UnconfinedWithExceptions(it)) { unwrapITE{ method.invokeAsync(null, it) } }
+            launch(UnconfinedWithExceptions(it)) { unwrapITE { method.invokeAsync(null, it) } }
         }
         else -> Handler {
-            DelegateLoggable(method.declaringClass).withExceptions(it){
+            DelegateLoggable(method.declaringClass).withExceptions(it) {
                 unwrapITE { method.invoke(null, it) }
             }
         }
