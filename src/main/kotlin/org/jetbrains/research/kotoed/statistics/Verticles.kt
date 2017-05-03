@@ -28,11 +28,11 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
     private val template = "TEST-.*\\.xml".toRegex()
 
     private val handlers = listOf<KFunction<Any>>(
-            JUnit::buildId,
-            JUnit::artifactName,
-            JUnit::artifactBody,
-            JUnit::totalTestCount,
-            JUnit::failedTestCount
+            JUnit::build_id,
+            JUnit::artifact_name,
+            JUnit::artifact_body,
+            JUnit::total_test_count,
+            JUnit::failed_test_count
     )
 
     fun field(handler: KFunction<Any>): Field<Any?> {
@@ -75,7 +75,7 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
         )
 
         jooq(ds).use {
-            it.insertInto(Tables.JUNITSTATISTICS)
+            it.insertInto(Tables.JUNIT_STATISTICS)
                     .columns(
                             data.map { field(it.first) }
                     )
@@ -91,25 +91,25 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 internal object JUnit {
     private val buildIdRegex = "(?<=id:)\\d+".toRegex()
 
-    fun buildId(path: String, json: JsonObject): Int {
+    fun build_id(path: String, json: JsonObject): Int {
         return buildIdRegex.find(path)?.run { value.toInt() } ?: -1
     }
 
-    fun artifactName(path: String, json: JsonObject): String {
+    fun artifact_name(path: String, json: JsonObject): String {
         return path.split("/").last()
     }
 
-    fun artifactBody(path: String, json: JsonObject): JsonObject {
+    fun artifact_body(path: String, json: JsonObject): JsonObject {
         return json
     }
 
-    fun totalTestCount(path: String, json: JsonObject): Int {
+    fun total_test_count(path: String, json: JsonObject): Int {
         return json.getJsonObject("testsuite")
                 .getString("tests")
                 .toInt()
     }
 
-    fun failedTestCount(path: String, json: JsonObject): Int {
+    fun failed_test_count(path: String, json: JsonObject): Int {
         return json.getJsonObject("testsuite")
                 .getString("failures")
                 .toInt()

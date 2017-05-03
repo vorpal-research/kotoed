@@ -34,7 +34,7 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
         val dbData = with(Tables.DENIZEN) {
             mapOf(
-                    DENIZENID.name to signUpMsg.denizenId,
+                    DENIZEN_ID.name to signUpMsg.denizenId,
                     PASSWORD.name to password,
                     SALT.name to salt
             )
@@ -44,7 +44,7 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
             with(Tables.DENIZEN) {
                 it.insertInto(this)
                         .set(it.newRecord(this, dbData))
-                        .returning(ID, DENIZENID)
+                        .returning(ID, DENIZEN_ID)
                         .fetchOne()
                         ?.into(JsonObject::class.java)
             }
@@ -67,7 +67,7 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
         return jooq(ds).use {
             with(Tables.DENIZEN) {
                 it.selectFrom(this)
-                        .where(DENIZENID.eq(infoMsg.denizenId))
+                        .where(DENIZEN_ID.eq(infoMsg.denizenId))
                         .fetchKAsync()
                         .into(JsonObject::class.java)
                         .firstOrNull()
