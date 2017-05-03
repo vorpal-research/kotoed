@@ -16,25 +16,6 @@ inline fun <reified T : Any> klassOf() = T::class
 
 /******************************************************************************/
 
-inline fun <T> defaultWrapperHandlerWithExceptions(
-        loggable: Loggable?,
-        crossinline handler: (Message<T>) -> Unit) = { msg: Message<T> ->
-    try {
-        handler(msg)
-    } catch (ex: Exception) {
-        loggable?.apply { log.error(ex) } ?: ex.printStackTrace()
-        msg.fail(
-                0xC0FFEE,
-                ex.message
-        )
-    }
-}
-
-inline fun <T> ((Message<T>) -> Unit).withExceptions(loggable: Loggable? = null) =
-        defaultWrapperHandlerWithExceptions(loggable, this)
-
-/******************************************************************************/
-
 interface Loggable {
     val log: Logger
         get() = LoggerFactory.getLogger(javaClass)
@@ -47,7 +28,7 @@ interface DelegateLoggable : Loggable {
         get() = LoggerFactory.getLogger(loggingClass)
 }
 
-fun DelegateLoggable(loggingClass: Class<*>) = object: DelegateLoggable{
+fun DelegateLoggable(loggingClass: Class<*>) = object : DelegateLoggable {
     override val loggingClass = loggingClass
 }
 
@@ -127,6 +108,3 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
 
 @Suppress("UNCHECKED_CAST")
 inline fun <D> Any?.cast(): D = this as D
-
-fun usingWriter(body: (Writer) -> Unit) = StringWriter().apply(body).toString()
-fun usingPrintWriter(body: (PrintWriter) -> Unit) = StringWriter().apply { body(PrintWriter(this)) }.toString()

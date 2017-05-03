@@ -92,6 +92,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
                 query.toJson().encodePrettily())
 
         val queryFields = table.fields().asSequence().filter { message.body().containsKey(it.name) }
+        @Suppress("UNCHECKED_CAST")
         val wherePart = queryFields.map { (it as Field<Any?>).eq(query.get(it)) }.reduce(Condition::and)
         val resp = db {
             selectFrom(table)

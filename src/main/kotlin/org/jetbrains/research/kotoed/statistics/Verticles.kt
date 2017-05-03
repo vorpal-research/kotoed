@@ -1,12 +1,10 @@
 package org.jetbrains.research.kotoed.statistics
 
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
 import org.jetbrains.research.kotoed.database.Tables
@@ -25,7 +23,7 @@ import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 
 @AutoDeployable
-class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
+class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 
     private val template = "TEST-.*\\.xml".toRegex()
 
@@ -45,57 +43,46 @@ class JUnitStatisticsVerticle : AbstractVerticle(), Loggable {
         }
     }
 
-    override fun start() {
-        val eb = vertx.eventBus()
+    @EventBusConsumerFor(Address.TeamCity.Build.Artifact)
+    suspend fun consumeTeamCityArtifact(msg: Message<JsonObject>) {
+        val wc = WebClient.create(vertx)
 
-        eb.consumer(
-                Address.TeamCity.Build.Artifact,
-                this@JUnitStatisticsVerticle::consumeTeamCityArtifact.withExceptions()
+        val artifactContent = fromJson<ArtifactContent>(msg.body())
+
+        if (template !in artifactContent.path) return
+
+        log.trace("Processing artifact ${artifactContent.path}")
+
+        val artifactContentRes = vxa<HttpResponse<Buffer>> {
+            wc.get(Config.TeamCity.Port, Config.TeamCity.Host, artifactContent.path)
+                    .putAuthTCHeaders()
+                    .send(it)
+        }
+
+        val xmlStream = ByteArrayInputStream(artifactContentRes.body().bytes)
+
+        val artifactBody = xml2json(xmlStream)
+
+        val data = handlers.map { handler ->
+            Pair(handler, handler.call(artifactContent.path, artifactBody))
+        }
+
+        val ds = vertx.getSharedDataSource(
+                Config.Debug.DB.DataSourceId,
+                Config.Debug.DB.Url,
+                Config.Debug.DB.User,
+                Config.Debug.DB.Password
         )
-    }
 
-    fun consumeTeamCityArtifact(msg: Message<JsonObject>) {
-        launch(UnconfinedWithExceptions(msg)) {
-
-            val wc = WebClient.create(vertx)
-
-            val artifactContent = fromJson<ArtifactContent>(msg.body())
-
-            if (template !in artifactContent.path) return@launch
-
-            log.trace("Processing artifact ${artifactContent.path}")
-
-            val artifactContentRes = vxa<HttpResponse<Buffer>> {
-                wc.get(Config.TeamCity.Port, Config.TeamCity.Host, artifactContent.path)
-                        .putAuthTCHeaders()
-                        .send(it)
-            }
-
-            val xmlStream = ByteArrayInputStream(artifactContentRes.body().bytes)
-
-            val artifactBody = xml2json(xmlStream)
-
-            val data = handlers.map { handler ->
-                Pair(handler, handler.call(artifactContent.path, artifactBody))
-            }
-
-            val ds = vertx.getSharedDataSource(
-                    Config.Debug.DB.DataSourceId,
-                    Config.Debug.DB.Url,
-                    Config.Debug.DB.User,
-                    Config.Debug.DB.Password
-            )
-
-            jooq(ds).use {
-                it.insertInto(Tables.JUNITSTATISTICS)
-                        .columns(
-                                data.map { field(it.first) }
-                        )
-                        .values(
-                                data.map { it.second }
-                        )
-                        .executeKAsync()
-            }
+        jooq(ds).use {
+            it.insertInto(Tables.JUNITSTATISTICS)
+                    .columns(
+                            data.map { field(it.first) }
+                    )
+                    .values(
+                            data.map { it.second }
+                    )
+                    .executeKAsync()
         }
     }
 }

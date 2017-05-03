@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
-import org.jooq.Log
 
 object StatusCodes {
     const val FORBIDDEN = 403
@@ -13,9 +12,9 @@ object StatusCodes {
     const val BAD_REQUEST = 400
 }
 
-data class KotoedException(val code: Int, override val message: String): Exception(message)
+data class KotoedException(val code: Int, override val message: String) : Exception(message)
 
-data class WrappedException(val inner: Throwable?): Exception(inner)
+data class WrappedException(val inner: Throwable?) : Exception(inner)
 
 val Throwable.unwrapped
     get() =
@@ -25,8 +24,8 @@ val Throwable.unwrapped
     }
 
 fun codeFor(ex: Throwable): Int =
-        when(ex) {
-            is WrappedException -> ex.inner?.let { codeFor(it) } ?: StatusCodes.INTERNAL_ERROR
+        when (ex) {
+            is WrappedException -> ex.inner?.let(::codeFor) ?: StatusCodes.INTERNAL_ERROR
             is ReplyException -> ex.failureCode()
             is KotoedException -> ex.code
             is IllegalArgumentException, is IllegalStateException ->
@@ -41,13 +40,16 @@ inline fun Loggable.handleException(handler: (Throwable) -> Unit, t: Throwable) 
     handler(exception)
 }
 
-inline fun<T> Loggable.withExceptions(handler: (Throwable) -> Unit, body: () -> T) =
-     try{ body() }
-     catch (t: Throwable) { handleException(handler, t) }
+inline fun <T> Loggable.withExceptions(handler: (Throwable) -> Unit, body: () -> T) =
+        try {
+            body()
+        } catch (t: Throwable) {
+            handleException(handler, t)
+        }
 
-fun<U> Loggable.handleException(msg: Message<U>, t: Throwable) {
+fun <U> Loggable.handleException(msg: Message<U>, t: Throwable) {
     val exception = t.unwrapped
-    log.error("Exception caught while handling message: \n" +
+    log.error("Exception caught while handling message:\n" +
             "${msg.body()} sent to ${msg.address()}", exception)
     msg.fail(
             codeFor(exception),
@@ -55,9 +57,12 @@ fun<U> Loggable.handleException(msg: Message<U>, t: Throwable) {
     )
 }
 
-fun<T, U> Loggable.withExceptions(msg: Message<U>, body: () -> T) =
-        try{ body() }
-        catch (t: Throwable) { handleException(msg, t) }
+fun <T, U> Loggable.withExceptions(msg: Message<U>, body: () -> T) =
+        try {
+            body()
+        } catch (t: Throwable) {
+            handleException(msg, t)
+        }
 
 fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     val exception = t.unwrapped
@@ -65,6 +70,9 @@ fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     ctx.fail(exception)
 }
 
-fun<T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
-        try{ body() }
-        catch (t: Throwable) { handleException(ctx, t) }
+fun <T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
+        try {
+            body()
+        } catch (t: Throwable) {
+            handleException(ctx, t)
+        }

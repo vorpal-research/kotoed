@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.teamcity.verticles
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -29,22 +28,15 @@ internal data class ArtifactHref(
 ) : Jsonable
 
 @AutoDeployable
-class ArtifactCrawlerVerticle : AbstractVerticle(), Loggable {
-    override fun start() {
-        val eb = vertx.eventBus()
+class ArtifactCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
 
-        eb.consumer<JsonObject>(
-                Address.TeamCity.Build.Crawl,
-                this@ArtifactCrawlerVerticle::consumeArtifactCrawl.withExceptions()
-        )
-    }
-
+    @EventBusConsumerFor(Address.TeamCity.Build.Crawl)
     fun consumeArtifactCrawl(msg: Message<JsonObject>) {
-        val eb = vertx.eventBus()
+        launch(UnconfinedWithExceptions({ log.error("", it) })) {
+            val eb = vertx.eventBus()
 
-        val wc = WebClient.create(vertx)
+            val wc = WebClient.create(vertx)
 
-        launch(UnconfinedWithExceptions({ log.error(it) })) {
             val artifactCrawl = fromJson<ArtifactCrawl>(msg.body())
 
             val artifactCrawlRes = vxa<HttpResponse<Buffer>> {

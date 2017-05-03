@@ -4,13 +4,12 @@ import io.netty.handler.codec.http.HttpHeaderNames
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.util.*
 
 @HandlerFor("/")
-fun handleIndex(ctx: RoutingContext) = with(ctx.response()) {
+fun RoutingContext.handleIndex() = with(response()) {
     putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
             .end(createHTML().html {
                 head { title("The awesome kotoed") }
@@ -22,24 +21,21 @@ fun handleIndex(ctx: RoutingContext) = with(ctx.response()) {
 }
 
 @HandlerFor("/teamcity/:address")
-fun handleTeamcity(ctx: RoutingContext) {
-    val vertx = ctx.vertx()
+suspend fun RoutingContext.handleTeamcity() {
+    val vertx = vertx()
     val eb = vertx.eventBus()
 
-    val req = ctx.request()
+    val req = request()
     val address by req
+    val body = if (req.method() == HttpMethod.POST) {
+        req.bodyAsync().toJsonObject()
+    } else throw IllegalArgumentException("Only POST is supported")
 
-    launch(UnconfinedWithExceptions(ctx)) {
-        val body = if (req.method() == HttpMethod.POST) {
-            req.bodyAsync().toJsonObject()
-        } else throw IllegalArgumentException("Only POST is supported")
+    val res = eb.sendAsync<JsonObject>(
+            address.orEmpty(),
+            body
+    )
 
-        val res = eb.sendAsync<JsonObject>(
-                address.orEmpty(),
-                body
-        )
-
-        ctx.jsonResponse()
-                .end(res.body())
-    }
+    jsonResponse()
+            .end(res.body())
 }

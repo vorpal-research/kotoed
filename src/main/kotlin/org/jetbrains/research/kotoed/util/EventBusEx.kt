@@ -87,7 +87,7 @@ fun AbstractVerticle.registerAllConsumers() {
     val eb = vertx.eventBus()
 
     for (function in klass.declaredMemberFunctions) {
-        for (annotation in function.annotations)
+        for (annotation in function.annotations) {
             when (annotation) {
                 is EventBusConsumerFor ->
                     if (function.isSuspend) {
@@ -103,37 +103,33 @@ fun AbstractVerticle.registerAllConsumers() {
                             }
                         }
                     }
-                is JsonableEventBusConsumerFor ->
-                    if (function.isSuspend) {
-                        // first parameter is the receiver, we need the second one
-                        val parameterClass = function.parameters[1].type.jvmErasure
-                        val resultClass = function.returnType.jvmErasure
-                        val toJson = getToJsonConverter(resultClass)
-                        val fromJson = getFromJsonConverter(parameterClass)
+                is JsonableEventBusConsumerFor -> {
+                    // first parameter is the receiver, we need the second one
+                    val parameterClass = function.parameters[1].type.jvmErasure
+                    val resultClass = function.returnType.jvmErasure
+                    val toJson = getToJsonConverter(resultClass)
+                    val fromJson = getFromJsonConverter(parameterClass)
 
+                    if (function.isSuspend) {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
                             launch(UnconfinedWithExceptions(msg)) {
                                 val argument = fromJson(msg.body())
-                                val res = function.callAsync(this@registerAllConsumers, argument)!!
+                                val res = expectNotNull(function.callAsync(this@registerAllConsumers, argument))
                                 msg.reply(toJson(res))
                             }
                         }
                     } else {
-                        // first parameter is the receiver, we need the second one
-                        val parameterClass = function.parameters[1].type.jvmErasure
-                        val resultClass = function.returnType.jvmErasure
-                        val toJson = getToJsonConverter(resultClass)
-                        val fromJson = getFromJsonConverter(parameterClass)
-
                         eb.consumer<JsonObject>(annotation.address) { msg ->
                             DelegateLoggable(javaClass).withExceptions(msg) {
                                 val argument = fromJson(msg.body())
-                                val res = function.call(this@registerAllConsumers, argument)!!
+                                val res = expectNotNull(function.call(this@registerAllConsumers, argument))
                                 msg.reply(toJson(res))
                             }
                         }
                     }
+                }
             }
+        }
     }
 }
 
@@ -166,7 +162,6 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
 
     protected suspend fun <R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int, klass: KClass<R>): R =
             sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
-
 }
 
 inline suspend fun <
@@ -176,4 +171,3 @@ inline suspend fun <
     @Suppress("DEPRECATION")
     return sendJsonableAsync(address, value, Argument::class, Result::class)
 }
-

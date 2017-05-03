@@ -108,6 +108,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                     } else if (statuses.any { VerificationStatus.Invalid == it }) {
 
                         // do nothing
+                        // log?
 
                     } else {
 
@@ -191,24 +192,27 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
     }
 
     suspend override fun doProcess(data: JsonObject) {
+        // FIXME rewrite to records
+
         val eb = vertx.eventBus()
 
         val projectName = data[Tables.PROJECT.NAME] ?: throw IllegalArgumentException("No project.name found in: $data")
         val courseId = data[Tables.PROJECT.COURSEID] ?: throw IllegalArgumentException("No project.courseid found in: $data")
 
-        val templateId = db {
-            select(Tables.COURSE.BUILDTEMPLATEID)
-                    .from(Tables.COURSE)
-                    .where(Tables.COURSE.ID.eq(courseId))
-                    .fetchOne()
-                    .into(String::class.java)
+        val courseRecord = db {
+            with(Tables.COURSE) {
+                select(ROOT_PROJECT_ID, BUILDTEMPLATEID)
+                        .from(this)
+                        .where(ID.eq(courseId))
+                        .fetchOne()
+            }
         }
 
         val createProject = CreateProject(
                 Project(
                         name2id(projectName),
                         projectName,
-                        "_Root" // FIXME
+                        courseRecord[Tables.COURSE.ROOT_PROJECT_ID] // FIXME
                 ),
                 VcsRoot(
                         name2vcs(projectName),
@@ -220,7 +224,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 BuildConfig(
                         name2build(projectName),
                         name2build(projectName),
-                        templateId
+                        courseRecord[Tables.COURSE.BUILDTEMPLATEID]
                 )
         )
 
