@@ -152,10 +152,6 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         log.info("Generated uid: $uid")
         log.info("Using directory: $randomName")
 
-        run(ee) {
-            randomName.mkdirs()
-        }
-
         val pendingResp = RepositoryInfo(
                 status = CloneStatus.pending,
                 uid = "$uid",
@@ -164,6 +160,10 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         )
         procs[message] = pendingResp
         info["$uid"] = message
+
+        run(ee) {
+            randomName.mkdirs()
+        }
 
         val root = pendingResp.root
 
