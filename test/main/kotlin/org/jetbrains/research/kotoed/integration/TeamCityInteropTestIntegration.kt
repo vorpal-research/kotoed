@@ -2,7 +2,6 @@ package org.jetbrains.research.kotoed.integration
 
 import io.vertx.core.Vertx
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -26,7 +25,6 @@ class TeamCityInteropTestIntegration : Loggable {
             stopServer(server)
         }
     }
-
 
     @Test
     fun pingTeamCity() {

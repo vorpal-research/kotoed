@@ -1,11 +1,8 @@
 package org.jetbrains.research.kotoed.integration
 
-import com.sun.jersey.api.client.Client
-import com.sun.jersey.api.client.config.DefaultClientConfig
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
@@ -13,8 +10,6 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import java.util.concurrent.Future
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.UriBuilder
 import kotlin.test.assertEquals
 
 class UserDatabaseTestIntegration : Loggable {
@@ -36,8 +31,8 @@ class UserDatabaseTestIntegration : Loggable {
     }
 
     fun makeStupidUser(login: String, password: String = "password", salt: String = "sugar") =
-        wpost("debug/eventbus/${Address.DB.create("denizen")}",
-                payload = JsonObject("denizenid" to login, "password" to password, "salt" to salt).encodePrettily())
+            wpost("debug/eventbus/${Address.DB.create("denizen")}",
+                    payload = JsonObject("denizenid" to login, "password" to password, "salt" to salt).encodePrettily())
 
     fun makeStupidCourse(name: String, buildTemplateId: String = "") =
             wpost("debug/eventbus/${Address.DB.create("course")}",
@@ -52,7 +47,7 @@ class UserDatabaseTestIntegration : Loggable {
                             "repourl" to repourl
                     ).encodePrettily())
 
-    val JsonObject.id get() = getInteger("id")
+    val JsonObject.id: Int get() = getInteger("id")
 
     @Test
     fun basic() {
@@ -75,4 +70,3 @@ class UserDatabaseTestIntegration : Loggable {
 
     }
 }
-

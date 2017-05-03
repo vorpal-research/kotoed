@@ -257,9 +257,9 @@ class JsonUtilTest {
     @Test
     fun testCustomJava() {
         val je = JavaExampleMessage()
-        je.bar = 42;
-        je.foo = "hello";
-        je.inner = ExampleMessage(2, "5", null);
+        je.bar = 42
+        je.foo = "hello"
+        je.inner = ExampleMessage(2, "5", null)
 
         assertEquals(je, fromJson(JsonObject("""
             { "bar" : 42, "foo" : "hello", "inner" : { "p1" : 2, "p2" : "5"  } }
