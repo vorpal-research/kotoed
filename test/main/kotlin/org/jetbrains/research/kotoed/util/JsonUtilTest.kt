@@ -104,9 +104,9 @@ class JsonUtilTest {
         assertEquals(
                 JsonObject("""
                     {
-                        "Branch" : {
-                            "Leaf" : {
-                                "Data" : [ 3, 4, "Hello" ]
+                        "branch" : {
+                            "leaf" : {
+                                "data" : [ 3, 4, "Hello" ]
                             }
                         }
                     }
@@ -177,19 +177,19 @@ class JsonUtilTest {
                         "project": {
                             "id": "Test",
                             "name": "Test project",
-                            "rootProjectId": "_Root"
+                            "root_project_id": "_Root"
                         },
-                        "vcsRoot": {
+                        "vcs_root": {
                             "id": "Test_VCS",
                             "name": "Test project VCS",
                             "type": "mercurial",
                             "url": "https://bitbucket.org/vorpal-research/kotoed",
-                            "projectId": "Test"
+                            "project_id": "Test"
                         },
-                        "buildConfig": {
+                        "build_config": {
                             "id": "Test_Build",
                             "name": "Test project build config",
-                            "templateId": "Test_Default_Build_Template"
+                            "template_id": "Test_Default_Build_Template"
                         }
                     }
                 """)),

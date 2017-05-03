@@ -16,7 +16,7 @@ class GlobalConfig : Configuration() {
             val PoolSize by 10
         }
 
-        val DB by DBConfig()
+        val Database by DBConfig()
 
         class MetricsConfig : Configuration() {
             val Enabled by true

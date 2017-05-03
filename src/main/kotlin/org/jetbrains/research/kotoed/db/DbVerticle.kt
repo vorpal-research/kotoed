@@ -26,7 +26,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
     companion object {
         val DBPool =
-                newFixedThreadPoolContext(Config.Debug.DB.PoolSize, "dbVerticles.dispatcher")
+                newFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
     }
 
     val dataSource get() = vertx.getSharedDataSource()

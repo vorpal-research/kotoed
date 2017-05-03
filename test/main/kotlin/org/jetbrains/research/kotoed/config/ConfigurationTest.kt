@@ -31,14 +31,14 @@ class ConfigurationTest {
 
         val default = JsonObject("""
                     {
-                        "Splendidness" : 9001,
-                        "Stupidity" : ${0xDEADBEEF},
-                        "Sub" : {
-                            "MaidenName" : "Hertz",
-                            "Play" : {
-                                "Author" : "Shakespeare",
-                                "Name" : "Romeo and Juliet",
-                                "ScreenTitle" : "\"Romeo and Juliet\", by Shakespeare"
+                        "splendidness" : 9001,
+                        "stupidity" : ${0xDEADBEEF},
+                        "sub" : {
+                            "maiden_name" : "Hertz",
+                            "play" : {
+                                "author" : "Shakespeare",
+                                "name" : "Romeo and Juliet",
+                                "screen_title" : "\"Romeo and Juliet\", by Shakespeare"
                             }
                         }
                     }
@@ -56,20 +56,20 @@ class ConfigurationTest {
 
         assertEquals(
                 default.copy().apply {
-                    put("Stupidity", 0) // me no stupid
+                    put("stupidity", 0) // me no stupid
                 },
-                loadConfiguration(BigConfig(), JsonObject("Stupidity" to 0)).toJson()
+                loadConfiguration(BigConfig(), JsonObject("stupidity" to 0)).toJson()
         )
 
         assertEquals(
                 default.copy().apply {
-                    getJsonObject("Sub")
-                            .getJsonObject("Play")
-                            .put("Author", "Some William")
-                            .put("ScreenTitle", "\"Romeo and Juliet\", by Some William")
+                    getJsonObject("sub")
+                            .getJsonObject("play")
+                            .put("author", "Some William")
+                            .put("screen_title", "\"Romeo and Juliet\", by Some William")
                 },
                 loadConfiguration(BigConfig(),
-                        JsonObject("""{"Sub":{"Play":{"Author":"Some William"}}}""")).toJson()
+                        JsonObject("""{"sub":{"play":{"author":"Some William"}}}""")).toJson()
         )
 
     }

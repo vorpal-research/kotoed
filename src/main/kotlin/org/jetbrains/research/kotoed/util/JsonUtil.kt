@@ -2,6 +2,7 @@
 
 package org.jetbrains.research.kotoed.util
 
+import com.google.common.base.CaseFormat
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jooq.Record
@@ -14,6 +15,9 @@ import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
+
+val camelToKey
+        = CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.LOWER_UNDERSCORE)!!
 
 /******************************************************************************/
 
@@ -30,8 +34,8 @@ inline operator fun JsonArray.component4(): Any? = this.getValue(3)
 
 inline operator fun JsonArray.get(index: Int): Any? = this.getValue(index)
 inline operator fun JsonArray.set(index: Int, value: Any?) = this.list.set(index, value)
-inline operator fun JsonObject.get(key: String): Any? = this.getValue(key)
-inline operator fun JsonObject.set(key: String, value: Any?) = this.put(key, value)
+inline operator fun JsonObject.get(key: String): Any? = this.getValue(camelToKey(key))
+inline operator fun JsonObject.set(key: String, value: Any?) = this.put(camelToKey(key), value)
 
 /******************************************************************************/
 
@@ -41,15 +45,15 @@ inline operator fun <R : Record, T> JsonObject.get(field: TableField<R, T>): T? 
 /******************************************************************************/
 
 inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
-        if (containsKey(oldName)) {
-            put(newName, remove(oldName))
+        if (containsKey(camelToKey(oldName))) {
+            put(camelToKey(newName), remove(camelToKey(oldName)))
         } else this
 
 /******************************************************************************/
 
 interface Jsonable {
     fun toJson(): JsonObject =
-            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(it.name, it.call(this).tryToJson()) })
+            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(camelToKey(it.name)!!, it.call(this).tryToJson()) })
 }
 
 interface JsonableCompanion<T : Any> {
@@ -177,7 +181,8 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 
 private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     val asMap = klass.declaredMemberProperties.map {
-        val value = data.getValue(it.name)
+        val key = camelToKey(it.name)
+        val value = data.getValue(key)
         if (value == null && !it.returnType.isMarkedNullable)
             throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
         else Pair(it.name, value?.tryFromJson(it.returnType))
@@ -214,7 +219,7 @@ inline fun <reified T : Jsonable> JsonObject.toJsonable() = fromJson(this, T::cl
 /******************************************************************************/
 
 fun JsonObject.getValueByType(name: String, type: KType): Any? {
-    val value = getValue(name)
+    val value = getValue(camelToKey(name))
     if (value == null && !type.isMarkedNullable)
         throw IllegalArgumentException("Field $name is missing in \"${this}\"")
     return value?.tryFromJson(type)
@@ -223,14 +228,14 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
 /******************************************************************************/
 
 object AnyAsJson {
-    operator fun Any?.get(key: String) = (this as? JsonObject)?.getValue(key)
+    operator fun Any?.get(key: String) = (this as? JsonObject)?.run { getValue(key) ?: getValue(camelToKey(key)) }
     operator fun Any?.get(index: Int) = (this as? JsonArray)?.getValue(index)
 }
 
 data class JsonDelegate(val obj: JsonObject) {
     @Suppress("UNCHECKED_CAST")
-    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(prop.name) as T
-    operator fun <T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(prop.name, value)
+    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(camelToKey(prop.name)!!) as T
+    operator fun <T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(camelToKey(prop.name)!!, value)
 }
 
 val JsonObject.delegate get() = JsonDelegate(this)
