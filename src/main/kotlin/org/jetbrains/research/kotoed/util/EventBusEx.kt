@@ -98,7 +98,7 @@ fun AbstractVerticle.registerAllConsumers() {
                         }
                     } else {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
-                            DelegateLoggable(javaClass).withExceptions(msg) {
+                            DelegateLoggable(klass.java).withExceptions(msg) {
                                 function.call(this, msg)
                             }
                         }
@@ -120,7 +120,7 @@ fun AbstractVerticle.registerAllConsumers() {
                         }
                     } else {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
-                            DelegateLoggable(javaClass).withExceptions(msg) {
+                            DelegateLoggable(klass.java).withExceptions(msg) {
                                 val argument = fromJson(msg.body())
                                 val res = expectNotNull(function.call(this@registerAllConsumers, argument))
                                 msg.reply(toJson(res))

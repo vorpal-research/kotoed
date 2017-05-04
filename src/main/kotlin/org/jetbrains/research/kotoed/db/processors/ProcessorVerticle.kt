@@ -48,7 +48,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     val cache: Cache<Int, VerificationStatus> = CacheBuilder.newBuilder()
             .expireAfterAccess(30, TimeUnit.MINUTES) // TODO: Move to settings
-            .build<Int, VerificationStatus>()
+            .build()
 
     val cacheMap: ConcurrentMap<Int, VerificationStatus>
         get() = cache.asMap()
