@@ -74,8 +74,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         super.stop(stopFuture)
     }
 
-    private val<T> VcsResult<T>.result
-        get() = when(this) {
+    private val <T> VcsResult<T>.result
+        get() = when (this) {
             is VcsResult.Success -> v
             is VcsResult.Failure -> throw VcsException(output.toList())
         }
@@ -136,21 +136,22 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
     @EventBusConsumerFor(Address.Code.Download)
     suspend fun handleClone(mes: Message<JsonObject>) {
-        val message: RemoteRequest = fromJson(mes.body())
+        val message: RemoteRequest = mes.body().toJsonable()
 
-        log.info("Requested clone: $message")
+        log.trace("Requested clone: $message")
 
         val url = message.url
-        if (message in procs) {
-            log.info("Cloning request for $url: repository already cloned")
-            mes.reply(procs[message]?.toJson())
+        val existing = procs[message]
+        if (existing != null) {
+            log.trace("Cloning request for $url: repository already cloned")
+            mes.reply(existing.toJson())
             return
         }
 
         val uid = UUID.randomUUID()
         val randomName = File(dir, "$uid")
-        log.info("Generated uid: $uid")
-        log.info("Using directory: $randomName")
+        log.trace("Generated uid: $uid")
+        log.trace("Using directory: $randomName")
 
         val pendingResp = RepositoryInfo(
                 status = CloneStatus.pending,
@@ -171,16 +172,20 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             run {
                 val res = run(ee) {
                     root.clone().also {
-                        log.info("Cloning finished for $url in directory $randomName")
+                        log.trace("Cloning finished for $url in directory $randomName")
                     }
                 }
                 vertx.goToEventLoop()
 
-                log.info("Cloning request for $url successful")
+                log.trace("Cloning request for $url successful")
 
                 val resp =
                         pendingResp.copy(
-                                status = if(res is VcsResult.Success) CloneStatus.done else CloneStatus.failed,
+                                status =
+                                when (res) {
+                                    is VcsResult.Success -> CloneStatus.done
+                                    else -> CloneStatus.failed
+                                },
                                 errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
                         )
 
@@ -189,12 +194,12 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
             onTimeout {
                 mes.reply(procs[message]?.toJson())
-                log.info("Cloning request for $url timed out: sending 'pending' reply")
+                log.trace("Cloning request for $url timed out: sending 'pending' reply")
             }
 
             onSuccess {
                 mes.reply(procs[message]?.toJson())
-                log.info("Cloning request for $url timed out: sending 'successful' reply")
+                log.trace("Cloning request for $url timed out: sending 'successful' reply")
             }
         }
 
@@ -207,8 +212,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val divided = diffOutput.splitBy { it.startsWith("diff") }.filterNot { it.isEmpty() }
 
         val res = divided.map {
-            log.info("Parsing:")
-            log.info(it.joinToString("\n"))
+            log.trace("Parsing:")
+            log.trace(it.joinToString("\n"))
             val parser = UnifiedDiffParser()
             val pres = parser.parse(it.asSequence().linesAsCharSequence().asInputStream())
             log.trace(pres.map { it.toJson() })
@@ -220,7 +225,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Code.Diff)
     suspend fun handleDiff(message: DiffRequest): DiffResponse {
-        log.info("Requested diff: $message")
+        log.trace("Requested diff: $message")
 
         UUID.fromString(message.uid)
 
@@ -239,7 +244,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Code.LocationDiff)
     suspend fun handleLocation(message: LocationRequest): LocationResponse {
-        log.info("Requested location adjustment: $message")
+        log.trace("Requested location adjustment: $message")
 
         UUID.fromString(message.uid)
 
@@ -248,8 +253,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf], "Inconsistent repo state").root
 
         val diffRes = run(ee) {
-            val from = message.fromRevision.let { VcsRoot.Revision.Id(it) }
-            val to = message.toRevision.let { VcsRoot.Revision.Id(it) }
+            val from = message.fromRevision.let { VcsRoot.Revision(it) }
+            val to = message.toRevision.let { VcsRoot.Revision(it) }
             root.diffAll(from, to)
         }.result
 

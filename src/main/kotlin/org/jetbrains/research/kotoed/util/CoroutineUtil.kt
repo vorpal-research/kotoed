@@ -5,6 +5,7 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
+import io.vertx.core.logging.Logger
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.CoroutineScope
