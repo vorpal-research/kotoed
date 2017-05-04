@@ -12,11 +12,8 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
-import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.*
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
@@ -120,8 +117,14 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
     }.ignore()
 
     open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+        val mbody = message.body()
         log.trace("Create requested in table ${table.name}:\n" +
-                message.body().encodePrettily())
+                mbody.encodePrettily())
+
+        for(field in table.primaryKey.fieldsArray) {
+            mbody.remove(field.name)
+        }
+
         val resp = db {
             insertInto(table)
                     .set(newRecord(table, message.body().map))
