@@ -5,7 +5,7 @@
   },
 
   "debug": {
-    "db": {
+    "database": {
       "url": "jdbc:postgresql://localhost/kotoed-test",
       "user": "kotoed",
       "password": "kotoed"
