@@ -189,8 +189,10 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     }.toMap()
 
     return try {
-        val ctor = klass.constructors.first()
-        ctor.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
+        val ctor = klass.constructors.find {
+            it.parameters.map { it.name }.toSet() == asMap.keys
+        }
+        ctor!!.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
     }
