@@ -12,8 +12,11 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.AutoDeployable
+import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.database.*
+import org.jetbrains.research.kotoed.util.ignore
 import org.jooq.*
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
@@ -79,7 +82,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
-        val resp = db { selectById(id) }
+        val resp = db { selectById(id) } ?: throw IllegalArgumentException("Cannot find ${table.name} entry for id $id")
         message.reply(resp)
     }.ignore()
 
@@ -121,7 +124,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
         log.trace("Create requested in table ${table.name}:\n" +
                 mbody.encodePrettily())
 
-        for(field in table.primaryKey.fieldsArray) {
+        for (field in table.primaryKey.fieldsArray) {
             mbody.remove(field.name)
         }
 
@@ -192,6 +195,9 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
 
 @AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
+
+@AutoDeployable
+class CourseStatusVerticle : CrudDatabaseVerticleWithReferences<CourseStatusRecord>(Tables.COURSE_STATUS)
 
 @AutoDeployable
 class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)

@@ -1,6 +1,14 @@
 package org.jetbrains.research.kotoed.eventbus
 
 object Address {
+    object Api {
+        object Course {
+            const val Create = "kotoed.api.course.create"
+            const val Read = "kotoed.api.course.read"
+            const val Error = "kotoed.api.course.error"
+        }
+    }
+
     object TeamCity {
         const val Proxy = "kotoed.teamcity.proxy"
 
