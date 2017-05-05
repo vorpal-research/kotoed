@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.integration
 
+import com.sun.jersey.api.client.UniformInterfaceException
 import io.vertx.core.Vertx
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
@@ -14,6 +15,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DebugEndpointTestIntegration : Loggable {
@@ -101,8 +103,18 @@ class DebugEndpointTestIntegration : Loggable {
         }
 
         for (id in ids) {
-            assertEquals("null", wget("debug/eventbus/${Address.DB.read("debug")}", params = listOf("id" to id)))
-            assertEquals("null", wget("debug/eventbus/${Address.DB.delete("debug")}", params = listOf("id" to id)))
+            assertEquals(
+                    400,
+                    assertFailsWith(UniformInterfaceException::class) {
+                        wget("debug/eventbus/${Address.DB.read("debug")}", params = listOf("id" to id)).let(::JsonObject)
+                    }.response.status
+            )
+            assertEquals(
+                    400,
+                    assertFailsWith(UniformInterfaceException::class) {
+                        wget("debug/eventbus/${Address.DB.delete("debug")}", params = listOf("id" to id)).let(::JsonObject)
+                    }.response.status
+            )
         }
     }
 
