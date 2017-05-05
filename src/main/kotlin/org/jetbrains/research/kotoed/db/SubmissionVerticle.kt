@@ -122,38 +122,32 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @EventBusConsumerFor(Address.Submission.Create)
-    fun handleSubmissionCreate(message: Message<JsonObject>) =
-            launch(UnconfinedWithExceptions { log.error("", it) }) {
-                val (_, project, _) = run(UnconfinedWithExceptions(message)) {
-                    var record: SubmissionRecord = message.body().toRecord()
-                    // Set record's state to be pending
-                    record.state = Submissionstate.pending
+    suspend fun handleSubmissionCreate(message: Message<JsonObject>) {
+        var record: SubmissionRecord = message.body().toRecord()
+        // Set record's state to be pending
+        record.state = Submissionstate.pending
 
-                    val project = selectById(Tables.PROJECT, record.projectId)
-                    expect(project["id"] == record.projectId, "Illegal projectId")
+        val project = selectById(Tables.PROJECT, record.projectId)
+        expect(project["id"] == record.projectId, "Illegal projectId")
 
-                    val parent = record.parentSubmissionId?.let { selectById(Tables.SUBMISSION, it) }
-                    expect(parent?.getValue("id") == record.parentSubmissionId, "Illegal parentsubmissionid")
+        val parent = record.parentSubmissionId?.let { selectById(Tables.SUBMISSION, it) }
+        expect(parent?.getValue("id") == record.parentSubmissionId, "Illegal parentsubmissionid")
 
-                    parent?.apply {
-                        expect(projectId == project.id)
-                        expect(state != Submissionstate.obsolete)
-                    }
+        parent?.apply {
+            expect(projectId == project.id)
+            expect(state != Submissionstate.obsolete)
+        }
 
-                    record = record.persistAsCopy()
-                    expect(record.id is Int)
+        record = record.persistAsCopy()
+        expect(record.id is Int)
 
-                    message.reply(record.toJson())
+        message.reply(record.toJson())
 
-                    Triple(record, project, parent)
-                }
+        val vcs = project.repoType
+        val repository = project.repoUrl
 
-                val vcs = project.repoType
-                val repository = project.repoUrl
-
-                sendJsonableAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repository))
-
-            }
+        return sendJsonableAsync(Address.Code.Download, RemoteRequest(VCS.valueOf(vcs), repository))
+    }
 
     @JsonableEventBusConsumerFor(Address.Submission.Comment.Create)
     suspend fun handleCommentCreate(message: SubmissionCommentRecord): SubmissionCommentRecord = run {

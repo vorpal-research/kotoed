@@ -17,6 +17,16 @@ abstract class VcsRoot(val remote: String, val local: String) {
     sealed class Revision {
         data class Id(val rep: String) : Revision()
         object Trunk : Revision()
+
+        companion object {
+            fun valueOf(rep: String) = when(rep.toLowerCase()) {
+                "tip", "head", "current" -> Trunk
+                else -> Id(rep)
+            }
+
+            @Suppress("NOTHING_TO_INLINE")
+            inline operator fun invoke(rep: String) = valueOf(rep)
+        }
     }
 
     abstract fun clone(): VcsResult<Unit>

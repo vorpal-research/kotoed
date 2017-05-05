@@ -130,9 +130,9 @@ suspend fun FileSystem.deleteRecursiveAsync(path: String, recursive: Boolean = t
 
 data class VertxTimeoutProcessing(val vertx: Vertx,
                                   val time: Long,
-                                  var onTimeoutSusp: suspend () -> Unit = {},
-                                  var onSuccessSusp: suspend () -> Unit = {},
-                                  var bodySusp: suspend () -> Unit = {}) {
+                                  private var onTimeoutSusp: suspend () -> Unit = {},
+                                  private var onSuccessSusp: suspend () -> Unit = {},
+                                  private var bodySusp: suspend () -> Unit = {}) {
 
     suspend fun execute(timeoutCtx: CoroutineContext = Unconfined) {
         var timedOut = false
