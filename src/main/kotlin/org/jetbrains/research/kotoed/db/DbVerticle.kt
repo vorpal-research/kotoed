@@ -75,6 +75,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
                     .returning()
                     .fetchOne()
                     ?.into(JsonObject::class.java)
+                    ?: throw IllegalArgumentException("Cannot find ${table.name} entry for id $id")
         }
         message.reply(resp)
     }.ignore()
