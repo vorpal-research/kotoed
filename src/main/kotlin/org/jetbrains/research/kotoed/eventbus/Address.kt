@@ -2,7 +2,7 @@ package org.jetbrains.research.kotoed.eventbus
 
 object Address {
     object TeamCity {
-        const val Test = "kotoed.teamcity.test"
+        const val Proxy = "kotoed.teamcity.proxy"
 
         object Project {
             const val Create = "kotoed.teamcity.project.create"

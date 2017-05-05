@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.teamcity.build.BuildInfo
 import org.jetbrains.research.kotoed.data.teamcity.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
+import org.jetbrains.research.kotoed.data.teamcity.project.DimensionQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.requests.FreeMarkerTemplateEngineImplEx
 import org.jetbrains.research.kotoed.teamcity.util.*
@@ -81,6 +82,27 @@ class TeamCityVerticle : AbstractKotoedVerticle(), Loggable {
                             .map { e -> "${e.key} -> ${e.value.bodyAsString()}" }
                             .joinToString("\n")
             )
+        }
+    }
+
+    @JsonableEventBusConsumerFor(Address.TeamCity.Proxy)
+    suspend fun consumeTeamCityProxy(query: DimensionQuery): JsonObject {
+        val wc = WebClient.create(vertx)
+
+        val res = vxa<HttpResponse<Buffer>> {
+            wc.get(Config.TeamCity.Port, Config.TeamCity.Host, query.endpoint + query.locator)
+                    .putDefaultTCHeaders()
+                    .send(it)
+        }
+
+        if (HttpResponseStatus.OK.code() == res.statusCode()) {
+
+            return res.bodyAsJsonObject()
+
+        } else {
+
+            return JsonObject()
+
         }
     }
 

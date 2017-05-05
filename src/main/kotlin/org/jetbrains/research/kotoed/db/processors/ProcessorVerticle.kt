@@ -11,10 +11,7 @@ import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.teamcity.project.BuildConfig
-import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
-import org.jetbrains.research.kotoed.data.teamcity.project.Project
-import org.jetbrains.research.kotoed.data.teamcity.project.VcsRoot
+import org.jetbrains.research.kotoed.data.teamcity.project.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -22,6 +19,7 @@ import org.jetbrains.research.kotoed.db.DatabaseVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.teamcity.util.*
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 import java.util.concurrent.ConcurrentMap
@@ -33,6 +31,8 @@ enum class VerificationStatus {
     Processed,
     Invalid
 }
+
+fun VerificationStatus?.bang() = this ?: VerificationStatus.Unknown
 
 data class VerificationData(
         val id: Int,
@@ -65,23 +65,24 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     fun handleProcess(msg: Message<JsonObject>) = launch(UnconfinedWithExceptions(msg)) {
         val id: Int by msg.body().delegate
         val data = db { selectById(id) }
-        val oldStatus = cacheMap.putIfAbsent(id, VerificationStatus.Unknown)
+        val oldStatus = cacheMap.putIfAbsent(id, VerificationStatus.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus) {
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
         process(data)
+        msg.reply(VerificationData(id, cache[id].bang()).toJson())
     }.ignore()
 
     fun handleVerify(msg: Message<JsonObject>) = launch(UnconfinedWithExceptions(msg)) {
         val id: Int by msg.body().delegate
         val data = db { selectById(id) }
-        val oldStatus = cacheMap.putIfAbsent(id, VerificationStatus.Unknown)
+        val oldStatus = cacheMap.putIfAbsent(id, VerificationStatus.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus) {
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
-        msg.reply(VerificationData(id, cache[id] ?: VerificationStatus.Unknown).toJson())
+        msg.reply(VerificationData(id, cache[id].bang()).toJson())
     }.ignore()
 
     suspend fun process(data: JsonObject?) {
@@ -89,7 +90,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
         val id = data[pk.name] as Int
 
-        val oldStatus = cache[id] ?: VerificationStatus.Unknown
+        val oldStatus = cache[id].bang()
 
         when (oldStatus) {
             VerificationStatus.Processed, VerificationStatus.NotReady -> {
@@ -103,17 +104,20 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
                     if (statuses.all { VerificationStatus.Processed == it }) {
 
-                        doProcess(data)
+                        try {
+                            doProcess(data)
+                            cacheMap.replace(id, VerificationStatus.NotReady, VerificationStatus.Processed)
+                        } catch (ex: Exception) {
+                            cacheMap.replace(id, VerificationStatus.NotReady, VerificationStatus.Invalid)
+                        }
 
                     } else if (statuses.any { VerificationStatus.Invalid == it }) {
 
-                        // do nothing
-                        // log?
+                        cacheMap.replace(id, VerificationStatus.NotReady, VerificationStatus.Invalid)
 
                     } else {
 
-                        // do nothing?
-                        // retry later?
+                        cacheMap.replace(id, VerificationStatus.NotReady, VerificationStatus.Unknown)
 
                     }
                 } else { // retry
@@ -126,8 +130,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     suspend open fun verify(data: JsonObject?): VerificationStatus =
             VerificationStatus.Processed
 
-    suspend open fun doProcess(data: JsonObject) {
-    }
+    suspend open fun doProcess(data: JsonObject) {}
 
     suspend open fun checkPrereqs(data: JsonObject): List<VerificationStatus> =
             emptyList()
@@ -191,6 +194,43 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 .map { it.status }
     }
 
+    suspend override fun verify(data: JsonObject?): VerificationStatus {
+        val eb = vertx.eventBus()
+
+        val projectRecord = data?.toRecord<ProjectRecord>() ?: return VerificationStatus.Invalid
+
+        val tcQueries = listOf(
+                DimensionQuery(
+                        TeamCityApi.Projects,
+                        DimensionLocator("id", name2id(projectRecord.name))
+                ),
+                DimensionQuery(
+                        TeamCityApi.VcsRoots,
+                        DimensionLocator("id", name2vcs(projectRecord.name))
+                ),
+                DimensionQuery(
+                        TeamCityApi.BuildTypes,
+                        DimensionLocator("id", name2build(projectRecord.name))
+                )
+        )
+
+        val res = tcQueries.map { q ->
+            vxa<Message<JsonObject>> {
+                eb.send(
+                        Address.TeamCity.Proxy,
+                        q.toJson(),
+                        it
+                )
+            }
+        }.map { it.body() }
+
+        return if (res.all { !it.isEmpty }) {
+            VerificationStatus.Processed
+        } else {
+            VerificationStatus.Invalid
+        }
+    }
+
     suspend override fun doProcess(data: JsonObject) {
         // FIXME rewrite to records
 
@@ -212,7 +252,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 Project(
                         name2id(projectName),
                         projectName,
-                        courseRecord[Tables.COURSE.ROOT_PROJECT_ID] // FIXME
+                        courseRecord[Tables.COURSE.ROOT_PROJECT_ID]
                 ),
                 VcsRoot(
                         name2vcs(projectName),
@@ -231,7 +271,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         vxa<Message<JsonObject>> {
             eb.send(
                     Address.TeamCity.Project.Create,
-                    createProject,
+                    createProject.toJson(),
                     it
             )
         }

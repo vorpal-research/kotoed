@@ -1,12 +1,13 @@
 package org.jetbrains.research.kotoed.teamcity.util
 
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.util.Jsonable
 
-data class ApiEndpoint(val path: String) {
+data class ApiEndpoint(val path: String) : Jsonable {
     operator fun invoke(): String = path
 }
 
-interface Locator
+interface Locator : Jsonable
 
 object EmptyLocator : Locator {
     override fun toString(): String = ""

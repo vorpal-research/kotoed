@@ -1,6 +1,8 @@
 package org.jetbrains.research.kotoed.data.teamcity.project
 
 import org.jetbrains.research.kotoed.data.EventBusDatum
+import org.jetbrains.research.kotoed.teamcity.util.ApiEndpoint
+import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
 
 data class Project(
         val id: String,
@@ -24,3 +26,8 @@ data class CreateProject(
         val vcsRoot: VcsRoot,
         val buildConfig: BuildConfig
 ) : EventBusDatum<CreateProject>()
+
+data class DimensionQuery(
+        val endpoint: ApiEndpoint,
+        val locator: DimensionLocator
+) : EventBusDatum<DimensionQuery>()
