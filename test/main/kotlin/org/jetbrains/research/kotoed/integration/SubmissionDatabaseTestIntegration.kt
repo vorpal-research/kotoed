@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.integration
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.Jsonable
@@ -33,6 +34,10 @@ class SubmissionDatabaseTestIntegration : Loggable {
             wpost("debug/eventbus/$address", payload = payload.encode())
                     .let(::JsonObject)
 
+    fun dbPostMany(address: String, payload: JsonObject) =
+            wpost("debug/eventbus/$address", payload = payload.encode())
+                    .let(::JsonArray)
+
     fun makeDbNew(entity: String, payload: JsonObject) =
             dbPost(Address.DB.create(entity), payload)
 
@@ -52,7 +57,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
 
         var submission = dbPost(
-                Address.Submission.Create,
+                Address.Api.Submission.Create,
                 object : Jsonable {
                     val project_id = project.id
                     val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
@@ -62,7 +67,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
         while (submission.getString("state") != "open") {
             submission = dbPost(
-                    Address.Submission.Read,
+                    Address.Api.Submission.Read,
                     object : Jsonable {
                         val id = submission.id
                     }.toJson()
@@ -71,7 +76,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
         }
 
         var resubmission = dbPost(
-                Address.Submission.Create,
+                Address.Api.Submission.Create,
                 object : Jsonable {
                     val parent_submission_id = submission.id
                     val project_id = project.id
@@ -80,7 +85,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
         while (resubmission.getString("state") != "open") {
             resubmission = dbPost(
-                    Address.Submission.Read,
+                    Address.Api.Submission.Read,
                     object : Jsonable {
                         val id = resubmission.id
                     }.toJson()
@@ -89,7 +94,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
         }
 
         val comment = dbPost(
-                Address.Submission.Comment.Create,
+                Address.Api.Submission.Comment.Create,
                 object : Jsonable {
                     val submission_id = submission.id
                     val sourcefile = "pom.xml"
@@ -100,7 +105,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
         assertEquals(resubmission.id, comment.getInteger("submission_id"))
 
         var resubmission2 = dbPost(
-                Address.Submission.Create,
+                Address.Api.Submission.Create,
                 object : Jsonable {
                     val parent_submission_id = resubmission.id
                     val project_id = project.id
@@ -109,7 +114,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
         while (resubmission2.getString("state") != "open") {
             resubmission2 = dbPost(
-                    Address.Submission.Read,
+                    Address.Api.Submission.Read,
                     object : Jsonable {
                         val id = resubmission2.id
                     }.toJson()
@@ -117,11 +122,11 @@ class SubmissionDatabaseTestIntegration : Loggable {
             Thread.sleep(100)
         }
 
-        val comments = dbPost(
-                Address.Submission.Comments,
+        val comments = dbPostMany(
+                Address.Api.Submission.Comments,
                 object : Jsonable {
                     val id = resubmission2.id
-                }.toJson()).getJsonArray("comments")
+                }.toJson())
 
         assertEquals(1, comments.size())
         assertEquals(comment.getString("text"), comments.getJsonObject(0).getString("text"))
