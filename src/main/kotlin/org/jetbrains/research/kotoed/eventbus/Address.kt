@@ -7,6 +7,18 @@ object Address {
             const val Read = "kotoed.api.course.read"
             const val Error = "kotoed.api.course.error"
         }
+
+        object Submission {
+            const val Read = "kotoed.submission.read"
+            const val Create = "kotoed.submission.create"
+            const val Comments = "kotoed.submission.comments"
+
+            object Comment {
+                const val Read = "kotoed.submission.comment.read"
+                const val Create = "kotoed.submission.comment.create"
+            }
+
+        }
     }
 
     object TeamCity {
@@ -53,15 +65,4 @@ object Address {
         fun verify(entity: String) = "kotoed.db.$entity.verify"
     }
 
-    object Submission {
-        const val Read = "kotoed.submission.read"
-        const val Create = "kotoed.submission.create"
-        const val Comments = "kotoed.submission.comments"
-
-        object Comment {
-            const val Read = "kotoed.submission.comment.read"
-            const val Create = "kotoed.submission.comment.create"
-        }
-
-    }
 }

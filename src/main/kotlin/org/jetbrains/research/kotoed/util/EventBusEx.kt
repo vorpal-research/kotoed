@@ -6,6 +6,7 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -15,8 +16,10 @@ import org.jooq.Record
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
@@ -47,39 +50,74 @@ annotation class EventBusConsumerFor(val address: String)
 @Target(AnnotationTarget.FUNCTION)
 annotation class JsonableEventBusConsumerFor(val address: String)
 
-private fun getToJsonConverter(klazz: KClass<*>): (value: Any) -> JsonObject =
-        when {
-            klazz.isSubclassOf(JsonObject::class) -> {
-                { it as JsonObject }
-            }
-            klazz.isSubclassOf(Jsonable::class) -> {
-                { (it as Jsonable).toJson() }
-            }
-            klazz.isSubclassOf(Record::class) -> {
-                { (it as Record).toJson() }
-            }
-            klazz.isSubclassOf(Unit::class) -> {
-                { JsonObject() }
-            }
-            else -> throw IllegalArgumentException("Non-jsonable class: $klazz")
+private fun getToJsonConverter(type: KType): (value: Any) -> Any {
+    val klazz = type.jvmErasure
+    return when {
+        klazz.isSubclassOf(JsonObject::class) -> {
+            { it.expectingIs<JsonObject>() }
+        }
+        klazz.isSubclassOf(Jsonable::class) -> {
+            { it.expectingIs<Jsonable>().toJson() }
+        }
+        klazz.isSubclassOf(Record::class) -> {
+            { it.expectingIs<Record>().toJson() }
+        }
+        klazz.isSubclassOf(Unit::class) -> {
+            { JsonObject() }
         }
 
-private fun getFromJsonConverter(klazz: KClass<*>): (value: JsonObject) -> Any =
-        when {
-            klazz.isSubclassOf(JsonObject::class) -> {
-                { it }
-            }
-            klazz.isSubclassOf(Jsonable::class) -> {
-                { fromJson(it, klazz) }
-            }
-            klazz.isSubclassOf(Record::class) -> {
-                { it.toRecord(klazz as KClass<out Record>) }
-            }
-            klazz.isSubclassOf(Unit::class) -> {
-                {}
-            }
-            else -> throw IllegalArgumentException("Non-jsonable class: $klazz")
+    // collections
+        klazz.isSubclassOf(JsonArray::class) -> {
+            { it }
         }
+        klazz.isSubclassOf(Collection::class) -> {
+            val elementMapper = getToJsonConverter(type.arguments.first().type!!);
+            {
+                (it as Collection<*>)
+                        .asSequence()
+                        .filterNotNull()
+                        .map(elementMapper)
+                        .toList()
+                        .let(::JsonArray)
+            }
+        }
+
+        else -> throw IllegalArgumentException("Non-jsonable class: $klazz")
+    }
+}
+
+private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
+    val klazz = type.jvmErasure
+    return when {
+        klazz.isSubclassOf(JsonObject::class) -> {
+            { it.expectingIs<JsonObject>() }
+        }
+        klazz.isSubclassOf(Jsonable::class) -> {
+            { fromJson(it.expectingIs<JsonObject>(), klazz) }
+        }
+        klazz.isSubclassOf(Record::class) -> {
+            { it.expectingIs<JsonObject>().toRecord(klazz as KClass<out Record>) }
+        }
+        klazz.isSubclassOf(Unit::class) -> {
+            {}
+        }
+
+    // collections
+        klazz.isSubclassOf(JsonArray::class) -> {
+            { it.expectingIs<JsonArray>() }
+        }
+        klazz.isSubclassOf(List::class) -> {
+            val elementMapper = getFromJsonConverter(type.arguments.first().type!!);
+            { it.expectingIs<JsonArray>().map(elementMapper) }
+        }
+        klazz.isSubclassOf(Set::class) -> {
+            val elementMapper = getFromJsonConverter(type.arguments.first().type!!);
+            { it.expectingIs<JsonArray>().map(elementMapper).toSet() }
+        }
+
+        else -> throw IllegalArgumentException("Non-jsonable class: $klazz")
+    }
+}
 
 fun AbstractVerticle.registerAllConsumers() {
     val klass = this::class
@@ -105,10 +143,10 @@ fun AbstractVerticle.registerAllConsumers() {
                     }
                 is JsonableEventBusConsumerFor -> {
                     // first parameter is the receiver, we need the second one
-                    val parameterClass = function.parameters[1].type.jvmErasure
-                    val resultClass = function.returnType.jvmErasure
-                    val toJson = getToJsonConverter(resultClass)
-                    val fromJson = getFromJsonConverter(parameterClass)
+                    val parameterType = function.parameters[1].type
+                    val resultType = function.returnType
+                    val toJson = getToJsonConverter(resultType)
+                    val fromJson = getFromJsonConverter(parameterType)
 
                     if (function.isSuspend) {
                         eb.consumer<JsonObject>(annotation.address) { msg ->
@@ -144,21 +182,48 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     internal suspend fun <Argument : Any, Result : Any> sendJsonableAsync(
             address: String,
             value: Argument,
-            argClass: KClass<Argument>,
-            resultClass: KClass<Result>
+            argClass: KClass<out Argument>,
+            resultClass: KClass<out Result>
     ): Result {
-        val toJson = getToJsonConverter(argClass)
-        val fromJson = getFromJsonConverter(resultClass)
+        val toJson = getToJsonConverter(argClass.starProjectedType)
+        val fromJson = getFromJsonConverter(resultClass.starProjectedType)
         return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson) as Result
+    }
+
+    @PublishedApi
+    @Deprecated("Do not call directly")
+    internal suspend fun <Argument : Any, Result : Any> sendJsonableCollectAsync(
+            address: String,
+            value: Argument,
+            argClass: KClass<out Argument>,
+            resultClass: KClass<out Result>
+    ): List<Result> {
+        val toJson = getToJsonConverter(argClass.starProjectedType)
+        val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+        return vertx
+                .eventBus()
+                .sendAsync<JsonArray>(address, toJson(value))
+                .body()
+                .asSequence()
+                .filterIsInstance<JsonObject>()
+                .map(fromJson)
+                .map { it as Result }
+                .toList()
     }
 
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
-    protected suspend fun <R : UpdatableRecord<R>> persist(v: R, klass: KClass<R>): R =
+    protected suspend fun <R : UpdatableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
             sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> persistAsCopy(v: R, klass: KClass<R>): R =
+    protected suspend fun <R : UpdatableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
             sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
+
+    protected suspend fun <R : UpdatableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
+            sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
+
+    protected suspend fun <R : UpdatableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
+            sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
 
     protected suspend fun <R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int, klass: KClass<R>): R =
             sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
