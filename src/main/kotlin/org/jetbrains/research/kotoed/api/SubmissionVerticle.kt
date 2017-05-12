@@ -33,15 +33,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         get() = Location(Filename(path = sourcefile), sourceline)
 
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
-        val eb = vertx.eventBus()
-        eb.sendAsync<JsonArray>(
-                Address.DB.readFor(Tables.SUBMISSION_COMMENT.name, Tables.SUBMISSION.name),
-                JsonObject(Tables.SUBMISSION_COMMENT.SUBMISSION_ID.name to parent.id)
-        )
-                .body()
-                .asSequence()
-                .filterIsInstance<JsonObject>()
-                .map { it.toRecord<SubmissionCommentRecord>() }
+        dbFindAsync(SubmissionCommentRecord().apply { submissionId = parent.id })
                 .forEach { comment ->
                     comment.submissionId = child.id
                     val adjustedLocation: LocationResponse =
@@ -133,7 +125,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Create)
     suspend fun handleCommentCreate(message: SubmissionCommentRecord): SubmissionCommentRecord = run {
-        val submission = selectById(Tables.SUBMISSION, message.submissionId)
+        message.apply { originalSubmissionId = originalSubmissionId ?: submissionId }
+
+        val submission = fetchByIdAsync(Tables.SUBMISSION, expectNotNull(message.submissionId))
         when (submission.state) {
             Submissionstate.open -> dbCreateAsync(message)
             Submissionstate.obsolete -> {

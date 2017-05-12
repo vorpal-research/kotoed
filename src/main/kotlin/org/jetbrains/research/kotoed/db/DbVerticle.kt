@@ -34,7 +34,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
             run(DBPool) { jooq(dataSource).use(body) }
 
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            launch(DBPool) { jooq(dataSource).use { it.body() } }
+            run(DBPool) { jooq(dataSource).use { it.body() } }
 
     protected fun DSLContext.selectById(id: Any) =
             select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
@@ -99,6 +99,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
                     .into(JsonObject::class.java)
                     .let(::JsonArray)
         }
+        log.trace("Found ${resp.size()} records")
         message.reply(resp)
     }.ignore()
 
@@ -170,11 +171,13 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
             dbAsync {
                 val res =
                         select(*table.fields())
-                                .from(table.join(fk.key.table).onKey())
+                                .from(table.join(fk.key.table).onKey(fk))
                                 .where(fkField.eq(id))
                                 .fetchKAsync()
                                 .into(JsonObject::class.java)
                                 .let(::JsonArray)
+
+                log.trace("Found ${res.size()} records")
 
                 msg.reply(res)
             }
