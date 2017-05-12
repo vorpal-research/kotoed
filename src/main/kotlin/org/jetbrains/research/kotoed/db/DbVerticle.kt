@@ -5,9 +5,7 @@ import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.*
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
@@ -15,6 +13,9 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
+import java.util.concurrent.Executors
+import kotlin.coroutines.experimental.AbstractCoroutineContextElement
+import kotlin.coroutines.experimental.CoroutineContext
 
 abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
         val table: Table<R>,
@@ -22,8 +23,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 ) : AbstractKotoedVerticle(), Loggable {
 
     companion object {
-        val DBPool =
-                newFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
+        val DBPool = newFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
     }
 
     val dataSource get() = vertx.getSharedDataSource()
@@ -34,7 +34,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
             run(DBPool) { jooq(dataSource).use(body) }
 
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            launch(DBPool) { jooq(dataSource).use { it.body() } }
+            run(DBPool) { jooq(dataSource).use { it.body() } }
 
     protected fun DSLContext.selectById(id: Any) =
             select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
@@ -99,6 +99,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
                     .into(JsonObject::class.java)
                     .let(::JsonArray)
         }
+        log.trace("Found ${resp.size()} records")
         message.reply(resp)
     }.ignore()
 
@@ -170,11 +171,13 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
             dbAsync {
                 val res =
                         select(*table.fields())
-                                .from(table.join(fk.key.table).onKey())
+                                .from(table.join(fk.key.table).onKey(fk))
                                 .where(fkField.eq(id))
                                 .fetchKAsync()
                                 .into(JsonObject::class.java)
                                 .let(::JsonArray)
+
+                log.trace("Found ${res.size()} records")
 
                 msg.reply(res)
             }

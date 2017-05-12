@@ -7,6 +7,7 @@ import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
+import io.vertx.core.eventbus.ReplyFailure
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
@@ -242,4 +243,15 @@ inline suspend fun <
         > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress("DEPRECATION")
     return sendJsonableAsync(address, value, Argument::class, Result::class)
+}
+
+inline suspend fun <
+        reified Result : Any,
+        reified Argument : Any
+        > AbstractKotoedVerticle.trySendJsonableAsync(address: String, value: Argument): Result? {
+    return try { sendJsonableAsync(address, value) }
+    catch (ex: ReplyException) {
+        if(ex.failureType() == ReplyFailure.NO_HANDLERS) null
+        else throw ex
+    }
 }

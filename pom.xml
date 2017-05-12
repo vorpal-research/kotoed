@@ -33,6 +33,7 @@
         <kotlinx.coroutines.version>0.14</kotlinx.coroutines.version>
         <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.2</diffparser.version>
+        <validation-api.version>1.1.0.Final</validation-api.version>
 
         <jersey-client.version>1.8</jersey-client.version>
 
@@ -193,6 +194,11 @@
             <groupId>org.wickedsource</groupId>
             <artifactId>diffparser</artifactId>
             <version>${diffparser.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>${validation-api.version}</version>
         </dependency>
 
     </dependencies>
@@ -493,6 +499,10 @@
                     </jdbc>
 
                     <generator>
+                        <generate>
+                            <fluentSetters>true</fluentSetters>
+                            <validationAnnotations>true</validationAnnotations>
+                        </generate>
                         <database>
                             <name>org.jooq.util.postgres.PostgresDatabase</name>
                             <includes>.*</includes>
