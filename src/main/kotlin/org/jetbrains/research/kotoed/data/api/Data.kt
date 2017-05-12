@@ -23,9 +23,29 @@ data class VerificationData(
     companion object {
         val Unknown = VerificationData(VerificationStatus.Unknown, listOf())
         val Processed = VerificationData(VerificationStatus.Processed, listOf())
+        val NotReady = VerificationData(VerificationStatus.NotReady, listOf())
         fun Invalid(errors: List<Int>) = VerificationData(VerificationStatus.Invalid, errors)
         fun Invalid(vararg errors: Int) = Invalid(errors.asList())
     }
+
+    infix fun and(other: VerificationData) =
+            when{
+                status == VerificationStatus.Invalid && other.status == VerificationStatus.Invalid -> {
+                    Invalid(errors + other.errors)
+                }
+                status == VerificationStatus.Invalid -> this
+                other.status == VerificationStatus.Invalid -> other
+                else -> when(Pair(status, other.status)) {
+                    Pair(VerificationStatus.NotReady, other.status),
+                        Pair(status, VerificationStatus.NotReady) -> NotReady
+                    Pair(VerificationStatus.Unknown, other.status),
+                        Pair(status, VerificationStatus.Unknown) -> NotReady
+                    Pair(VerificationStatus.Processed, VerificationStatus.Processed) ->
+                        Processed
+                    else -> Unknown
+                }
+            }
+
 }
 
 data class DbRecordWrapper(
