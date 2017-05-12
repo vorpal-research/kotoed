@@ -8,6 +8,12 @@ object Address {
             const val Error = "kotoed.api.course.error"
         }
 
+        object Project {
+            const val Create = "kotoed.api.project.create"
+            const val Read = "kotoed.api.project.read"
+            const val Error = "kotoed.api.project.error"
+        }
+
         object Submission {
             const val Read = "kotoed.submission.read"
             const val Create = "kotoed.submission.create"
