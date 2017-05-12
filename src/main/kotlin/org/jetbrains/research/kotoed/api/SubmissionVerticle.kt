@@ -5,12 +5,14 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
+import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -23,17 +25,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     // FIXME: insert teamcity calls to build the submission
 
-    @JvmName("persistExt")
-    protected suspend inline fun <reified R : UpdatableRecord<R>> R.persist(): R =
-            dbUpdateAsync(this, klassOf())
-
-    @JvmName("persistAsCopyExt")
-    protected suspend inline fun <reified R : UpdatableRecord<R>> R.persistAsCopy(): R =
-            dbCreateAsync(this, klassOf())
-
     @JvmName("selectByIdWhatever")
     protected suspend inline fun <reified R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int): R =
-            selectById(instance, id, klassOf())
+            fetchByIdAsync(instance, id, klassOf())
 
     private val SubmissionCommentRecord.location
         get() = Location(Filename(path = sourcefile), sourceline)
@@ -141,7 +135,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCommentCreate(message: SubmissionCommentRecord): SubmissionCommentRecord = run {
         val submission = selectById(Tables.SUBMISSION, message.submissionId)
         when (submission.state) {
-            Submissionstate.open -> message.persistAsCopy()
+            Submissionstate.open -> dbCreateAsync(message)
             Submissionstate.obsolete -> {
                 log.warn("Comment request for an obsolete submission received:" +
                         "Submission id = ${submission.id}")
@@ -161,5 +155,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comments)
     suspend fun handleComments(message: SubmissionRecord): List<SubmissionCommentRecord> =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id })
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Error)
+    suspend fun handleError(verificationData: VerificationData): List<SubmissionStatusRecord> =
+            verificationData.errors
+                    .map { dbFetchAsync(SubmissionStatusRecord().apply { id = it }) }
 
 }

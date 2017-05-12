@@ -6,6 +6,7 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
+import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
@@ -28,6 +29,11 @@ suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Mess
 @JvmName("sendJsonAsync")
 suspend fun EventBus.sendAsync(address: String, message: Any): Message<JsonObject> =
         sendAsync<JsonObject>(address, message)
+
+@JvmName("trySendJsonAsync")
+suspend fun EventBus.trySendAsync(address: String, message: Any): Message<JsonObject>? =
+        try{ sendAsync<JsonObject>(address, message) }
+        catch (ex: ReplyException) { null }
 
 @Deprecated("Forgot to call .toJson()?",
         level = DeprecationLevel.ERROR,
@@ -225,13 +231,14 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     protected suspend fun <R : UpdatableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
             sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> selectById(instance: Table<R>, id: Int, klass: KClass<R>): R =
+    protected suspend fun <R : UpdatableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
+                                                                  klass: KClass<out R> = instance.recordType.kotlin): R =
             sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
 }
 
 inline suspend fun <
-        reified Argument : Any,
-        reified Result : Any
+        reified Result : Any,
+        reified Argument : Any
         > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress("DEPRECATION")
     return sendJsonableAsync(address, value, Argument::class, Result::class)
