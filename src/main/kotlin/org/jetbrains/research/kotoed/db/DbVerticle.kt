@@ -202,3 +202,6 @@ class CourseStatusVerticle : CrudDatabaseVerticleWithReferences<CourseStatusReco
 
 @AutoDeployable
 class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
+
+@AutoDeployable
+class ProjectStatusVerticle : CrudDatabaseVerticleWithReferences<ProjectStatusRecord>(Tables.PROJECT_STATUS)
