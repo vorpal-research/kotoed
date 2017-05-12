@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.data.api.bang
 import org.jetbrains.research.kotoed.db.DatabaseVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jooq.ForeignKey
 import org.jooq.Table
 import org.jooq.UpdatableRecord
 import java.util.concurrent.ConcurrentMap
@@ -115,12 +116,13 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     suspend open fun doProcess(data: JsonObject): VerificationData =
             VerificationData.Processed
 
+    open val checkedReferences: List<ForeignKey<R, *>> get() = table.references
+
     suspend open fun checkPrereqs(data: JsonObject): List<VerificationData> {
 
         val eb = vertx.eventBus()
 
-        return table
-                .references
+        return checkedReferences
                 .asSequence()
                 // XXX: we expect here that we have no composite foreign keys
                 .filter { it.fieldsArray.size == 1 }
