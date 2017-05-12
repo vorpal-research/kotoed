@@ -7,7 +7,7 @@ import org.jetbrains.research.kotoed.util.Jsonable
 data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
 
 enum class VCS { git, mercurial }
-enum class CloneStatus { done, failed, pending, none }
+enum class CloneStatus { done, failed, pending }
 
 data class PingResponse(val status: Boolean): Jsonable
 

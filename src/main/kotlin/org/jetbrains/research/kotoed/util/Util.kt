@@ -108,3 +108,5 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
 
 @Suppress("UNCHECKED_CAST")
 inline fun <D> Any?.cast(): D = this as D
+
+inline fun<T> forceType(v: T) = v

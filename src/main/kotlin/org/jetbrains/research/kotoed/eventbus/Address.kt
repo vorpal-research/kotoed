@@ -15,13 +15,14 @@ object Address {
         }
 
         object Submission {
-            const val Read = "kotoed.submission.read"
-            const val Create = "kotoed.submission.create"
-            const val Comments = "kotoed.submission.comments"
+            const val Read = "kotoed.api.submission.read"
+            const val Create = "kotoed.api.submission.create"
+            const val Comments = "kotoed.api.submission.comments"
+            const val Error = "kotoed.api.submission.error"
 
             object Comment {
-                const val Read = "kotoed.submission.comment.read"
-                const val Create = "kotoed.submission.comment.create"
+                const val Read = "kotoed.api.submission.comment.read"
+                const val Create = "kotoed.api.submission.comment.create"
             }
 
         }

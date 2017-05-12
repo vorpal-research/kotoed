@@ -46,7 +46,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Project.Error)
     suspend fun handleError(verificationData: VerificationData): JsonObject =
             verificationData.errors
-                    .map { selectById(Tables.PROJECT_STATUS, it, ProjectStatusRecord::class) }
+                    .map { fetchByIdAsync(Tables.PROJECT_STATUS, it, ProjectStatusRecord::class) }
                     .map { it.toJson() }
                     .let { JsonObject("data" to it) }
 
