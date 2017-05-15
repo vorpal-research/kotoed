@@ -4,6 +4,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.AnyAsJson
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.Loggable
 import org.junit.AfterClass
@@ -21,6 +22,11 @@ class SubmissionDatabaseTestIntegration : Loggable {
         fun before() {
             server = startServer()
             server.get()
+
+            try {
+                setupTC()
+            } catch (ex: Exception) {}
+
         }
 
         @JvmStatic
@@ -39,21 +45,23 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     .let(::JsonArray)
 
     fun makeDbNew(entity: String, payload: JsonObject) =
-            dbPost(Address.DB.create(entity), payload)
+            dbPost(Address.Api.create(entity), payload)
 
     val JsonObject.id: Int? get() = getInteger("id")
 
     @Test
-    fun testSimple() {
-        val user = makeDbNew("denizen", JsonObject("""{ "denizen_id": "Vasyatka", "password" : "", "salt" : "" }"""))
-        val course = makeDbNew("course", JsonObject("""{ "name": "Transmogrification 101", "build_template_id" : "" }"""))
+    fun testSimple() = with(AnyAsJson) {
+        val user = makeDbNew("denizen", JsonObject("""{ "denizen_id": "Vasyatka", "password" : "", "salt" : "" }""")).getJsonObject("record")
+        val course = makeDbNew("course",
+                JsonObject("""{ "name": "Transmogrification 101", "build_template_id" : "Test_build_template_id", "root_project_id" : "_Root" }""")).getJsonObject("record")
         val project = makeDbNew("project",
                 object : Jsonable {
+                    val name = "Da_supa_mega_project"
                     val denizen_id = user.id
                     val course_id = course.id
                     val repo_type = "mercurial"
                     val repo_url = "http://bitbucket.org/vorpal-research/kotoed"
-                }.toJson())
+                }.toJson()).getJsonObject("record")
 
 
         var submission = dbPost(
@@ -61,7 +69,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 object : Jsonable {
                     val project_id = project.id
                     val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
-                }.toJson())
+                }.toJson()).getJsonObject("record")
 
         assert(submission.id is Int)
 
@@ -71,7 +79,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     object : Jsonable {
                         val id = submission.id
                     }.toJson()
-            )
+            ).getJsonObject("record")
             Thread.sleep(100)
         }
 
@@ -81,7 +89,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val parent_submission_id = submission.id
                     val project_id = project.id
                     val revision = "82b75aa179ef4d20b2870df88c37657ecb2b9f6b"
-                }.toJson())
+                }.toJson()).getJsonObject("record")
 
         while (resubmission.getString("state") != "open") {
             resubmission = dbPost(
@@ -89,7 +97,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     object : Jsonable {
                         val id = resubmission.id
                     }.toJson()
-            )
+            ).getJsonObject("record")
             Thread.sleep(100)
         }
 
@@ -110,7 +118,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val parent_submission_id = resubmission.id
                     val project_id = project.id
                     val revision = "9fc0841dcdfaf274fc9b71a790dd6a46d21731d8"
-                }.toJson())
+                }.toJson()).getJsonObject("record")
 
         while (resubmission2.getString("state") != "open") {
             resubmission2 = dbPost(
@@ -118,7 +126,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     object : Jsonable {
                         val id = resubmission2.id
                     }.toJson()
-            )
+            ).getJsonObject("record")
             Thread.sleep(100)
         }
 

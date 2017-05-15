@@ -11,6 +11,7 @@ import io.vertx.core.eventbus.ReplyFailure
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -231,6 +232,9 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
 
     protected suspend fun <R : UpdatableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
             sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+
+    protected suspend fun <R : UpdatableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+            sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
 
     protected suspend fun <R : UpdatableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
                                                                   klass: KClass<out R> = instance.recordType.kotlin): R =

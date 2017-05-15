@@ -44,10 +44,8 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Error)
-    suspend fun handleError(verificationData: VerificationData): JsonObject =
+    suspend fun handleError(verificationData: VerificationData): List<CourseStatusRecord> =
             verificationData.errors
-                    .map { fetchByIdAsync(Tables.COURSE_STATUS, it, CourseStatusRecord::class) }
-                    .map { it.toJson() }
-                    .let { JsonObject("data" to it) }
+                    .map { fetchByIdAsync(Tables.COURSE_STATUS, it) }
 
 }
