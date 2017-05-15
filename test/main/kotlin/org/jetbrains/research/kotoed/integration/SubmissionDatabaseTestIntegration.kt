@@ -13,6 +13,12 @@ import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
+inline fun whileEx(condition: () -> Boolean, maxTries: Int = Int.MAX_VALUE, body: () -> Unit) {
+    var tries = 0
+    while (condition() && tries < maxTries) {
+        ++tries; body(); }
+}
+
 class SubmissionDatabaseTestIntegration : Loggable {
 
     companion object {
@@ -25,7 +31,8 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
             try {
                 setupTC()
-            } catch (ex: Exception) {}
+            } catch (ex: Exception) {
+            }
 
         }
 
@@ -73,7 +80,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
         assert(submission.id is Int)
 
-        while (submission.getString("state") != "open") {
+        whileEx({ submission.getString("state") != "open" }, maxTries = 200) {
             submission = dbPost(
                     Address.Api.Submission.Read,
                     object : Jsonable {
@@ -91,7 +98,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val revision = "82b75aa179ef4d20b2870df88c37657ecb2b9f6b"
                 }.toJson()).getJsonObject("record")
 
-        while (resubmission.getString("state") != "open") {
+        whileEx({ resubmission.getString("state") != "open" }, maxTries = 200) {
             resubmission = dbPost(
                     Address.Api.Submission.Read,
                     object : Jsonable {
@@ -120,7 +127,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val revision = "9fc0841dcdfaf274fc9b71a790dd6a46d21731d8"
                 }.toJson()).getJsonObject("record")
 
-        while (resubmission2.getString("state") != "open") {
+        whileEx({ resubmission2.getString("state") != "open" }, maxTries = 200) {
             resubmission2 = dbPost(
                     Address.Api.Submission.Read,
                     object : Jsonable {

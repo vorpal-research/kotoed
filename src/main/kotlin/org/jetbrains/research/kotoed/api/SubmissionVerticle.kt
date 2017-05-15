@@ -32,7 +32,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper {
         val res: SubmissionRecord = dbFetchAsync(submission)
         val status: VerificationData = dbProcessAsync(res)
-        if(status.status == VerificationStatus.Processed) {
+        if(status.status == VerificationStatus.Processed
+                && res.state != Submissionstate.open) {
             dbUpdateAsync(res.apply { state = Submissionstate.open })
         }
         return DbRecordWrapper(res, status)
