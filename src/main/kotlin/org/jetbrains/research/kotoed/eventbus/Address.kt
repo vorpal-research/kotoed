@@ -2,6 +2,9 @@ package org.jetbrains.research.kotoed.eventbus
 
 object Address {
     object Api {
+        fun create(entity: String) = "kotoed.api.$entity.create"
+        fun read(entity: String) = "kotoed.api.$entity.read"
+
         object Course {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
@@ -16,6 +19,7 @@ object Address {
 
         object Submission {
             const val Read = "kotoed.api.submission.read"
+            const val Last = "kotoed.api.submission.last"
             const val Create = "kotoed.api.submission.create"
             const val Comments = "kotoed.api.submission.comments"
             const val Error = "kotoed.api.submission.error"
@@ -25,6 +29,11 @@ object Address {
                 const val Create = "kotoed.api.submission.comment.create"
             }
 
+        }
+
+        object Denizen {
+            const val Create = "kotoed.api.denizen.create"
+            const val Read = "kotoed.api.denizen.read"
         }
     }
 
