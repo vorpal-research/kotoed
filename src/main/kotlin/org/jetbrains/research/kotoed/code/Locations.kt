@@ -27,11 +27,12 @@ fun Location.applyDiffs(diffs: Sequence<Diff>): Location {
     var adj: Int = 0
     var curLine: Int = 0
     for(hunk in relevant.hunks) {
+        curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
+
         if(curLine > line) {
             return Location(relevant.toFileName.asFilename(), line + adj, col)
         }
 
-        curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
         adj += (hunk.toFileRange.lineCount - hunk.fromFileRange.lineCount)
     }
 

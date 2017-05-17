@@ -501,7 +501,6 @@
                     <generator>
                         <generate>
                             <fluentSetters>true</fluentSetters>
-                            <validationAnnotations>true</validationAnnotations>
                         </generate>
                         <database>
                             <name>org.jooq.util.postgres.PostgresDatabase</name>

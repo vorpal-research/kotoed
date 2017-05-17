@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray

@@ -115,7 +115,9 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val sourcefile = "pom.xml"
                     val sourceline = 2
                     val text = "tl;dr"
-                }.toJson())
+                }.toJson()).getJsonObject("record")
+
+        println(comment)
 
         assertEquals(resubmission.id, comment.getInteger("submission_id"))
 

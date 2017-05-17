@@ -30,6 +30,8 @@ suspend fun startApplication(): Vertx {
             }
     )
 
+    //vertx.eventBus().addInterceptor(DebugInterceptor)
+
     vxa<CompositeFuture> { autoDeploy(vertx, it) }
 
     return vertx
