@@ -110,3 +110,9 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
 inline fun <D> Any?.cast(): D = this as D
 
 inline fun<T> forceType(v: T) = v
+
+// XXX: think
+data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async: suspend (K) -> V) {
+    suspend fun getAsync(key: K) = cache.getOrPut(key){ async(key) }
+    suspend operator fun invoke(key: K) = getAsync(key)
+}

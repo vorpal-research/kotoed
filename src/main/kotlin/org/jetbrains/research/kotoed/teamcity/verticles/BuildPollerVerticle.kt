@@ -12,12 +12,13 @@ import org.jetbrains.research.kotoed.teamcity.util.DimensionLocator
 import org.jetbrains.research.kotoed.teamcity.util.TeamCityApi
 import org.jetbrains.research.kotoed.teamcity.util.plus
 import org.jetbrains.research.kotoed.teamcity.util.putDefaultTCHeaders
+import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.UnconfinedWithExceptions
 import org.jetbrains.research.kotoed.util.vxa
 import java.time.Duration
 
-class BuildPollerVerticle(val id: Int) : AbstractVerticle(), Loggable {
+class BuildPollerVerticle(val id: Int) : AbstractKotoedVerticle(), Loggable {
 
     // FIXME akhin Stale verticle detection?
 

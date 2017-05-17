@@ -4,10 +4,8 @@ package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
-import io.vertx.core.eventbus.EventBus
-import io.vertx.core.eventbus.Message
-import io.vertx.core.eventbus.ReplyException
-import io.vertx.core.eventbus.ReplyFailure
+import io.vertx.core.Handler
+import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
@@ -18,6 +16,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
 import org.jooq.Table
 import org.jooq.UpdatableRecord
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.declaredMemberFunctions
@@ -176,6 +175,14 @@ fun AbstractVerticle.registerAllConsumers() {
                 }
             }
         }
+    }
+}
+
+object DebugInterceptor: Handler<SendContext<*>>, Loggable {
+    override fun handle(event: SendContext<*>) {
+        val message = event.message()
+        log.trace("Message to ${message.address()}[${message.replyAddress() ?: ""}]")
+        event.next()
     }
 }
 

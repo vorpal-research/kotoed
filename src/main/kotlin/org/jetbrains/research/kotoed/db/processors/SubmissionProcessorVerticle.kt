@@ -28,23 +28,61 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         get() = Location(Filename(path = sourcefile), sourceline)
 
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
-        dbFindAsync(SubmissionCommentRecord().apply { submissionId = parent.id })
-                .forEach { comment ->
-                    comment.submissionId = child.id
-                    val adjustedLocation: LocationResponse =
-                            sendJsonableAsync(
-                                    Address.Code.LocationDiff,
-                                    LocationRequest(
-                                            vcsUid,
-                                            comment.location,
-                                            parent.revision,
-                                            child.revision
-                                    )
+        val submissionCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(Tables.SUBMISSION, id) }
+        val commentCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(Tables.SUBMISSION_COMMENT, id) }
+        val ancestorCommentCacheAsync = AsyncCache { comment: SubmissionCommentRecord ->
+            dbFindAsync(SubmissionCommentRecord().apply {
+                submissionId = comment.originalSubmissionId
+                persistentCommentId = comment.persistentCommentId
+            }).expecting(
+                    message = "Duplicate or missing comment in chain detected: " +
+                            "submission.id = ${comment.originalSubmissionId} " +
+                            "comment.id = ${comment.persistentCommentId}")
+            { it.size == 1 }
+                    .first()
+        }
+
+        val parentComments =
+                dbFindAsync(SubmissionCommentRecord().apply { submissionId = parent.id })
+
+        val alreadyMappedPersistentIds =
+                dbFindAsync(SubmissionCommentRecord().apply { submissionId = child.id }).map { it.persistentCommentId }
+
+        // first, we create all the missing comments
+        var childComments: List<SubmissionCommentRecord> =
+                parentComments
+                        .asSequence()
+                        .filter { it.persistentCommentId !in alreadyMappedPersistentIds }
+                        .mapTo(mutableListOf()) { comment ->
+                            dbCreateAsync(comment.copy().apply { submissionId = child.id })
+                        }
+
+        // second, we remap all the locations and reply-chains
+
+        childComments = childComments.map { comment ->
+            val ancestorComment = ancestorCommentCacheAsync(comment)
+            val ancestorSubmission = submissionCacheAsync(ancestorComment.submissionId)
+
+            val adjustedLocation: LocationResponse =
+                    sendJsonableAsync(
+                            Address.Code.LocationDiff,
+                            LocationRequest(
+                                    vcsUid,
+                                    ancestorComment.location,
+                                    ancestorSubmission.revision,
+                                    child.revision
                             )
-                    comment.sourcefile = adjustedLocation.location.filename.path
-                    comment.sourceline = adjustedLocation.location.line
-                    dbCreateAsync(comment)
-                }
+                    )
+            comment.sourcefile = adjustedLocation.location.filename.path
+            comment.sourceline = adjustedLocation.location.line
+
+            if (comment.previousCommentId != null) {
+                val prevAncestor = ancestorCommentCacheAsync(commentCacheAsync(comment.previousCommentId))
+                comment.previousCommentId = childComments.find { it.persistentCommentId == prevAncestor.persistentCommentId }?.id
+            }
+
+            dbUpdateAsync(comment)
+        }
 
         parent.state = Submissionstate.obsolete
 
@@ -62,7 +100,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                         RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
                 )
 
-        if(vcsReq.status != CloneStatus.done) return VerificationData.Unknown
+        if (vcsReq.status != CloneStatus.done) return VerificationData.Unknown
 
         parentSub?.let {
             recreateCommentsAsync(vcsReq.uid, parentSub, sub)
@@ -123,11 +161,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     .map { it.persistentCommentId }
                     .toSet()
 
-            if(parentSub.state != Submissionstate.obsolete) {
+            if (parentSub.state != Submissionstate.obsolete) {
                 return VerificationData.Unknown
             }
 
-            if(!parentComments.all { it.persistentCommentId in ourComments }) {
+            if (!parentComments.all { it.persistentCommentId in ourComments }) {
                 return VerificationData.Unknown
             }
         }
