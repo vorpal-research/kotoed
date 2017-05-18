@@ -45,11 +45,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Read)
-    suspend fun handleRead(comment: SubmissionCommentRecord): DbRecordWrapper {
-        val res: SubmissionCommentRecord = dbFetchAsync(comment)
-        val status: VerificationData = dbProcessAsync(res)
-        return DbRecordWrapper(res, status)
-    }
+    suspend fun handleRead(comment: SubmissionCommentRecord) = DbRecordWrapper(dbFetchAsync(comment), VerificationData.Processed)
 
 
 }

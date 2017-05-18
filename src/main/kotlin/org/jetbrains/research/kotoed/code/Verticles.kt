@@ -44,6 +44,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     private val RepositoryInfo.root get() = when (vcs) {
         VCS.git -> Git(url, File(dir, uid).absolutePath)
         VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath)
+        null -> throw IllegalArgumentException("No supported vcs found at $url")
     }
 
     fun onCacheRemove(removalNotification: RemovalNotification<RemoteRequest, RepositoryInfo>) =
@@ -126,12 +127,48 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 status = CloneStatus.pending,
                 uid = "",
                 url = url,
-                vcs = message.vcs
+                vcs = message.vcs ?: VCS.git
         )
 
         val vcsRes = run(ee) { pendingResp.root.ping() }
 
         return PingResponse(vcsRes is VcsResult.Success)
+    }
+
+    suspend fun guessVcsType(message: RemoteRequest): VCS {
+        val tryHg = try {
+            handlePing(message.copy(vcs = VCS.mercurial))
+        } catch (ex: Exception) {
+            null
+        }
+
+        if (tryHg != null && tryHg.status) return VCS.mercurial
+
+        val tryGit = try {
+            handlePing(message.copy(vcs = VCS.git))
+        } catch (ex: Exception) {
+            null
+        }
+
+        if (tryGit != null && tryGit.status) return VCS.git
+
+        throw IllegalArgumentException("No supported vcs type found: ${message.url}")
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.Info)
+    suspend fun handleInfo(request: InfoFormat): InfoFormat {
+        log.info("Requested info: $request")
+
+        UUID.fromString(request.uid)
+        val inf = expectNotNull(info[request.uid], "Repository not found")
+        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+
+        val (revRes, brRes) = run(ee) {
+            val rev = request.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            root.info(rev, request.branch)
+        }.result
+
+        return request.copy(revision = revRes, branch = brRes)
     }
 
     @EventBusConsumerFor(Address.Code.Download)
@@ -166,11 +203,15 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             randomName.mkdirs()
         }
 
-        val root = pendingResp.root
-
         vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = UnconfinedWithExceptions(mes)) {
             run {
+                var resp = pendingResp
                 val res = run(ee) {
+                    if (pendingResp.vcs == null) {
+                        resp = resp.copy(vcs = guessVcsType(message))
+                    }
+
+                    val root = resp.root
                     root.clone().also {
                         log.trace("Cloning finished for $url in directory $randomName")
                     }
@@ -179,8 +220,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
                 log.trace("Cloning request for $url successful")
 
-                val resp =
-                        pendingResp.copy(
+                resp =
+                        resp.copy(
                                 status =
                                 when (res) {
                                     is VcsResult.Success -> CloneStatus.done

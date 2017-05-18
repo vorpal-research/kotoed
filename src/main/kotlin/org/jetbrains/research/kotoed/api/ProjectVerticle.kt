@@ -19,9 +19,11 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCreate(project: ProjectRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
 
-        val res: ProjectRecord = vxa<Message<JsonObject>> {
-            eb.send(Address.DB.create(project.table.name), project.toJson(), it)
-        }.body().toRecord()
+        project.id = null
+        expect(project.courseId is Int)
+        expect(project.denizenId is Int)
+
+        val res: ProjectRecord = dbCreateAsync(project)
 
         eb.send(Address.DB.process(project.table.name), res.toJson())
 

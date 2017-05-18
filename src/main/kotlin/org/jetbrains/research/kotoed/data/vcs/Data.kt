@@ -11,12 +11,12 @@ enum class CloneStatus { done, failed, pending }
 
 data class PingResponse(val status: Boolean): Jsonable
 
-data class RemoteRequest(val vcs: VCS, val url: String) : Jsonable
+data class RemoteRequest(val vcs: VCS?, val url: String) : Jsonable
 data class RepositoryInfo(
         val status: CloneStatus,
         val uid: String,
         val url: String,
-        val vcs: VCS,
+        val vcs: VCS?,
         val errors: List<String> = listOf()
 ) : Jsonable
 
@@ -25,6 +25,12 @@ data class ReadResponse(val contents: String) : Jsonable
 
 data class ListRequest(val uid: String, val revision: String?) : Jsonable
 data class ListResponse(val files: List<String>) : Jsonable
+
+data class InfoFormat(
+        val uid: String,
+        val revision: String? = null,
+        val branch: String? = null
+) : Jsonable
 
 data class DiffRequest(
         val uid: String,
