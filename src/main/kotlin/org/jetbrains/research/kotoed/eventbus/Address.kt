@@ -60,6 +60,7 @@ object Address {
         const val Diff = "kotoed.code.diff"
         const val Info = "kotoed.code.info"
         const val LocationDiff = "kotoed.code.diff.location"
+        const val PurgeCache = "kotoed.code.purgecache"
     }
 
     object User {

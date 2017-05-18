@@ -22,6 +22,7 @@ import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.experimental.suspendCoroutine
 
 @AutoDeployable
 class CodeVerticle : AbstractKotoedVerticle(), Loggable {
@@ -135,7 +136,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         return PingResponse(vcsRes is VcsResult.Success)
     }
 
-    suspend fun guessVcsType(message: RemoteRequest): VCS {
+    suspend fun guessVcsType(message: RemoteRequest): VCS? {
         val tryHg = try {
             handlePing(message.copy(vcs = VCS.mercurial))
         } catch (ex: Exception) {
@@ -169,6 +170,13 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         }.result
 
         return request.copy(revision = revRes, branch = brRes)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.PurgeCache)
+    suspend fun handlePurgeCache(message: RemoteRequest) {
+        log.trace("Requested cache purge: $message")
+
+        procs.invalidate(message.url)
     }
 
     @EventBusConsumerFor(Address.Code.Download)
@@ -206,31 +214,35 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = UnconfinedWithExceptions(mes)) {
             run {
                 var resp = pendingResp
-                val res = run(ee) {
-                    if (pendingResp.vcs == null) {
-                        resp = resp.copy(vcs = guessVcsType(message))
-                    }
+                try {
+                    val res = run(ee) {
+                        if (pendingResp.vcs == null) {
+                            resp = resp.copy(vcs = guessVcsType(message))
+                        }
 
-                    val root = resp.root
-                    root.clone().also {
-                        log.trace("Cloning finished for $url in directory $randomName")
+                        val root = resp.root
+                        root.clone().also {
+                            log.trace("Cloning finished for $url in directory $randomName")
+                        }
                     }
+                    vertx.goToEventLoop()
+
+                    log.trace("Cloning request for $url successful")
+
+                    resp =
+                            resp.copy(
+                                    status =
+                                    when (res) {
+                                        is VcsResult.Success -> CloneStatus.done
+                                        else -> CloneStatus.failed
+                                    },
+                                    errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
+                            )
+                    procs[url] = resp
+                } catch (ex: Exception) {
+                    procs[url] = resp.copy(status = CloneStatus.failed, errors = listOf(ex.message.toString()))
+                    throw ex
                 }
-                vertx.goToEventLoop()
-
-                log.trace("Cloning request for $url successful")
-
-                resp =
-                        resp.copy(
-                                status =
-                                when (res) {
-                                    is VcsResult.Success -> CloneStatus.done
-                                    else -> CloneStatus.failed
-                                },
-                                errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
-                        )
-
-                procs[url] = resp
             }
 
             onTimeout {

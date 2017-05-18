@@ -60,7 +60,7 @@ annotation class JsonableEventBusConsumerFor(val address: String)
 private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
     return when {
-        klazz.isSubclassOf(JsonObject::class) -> {
+        klazz == JsonObject::class -> {
             { it.expectingIs<JsonObject>() }
         }
         klazz.isSubclassOf(Jsonable::class) -> {
@@ -69,12 +69,12 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
         klazz.isSubclassOf(Record::class) -> {
             { it.expectingIs<Record>().toJson() }
         }
-        klazz.isSubclassOf(Unit::class) -> {
+        klazz == Unit::class -> {
             { JsonObject() }
         }
 
     // collections
-        klazz.isSubclassOf(JsonArray::class) -> {
+        klazz == JsonArray::class -> {
             { it }
         }
         klazz.isSubclassOf(Collection::class) -> {
@@ -96,7 +96,7 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
 private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
     return when {
-        klazz.isSubclassOf(JsonObject::class) -> {
+        klazz == JsonObject::class -> {
             { it.expectingIs<JsonObject>() }
         }
         klazz.isSubclassOf(Jsonable::class) -> {
@@ -105,12 +105,12 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
         klazz.isSubclassOf(Record::class) -> {
             { it.expectingIs<JsonObject>().toRecord(klazz as KClass<out Record>) }
         }
-        klazz.isSubclassOf(Unit::class) -> {
+        klazz == Unit::class -> {
             {}
         }
 
     // collections
-        klazz.isSubclassOf(JsonArray::class) -> {
+        klazz == JsonArray::class -> {
             { it.expectingIs<JsonArray>() }
         }
         klazz.isSubclassOf(List::class) -> {
