@@ -31,7 +31,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     private val ee by lazy {
         newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
     }
-    private val procs by lazy<Cache<RemoteRequest, RepositoryInfo>> {
+    private val procs by lazy<Cache<String, RepositoryInfo>> {
         CacheBuilder
                 .newBuilder()
                 .maximumSize(Config.VCS.CloneCapacity)
@@ -47,7 +47,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         null -> throw IllegalArgumentException("No supported vcs found at $url")
     }
 
-    fun onCacheRemove(removalNotification: RemovalNotification<RemoteRequest, RepositoryInfo>) =
+    fun onCacheRemove(removalNotification: RemovalNotification<String, RepositoryInfo>) =
             launch {
                 if (removalNotification.value.status == CloneStatus.pending) return@launch
 
@@ -90,7 +90,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val path = message.path
 
         val inf = expectNotNull(info[message.uid], "Repository not found")
-        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val catRes = run(ee) {
             val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
@@ -108,7 +108,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val inf = expectNotNull(info[message.uid], "Repository not found")
 
-        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val lsRes = run(ee) {
             val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
@@ -161,7 +161,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         UUID.fromString(request.uid)
         val inf = expectNotNull(info[request.uid], "Repository not found")
-        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val (revRes, brRes) = run(ee) {
             val rev = request.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
@@ -178,7 +178,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         log.trace("Requested clone: $message")
 
         val url = message.url
-        val existing = procs[message]
+        val existing = procs[url]
         if (existing != null) {
             log.trace("Cloning request for $url: repository already cloned")
             mes.reply(existing.toJson())
@@ -196,7 +196,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 url = url,
                 vcs = message.vcs
         )
-        procs[message] = pendingResp
+        procs[url] = pendingResp
         info["$uid"] = message
 
         run(ee) {
@@ -230,16 +230,16 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                                 errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
                         )
 
-                procs[message] = resp
+                procs[url] = resp
             }
 
             onTimeout {
-                mes.reply(procs[message]?.toJson())
+                mes.reply(procs[url]?.toJson())
                 log.trace("Cloning request for $url timed out: sending 'pending' reply")
             }
 
             onSuccess {
-                mes.reply(procs[message]?.toJson())
+                mes.reply(procs[url]?.toJson())
                 log.trace("Cloning request for $url timed out: sending 'successful' reply")
             }
         }
@@ -271,7 +271,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         UUID.fromString(message.uid)
 
         val inf = expectNotNull(info[message.uid], "Repository not found")
-        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val diffRes = run(ee) {
             val from = message.from.let { VcsRoot.Revision.Id(it) }
@@ -291,7 +291,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val inf = expectNotNull(info[message.uid], "Repository not found")
 
-        val root = expectNotNull(procs[inf], "Inconsistent repo state").root
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val diffRes = run(ee) {
             val from = message.fromRevision.let { VcsRoot.Revision(it) }
