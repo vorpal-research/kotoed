@@ -102,6 +102,12 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         if (vcsReq.status != CloneStatus.done) return VerificationData.Unknown
 
+        if(sub.revision == null) {
+            val vcsInfo: InfoFormat = sendJsonableAsync(Address.Code.Info, InfoFormat(uid = vcsReq.uid))
+            sub.revision = vcsInfo.revision
+            dbUpdateAsync(sub)
+        }
+
         parentSub?.let {
             recreateCommentsAsync(vcsReq.uid, parentSub, sub)
         }

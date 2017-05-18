@@ -19,6 +19,11 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
     suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
+        submission.id = null
+        submission.datetime = null
+        submission.state = Submissionstate.pending
+        expect(submission.projectId is Int)
+
         val res: SubmissionRecord = dbCreateAsync(submission)
         eb.send(Address.DB.process(submission.table.name), res.toJson())
         return DbRecordWrapper(res)
