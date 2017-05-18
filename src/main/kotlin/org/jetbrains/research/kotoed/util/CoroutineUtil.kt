@@ -18,6 +18,8 @@ import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KFunction
 
+import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
+
 /******************************************************************************/
 
 fun launch(block: suspend CoroutineScope.() -> Unit) {
@@ -81,9 +83,13 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
                     handleException(ctx, exception)
         } + Unconfined
 
+// NOTE: suspendCoroutineOrReturn<> is not recommended by kotlin devs, BUT,
+// however, suspendCoroutine<>, the only alternative, does *not* work correctly if suspend fun has no
+// suspension points.
+
 inline suspend fun <R> KFunction<R>.callAsync(vararg args: Any?) =
         when {
-            isSuspend -> suspendCoroutine<R> { call(*args, it) }
+            isSuspend -> suspendCoroutineOrReturn<R> { call(*args, it) }
             else -> throw Error("$this cannot be called as async")
         }
 
@@ -92,7 +98,7 @@ val Method.isKotlinSuspend
 
 inline suspend fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
         when {
-            isKotlinSuspend -> suspendCoroutine<Any?> { invoke(receiver, *args, it) }
+            isKotlinSuspend -> suspendCoroutineOrReturn<Any?> { invoke(receiver, *args, it) }
             else -> throw Error("$this cannot be invoked as async")
         }
 
