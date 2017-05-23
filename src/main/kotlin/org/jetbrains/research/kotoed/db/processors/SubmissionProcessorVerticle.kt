@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.teamcity.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
@@ -13,6 +14,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.teamcity.util.name2build
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
@@ -111,6 +113,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         parentSub?.let {
             recreateCommentsAsync(vcsReq.uid, parentSub, sub)
         }
+
+        Unit.also { sendJsonableAsync(Address.TeamCity.Build.Trigger, TriggerBuild(name2build(project.name), sub.revision)) }
 
         return verify(data)
     }

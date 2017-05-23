@@ -43,49 +43,67 @@ class SubmissionDatabaseTestIntegration : Loggable {
         }
     }
 
-    fun dbPost(address: String, payload: JsonObject) =
-            wpost("debug/eventbus/$address", payload = payload.encode())
+    fun dbPost(address: String, payload: Jsonable) =
+            wpost("debug/eventbus/$address", payload = payload.toJson().encode())
                     .let(::JsonObject)
 
-    fun dbPostMany(address: String, payload: JsonObject) =
-            wpost("debug/eventbus/$address", payload = payload.encode())
+    fun dbPostMany(address: String, payload: Jsonable) =
+            wpost("debug/eventbus/$address", payload = payload.toJson().encode())
                     .let(::JsonArray)
 
-    fun makeDbNew(entity: String, payload: JsonObject) =
-            dbPost(Address.Api.create(entity), payload)
+    fun makeDbNew(entity: String, payload: Jsonable) =
+            dbPost(Address.Api.create(entity), payload).getJsonObject("record")
 
     val JsonObject.id: Int? get() = getInteger("id")
 
     @Test
     fun testSimple() = with(AnyAsJson) {
-        val user = makeDbNew("denizen", JsonObject("""{ "denizen_id": "Vasyatka", "password" : "", "salt" : "" }""")).getJsonObject("record")
-        val course = makeDbNew("course",
-                JsonObject("""{ "name": "Transmogrification 101", "build_template_id" : "Test_build_template_id", "root_project_id" : "_Root" }""")).getJsonObject("record")
-        val project = makeDbNew("project",
-                object : Jsonable {
-                    val name = "Da_supa_mega_project"
-                    val denizen_id = user.id
-                    val course_id = course.id
-                    val repo_type = "mercurial"
-                    val repo_url = "http://bitbucket.org/vorpal-research/kotoed"
-                }.toJson()).getJsonObject("record")
+        val user = makeDbNew(
+            "denizen",
+            object: Jsonable {
+                val denizenId = "Vasyatka"
+                val password = ""
+                val salt = ""
+            }
+        )
+
+        val course = makeDbNew(
+            "course",
+            object: Jsonable {
+                val name = "Transmogrification 101"
+                val buildTemplateId = "Test_build_template_id"
+                val rootProjectId = "_Root"
+            }
+        )
+
+        val project = makeDbNew(
+            "project",
+            object : Jsonable {
+                val name = "Da_supa_mega_project"
+                val denizen_id = user.id
+                val course_id = course.id
+                val repo_type = "mercurial"
+                val repo_url = "http://bitbucket.org/vorpal-research/kotoed"
+            }
+        )
 
 
-        var submission = dbPost(
-                Address.Api.Submission.Create,
-                object : Jsonable {
-                    val project_id = project.id
-                    val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
-                }.toJson()).getJsonObject("record")
+        var submission = makeDbNew(
+            "submission",
+            object : Jsonable {
+                val projectId = project.id
+                val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
+            }
+        )
 
         assert(submission.id is Int)
 
         whileEx({ submission.getString("state") != "open" }, maxTries = 200) {
             submission = dbPost(
-                    Address.Api.Submission.Read,
-                    object : Jsonable {
-                        val id = submission.id
-                    }.toJson()
+                Address.Api.Submission.Read,
+                object : Jsonable {
+                    val id = submission.id
+                }
             ).getJsonObject("record")
             Thread.sleep(100)
         }
@@ -96,14 +114,15 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val parent_submission_id = submission.id
                     val project_id = project.id
                     val revision = "82b75aa179ef4d20b2870df88c37657ecb2b9f6b"
-                }.toJson()).getJsonObject("record")
+                }
+        ).getJsonObject("record")
 
         whileEx({ resubmission.getString("state") != "open" }, maxTries = 200) {
             resubmission = dbPost(
                     Address.Api.Submission.Read,
                     object : Jsonable {
                         val id = resubmission.id
-                    }.toJson()
+                    }
             ).getJsonObject("record")
             Thread.sleep(100)
         }
@@ -115,7 +134,8 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val sourcefile = "pom.xml"
                     val sourceline = 2
                     val text = "tl;dr"
-                }.toJson()).getJsonObject("record")
+                }
+        ).getJsonObject("record")
 
         println(comment)
 
@@ -127,14 +147,15 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val parent_submission_id = resubmission.id
                     val project_id = project.id
                     val revision = "9fc0841dcdfaf274fc9b71a790dd6a46d21731d8"
-                }.toJson()).getJsonObject("record")
+                }
+        ).getJsonObject("record")
 
         whileEx({ resubmission2.getString("state") != "open" }, maxTries = 200) {
             resubmission2 = dbPost(
                     Address.Api.Submission.Read,
                     object : Jsonable {
                         val id = resubmission2.id
-                    }.toJson()
+                    }
             ).getJsonObject("record")
             Thread.sleep(100)
         }
@@ -143,7 +164,8 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 Address.Api.Submission.Comments,
                 object : Jsonable {
                     val id = resubmission2.id
-                }.toJson())
+                }
+        )
 
         assertEquals(1, comments.size())
         assertEquals(comment.getString("text"), comments.getJsonObject(0).getString("text"))
