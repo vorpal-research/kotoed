@@ -62,7 +62,7 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
     }
 
     override fun cat(path: String, revision: Revision): VcsResult<Sequence<String>> {
-        val res = CommandLine(git, "show", "${revision.rep}:path").execute(File(local)).complete()
+        val res = CommandLine(git, "show", "${revision.rep}:$path").execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }

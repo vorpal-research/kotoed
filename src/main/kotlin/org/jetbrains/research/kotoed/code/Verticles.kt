@@ -94,7 +94,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val catRes = run(ee) {
-            val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             root.cat(path, rev)
         }.result
 
@@ -112,7 +112,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val lsRes = run(ee) {
-            val rev = message.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             root.ls(rev)
         }.result
 
@@ -165,7 +165,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val (revRes, brRes) = run(ee) {
-            val rev = request.revision?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            val rev = request.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             root.info(rev, request.branch)
         }.result
 
@@ -286,8 +286,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val diffRes = run(ee) {
-            val from = message.from.let { VcsRoot.Revision.Id(it) }
-            val to = message.to?.let { VcsRoot.Revision.Id(it) } ?: VcsRoot.Revision.Trunk
+            val from = message.from.let { VcsRoot.Revision(it) }
+            val to = message.to?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             if (message.path != null) root.diff(message.path, from, to)
             else root.diffAll(from, to)
         }.result
