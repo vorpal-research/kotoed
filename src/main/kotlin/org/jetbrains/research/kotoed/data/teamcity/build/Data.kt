@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.data.teamcity.build
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.EventBusDatum
 import org.jetbrains.research.kotoed.util.JsonableCompanion
+import org.jetbrains.research.kotoed.util.klassOf
 import kotlin.reflect.KClass
 
 data class TriggerBuild(
@@ -11,7 +12,7 @@ data class TriggerBuild(
 ) : EventBusDatum<TriggerBuild>() {
     companion object : JsonableCompanion<TriggerBuild> {
         override val dataklass: KClass<TriggerBuild>
-            get() = TriggerBuild::class
+            get() = klassOf()
 
         override fun fromJson(json: JsonObject): TriggerBuild? =
                 super.fromJson(json)?.apply {
