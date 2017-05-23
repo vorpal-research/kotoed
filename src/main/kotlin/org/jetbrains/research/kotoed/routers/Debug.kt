@@ -1,16 +1,22 @@
 package org.jetbrains.research.kotoed.routers
 
+import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.RoutingContext
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.impl.DSL
 import org.jooq.util.postgres.PostgresDataType
+import java.nio.file.Path
 
 // XXX: testing, remove in production
 
@@ -196,4 +202,84 @@ suspend fun RoutingContext.handleDebugEventBus() {
             }
     val res = eb.sendAsync<Any>(address, body)
     jsonResponse().end("${res.body()}")
+}
+
+internal fun cssClassByPath(path: String) =
+    when{
+        path.endsWith(".java") -> "language-java"
+        path.endsWith(".kt") -> "language-kotlin"
+        path.endsWith(".xml") -> "language-xml"
+        path.endsWith(".sql") -> "language-sql"
+        else -> null
+    }
+
+@HandlerFor("""\/debug\/code\/([^\/]+)\/([^\/]+)\/(.*)""", isRegex = true)
+suspend fun RoutingContext.handleDebugCode() = with(response()) {
+    val req = request()
+    val param0 by req
+    var uid = param0
+    val param1 by req
+    val revision = param1
+    val param2 by req
+    val path = param2
+    val eb = vertx().eventBus()
+
+    if(uid == "byUrl") {
+        val url by req
+        val message = object : Jsonable {
+            val url = url.orEmpty().unquote()
+        }
+
+        val res = eb.sendAsync(Address.Code.Download, message.toJson()).body()
+        println("res = ${res}")
+        if(res.containsKey("uid")) uid = res.getString("uid")
+        else throw KotoedException(202, "Result not ready yet")
+    }
+
+    val message = object : Jsonable {
+        val uid = uid
+        val path = path
+        val revision = revision
+    }
+
+    val res =
+            when{
+                path!!.isEmpty() || path.endsWith("/") -> eb.sendAsync(Address.Code.List, message.toJson()).body()
+                else -> eb.sendAsync(Address.Code.Read, message.toJson()).body()
+            }
+
+    putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
+            .end(createHTML().html {
+                head {
+                    title("The awesome kotoed")
+                    link(href = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.css", rel = "stylesheet")
+                    meta { charset = "UTF-8" }
+                }
+                body {
+                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js")
+                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-java.min.js")
+                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-kotlin.min.js")
+                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-yaml.min.js")
+                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-sql.min.js")
+
+                    if(res.containsKey("contents")) {
+                        pre { code(classes = path?.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
+                    } else if(res.containsKey("files")) {
+                        val prep = res
+                                .getJsonArray("files")
+                                .map { it.toString() }
+                                .filter { it.startsWith(path) }
+                                .map { it.removePrefix(path).split("/") }
+                                .map { it.first() + if(it.size > 1) "/" else "" }
+                                .toSet()
+
+                        ul {
+                            if(path.isNotEmpty()) li { a(href = "/debug/code/$uid/$revision/${path}.."){ +".." } }
+                            for(f in prep) {
+                                li { a(href = "/debug/code/$uid/$revision/${path + f}"){ +f } }
+                            }
+                        }
+                    }
+                }
+            })
 }
