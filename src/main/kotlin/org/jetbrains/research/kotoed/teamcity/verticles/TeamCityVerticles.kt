@@ -145,7 +145,7 @@ class TeamCityVerticle : AbstractKotoedVerticle(), Loggable {
 
         val changeLocator = EmptyLocator *
                 DimensionLocator.from("buildType", triggerBuild.buildTypeId) *
-                DimensionLocator.from("version", triggerBuild.revision)
+                DimensionLocator.from("version", triggerBuild.revision.slice(0..11))
 
         val changes = vxa<HttpResponse<Buffer>> {
             wc.get(Config.TeamCity.Port, Config.TeamCity.Host, TeamCityApi.Changes + changeLocator)
