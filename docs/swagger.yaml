@@ -1,0 +1,140 @@
+swagger: '2.0'
+info:
+  title: Kotoed
+  version: 0.1.0
+host: localhost
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /eventbus/kotoed.api.course.create:
+    post:
+      description: Create a new course
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Course'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Course'
+  /eventbus/kotoed.api.course.read:
+    post:
+      description: Query a course by its properties
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Course'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Course'
+  /eventbus/kotoed.api.project.create:
+    post:
+      description: Create a new project
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Project'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Project'
+  /eventbus/kotoed.api.project.read:
+    post:
+      description: Query a project by its properties
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Project'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Project'
+  /eventbus/kotoed.api.denizen.create:
+    post:
+      description: Create a new user
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Denizen'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Denizen'
+  /eventbus/kotoed.api.denizen.read:
+    post:
+      description: Query a user by their properties
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/Denizen'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Denizen'
+definitions:
+  Course:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Primary key
+      name:
+        type: string
+        description: Course name
+      build_template_id:
+        type: string
+        description: >-
+          TeamCity build template ID this course should use when building the submissions
+      root_project_id:
+        type: string
+        description: >-
+          TeamCity root project for the auto-created course project
+  Project:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Primary key
+      denizen_id:
+        type: integer
+        description: Foreign key to project owner
+      course_id:
+        type: integer
+        description: Foreign key to project course
+      repo_type:
+        type: string
+        enum:
+          - hg
+          - mercurial
+          - git
+        description: Project repository type
+      repo_url:
+        type: string
+        description: Project repository url
+      name:
+        type: string
+        description: Project name
+  Denizen:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Primary key
+      denizen_id:
+        type: string
+        description: User name
+      password:
+        type: string
+        description: User password
+      salt:
+        type: string
+        description: Password salt
