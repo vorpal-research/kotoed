@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: Kotoed
   version: 0.1.0
-host: localhost
+host: localhost:9000
 consumes:
   - application/json
 produces:
@@ -21,12 +21,13 @@ paths:
           schema:
             $ref: '#/definitions/Course'
   /eventbus/kotoed.api.course.read:
-    post:
-      description: Query a course by its properties
+    get:
+      description: Read a course by its id
       parameters:
-        - in: body
-          schema:
-            $ref: '#/definitions/Course'
+        - in: query
+          name: id
+          type: integer
+          required: true
       responses:
         '200':
           description: OK
@@ -45,12 +46,13 @@ paths:
           schema:
             $ref: '#/definitions/Project'
   /eventbus/kotoed.api.project.read:
-    post:
-      description: Query a project by its properties
+    get:
+      description: Read a project by its id
       parameters:
-        - in: body
-          schema:
-            $ref: '#/definitions/Project'
+        - in: query
+          name: id
+          type: integer
+          required: true
       responses:
         '200':
           description: OK
@@ -69,12 +71,13 @@ paths:
           schema:
             $ref: '#/definitions/Denizen'
   /eventbus/kotoed.api.denizen.read:
-    post:
-      description: Query a user by their properties
+    get:
+      description: Read a user by their id
       parameters:
-        - in: body
-          schema:
-            $ref: '#/definitions/Denizen'
+        - in: query
+          name: id
+          type: integer
+          required: true
       responses:
         '200':
           description: OK
