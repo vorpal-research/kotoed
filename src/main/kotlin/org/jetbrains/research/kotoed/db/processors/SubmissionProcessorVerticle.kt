@@ -114,7 +114,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             recreateCommentsAsync(vcsReq.uid, parentSub, sub)
         }
 
-        Unit.also { sendJsonableAsync(Address.TeamCity.Build.Trigger, TriggerBuild(name2build(project.name), sub.revision)) }
+        try { // FIXME: remove try when triggering builds actually works.
+            Unit.also { sendJsonableAsync(Address.TeamCity.Build.Trigger, TriggerBuild(name2build(project.name), sub.revision)) }
+        } catch (ex: Exception) {
+            log.trace("", ex)
+        }
 
         return verify(data)
     }

@@ -205,13 +205,17 @@ suspend fun RoutingContext.handleDebugEventBus() {
 }
 
 internal fun cssClassByPath(path: String) =
-    when{
-        path.endsWith(".java") -> "language-java"
-        path.endsWith(".kt") -> "language-kotlin"
-        path.endsWith(".xml") -> "language-xml"
-        path.endsWith(".sql") -> "language-sql"
-        else -> null
-    }
+        path.split(".").last().let {
+            when(it){
+                "java" -> "language-java"
+                "kt" -> "language-kotlin"
+                "xml", "iml" -> "language-xml"
+                "sql" -> "language-sql"
+                "json" -> "language-json"
+                "yml", "yaml" -> "language-yaml"
+                else -> "language-$it"
+            }
+        }
 
 @HandlerFor("""\/debug\/code\/([^\/]+)\/([^\/]+)\/(.*)""", isRegex = true)
 suspend fun RoutingContext.handleDebugCode() = with(response()) {
@@ -231,9 +235,16 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
         }
 
         val res = eb.sendAsync(Address.Code.Download, message.toJson()).body()
-        println("res = ${res}")
-        if(res.containsKey("uid")) uid = res.getString("uid")
-        else throw KotoedException(202, "Result not ready yet")
+
+        println("res = ${res.encodePrettily()}")
+
+        uid = res.getString("uid")
+
+        when(res.getString("status")) {
+            "pending" -> throw KotoedException(202, "Result not ready yet")
+            "failed" -> throw KotoedException(404, "Repository not found")
+            else -> {}
+        }
     }
 
     val message = object : Jsonable {
@@ -248,22 +259,35 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                 else -> eb.sendAsync(Address.Code.Read, message.toJson()).body()
             }
 
+    val supportedLanguages = setOf(
+            "java", "kotlin", "xml", "yaml", "json",
+            "javascript", "markdown", "sql", "asciidoc", "bash"
+    )
+
     putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
             .end(createHTML().html {
                 head {
                     title("The awesome kotoed")
-                    link(href = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.css", rel = "stylesheet")
                     meta { charset = "UTF-8" }
+                    meta { name = "viewport"; content = "width=device-width, initial-scale=1" }
+                    link { href = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.css"; rel = "stylesheet" }
+                    link { href = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"; rel = "stylesheet" }
+                    script { src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" }
+                    script { src = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" }
+                    script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js" }
+                    for(lang in supportedLanguages) {
+                        script{ src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-$lang.min.js" }
+                    }
                 }
                 body {
-                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js")
-                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-java.min.js")
-                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-kotlin.min.js")
-                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-yaml.min.js")
-                    script(src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-sql.min.js")
-
                     if(res.containsKey("contents")) {
-                        pre { code(classes = path?.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
+                        div(classes = "container") {
+                            div(classes = "list-group") {
+                                if (path.isNotEmpty())
+                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path}/..") { +"[up]" }
+                            }
+                            pre { code(classes = path?.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
+                        }
                     } else if(res.containsKey("files")) {
                         val prep = res
                                 .getJsonArray("files")
@@ -273,10 +297,15 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                                 .map { it.first() + if(it.size > 1) "/" else "" }
                                 .toSet()
 
-                        ul {
-                            if(path.isNotEmpty()) li { a(href = "/debug/code/$uid/$revision/${path}.."){ +".." } }
-                            for(f in prep) {
-                                li { a(href = "/debug/code/$uid/$revision/${path + f}"){ +f } }
+                        div(classes = "container") {
+                            if (path.isNotEmpty())
+                                div(classes = "list-group") {
+                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path}..") { +"[up]" }
+                                }
+                            div(classes = "list-group") {
+                                for (f in prep) {
+                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path + f}") { +f }
+                                }
                             }
                         }
                     }
