@@ -264,14 +264,20 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
             "javascript", "markdown", "sql", "asciidoc", "bash"
     )
 
+    fun MetaDataContent.css(href: String) = link(href = href, rel = "stylesheet")
+    fun FlowContent.bsContainer(block: DIV.() -> Unit = {}) = div(classes = "container", block = block)
+    fun FlowContent.bsListGroup(block: DIV.() -> Unit = {}) = div(classes = "list-group", block = block)
+    fun FlowContent.bsListGroupItem(href: String? = null, block: A.() -> Unit = {}) =
+            a(classes = "list-group-item", href = href, block = block)
+
     putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
             .end(createHTML().html {
                 head {
                     title("The awesome kotoed")
                     meta { charset = "UTF-8" }
                     meta { name = "viewport"; content = "width=device-width, initial-scale=1" }
-                    link { href = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.css"; rel = "stylesheet" }
-                    link { href = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"; rel = "stylesheet" }
+                    css("https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.css")
+                    css("https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css")
                     script { src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" }
                     script { src = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" }
                     script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js" }
@@ -281,10 +287,10 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                 }
                 body {
                     if(res.containsKey("contents")) {
-                        div(classes = "container") {
-                            div(classes = "list-group") {
+                        bsContainer {
+                            bsListGroup {
                                 if (path.isNotEmpty())
-                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path}/..") { +"[up]" }
+                                    bsListGroupItem(href = "/debug/code/$uid/$revision/${path}/..") { +"[up]" }
                             }
                             pre { code(classes = path?.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
                         }
@@ -297,14 +303,14 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                                 .map { it.first() + if(it.size > 1) "/" else "" }
                                 .toSet()
 
-                        div(classes = "container") {
+                        bsContainer {
                             if (path.isNotEmpty())
-                                div(classes = "list-group") {
-                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path}..") { +"[up]" }
+                                bsListGroup {
+                                    bsListGroupItem(href = "/debug/code/$uid/$revision/${path}..") { +"[up]" }
                                 }
-                            div(classes = "list-group") {
+                            bsListGroup {
                                 for (f in prep) {
-                                    a(classes = "list-group-item", href = "/debug/code/$uid/$revision/${path + f}") { +f }
+                                    bsListGroupItem(href = "/debug/code/$uid/$revision/${path + f}") { +f }
                                 }
                             }
                         }
