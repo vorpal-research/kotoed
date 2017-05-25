@@ -13,6 +13,7 @@ paths:
       description: Create a new course
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/CourseBase'
       responses:
@@ -33,6 +34,7 @@ paths:
       description: Query a course by its id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -82,6 +84,7 @@ paths:
       description: Get errors associated with a course
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/VerificationData'
       responses:
@@ -104,6 +107,7 @@ paths:
       description: Create a new project
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/ProjectBase'
       responses:
@@ -123,6 +127,7 @@ paths:
       description: Query a project by its id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -171,6 +176,7 @@ paths:
       description: Get errors associated with a project
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/VerificationData'
       responses:
@@ -193,6 +199,7 @@ paths:
       description: Create a new user
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/DenizenBase'
       responses:
@@ -213,6 +220,7 @@ paths:
       description: Query a user by its id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -273,6 +281,7 @@ paths:
       description: Query a submission by its id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -321,6 +330,7 @@ paths:
       description: Query the last corresponding submission for any submission with this id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -369,6 +379,7 @@ paths:
       description: Query all submission comments by submission id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
@@ -413,6 +424,7 @@ paths:
       description: Get errors associated with a submission
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/VerificationData'
       responses:
@@ -435,6 +447,7 @@ paths:
       description: Create a new comment
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/SubmissionCommentBase'
       responses:
@@ -455,6 +468,7 @@ paths:
       description: Query a submission comment by its id
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/HasId'
       responses:
