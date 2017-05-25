@@ -14,96 +14,142 @@ paths:
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Course'
+            $ref: '#/definitions/CourseBase'
       responses:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Course'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Course'
   /eventbus/kotoed.api.course.read:
     post:
-      description: Query a course by its properties
+      description: Query a course by its id
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Course'
+            $ref: '#/definitions/HasId'
       responses:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Course'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Course'
+    get:
+      description: Query a course by its id
+      parameters:
+        - name: id
+          in: query
+          description: Primary key
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Course'
   /eventbus/kotoed.api.project.create:
     post:
       description: Create a new project
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Project'
+            $ref: '#/definitions/ProjectBase'
       responses:
         '200':
-          description: OK
           schema:
-            $ref: '#/definitions/Project'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Project'
   /eventbus/kotoed.api.project.read:
     post:
       description: Query a project by its properties
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Project'
+            $ref: '#/definitions/HasId'
       responses:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Project'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Project'
   /eventbus/kotoed.api.denizen.create:
     post:
       description: Create a new user
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Denizen'
+            $ref: '#/definitions/DenizenBase'
       responses:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Denizen'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Denizen'
   /eventbus/kotoed.api.denizen.read:
     post:
       description: Query a user by their properties
       parameters:
         - in: body
           schema:
-            $ref: '#/definitions/Denizen'
+            $ref: '#/definitions/HasId'
       responses:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Denizen'
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Denizen'
 definitions:
-  Course:
+  HasId:
     type: object
+    required:
+      - id
     properties:
       id:
         type: integer
         description: Primary key
+  CourseBase:
+    type: object
+    properties:
       name:
         type: string
         description: Course name
       build_template_id:
         type: string
         description: >-
-          TeamCity build template ID this course should use when building the submissions
+          TeamCity build template ID this course should use when building the
+          submissions
       root_project_id:
         type: string
-        description: >-
-          TeamCity root project for the auto-created course project
-  Project:
+        description: TeamCity root project for the auto-created course project
+  Course:
+    allOf:
+      - $ref: '#/definitions/HasId'
+      - $ref: '#/definitions/CourseBase'
+  ProjectBase:
     type: object
     properties:
-      id:
-        type: integer
-        description: Primary key
       denizen_id:
         type: integer
         description: Foreign key to project owner
@@ -123,7 +169,11 @@ definitions:
       name:
         type: string
         description: Project name
-  Denizen:
+  Project:
+    allOf:
+      - $ref: '#/definitions/HasId'
+      - $ref: '#/definitions/ProjectBase'
+  DenizenBase:
     type: object
     properties:
       id:
@@ -138,3 +188,31 @@ definitions:
       salt:
         type: string
         description: Password salt
+  Denizen:
+    allOf:
+      - $ref: '#/definitions/HasId'
+      - $ref: '#/definitions/DenizenBase'
+  DbRecordWrapper:
+    type: object
+    required:
+      - verificationData
+    properties:
+      verificationData:
+        $ref: '#/definitions/VerificationData'
+      record:
+        type: object
+  VerificationData:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: string
+        enum:
+        - Unknown
+        - NotReady
+        - Processed
+      errors:
+        type: array
+        items:
+          type: integer
