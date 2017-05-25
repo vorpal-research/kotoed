@@ -71,7 +71,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
                     .returning()
                     .fetchOne()
                     ?.into(JsonObject::class.java)
-                    ?: throw IllegalArgumentException("Cannot find ${table.name} entry for id $id")
+                    ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         }
         message.reply(resp)
     }.ignore()
@@ -79,7 +79,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
     open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
-        val resp = db { selectById(id) } ?: throw IllegalArgumentException("Cannot find ${table.name} entry for id $id")
+        val resp = db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         message.reply(resp)
     }.ignore()
 
