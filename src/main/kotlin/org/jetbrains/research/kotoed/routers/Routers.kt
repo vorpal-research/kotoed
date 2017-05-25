@@ -16,6 +16,10 @@ fun RoutingContext.handleIndex() = with(response()) {
                 body {
                     h2 { +"Kotoed here"; +Entities.copy }
                     p { a(href = "/teamcity") { +"Teamcity bindings" } }
+                    p { a(href = "http://petstore.swagger.io/?url=https://bitbucket.org/vorpal-research/kotoed/raw/tip/docs/swagger.yaml") {
+                            +"REST API documentation"
+                        }
+                    }
                 }
             })
 }
