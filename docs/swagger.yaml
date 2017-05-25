@@ -112,6 +112,7 @@ paths:
             $ref: '#/definitions/ProjectBase'
       responses:
         '200':
+          description: OK
           schema:
             allOf:
               - $ref: '#/definitions/DbRecordWrapper'
@@ -261,6 +262,7 @@ paths:
       description: Create a new user
       parameters:
         - in: body
+          name: body
           schema:
             $ref: '#/definitions/SubmissionBase'
       responses:

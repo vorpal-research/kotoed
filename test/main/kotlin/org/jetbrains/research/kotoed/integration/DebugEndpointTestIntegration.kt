@@ -104,13 +104,13 @@ class DebugEndpointTestIntegration : Loggable {
 
         for (id in ids) {
             assertEquals(
-                    400,
+                    404,
                     assertFailsWith(UniformInterfaceException::class) {
                         wget("debug/eventbus/${Address.DB.read("debug")}", params = listOf("id" to id)).let(::JsonObject)
                     }.response.status
             )
             assertEquals(
-                    400,
+                    404,
                     assertFailsWith(UniformInterfaceException::class) {
                         wget("debug/eventbus/${Address.DB.delete("debug")}", params = listOf("id" to id)).let(::JsonObject)
                     }.response.status
