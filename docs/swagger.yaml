@@ -24,6 +24,10 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Course'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
   /eventbus/kotoed.api.course.read:
     post:
       description: Query a course by its id
@@ -40,6 +44,14 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Course'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
     get:
       description: Query a course by its id
       parameters:
@@ -57,6 +69,36 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Course'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.course.error:
+    post:
+      description: Get errors associated with a course
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/VerificationData'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Primary key
+              course_id:
+                type: integer
+                description: The id of the course
+              data:
+                type: object
+                description: Data associated with the event
   /eventbus/kotoed.api.project.create:
     post:
       description: Create a new project
@@ -72,9 +114,13 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Project'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
   /eventbus/kotoed.api.project.read:
     post:
-      description: Query a project by its properties
+      description: Query a project by its id
       parameters:
         - in: body
           schema:
@@ -88,6 +134,60 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Project'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a project by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Project'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.project.error:
+    post:
+      description: Get errors associated with a project
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/VerificationData'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Primary key
+              project_id:
+                type: integer
+                description: The id of the project
+              data:
+                type: object
+                description: Data associated with the event
   /eventbus/kotoed.api.denizen.create:
     post:
       description: Create a new user
@@ -104,9 +204,13 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Denizen'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
   /eventbus/kotoed.api.denizen.read:
     post:
-      description: Query a user by their properties
+      description: Query a user by its id
       parameters:
         - in: body
           schema:
@@ -120,7 +224,334 @@ paths:
               - properties:
                   record:
                     $ref: '#/definitions/Denizen'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a user by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Denizen'
+  /eventbus/kotoed.api.submission.create:
+    post:
+      description: Create a new user
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/SubmissionBase'
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Submission'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+  /eventbus/kotoed.api.submission.read:
+    post:
+      description: Query a submission by its id
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/HasId'
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Submission'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a submission by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Submission'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.last:
+    post:
+      description: Query the last corresponding submission for any submission with this id
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/HasId'
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Submission'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a user by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/Submission'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.comments:
+    post:
+      description: Query all submission comments by submission id
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/HasId'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SubmissionComment'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a user by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SubmissionComment'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.error:
+    post:
+      description: Get errors associated with a submission
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/VerificationData'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: Primary key
+              submission_id:
+                type: integer
+                description: The id of the submission
+              data:
+                type: object
+                description: Data associated with the event
+  /eventbus/kotoed.api.submission.comment.create:
+    post:
+      description: Create a new comment
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/SubmissionCommentBase'
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/SubmissionComment'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+  /eventbus/kotoed.api.submission.comment.read:
+    post:
+      description: Query a submission comment by its id
+      parameters:
+        - in: body
+          schema:
+            $ref: '#/definitions/HasId'
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/SubmissionComment'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Query a submission comment by its id
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: Primary key
+      responses:
+        '200':
+          description: OK
+          schema:
+            allOf:
+              - $ref: '#/definitions/DbRecordWrapper'
+              - properties:
+                  record:
+                    $ref: '#/definitions/SubmissionComment'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
 definitions:
+  ErrorEntity:
+    type: object
+    required:
+      - success
+      - error
+      - code
+    properties:
+      success:
+        type: boolean
+        description: Is operation successful?
+      error:
+        type: string
+        description: Error message
+      code:
+        type: integer
+        description: Error code
+      stacktrace:
+        type: array
+        items:
+          type: string
+        description: Optional stacktrace information for debugging
+    additionalProperties:
+      description: Supplemental information for additional types of errors
+  NotFoundError:
+    allOf:
+      - $ref: '#/definitions/ErrorEntity'
+      - properties:
+          success:
+            enum:
+              - false
+          code:
+            enum:
+              - 404
+  RequestError:
+    allOf:
+      - $ref: '#/definitions/ErrorEntity'
+      - properties:
+          success:
+            enum:
+              - false
+          code:
+            enum:
+              - 400
+  UnknownError:
+    allOf:
+      - $ref: '#/definitions/ErrorEntity'
+      - properties:
+          success:
+            enum:
+              - false
+          code:
+            enum:
+              - 500
   HasId:
     type: object
     required:
@@ -129,8 +560,37 @@ definitions:
       id:
         type: integer
         description: Primary key
+  DbRecordWrapper:
+    type: object
+    required:
+      - verificationData
+    properties:
+      verificationData:
+        $ref: '#/definitions/VerificationData'
+      record:
+        type: object
+  VerificationData:
+    type: object
+    required:
+      - status
+    properties:
+      status:
+        type: string
+        enum:
+          - Unknown
+          - NotReady
+          - Processed
+      errors:
+        type: array
+        default: []
+        items:
+          type: integer
   CourseBase:
     type: object
+    required:
+      - name
+      - build_template_id
+      - root_project_id
     properties:
       name:
         type: string
@@ -149,6 +609,12 @@ definitions:
       - $ref: '#/definitions/CourseBase'
   ProjectBase:
     type: object
+    required:
+      - denizen_id
+      - course_id
+      - repo_type
+      - repo_url
+      - name
     properties:
       denizen_id:
         type: integer
@@ -175,10 +641,11 @@ definitions:
       - $ref: '#/definitions/ProjectBase'
   DenizenBase:
     type: object
+    required:
+      - denizen_id
+      - password
+      - salt
     properties:
-      id:
-        type: integer
-        description: Primary key
       denizen_id:
         type: string
         description: User name
@@ -192,27 +659,85 @@ definitions:
     allOf:
       - $ref: '#/definitions/HasId'
       - $ref: '#/definitions/DenizenBase'
-  DbRecordWrapper:
+  SubmissionBase:
     type: object
     required:
-      - verificationData
+      - project_id
+      - revision
     properties:
-      verificationData:
-        $ref: '#/definitions/VerificationData'
-      record:
-        type: object
-  VerificationData:
-    type: object
-    required:
-      - status
-    properties:
-      status:
+      parent_submission_id:
+        type: integer
+        default: null
+        description: The id of previous version of this submission (if any)
+      project_id:
+        type: integer
+        description: Reference to project id
+      revision:
         type: string
-        enum:
-        - Unknown
-        - NotReady
-        - Processed
-      errors:
-        type: array
-        items:
-          type: integer
+        description: VCS revision bound to this submission.
+  Submission:
+    allOf:
+      - $ref: '#/definitions/HasId'
+      - type: object
+        properties:
+          datetime:
+            type: integer
+            description: Epoch value for this submission creation time
+            default: now
+          state:
+            type: string
+            enum:
+              - pending
+              - invalid
+              - open
+              - obsolete
+              - closed
+            default: pending
+            description: Current state of this submission
+      - $ref: '#/definitions/SubmissionBase'
+  SubmissionCommentBase:
+    type: object
+    required:
+      - submission_id
+      - author_id
+      - sourcefile
+      - sourceline
+      - text
+    properties:
+      submission_id:
+        type: integer
+        description: The id of the submission
+      author_id:
+        type: integer
+        description: The denizen id of the author
+      sourcefile:
+        type: string
+        description: Filename
+      sourceline:
+        type: integer
+        description: Line number
+      text:
+        type: string
+        description: Comment contents
+      previous_comment_id:
+        type: integer
+        default: null
+        description: The id of the comment this comment replies to (if any)
+  SubmissionComment:
+    allOf:
+      - $ref: '#/definitions/HasId'
+      - type: object
+        properties:
+          state:
+            type: string
+            enum:
+              - open
+              - closed
+          persistent_comment_id:
+            type: integer
+            description: The unified id for all versions of a single comment
+          original_submission_id:
+            type: integer
+            description: Id of submission for the first version of this comment
+            default: submission_id
+      - $ref: '#/definitions/SubmissionCommentBase'

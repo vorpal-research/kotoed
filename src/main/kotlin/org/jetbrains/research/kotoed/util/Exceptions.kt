@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.util.StatusCodes.NOT_FOUND
 
 object StatusCodes {
     const val FORBIDDEN = 403
@@ -15,6 +16,8 @@ object StatusCodes {
 data class KotoedException(val code: Int, override val message: String) : Exception(message)
 
 data class WrappedException(val inner: Throwable?) : Exception(inner)
+
+fun NotFound(message: String) = KotoedException(code = NOT_FOUND, message = message)
 
 val Throwable.unwrapped
     get() =
