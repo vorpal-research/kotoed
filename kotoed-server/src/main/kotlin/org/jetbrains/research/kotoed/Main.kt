@@ -57,9 +57,6 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val router = Router.router(vertx)
 
         log.info("Alive and standing")
-
-        router.route()
-                .failureHandler(this@RootVerticle::handleFailure)
         
         router.route("/static/*").handler(StaticHandler.create("webroot/static"))
 
