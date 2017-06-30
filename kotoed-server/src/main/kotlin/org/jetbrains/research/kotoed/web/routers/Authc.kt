@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.http.HttpHeaders
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.*
 
@@ -13,5 +14,5 @@ fun login(context: RoutingContext) {}
 @LoginRequired
 fun logout(context: RoutingContext) {
     context.session().destroy()
-    context.response().setStatus(HttpResponseStatus.FOUND).putHeader("location", "/").end()
+    context.response().setStatus(HttpResponseStatus.FOUND).putHeader(HttpHeaders.LOCATION, "/").end()
 }
