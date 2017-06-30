@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceMap": true
+  },
+  "include": [
+    "src/main/ts/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
