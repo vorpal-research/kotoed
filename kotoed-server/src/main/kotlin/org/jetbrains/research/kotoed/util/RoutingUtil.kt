@@ -41,6 +41,7 @@ annotation class Last
 annotation class Chain
 // Add content-type: application/json to response
 annotation class JsonResponse
+
 // Apply TemplateHandler on this route after this handler
 annotation class Templatize(val templateName: String, val withHelpers: Boolean = true)
 
@@ -166,9 +167,6 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
             .forEach { method ->
                 log.trace("Auto-registering handler $method")
 
-                makeRoute(method)
-                        .handler(funToHandler(method, method.shouldChainHandler()))
-
                 method.getAnnotation(LoginRequired::class.java)?.apply {
                     makeRoute(method).handler(cookieHandler)
                     makeRoute(method).handler(sessionHandler)
@@ -181,6 +179,10 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                     makeRoute(method).handler(PutJsonHeaderHandler)
                     makeRoute(method).failureHandler(routingConfig.jsonFailureHandler)
                 }
+
+                makeRoute(method)
+                        .handler(funToHandler(method, method.shouldChainHandler()))
+
 
                 method.getAnnotation(Templatize::class.java)?.apply {
 
