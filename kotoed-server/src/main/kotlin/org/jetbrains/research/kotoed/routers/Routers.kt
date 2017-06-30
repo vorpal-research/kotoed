@@ -8,22 +8,6 @@ import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.util.*
 
-@HandlerFor("/")
-fun RoutingContext.handleIndex() = with(response()) {
-    putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValuesEx.HTML)
-            .end(createHTML().html {
-                head { title("The awesome kotoed") }
-                body {
-                    h2 { +"Kotoed here"; +Entities.copy }
-                    p { a(href = "/teamcity") { +"Teamcity bindings" } }
-                    p { a(href = "http://petstore.swagger.io/?url=https://bitbucket.org/vorpal-research/kotoed/raw/tip/docs/swagger.yaml") {
-                            +"REST API documentation"
-                        }
-                    }
-                }
-            })
-}
-
 @HandlerFor("/teamcity/:address")
 suspend fun RoutingContext.handleTeamcity() {
     val vertx = vertx()

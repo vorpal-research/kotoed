@@ -72,6 +72,7 @@ fun HttpServerResponse.end(json: Jsonable) =
 object HttpHeaderValuesEx {
     const val APPLICATION_XML = "application/xml"
     const val HTML = "text/html"
+    const val HTML_UTF8 = "text/html; charset=utf-8"
 }
 
 /******************************************************************************/
@@ -191,48 +192,6 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
                 f
             }
     CompositeFuture.all(fs).setHandler(handler)
-}
-
-annotation class HandlerFor(val path: String, val isRegex: Boolean = false)
-
-private inline fun <T> unwrapITE(body: () -> T) {
-    try {
-        body()
-    } catch (ite: InvocationTargetException) {
-        throw WrappedException(ite.cause)
-    }
-}
-
-private fun funToHandler(method: Method): Handler<RoutingContext> {
-    return when {
-        // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
-        method.isKotlinSuspend -> Handler {
-            launch(UnconfinedWithExceptions(it)) { unwrapITE { method.invokeAsync(null, it) } }
-        }
-        else -> Handler {
-            DelegateLoggable(method.declaringClass).withExceptions(it) {
-                unwrapITE { method.invoke(null, it) }
-            }
-        }
-    }
-}
-
-fun autoRegisterHandlers(router: Router) {
-    val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
-    Reflections("org.jetbrains.research.kotoed", MethodAnnotationsScanner())
-            .getMethodsAnnotatedWith(HandlerFor::class.java)
-            .forEach { method ->
-                log.trace("Auto-registering handler $method")
-
-                val anno = method.getAnnotation(HandlerFor::class.java)
-                if (anno.isRegex) {
-                    router.routeWithRegex(anno.path)
-                            .handler(funToHandler(method))
-                } else {
-                    router.route(anno.path)
-                            .handler(funToHandler(method))
-                }
-            }
 }
 
 /******************************************************************************/

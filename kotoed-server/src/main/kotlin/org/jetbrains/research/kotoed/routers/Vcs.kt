@@ -6,6 +6,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
 @HandlerFor("/vcs/ping/:vcs")
+@JsonResponse
 suspend fun RoutingContext.handleVcsPing() {
     val vertx = vertx()
     val eb = vertx.eventBus()
@@ -22,10 +23,11 @@ suspend fun RoutingContext.handleVcsPing() {
 
     val res = eb.sendAsync(Address.Code.Ping, message.toJson())
 
-    jsonResponse().end(res.body())
+    response().end(res.body())
 }
 
 @HandlerFor("/vcs/clone/:vcs")
+@JsonResponse
 suspend fun RoutingContext.handleVcsClone() {
     val vertx = vertx()
     val eb = vertx.eventBus()
@@ -42,7 +44,7 @@ suspend fun RoutingContext.handleVcsClone() {
 
     val res = eb.sendAsync(Address.Code.Download, message.toJson())
 
-    jsonResponse().end(res.body())
+    response().end(res.body())
 }
 
 @HandlerFor("""\/vcs\/read\/([^\/]+)\/(.+)""", isRegex = true)
@@ -67,9 +69,9 @@ suspend fun RoutingContext.handleVcsRead() {
     val res = eb.sendAsync(Address.Code.Read, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        jsonResponse().end(res.body())
+        response().end(res.body())
     } else {
-        jsonResponse()
+        response()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))
@@ -77,6 +79,7 @@ suspend fun RoutingContext.handleVcsRead() {
 }
 
 @HandlerFor("/vcs/list/:uid")
+@JsonResponse
 suspend fun RoutingContext.handleVcsList() {
     val vertx = vertx()
     val eb = vertx.eventBus()
@@ -94,9 +97,9 @@ suspend fun RoutingContext.handleVcsList() {
     val res = eb.sendAsync(Address.Code.List, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        jsonResponse().end(res.body())
+        response().end(res.body())
     } else {
-        jsonResponse()
+        response()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))
@@ -104,6 +107,7 @@ suspend fun RoutingContext.handleVcsList() {
 }
 
 @HandlerFor("/vcs/diff/:uid/:from::to")
+@JsonResponse
 suspend fun RoutingContext.handleVcsDiff() {
     val vertx = vertx()
     val eb = vertx.eventBus()
@@ -125,9 +129,9 @@ suspend fun RoutingContext.handleVcsDiff() {
     val res = eb.sendAsync(Address.Code.Diff, message.toJson())
 
     if (res.body().getBoolean("success")) {
-        jsonResponse().end(res.body())
+        response().end(res.body())
     } else {
-        jsonResponse()
+        response()
                 .setStatus(HttpResponseStatus.NOT_FOUND)
                 .end(HttpResponseStatus.NOT_FOUND.toJson()
                         .mergeIn(res.body()))
