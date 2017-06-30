@@ -2,12 +2,15 @@ package org.jetbrains.research.kotoed
 
 import io.vertx.core.*
 import io.vertx.core.json.JsonArray
+import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.ErrorHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.handler.StaticHandler
+import io.vertx.ext.web.sstore.LocalSessionStore
+import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.ext.web.templ.TemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
@@ -17,6 +20,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
+import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -58,6 +62,8 @@ class RootVerticle : AbstractVerticle(), Loggable {
         
         router.route("/static/*").handler(StaticHandler.create("webroot/static"))
 
+        val authProvider = UavAuthProvider(vertx)
+
         router.autoRegisterHandlers(object: RoutingConfig {
             override val templateEngine: TemplateEngine =
                     JadeTemplateEngine.create()
@@ -71,6 +77,8 @@ class RootVerticle : AbstractVerticle(), Loggable {
                     StaticFilesHelper(vertx)
             override val templateHelpers: Map<String, TemplateHelper> =
                     mapOf("static" to staticFilesHelper)
+            override val authProvider: AuthProvider = authProvider
+            override val sessionStore: SessionStore = LocalSessionStore.create(vertx)
         })
 
         vertx.createHttpServer()

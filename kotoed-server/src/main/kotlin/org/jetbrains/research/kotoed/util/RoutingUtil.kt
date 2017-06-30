@@ -45,6 +45,8 @@ annotation class Templatize(val templateName: String, val withHelpers: Boolean =
 
 annotation class JsBundle(val bundleName: String, val withHash: Boolean = true)
 
+annotation class LoginRequired
+
 interface RoutingConfig {
     val templateEngine: TemplateEngine
     val templateHelpers: Map<String, TemplateHelper>
@@ -57,6 +59,12 @@ interface RoutingConfig {
         get() = Handler {  }
     val staticFilesHelper: StaticFilesHelper?
         get() = null
+    val authProvider: AuthProvider
+    val sessionStore: SessionStore
+    val loginPath: String
+        get() = "/login"
+    val mainPage: String
+        get() = "/"
 }
 
 object PutJsonHeaderHandler : Handler<RoutingContext> {
@@ -133,8 +141,20 @@ private fun Method.shouldChainHandler(): Boolean =
 fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
     val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
 
+    val cookieHandler = CookieHandler.create()
+    val sessionHandler = SessionHandler.create(routingConfig.sessionStore)
+    val userSessionHandler = UserSessionHandler.create(routingConfig.authProvider)
+    val authHandler = RedirectAuthHandler.create(routingConfig.authProvider, routingConfig.loginPath)
+
     route().handler(routingConfig.loggingHandler)
 
+    route(routingConfig.loginPath).handler(cookieHandler)
+    route(routingConfig.loginPath).handler(sessionHandler)
+    route(routingConfig.loginPath).handler(userSessionHandler)
+    route(routingConfig.loginPath).method(HttpMethod.POST).handler(BodyHandler.create())
+    route(routingConfig.loginPath).method(HttpMethod.POST).handler(
+            FormLoginHandler.create(routingConfig.authProvider)
+                    .setDirectLoggedInOKURL(routingConfig.mainPage))
 
 
     Reflections("org.jetbrains.research.kotoed", MethodAnnotationsScanner())
@@ -145,6 +165,12 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                 makeRoute(method)
                         .handler(funToHandler(method, method.shouldChainHandler()))
 
+                method.getAnnotation(LoginRequired::class.java)?.apply {
+                    makeRoute(method).handler(cookieHandler)
+                    makeRoute(method).handler(sessionHandler)
+                    makeRoute(method).handler(userSessionHandler)
+                    makeRoute(method).handler(authHandler)
+                }
 
                 method.getAnnotation(JsonResponse::class.java)?.apply {
                     makeRoute(method).handler(PutJsonHeaderHandler)
