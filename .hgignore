@@ -8,6 +8,7 @@ target
 
 .idea
 .idea_modules
+*.iml
 .classpath
 .project
 .settings
