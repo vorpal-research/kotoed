@@ -24,7 +24,7 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
         get() = JDBCClient.create(vertx, ds)
                 .let { JDBCAuth.create(vertx, it) }
                 .apply {
-                    setAuthenticationQuery("SELECT password, salt FROM Denizen WHERE denizenId = ?")
+                    setAuthenticationQuery("SELECT password, salt FROM denizen WHERE denizen_id = ?")
                 }
 
     @JsonableEventBusConsumerFor(Address.User.Auth.SignUp)
