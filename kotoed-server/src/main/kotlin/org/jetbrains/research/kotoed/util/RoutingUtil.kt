@@ -12,6 +12,7 @@ import io.vertx.ext.web.templ.TemplateEngine
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
+import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
 import org.slf4j.LoggerFactory
@@ -61,6 +62,8 @@ interface RoutingConfig {
         get() = null
     val authProvider: AuthProvider
     val sessionStore: SessionStore
+    val sessionProlongator: Handler<RoutingContext>
+        get() = Handler {  }
     val loginPath: String
         get() = "/login"
     val mainPage: String
@@ -152,6 +155,7 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
     route(routingConfig.loginPath).handler(sessionHandler)
     route(routingConfig.loginPath).handler(userSessionHandler)
     route(routingConfig.loginPath).method(HttpMethod.POST).handler(BodyHandler.create())
+    route(routingConfig.loginPath).handler(routingConfig.sessionProlongator)
     route(routingConfig.loginPath).method(HttpMethod.POST).handler(
             FormLoginHandler.create(routingConfig.authProvider)
                     .setDirectLoggedInOKURL(routingConfig.mainPage))
@@ -169,6 +173,7 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                     makeRoute(method).handler(cookieHandler)
                     makeRoute(method).handler(sessionHandler)
                     makeRoute(method).handler(userSessionHandler)
+                    makeRoute(method).handler(routingConfig.sessionProlongator)
                     makeRoute(method).handler(authHandler)
                 }
 

@@ -21,6 +21,7 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
+import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -65,20 +66,17 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val authProvider = UavAuthProvider(vertx)
 
         router.autoRegisterHandlers(object: RoutingConfig {
-            override val templateEngine: TemplateEngine =
+            override val templateEngine =
                     JadeTemplateEngine.create()
-            override val jsonFailureHandler: Handler<RoutingContext> =
-                    Handler { routingContext -> handleFailure(routingContext) }
-            override val htmlFailureHandler: Handler<RoutingContext> =
-                    ErrorHandler.create()
-            override val loggingHandler: Handler<RoutingContext> =
-                    LoggerHandler.create(LoggerFormat.SHORT)
-            override val staticFilesHelper: StaticFilesHelper =
-                    StaticFilesHelper(vertx)
-            override val templateHelpers: Map<String, TemplateHelper> =
-                    mapOf("static" to staticFilesHelper)
-            override val authProvider: AuthProvider = authProvider
-            override val sessionStore: SessionStore = LocalSessionStore.create(vertx)
+            override val jsonFailureHandler =
+                    Handler<RoutingContext> { routingContext -> handleFailure(routingContext) }
+            override val htmlFailureHandler = ErrorHandler.create()
+            override val loggingHandler = LoggerHandler.create(LoggerFormat.SHORT)
+            override val staticFilesHelper = StaticFilesHelper(vertx)
+            override val templateHelpers = mapOf("static" to staticFilesHelper)
+            override val authProvider = authProvider
+            override val sessionStore = LocalSessionStore.create(vertx)
+            override val sessionProlongator = SessionProlongator.create()
         })
 
         vertx.createHttpServer()
