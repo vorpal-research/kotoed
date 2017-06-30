@@ -2,7 +2,6 @@ package org.jetbrains.research.kotoed.routers
 
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
@@ -16,7 +15,6 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.impl.DSL
 import org.jooq.util.postgres.PostgresDataType
-import java.nio.file.Path
 
 // XXX: testing, remove in production
 
@@ -31,9 +29,11 @@ fun RoutingContext.handleDebug() {
 }
 
 @HandlerFor("/debug/settings")
-fun RoutingContext.handleDebugSettings() = jsonResponse().end(Config)
+@JsonResponse
+fun RoutingContext.handleDebugSettings() = response().end(Config)
 
 @HandlerFor("/debug/request")
+@JsonResponse
 fun RoutingContext.handleDebugRequest() {
     val req = request()
     val result = object : Jsonable {
@@ -47,16 +47,19 @@ fun RoutingContext.handleDebugRequest() {
             val remoteAddress = req.connection().remoteAddress().toString()
         }
     }
-    jsonResponse().end(result)
+    response().end(result)
 }
 
 @HandlerFor("/debug/crash/now")
+@JsonResponse
 fun RoutingContext.handleDebugCrashNow(): Unit = throw IllegalStateException("Forced crash")
 
 @HandlerFor("/debug/crash/suspend")
+@JsonResponse
 suspend fun RoutingContext.handleDebugCrashSuspend(): Unit = throw IllegalStateException("Forced crash")
 
 @HandlerFor("/debug/crash/delay")
+@JsonResponse
 suspend fun RoutingContext.handleDebugCrash() {
     val vertx = vertx()
     vertx.delayAsync(500)
@@ -64,6 +67,7 @@ suspend fun RoutingContext.handleDebugCrash() {
 }
 
 @HandlerFor("/debug/database/create")
+@JsonResponse
 fun RoutingContext.handleDebugDatabaseCreate() {
     val vertx = vertx()
 
@@ -79,10 +83,11 @@ fun RoutingContext.handleDebugDatabaseCreate() {
     val res = object : Jsonable {
         val query = q.toString()
     }
-    jsonResponse().end(res)
+    response().end(res)
 }
 
 @HandlerFor("/debug/database/fill")
+@JsonResponse
 suspend fun RoutingContext.handleDebugDatabaseFill() {
     val vertx = vertx()
 
@@ -128,10 +133,11 @@ suspend fun RoutingContext.handleDebugDatabaseFill() {
 
     vertx.goToEventLoop()
 
-    jsonResponse().end(JsonArray(res).encodePrettily())
+    response().end(JsonArray(res).encodePrettily())
 }
 
 @HandlerFor("/debug/database/read/:id")
+@JsonResponse
 suspend fun RoutingContext.handleDebugDatabaseRead() {
     val vertx = vertx()
 
@@ -158,10 +164,11 @@ suspend fun RoutingContext.handleDebugDatabaseRead() {
 
     vertx.goToEventLoop()
 
-    jsonResponse().end(Json.encode(res))
+    response().end(Json.encode(res))
 }
 
 @HandlerFor("/debug/database/clear")
+@JsonResponse
 suspend fun RoutingContext.handleDebugDatabaseClear() {
     val vertx = vertx()
 
@@ -179,10 +186,11 @@ suspend fun RoutingContext.handleDebugDatabaseClear() {
 
     vertx.goToEventLoop()
 
-    jsonResponse().end(JsonObject("success" to true))
+    response().end(JsonObject("success" to true))
 }
 
 @HandlerFor("/debug/eventbus/:address")
+@JsonResponse
 suspend fun RoutingContext.handleDebugEventBus() {
     val vertx = vertx()
 
@@ -201,7 +209,7 @@ suspend fun RoutingContext.handleDebugEventBus() {
                         .let(::JsonObject)
             }
     val res = eb.sendAsync<Any>(address, body)
-    jsonResponse().end("${res.body()}")
+    response().end("${res.body()}")
 }
 
 internal fun cssClassByPath(path: String) =
