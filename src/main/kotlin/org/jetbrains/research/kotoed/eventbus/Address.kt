@@ -69,6 +69,11 @@ object Address {
             const val Login = "kotoed.user.auth.login"
             const val Info = "kotoed.user.auth.info"
         }
+
+        object OAuth {
+            const val SignUp = "kotoed.user.oauth.signup"
+            const val Login = "kotoed.user.oauth.login"
+        }
     }
 
     object DB {
