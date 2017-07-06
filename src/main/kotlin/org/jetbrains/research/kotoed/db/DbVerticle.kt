@@ -204,3 +204,9 @@ class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables
 
 @AutoDeployable
 class ProjectStatusVerticle : CrudDatabaseVerticleWithReferences<ProjectStatusRecord>(Tables.PROJECT_STATUS)
+
+@AutoDeployable
+class OAuthProviderVerticle : CrudDatabaseVerticle<OauthProviderRecord>(Tables.OAUTH_PROVIDER)
+
+@AutoDeployable
+class OAuthProfileVerticle : CrudDatabaseVerticleWithReferences<OauthProfileRecord>(Tables.OAUTH_PROFILE)
