@@ -10,14 +10,16 @@ const dst_path = path.resolve(__dirname, "target/js/webroot/static/");
 const config: webpack.Configuration = {
     context: src_main,
     entry: {
-        hello: "./ts/hello.ts"
+        hello: "./ts/hello.ts",
+        code: "./ts/code.ts"
+
     },
     output: {
         path: dst_path,
         filename: 'js/[name].bundle.js'
     },
     resolve: {
-        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
+        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".css", ".less"],
         alias: {
             css: path.resolve(src_main, "css"),
             ts: path.resolve(src_main, "ts"),
@@ -30,7 +32,7 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: "ts-loader"
+                loader: "awesome-typescript-loader"
             },
             {
                 test: /\.css$/,
