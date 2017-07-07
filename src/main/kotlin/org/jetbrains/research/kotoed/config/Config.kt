@@ -13,7 +13,7 @@ class GlobalConfig : Configuration() {
             val Dialect get() = JDBCUtils.dialect(Url)
 
             val DataSourceId by "debug.db"
-            val PoolSize by 10
+            val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
         }
 
         val Database by DBConfig()
@@ -49,6 +49,28 @@ class GlobalConfig : Configuration() {
     }
 
     val VCS by VCSConfig()
+
+    class MailConfig : Configuration() {
+        val KotoedAddress: String by "kotoed@jetbrains.com"
+        val KotoedSignature: String by "Kotoed, the one and only"
+        val ServerHost: String by "kspt.icc.spbstu.ru"
+
+        val UseSSL: Boolean by false
+        val UseTLS: Boolean by false
+
+        val ServerPort: Int by { if(UseTLS) 587 else if(UseSSL) 465 else 25 }
+
+        val User: String? by Null
+        val Password: String? by Null
+    }
+
+    class NotificationsConfig : Configuration() {
+        val PoolSize: Int by { Runtime.getRuntime().availableProcessors() }
+
+        val Mail by MailConfig()
+    }
+
+    val Notifications by NotificationsConfig()
 
     class RootConfig : Configuration() {
         val Port: Int by 9000

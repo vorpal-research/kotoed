@@ -200,6 +200,11 @@
             <artifactId>validation-api</artifactId>
             <version>${validation-api.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.simplejavamail</groupId>
+            <artifactId>simple-java-mail</artifactId>
+            <version>4.2.3</version>
+        </dependency>
 
     </dependencies>
 
