@@ -2,7 +2,7 @@
  * Created by gagarski on 6/27/17.
  */
 
-import $ = require('jquery');
+import * as $ from 'jquery';
 
 require("bootstrap-less/js/bootstrap.js");
 require("less/hello.less");
