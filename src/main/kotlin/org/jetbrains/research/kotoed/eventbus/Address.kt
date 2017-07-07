@@ -88,4 +88,10 @@ object Address {
         fun verify(entity: String) = "kotoed.db.$entity.verify"
     }
 
+    object Notifications {
+        object Email {
+            const val Send = "kotoed.notifications.email.send"
+        }
+    }
+
 }
