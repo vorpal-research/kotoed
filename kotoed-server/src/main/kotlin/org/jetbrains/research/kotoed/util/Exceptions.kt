@@ -23,12 +23,14 @@ val Throwable.unwrapped
     get() =
     when (this) {
         is org.jetbrains.research.kotoed.util.WrappedException -> inner ?: this
+        is java.lang.reflect.InvocationTargetException -> cause ?: this
         else -> this
     }
 
 fun codeFor(ex: Throwable): Int =
         when (ex) {
             is WrappedException -> ex.inner?.let(::codeFor) ?: StatusCodes.INTERNAL_ERROR
+            is java.lang.reflect.InvocationTargetException -> ex.cause?.let(::codeFor) ?: StatusCodes.INTERNAL_ERROR
             is ReplyException -> ex.failureCode()
             is KotoedException -> ex.code
             is IllegalArgumentException, is IllegalStateException ->
