@@ -18,3 +18,10 @@ fun handleIndex(context: RoutingContext) {
 @LoginRequired
 @JsBundle("hello")
 fun handleSecret(context: RoutingContext) {}
+
+@HandlerFor("/somecode_ace")
+@Templatize("code_ace.jade")
+//@LoginRequired
+@JsBundle("code_ace")
+fun handleCodeAce(context: RoutingContext) {}
+
