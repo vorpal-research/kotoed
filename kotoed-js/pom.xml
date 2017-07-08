@@ -22,7 +22,7 @@
                 </property>
             </activation>
             <properties>
-                <webpack.args></webpack.args>
+                <webpack.args>--config=webpack.config.dev.ts --color</webpack.args>
             </properties>
         </profile>
         <profile>
@@ -31,7 +31,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <webpack.args>-p</webpack.args>
+                <webpack.args>--config=webpack.config.prod.ts -p --color</webpack.args>
             </properties>
         </profile>
 
