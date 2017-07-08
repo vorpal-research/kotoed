@@ -9,8 +9,6 @@ import "codemirror/addon/fold/comment-fold"
 import * as moment from "moment"
 import * as cmr from "./cm_review";
 
-import "ts/types_ex/codemirror_fold_gutter"
-
 import "codemirror/addon/fold/foldgutter.css"
 import "codemirror/lib/codemirror.css"
 import "less/code.less";
