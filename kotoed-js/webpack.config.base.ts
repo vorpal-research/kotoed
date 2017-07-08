@@ -73,8 +73,7 @@ const config: webpack.Configuration = {
             $: 'jquery',
             jquery: 'jquery'
         })
-    ],
-    devtool: 'inline-source-map',
+    ]
 };
 
 export default config;
