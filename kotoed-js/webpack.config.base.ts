@@ -11,7 +11,7 @@ const config: webpack.Configuration = {
     context: src_main,
     entry: {
         hello: "./ts/hello.ts",
-        code: "./ts/code.ts"
+        code: "./ts/code/index.tsx"
     },
     output: {
         path: dst_path,
