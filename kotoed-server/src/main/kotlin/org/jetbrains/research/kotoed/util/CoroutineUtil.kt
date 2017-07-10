@@ -83,6 +83,16 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
                     handleException(ctx, exception)
         } + Unconfined
 
+inline fun UnconfinedWithExceptions(loggable: Loggable) =
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
+                CoroutineExceptionHandler,
+                DelegateLoggable {
+            override val loggingClass = loggable::class.java
+
+            override fun handleException(context: CoroutineContext, exception: Throwable) =
+                    loggable.log.error("", exception)
+        } + Unconfined
+
 // NOTE: suspendCoroutineOrReturn<> is not recommended by kotlin devs, BUT,
 // however, suspendCoroutine<>, the only alternative, does *not* work correctly if suspend fun has no
 // suspension points.
