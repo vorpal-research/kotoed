@@ -11,7 +11,9 @@ import java.nio.file.Paths
 class StaticFilesHelper(vertx: Vertx,
                         val staticWebBase: String = "static",
                         staticLocalBase: String = "webroot/static",
-                        val bundlePattern: String = "js/%s.bundle.js") : TemplateHelper, Loggable {
+                        val jsBundlePattern: String = "js/%s.bundle.js",
+                        val cssBundlePattern: String = "css/%s.css"
+                        ) : TemplateHelper, Loggable {
     /**
      * We calculate file hashes to drop clients' caches when these files are updated
      */
@@ -37,18 +39,24 @@ class StaticFilesHelper(vertx: Vertx,
 
     }
 
-    fun staticPath(path: String): String = Paths.get(staticWebBase, path).toString()
+    fun staticPath(path: String, withHash: Boolean = true): String {
+        val webPath = Paths.get(staticWebBase, path).toString()
+        if (!withHash) {
+            return webPath
+        } else if (staticHashes.containsKey(path)) {
+            return "$webPath?${staticHashes[path]}"
+        } else {
+            log.warn("Cannot find hash for path $webPath")
+            return webPath
+        }
+    }
 
-    fun staticPathWithHash(path: String) =
-            if (staticHashes.containsKey(path))
-                "${staticPath(path)}?${staticHashes[path]}"
-            else staticPath(path).also {
-                log.warn("Cannot find hash for path $path")
-            }
+    private fun jsBundleName(bundle: String) = String.format(jsBundlePattern, bundle)
 
-    private fun jsBundleName(bundle: String) = String.format(bundlePattern, bundle)
+    private fun cssBundleName(bundle: String) = String.format(cssBundlePattern, bundle)
 
-    fun bundlePath(bundle: String) = staticPath(jsBundleName(bundle))
+    fun jsBundlePath(bundle: String, withHash: Boolean = true) = staticPath(jsBundleName(bundle), withHash)
 
-    fun bundlePathWithHash(bundle: String) = staticPathWithHash(jsBundleName(bundle))
+    fun cssBundlePath(bundle: String, withHash: Boolean = true) = staticPath(cssBundleName(bundle), withHash)
+
 }

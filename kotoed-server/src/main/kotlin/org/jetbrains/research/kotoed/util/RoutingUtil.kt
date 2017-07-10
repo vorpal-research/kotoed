@@ -45,7 +45,11 @@ annotation class JsonResponse
 // Apply TemplateHandler on this route after this handler
 annotation class Templatize(val templateName: String, val withHelpers: Boolean = true)
 
-annotation class JsBundle(val bundleName: String, val withHash: Boolean = true)
+annotation class JsBundle(val bundleName: String,
+                          val withHash: Boolean = true,
+                          val withVendor: Boolean = true,
+                          val withCss: Boolean = true,
+                          val vendorName: String = "vendor")
 
 annotation class LoginRequired
 
@@ -200,13 +204,32 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                                         throw IllegalStateException("In order to use JsBundle annotation " +
                                                 "config.staticFilesHelper must be provided")
 
-                        val path = if (withHash)
-                            staticFilesHelper.bundlePathWithHash(bundleName)
-                        else
-                            staticFilesHelper.bundlePath(bundleName)
+                        val vendorJs = if (withVendor)
+                            staticFilesHelper.jsBundlePath(vendorName, withHash) else
+                            null
+
+                        val js = staticFilesHelper.jsBundlePath(bundleName, withHash)
+
+                        val vendorCss = if (withCss)
+                            staticFilesHelper.cssBundlePath(vendorName, withHash) else
+                            null
+
+                        val css = if (withVendor && withCss)
+                            staticFilesHelper.cssBundlePath(bundleName, withHash) else
+                            null
 
                         makeRoute(method).handler {
-                            it.put("jsBundlePath", path)
+                            if (withVendor)
+                                it.put("vendorJs", vendorJs)
+
+                            it.put("js", js)
+
+                            if (withVendor && withCss)
+                                it.put("vendorCss", vendorCss)
+
+                            if (withCss)
+                                it.put("css", css)
+
                             it.next()
                         }
                     }
