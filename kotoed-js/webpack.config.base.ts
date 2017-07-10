@@ -1,6 +1,6 @@
 import * as webpack from 'webpack';
 import * as path from 'path';
-
+import * as ExtractTextPlugin from "extract-text-webpack-plugin"
 declare const __dirname;
 
 const src_main = path.resolve(__dirname, "src/main/");
@@ -12,7 +12,6 @@ const config: webpack.Configuration = {
     entry: {
         hello: "./ts/hello.ts",
         code: "./ts/code.ts"
-
     },
     output: {
         path: dst_path,
@@ -36,28 +35,36 @@ const config: webpack.Configuration = {
             },
             {
                 test: /\.css$/,
-                use: [
-                    {
-                        loader: 'style-loader',
-                    },
-                    {
-                        loader: 'css-loader'
-                    },
-                ]
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: [
+                        {
+                            loader: 'css-loader',
+                            options: {
+                                sourceMap: true
+                            }
+                        }
+                    ],
+                    allChunks: true
+                })
             },
             {
                 test: /\.less$/,
-                use: [
-                    {
-                        loader: 'style-loader',
-                    },
-                    {
-                        loader: 'css-loader',
-                    },
-                    {
-                        loader: 'less-loader'
-                    },
-                ]
+                use: ExtractTextPlugin.extract({
+                    //resolve-url-loader may be chained before sass-loader if necessary
+                    fallback: 'style-loader',
+                    use: [
+                        {
+                            loader: 'css-loader',
+                            options: {
+                                // importLoaders: 2,
+                                sourceMap: true
+                            }
+                        },
+                        'less-loader?sourceMap'
+                    ],
+                    allChunks: true
+                })
             },
 
             {
@@ -72,7 +79,21 @@ const config: webpack.Configuration = {
             jQuery: 'jquery',
             $: 'jquery',
             jquery: 'jquery'
-        })
+        }),
+
+        new webpack.optimize.CommonsChunkPlugin({
+            name: "vendor",
+            minChunks: function (module) {
+                // this assumes your vendor imports exist in the node_modules directory
+                return (module.context && module.context.indexOf("node_modules") !== -1) ||
+                    // TODO maybe there is a better way of detecting kotoed-bootstrap
+                    (module.resource && module.resource.indexOf("kotoed-bootstrap") !== -1);
+            }
+        }),
+        new ExtractTextPlugin({
+            filename:'css/[name].css',
+            allChunks: true
+        }),
     ]
 };
 

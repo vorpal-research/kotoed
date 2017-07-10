@@ -9,9 +9,10 @@ import "codemirror/addon/fold/comment-fold"
 import * as moment from "moment"
 import * as cmr from "./cm_review";
 
-import "codemirror/addon/fold/foldgutter.css"
-import "codemirror/lib/codemirror.css"
+import "less/kotoed-bootstrap/bootstrap.less";
 import "less/code.less";
+import "codemirror/addon/fold/foldgutter.css";
+import "codemirror/lib/codemirror.css";
 
 $(document).ready(function() {
     let fr = new cmr.FileReview(

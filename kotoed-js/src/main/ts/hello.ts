@@ -4,8 +4,9 @@
 
 import * as $ from 'jquery';
 
-require("bootstrap-less/js/bootstrap.js");
-require("less/hello.less");
+import "bootstrap-less/js/bootstrap.js";
+import "less/kotoed-bootstrap/bootstrap.less";
+import "less/code.less";
 
 $(document).ready(function() {
     console.log("READY!!!");
