@@ -8,11 +8,10 @@ import io.vertx.core.json.JsonObject
 import org.jooq.Record
 import org.jooq.TableField
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
-import kotlin.reflect.KClass
-import kotlin.reflect.KProperty
-import kotlin.reflect.KType
-import kotlin.reflect.KTypeProjection
+import kotlin.reflect.*
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
@@ -82,6 +81,7 @@ internal fun Any?.tryToJson(): Any? =
             is Enum<*> -> toString()
             is Date -> time
             is Instant -> this.toEpochMilli()
+            is LocalDateTime -> this.toInstant(ZoneOffset.UTC).toEpochMilli()
             else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
 
@@ -172,6 +172,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 
                 Instant::class -> Instant.ofEpochMilli(toLong())
                 Date::class -> Date.from(Instant.ofEpochMilli(toLong()))
+                LocalDateTime::class -> LocalDateTime.ofInstant(Instant.ofEpochMilli(toLong()), ZoneOffset.UTC)
 
                 else -> die()
             }
@@ -189,9 +190,8 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     }.toMap()
 
     return try {
-        val ctor = klass.constructors.find {
-            it.parameters.map { it.name }.toSet() == asMap.keys
-        }
+        fun ctorCheck(ctor: KFunction<*>) = ctor.parameters.map { it.name }.toSet() == asMap.keys
+        val ctor =  klass.primaryConstructor?.takeIf(::ctorCheck) ?: klass.constructors.find(::ctorCheck)
         ctor!!.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)

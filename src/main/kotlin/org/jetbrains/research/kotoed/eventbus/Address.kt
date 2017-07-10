@@ -94,4 +94,6 @@ object Address {
         }
     }
 
+    const val Schedule = "kotoed.schedule"
+
 }
