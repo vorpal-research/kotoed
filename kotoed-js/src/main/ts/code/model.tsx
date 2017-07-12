@@ -20,8 +20,3 @@ export interface Comment {
     location: CommentLocation
     state: CommentState
 }
-
-export interface LineComments {
-    comments: Array<Comment>
-}
-

@@ -15,3 +15,35 @@ export function groupByLine(comments: Comment[]): Comment[][] {
 
     return grouped;
 }
+
+export function toCmLine(line: number) {
+    return line - 1;
+}
+
+export interface CmMode {
+    mode?: string,
+    contentType?: string
+}
+
+export function guessCmMode(filename: string) {
+    let extension = filename.match(/(.*)[\/\\]([^\/\\]+)\.(\w+)$/)[3];
+    switch (extension) {
+        case "kt":
+            return {
+                mode: "clike",
+                contentType: "text/x-kotlin"
+            };
+        case "scala":
+            return {
+                mode: "clike",
+                contentType: "text/x-scala"
+            };
+        case "java":
+            return {
+                mode: "clike",
+                contentType: "text/x-java"
+            };
+        default:
+            return {}
+    }
+}
