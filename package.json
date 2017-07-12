@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/history": "^4.6.0"
+  },
+  "dependencies": {
+    "history": "^4.6.3"
+  }
+}
