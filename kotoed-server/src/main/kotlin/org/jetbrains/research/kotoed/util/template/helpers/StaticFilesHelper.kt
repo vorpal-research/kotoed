@@ -9,7 +9,7 @@ import java.io.FileInputStream
 import java.nio.file.Paths
 
 class StaticFilesHelper(vertx: Vertx,
-                        val staticWebBase: String = "static",
+                        val staticWebBase: String = "/static",
                         staticLocalBase: String = "webroot/static",
                         val jsBundlePattern: String = "js/%s.bundle.js",
                         val cssBundlePattern: String = "css/%s.css"
