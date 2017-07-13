@@ -16,12 +16,12 @@ import * as React from "react";
 import {render} from "react-dom";
 import CodeReviewContainer from "./containers/CodeReviewContainer";
 import {BrowserRouter} from "react-router-dom";
-import {Route} from "react-router";
+import {Route, Switch} from "react-router";
 
 render(
     <BrowserRouter basename="/codereview">
-        <div>
+        <Switch>
             <Route path="/:rev/:path*" component={CodeReviewContainer}/>
-        </div>
+        </Switch>
     </BrowserRouter>,
     document.getElementById("code-review-app"));

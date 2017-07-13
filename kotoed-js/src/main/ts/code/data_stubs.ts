@@ -2,7 +2,7 @@
  * Created by gagarski on 7/12/17.
  */
 
-import {Comment} from "./model";
+import {Comment, Directory} from "./model";
 
 export const codeKt = `
 package org.jetbrains.research.kotoed.web.handlers
@@ -249,7 +249,7 @@ export const comments: Comment[] = [
         author: "Ffff",
         state: "open",
         location: {
-            file: "do not care",
+            file: "src/main/kotlin/hello.kt",
             line: 2
         }
     },
@@ -260,7 +260,7 @@ export const comments: Comment[] = [
         author: "Ffff",
         state: "open",
         location: {
-            file: "do not care",
+            file: "src/main/kotlin/hello.kt",
             line: 2
         }
     },
@@ -271,7 +271,7 @@ export const comments: Comment[] = [
         author: "Ffff",
         state: "open",
         location: {
-            file: "do not care",
+            file: "src/main/java/hello.java",
             line: 2
         }
     },
@@ -282,7 +282,7 @@ export const comments: Comment[] = [
         author: "Ffff",
         state: "open",
         location: {
-            file: "do not care",
+            file: "src/main/kotlin/hello.kt",
             line: 9
         }
     },
@@ -293,9 +293,50 @@ export const comments: Comment[] = [
         author: "Ffff",
         state: "open",
         location: {
-            file: "do not care",
+            file: "src/main/kotlin/hello.kt",
             line: 9
         }
     },
 
 ];
+
+
+export const rootDir: Directory = {
+    type: "directory",
+    name: "/",
+    children: [
+        {
+            type: "directory",
+            name: "src",
+            children: [
+                {
+                    type: "directory",
+                    name: "main",
+                    children: [
+                        {
+                            type: "directory",
+                            name: "kotlin",
+                            children: [
+                                {
+                                    type: "file",
+                                    name: "main.kt"
+                                }
+                            ]
+                        },
+                        {
+                            type: "directory",
+                            name: "java",
+                            children: [
+                                {
+                                    type: "file",
+                                    name: "main.java"
+                                }
+                            ]
+                        },
+
+                    ]
+                }
+            ]
+        }
+    ]
+};
