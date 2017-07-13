@@ -20,3 +20,17 @@ export interface Comment {
     location: CommentLocation
     state: CommentState
 }
+
+export type FileType = "file" | "directory"
+
+export interface File {
+    type: "file";
+    name: string;
+}
+
+export interface Directory {
+    type: "directory";
+    name: string;
+    children: Array<File | Directory>
+}
+
