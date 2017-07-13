@@ -18,16 +18,6 @@ import CodeReviewContainer from "./containers/CodeReviewContainer";
 import {BrowserRouter} from "react-router-dom";
 import {Route} from "react-router";
 
-
-// render(
-//     <FileReviewComponent
-//         mode="clike"
-//         contentType="text/x-kotlin"
-//         height={800}
-//         comments={groupByLine(comments)}
-//         value={code}/>,
-//     document.getElementById("code-review-app"));
-
 render(
     <BrowserRouter basename="/codereview">
         <div>
