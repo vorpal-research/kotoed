@@ -29,14 +29,14 @@ const states = ["1", "2", "3", "4"];
 
 const mapDispatchToProps = function (dispatch, ownProps) {
     return {
-        onButtonClick: () => {
-            let ix = states.indexOf(ownProps.reduxEx);
+        onButtonClick() {
+            let ix = states.indexOf(this.reduxEx);
             console.log(ix);
-            console.log(states.indexOf(ownProps.reduxEx));
-            console.log(ownProps.reduxEx);
-            console.log(ownProps);
+            console.log(states.indexOf(this.reduxEx));
+            console.log(this.reduxEx);
+            console.log(this);
 
-            dispatch(setExampleState(states[(ix % states.length + states.length) % states.length]))
+            dispatch(setExampleState(states[((ix + 1) % states.length + states.length) % states.length]))
         }
     }
 };
