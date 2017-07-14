@@ -14,14 +14,18 @@ import "codemirror/lib/codemirror.css";
 import * as React from "react";
 
 import {render} from "react-dom";
-import CodeReviewContainer from "./containers/CodeReviewContainer";
+import CodeReviewContainer, {store} from "./containers/CodeReviewContainer";
 import {BrowserRouter} from "react-router-dom";
 import {Route, Switch} from "react-router";
+import {Provider} from "react-redux";
+
 
 render(
-    <BrowserRouter basename="/codereview">
-        <Switch>
-            <Route path="/:rev/:path*" component={CodeReviewContainer}/>
-        </Switch>
-    </BrowserRouter>,
+    <Provider store={store}>
+        <BrowserRouter basename="/codereview">
+            <Switch>
+                <Route path="/:rev/:path*" component={CodeReviewContainer}/>
+            </Switch>
+        </BrowserRouter>
+    </Provider>,
     document.getElementById("code-review-app"));

@@ -7,12 +7,13 @@ interface LineCommentsProps {
     comments: Array<Comment>,
     canClose: boolean,
     arrowOffset: number
+    reduxEx: string
 }
 
 export default class LineCommentsComponent extends React.Component<LineCommentsProps, {}> {
     render() {
         const commentComps = this.props.comments.map((comment) => {
-            return (<CommentComponent key={comment.id} {...comment}/>);
+            return (<CommentComponent key={comment.id} {...comment} reduxEx={this.props.reduxEx}/>);
         });
 
         return (
