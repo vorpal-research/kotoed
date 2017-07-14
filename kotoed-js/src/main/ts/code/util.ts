@@ -20,6 +20,10 @@ export function toCmLine(line: number) {
     return line - 1;
 }
 
+export function fromCmLine(line: number) {
+    return line + 1;
+}
+
 export interface CmMode {
     mode?: string,
     contentType?: string

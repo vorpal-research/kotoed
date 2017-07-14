@@ -7,7 +7,39 @@ import {default as FileReviewComponent, FileReviewProps} from "../components/Fil
 import {CmMode, groupByLine, guessCmMode} from "../util";
 import * as data_stubs from "../data_stubs"
 import {codeJava, codeKt, codePlain, codeScala, comments} from "../data_stubs";
+import {createStore} from "redux";
+import {exampleReducer} from "../reducers";
+import {setExampleState} from "../actions";
+import {connect} from "react-redux";
 
+export const store = createStore(exampleReducer);
+
+const mapStateToProps = function(store): Partial<FileReviewProps> {
+    return {
+        height: 800,
+        comments: groupByLine(comments),
+        value: codeKt,
+        mode: "clike",
+        contentType: "text/x-kotlin",
+        reduxEx: store.reduxEx,
+    }
+};
+
+const states = ["1", "2", "3", "4"];
+
+const mapDispatchToProps = function (dispatch, ownProps) {
+    return {
+        onButtonClick: () => {
+            let ix = states.indexOf(ownProps.reduxEx);
+            console.log(ix);
+            console.log(states.indexOf(ownProps.reduxEx));
+            console.log(ownProps.reduxEx);
+            console.log(ownProps);
+
+            dispatch(setExampleState(states[(ix % states.length + states.length) % states.length]))
+        }
+    }
+};
 
 function chooseCode(mode: CmMode) {
     switch(mode.contentType) {
@@ -18,26 +50,4 @@ function chooseCode(mode: CmMode) {
     }
 }
 
-export default class CodeReviewContainer extends
-        React.Component<ReactRouter.RouteComponentProps<{splat: Array<string>}>, FileReviewProps> {
-    constructor(props) {
-        super(props);
-        let mode = guessCmMode(this.props.match.params["path"]);
-        this.state = {
-            height: 800,
-            comments: groupByLine(comments),
-            value: chooseCode(mode),
-            ...mode
-        }
-    }
-
-    render() {
-        console.log(this.props);
-        return <FileReviewComponent
-            mode={this.state.mode}
-            contentType={this.state.contentType}
-            height={this.state.height}
-            comments={this.state.comments}
-            value={this.state.value}/>
-    }
-}
+export default connect(mapStateToProps, mapDispatchToProps)(FileReviewComponent);

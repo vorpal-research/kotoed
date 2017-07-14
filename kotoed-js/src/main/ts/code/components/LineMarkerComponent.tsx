@@ -9,50 +9,76 @@ interface LineMarkerProps {
     comments: Array<Comment>,
     lineNumber: number,
     editor: cm.Editor,
-    arrowOffset: number
+    arrowOffset: number,
+    expanded: boolean,
+    reduxEx: string,
+    onExpand: (number) => void
+    onCollapse: (number) => void
 }
 
 interface LineMarkerState {
-    hidden: boolean
+    expanded: boolean
 }
 
 export default class LineMarkerComponent extends React.Component<LineMarkerProps, LineMarkerState> {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
-            hidden: true
+            expanded: props.expanded
         };
     }
 
-    getClassNames = () => {
-        if (this.state.hidden)
-            return "label-danger review-hidden";
+    componentDidMount() {
+        if (this.state.expanded)
+            this.doExpand()
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        // todo think
+    }
+
+    private getClassNames = () => {
+        if (this.state.expanded)
+            return "label-default review-shown";
         else
-            return "label-default review-shown"
+            return "label-danger review-hidden";
+
+    };
+
+    private doExpand = () => {
+        let div = document.createElement("div");
+        render(
+            <LineCommentsComponent
+                comments={this.props.comments}
+                canClose={true}
+                arrowOffset={this.props.arrowOffset}
+                reduxEx={this.props.reduxEx}
+            />,
+            div);
+        this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
+            coverGutter: true,
+            noHScroll: false,
+            above: false,
+            showIfHidden: false
+        });
+    };
+
+    private doCollapse = () => {
+        let li = this.props.editor.lineInfo(this.props.lineNumber  - 1);
+        li.widgets[0].clear();
     };
 
     onClick = () => {
-        if (this.state.hidden) {
-            let div = document.createElement("div");
-            render(
-                <LineCommentsComponent
-                    comments={this.props.comments}
-                    canClose={true}
-                    arrowOffset={this.props.arrowOffset}/>,
-                div);
-            this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
-                coverGutter: true,
-                noHScroll: false,
-                above: false,
-                showIfHidden: false
-            });
+        if (this.state.expanded) {
+            this.doCollapse();
+            this.props.onCollapse(this.props.lineNumber);
         } else {
-            let li = this.props.editor.lineInfo(this.props.lineNumber  - 1);
-            li.widgets[0].clear();
+            this.doExpand();
+            this.props.onExpand(this.props.lineNumber);
         }
 
         this.setState((prevState) => ({
-            hidden: !prevState.hidden
+            expanded: !prevState.expanded
         }));
     };
 
