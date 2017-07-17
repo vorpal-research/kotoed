@@ -57,3 +57,9 @@ inline fun <reified R : UpdatableRecord<R>> DbRecordWrapper(
         record: R,
         verificationData: VerificationData = VerificationData.Unknown
 ) = DbRecordWrapper(record.toJson(), verificationData)
+
+data class SubmissionCodeRemoteRequest(val submissionId: Int): Jsonable
+data class SubmissionCodeReadRequest(val submissionId: Int, val path: String): Jsonable
+data class SubmissionCodeReadResponse(val contents: String): Jsonable
+data class SubmissionCodeListRequest(val submissionId: Int): Jsonable
+data class SubmissionCodeListResponse(val files: List<String>): Jsonable

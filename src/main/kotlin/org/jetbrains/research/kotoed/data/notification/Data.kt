@@ -2,6 +2,8 @@ package org.jetbrains.research.kotoed.data.notification
 
 import org.jetbrains.research.kotoed.util.Jsonable
 
+data class CurrentNotificationsQuery(val denizenId: Int): Jsonable
+
 enum class NotificationService{ EMAIL }
 
 data class NotificationMessage(
@@ -9,7 +11,4 @@ data class NotificationMessage(
         val service: NotificationService,
         val subject: String,
         val contents: String
-): Jsonable
-data class NotificationResult(
-        val success: Boolean
 ): Jsonable
