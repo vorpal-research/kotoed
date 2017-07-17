@@ -3,7 +3,7 @@ import * as cm from "codemirror"
 import {render} from "react-dom";
 
 import {Comment} from "../model"
-import LineCommentsComponent from "./LineCommentsComponent";
+import LineComments from "./LineComments";
 
 interface LineMarkerProps {
     comments: Array<Comment>,
@@ -11,7 +11,6 @@ interface LineMarkerProps {
     editor: cm.Editor,
     arrowOffset: number,
     expanded: boolean,
-    reduxEx: string,
     onExpand: (number) => void
     onCollapse: (number) => void
 }
@@ -48,11 +47,10 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     private doExpand = () => {
         let div = document.createElement("div");
         render(
-            <LineCommentsComponent
+            <LineComments
                 comments={this.props.comments}
                 canClose={true}
                 arrowOffset={this.props.arrowOffset}
-                reduxEx={this.props.reduxEx}
             />,
             div);
         this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {

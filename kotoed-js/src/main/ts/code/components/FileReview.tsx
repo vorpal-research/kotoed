@@ -3,11 +3,9 @@ import * as cm from "codemirror"
 import {render} from "react-dom";
 
 import {Comment} from "../model";
-import LineMarkerComponent from "./LineMarkerComponent";
+import LineMarker from "./LineMarker";
 import {fromCmLine, toCmLine} from "../util";
-import {Reducer} from "redux";
-import {store} from "../containers/CodeReviewContainer";
-import {setExampleState} from "../actions";
+
 
 // TODO unexport
 export interface FileReviewProps {
@@ -15,9 +13,7 @@ export interface FileReviewProps {
     mode?: string,
     contentType?: string,
     height: number,
-    comments: Comment[][],
-    reduxEx: string,
-    onButtonClick: () => void
+    comments: Comment[][]
 }
 
 interface FileReviewComponentState {
@@ -26,7 +22,7 @@ interface FileReviewComponentState {
 
 const REVIEW_GUTTER = "review-gutter";
 
-export default class FileReviewComponent extends React.Component<FileReviewProps, FileReviewComponentState> {
+export default class FileReview extends React.Component<FileReviewProps, FileReviewComponentState> {
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
@@ -73,7 +69,7 @@ export default class FileReviewComponent extends React.Component<FileReviewProps
 
     private renderMarkers = () => {
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
-            // TODO try to more smart here
+            // TODO try to be more smart here
             let cmLine = i;
             let reviewLine = fromCmLine(i);
             let comments: Array<Comment> = this.props.comments[reviewLine] || [];
@@ -82,13 +78,12 @@ export default class FileReviewComponent extends React.Component<FileReviewProps
 
             if (comments.length > 0) {
                 let badge = document.createElement("div");
-                render(<LineMarkerComponent
+                render(<LineMarker
                         comments={comments}
                         lineNumber={reviewLine}
                         editor={this.editor}
                         arrowOffset={this.arrowOffset}
                         expanded={this.state.expanded[reviewLine]}
-                        reduxEx={this.props.reduxEx}
                         onExpand={this.handleMarkerExpand}
                         onCollapse={this.handleMarkerCollapse}
                     />,
@@ -152,14 +147,7 @@ export default class FileReviewComponent extends React.Component<FileReviewProps
 
     render() {
         return (
-        <div>
             <textarea ref={ref => this.textAreaNode = ref} defaultValue={this.props.value}/>
-            <div>{this.props.reduxEx}</div>
-            <button type="button" className="btn btn-primary btn-md" onClick={() => {
-                console.log("Clicked!");
-                this.props.onButtonClick();
-            }}>Click me!</button>
-        </div>
         )
     }
 }

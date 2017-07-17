@@ -1,18 +1,15 @@
 import * as React from "react";
 import * as ReactRouter from "react-router"
-import * as cm from "codemirror"
-import {render} from "react-dom";
 
-import {default as FileReviewComponent, FileReviewProps} from "../components/FileReviewComponent";
+import {default as FileReviewComponent, FileReviewProps} from "../components/FileReview";
 import {CmMode, groupByLine, guessCmMode} from "../util";
 import * as data_stubs from "../data_stubs"
 import {codeJava, codeKt, codePlain, codeScala, comments} from "../data_stubs";
 import {createStore} from "redux";
-import {exampleReducer} from "../reducers";
-import {setExampleState} from "../actions";
 import {connect} from "react-redux";
+import CodeReview from "../components/CodeReview";
 
-export const store = createStore(exampleReducer);
+export const store = createStore((state) => {return state});
 
 const mapStateToProps = function(store): Partial<FileReviewProps> {
     return {
@@ -21,22 +18,13 @@ const mapStateToProps = function(store): Partial<FileReviewProps> {
         value: codeKt,
         mode: "clike",
         contentType: "text/x-kotlin",
-        reduxEx: store.reduxEx,
     }
 };
 
-const states = ["1", "2", "3", "4"];
-
 const mapDispatchToProps = function (dispatch, ownProps) {
     return {
-        onButtonClick() {
-            let ix = states.indexOf(this.reduxEx);
-            console.log(ix);
-            console.log(states.indexOf(this.reduxEx));
-            console.log(this.reduxEx);
-            console.log(this);
+        onButtonClick: () => {
 
-            dispatch(setExampleState(states[((ix + 1) % states.length + states.length) % states.length]))
         }
     }
 };
@@ -50,4 +38,4 @@ function chooseCode(mode: CmMode) {
     }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(FileReviewComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(CodeReview);
