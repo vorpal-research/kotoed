@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed
 
 import io.vertx.core.*
 import io.vertx.core.json.JsonArray
+import io.vertx.core.spi.VerticleFactory
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
