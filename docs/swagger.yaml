@@ -421,6 +421,179 @@ paths:
           description: Entity not found
           schema:
             $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.code.download:
+    post:
+      description: Download the source code for current submission
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/RepositoryInfo'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Download the source code for current submission
+      parameters:
+        - in: query
+          name: submission_id
+          type: integer
+          description: The id of submission
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/RepositoryInfo'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.code.read:
+    post:
+      description: Get specified file contents for current submission
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+              - path
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
+              path:
+                type: string
+                description: Path to file
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - contents
+            properties:
+              contents:
+                type: string
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Download the source code for current submission
+      parameters:
+        - in: query
+          name: submission_id
+          type: integer
+          description: The id of submission
+        - in: query
+          name: path
+          type: string
+          description: Path to file
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - contents
+            properties:
+              contents:
+                type: string
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.code.list:
+    post:
+      description: Get all the files in submission
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - files
+            properties:
+              files:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+    get:
+      description: Get all the files in submission
+      parameters:
+        - in: query
+          name: submission_id
+          type: integer
+          description: The id of submission
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - files
+            properties:
+              files:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
   /eventbus/kotoed.api.submission.error:
     post:
       description: Get errors associated with a submission
@@ -757,3 +930,34 @@ definitions:
             description: Id of submission for the first version of this comment
             default: submission_id
       - $ref: '#/definitions/SubmissionCommentBase'
+  RepositoryInfo:
+    type: object
+    required:
+      - status
+      - uid
+      - url
+    properties:
+      status:
+        type: string
+        enum:
+          - pending
+          - done
+          - failed
+      uid:
+        type: string
+        format: uuid
+      url:
+        type: string
+        format: url
+      vcs:
+        type: string
+        default: null
+        enum:
+          - git
+          - mercurial
+      errors:
+        type: array
+        default: []
+        items:
+          type: string
+
