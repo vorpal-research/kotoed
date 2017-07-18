@@ -9,7 +9,9 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import java.util.concurrent.Future
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class OAuthTestIntegration {
     companion object {
