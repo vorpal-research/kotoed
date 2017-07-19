@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "sourceMap": true,
     "jsx": "react",
-    "noErrorTruncation": true
+    "module": "commonjs",
+    "noErrorTruncation": true,
+    "sourceMap": true,
+    "target": "es2015"
   },
   "include": [
     "src/main/ts/**/*"

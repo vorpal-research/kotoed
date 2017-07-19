@@ -31,7 +31,8 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: "awesome-typescript-loader"
+                exclude: path.resolve(__dirname, "node_modules/"),
+                use: ["babel-loader", "awesome-typescript-loader"]
             },
             {
                 test: /\.jsx?$/,
