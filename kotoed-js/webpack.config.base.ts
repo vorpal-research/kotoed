@@ -11,14 +11,14 @@ const config: webpack.Configuration = {
     context: src_main,
     entry: {
         hello: "./ts/hello.ts",
-        code: "./ts/code.ts"
+        code: "./ts/code/index.tsx"
     },
     output: {
         path: dst_path,
         filename: 'js/[name].bundle.js'
     },
     resolve: {
-        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".css", ".less"],
+        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".jsx", ".css", ".less"],
         alias: {
             css: path.resolve(src_main, "css"),
             ts: path.resolve(src_main, "ts"),
@@ -31,7 +31,13 @@ const config: webpack.Configuration = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: "awesome-typescript-loader"
+                exclude: path.resolve(__dirname, "node_modules/"),
+                use: ["babel-loader", "awesome-typescript-loader"]
+            },
+            {
+                test: /\.jsx?$/,
+                exclude: path.resolve(__dirname, "node_modules/"),
+                loader: "babel-loader"
             },
             {
                 test: /\.css$/,
@@ -69,7 +75,12 @@ const config: webpack.Configuration = {
 
             {
                 test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-                loader: "file-loader?name=fonts/[name].[ext]"
+                issuer: /(\.less|\.css)$/,
+                loader: "file-loader",
+                options: {
+                    name: "fonts/[name].[ext]",
+                    publicPath: '../'  // CSS are put into css/ folder by ExtractTextPlugin
+                }
             }
 
         ]

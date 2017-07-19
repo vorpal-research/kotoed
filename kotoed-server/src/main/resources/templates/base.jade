@@ -6,11 +6,11 @@ html
             link(rel="stylesheet", href=context.vendorCss)
         if context.css
             link(rel="stylesheet", href=context.css)
-        if context.vendorJs
-            script(type="text/javascript", src=context.vendorJs)
-        if context.js
-            script(type="text/javascript", src=context.js)
 
     body
         div(class="container")
             block content
+            if context.vendorJs
+                script(type="text/javascript", src=context.vendorJs)
+            if context.js
+                script(type="text/javascript", src=context.js)
