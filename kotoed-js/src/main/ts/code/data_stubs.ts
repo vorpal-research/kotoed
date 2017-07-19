@@ -2,7 +2,11 @@
  * Created by gagarski on 7/12/17.
  */
 
-import {Comment, Directory} from "./model";
+import {Comment, File, StoredFile} from "./model";
+import {FileTreeNode, LoadingNode} from "./components/FileTree";
+import {fromJS, List, Map} from "immutable";
+import {ImmutableStoredFile} from "./state";
+import {guessCmMode} from "./util/codemirror";
 
 export const codeKt = `
 package org.jetbrains.research.kotoed.web.handlers
@@ -301,42 +305,109 @@ export const comments: Comment[] = [
 ];
 
 
-export const rootDir: Directory = {
-    type: "directory",
-    name: "/",
-    children: [
+export const rootDir: List<ImmutableStoredFile> = fromJS([
+    {
+        type: "directory",
+        filename: "src",
+        isExpanded: false,
+        isLoaded: false,
+        children: []
+    }
+]);
+
+interface DirStorage {
+    [index: string]: File[]
+}
+
+const storage: DirStorage = {
+    "": [{
+        type: "directory",
+        filename: "src"
+    }],
+    "src": [
         {
             type: "directory",
-            name: "src",
-            children: [
-                {
-                    type: "directory",
-                    name: "main",
-                    children: [
-                        {
-                            type: "directory",
-                            name: "kotlin",
-                            children: [
-                                {
-                                    type: "file",
-                                    name: "main.kt"
-                                }
-                            ]
-                        },
-                        {
-                            type: "directory",
-                            name: "java",
-                            children: [
-                                {
-                                    type: "file",
-                                    name: "main.java"
-                                }
-                            ]
-                        },
-
-                    ]
-                }
-            ]
+            filename: "main"
+        },
+        {
+            type: "file",
+            filename: "README"
         }
-    ]
+    ],
+    "src/main": [
+        {
+            type: "directory",
+            filename: "java"
+        },
+        {
+            type: "directory",
+            filename: "kotlin"
+        },
+        {
+            type: "directory",
+            filename: "scala"
+        },
+
+    ],
+    "src/main/java": [
+        {
+            type: "file",
+            filename: "Main.java"
+        },
+        {
+            type: "file",
+            filename: "Util.java"
+        }
+    ],
+    "src/main/kotlin": [
+        {
+            type: "file",
+            filename: "Main.kt"
+        },
+        {
+            type: "file",
+            filename: "Util.kt"
+        }
+    ],
+    "src/main/scala": [
+        {
+            type: "file",
+            filename: "Main.scala"
+        },
+        {
+            type: "file",
+            filename: "Util.scala"
+        }
+    ],
+};
+
+const DELAY = 1000;
+
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function listDir(dir: string): Promise<File[]> {
+    return delay(DELAY).then(() => {
+        return storage[dir] || [];
+    })
+}
+
+export function fetchFile(file: string): Promise<string> {
+    return delay(DELAY).then(() => {
+        let mode = guessCmMode(file);
+        if (mode.contentType === "text/x-kotlin")
+            return codeKt;
+        else if (mode.contentType === "text/x-java")
+            return codeJava;
+        else if (mode.contentType === "text/x-scala")
+            return codeScala;
+        else
+            return codePlain;
+    });
+}
+
+export const initialFileTreeState = {
+    fileTree: rootDir,
+    selectedPath: null
 };

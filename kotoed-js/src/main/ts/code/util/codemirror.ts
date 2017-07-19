@@ -1,8 +1,4 @@
-/**
- * Created by gagarski on 7/10/17.
- */
-
-import {Comment} from "./model"
+import {Comment} from "../model"
 
 export function groupByLine(comments: Comment[]): Comment[][] {
     let grouped: Comment[][] = [];
@@ -29,9 +25,12 @@ export interface CmMode {
     contentType?: string
 }
 
-export function guessCmMode(filename: string) {
-    let extension = filename.match(/(.*)[\/\\]([^\/\\]+)\.(\w+)$/)[3];
-    switch (extension) {
+export function guessCmMode(filename: string): CmMode {
+    let match = filename.match(/(.*)[\/\\]([^\/\\]+)\.(\w+)$/);
+    if (!match || match.length < 4)
+        return {};
+
+    switch (match[3]) {
         case "kt":
             return {
                 mode: "clike",

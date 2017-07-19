@@ -4,7 +4,8 @@ import {render} from "react-dom";
 
 import {Comment} from "../model";
 import LineMarker from "./LineMarker";
-import {fromCmLine, toCmLine} from "../util";
+import {fromCmLine, toCmLine} from "../util/codemirror";
+import {FileTreeNode, LoadingNode} from "./FileTree";
 
 
 // TODO unexport
@@ -13,7 +14,8 @@ export interface FileReviewProps {
     mode?: string,
     contentType?: string,
     height: number,
-    comments: Comment[][]
+    comments: Comment[][],
+
 }
 
 interface FileReviewComponentState {
@@ -135,7 +137,20 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.renderMarkers();
     }
 
-    componentDidUpdate() {
+    componentDidUpdate(oldProps: FileReviewProps) {
+        if (this.props.mode && oldProps.mode !== this.props.mode) {
+            require(`codemirror/mode/${this.props.mode}/${this.props.mode}`);
+        }
+
+        if (oldProps.mode !== this.props.mode || oldProps.contentType !== this.props.contentType) {
+            this.editor.setOption("mode", this.props.contentType || this.props.mode || "text/plain");
+        }
+
+        if (oldProps.value !== this.props.value) {
+            this.editor.setValue(this.props.value);
+        }
+
+
         this.renderMarkers();
     }
 

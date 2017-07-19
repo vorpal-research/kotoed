@@ -21,22 +21,11 @@ import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
 import "less/unblueprint.less"
 
-
-// render(
-//     <Provider store={store}>
-//         <BrowserRouter basename="/codereview">
-//             <Switch>
-//                 <Route path="/:rev/:path*" component={CodeReviewContainer}/>
-//             </Switch>
-//         </BrowserRouter>
-//     </Provider>,
-//     document.getElementById("code-review-app"));
-
 render(
     <Provider store={store}>
         <BrowserRouter basename="/codereview">
             <Switch>
-                <Route path="/:rev/:path*" component={CodeReviewContainer}/>
+                <Route path="/:submission/:path*" component={CodeReviewContainer}/>
             </Switch>
         </BrowserRouter>
     </Provider>,
