@@ -1,15 +1,10 @@
 package org.jetbrains.research.kotoed.statistics
 
-import io.vertx.core.buffer.Buffer
-import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.client.HttpResponse
-import io.vertx.ext.web.client.WebClient
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.teamcity.build.ArtifactContent
+import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.teamcity.util.putAuthTCHeaders
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.PostgresDataTypeEx
 import org.jetbrains.research.kotoed.util.database.executeKAsync
@@ -17,7 +12,6 @@ import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.database.jooq
 import org.jooq.Field
 import org.jooq.impl.DSL.field
-import java.io.ByteArrayInputStream
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
@@ -43,28 +37,18 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
         }
     }
 
-    @EventBusConsumerFor(Address.TeamCity.Build.Artifact)
-    suspend fun consumeTeamCityArtifact(msg: Message<JsonObject>) {
-        val wc = WebClient.create(vertx)
+    @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
+    suspend fun consumeLogContent(logContent: LogContent) {
+        if (template !in logContent.logName) return
 
-        val artifactContent = fromJson<ArtifactContent>(msg.body())
+        log.trace("Processing log $logContent")
 
-        if (template !in artifactContent.path) return
-
-        log.trace("Processing artifact ${artifactContent.path}")
-
-        val artifactContentRes = vxa<HttpResponse<Buffer>> {
-            wc.get(Config.TeamCity.Port, Config.TeamCity.Host, artifactContent.path)
-                    .putAuthTCHeaders()
-                    .send(it)
-        }
-
-        val xmlStream = ByteArrayInputStream(artifactContentRes.body().bytes)
+        val xmlStream = logContent.content.byteInputStream()
 
         val artifactBody = xml2json(xmlStream)
 
         val data = handlers.map { handler ->
-            Pair(handler, handler.call(artifactContent.path, artifactBody))
+            Pair(handler, handler.call(logContent, artifactBody))
         }
 
         val ds = vertx.getSharedDataSource(
@@ -91,25 +75,25 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 internal object JUnit {
     private val buildIdRegex = "(?<=id:)\\d+".toRegex()
 
-    fun build_id(path: String, json: JsonObject): Int {
-        return buildIdRegex.find(path)?.run { value.toInt() } ?: -1
+    fun build_id(logContent: LogContent, json: JsonObject): Int {
+        return logContent.buildId
     }
 
-    fun artifact_name(path: String, json: JsonObject): String {
-        return path.split("/").last()
+    fun artifact_name(logContent: LogContent, json: JsonObject): String {
+        return logContent.logName
     }
 
-    fun artifact_body(path: String, json: JsonObject): JsonObject {
+    fun artifact_body(logContent: LogContent, json: JsonObject): JsonObject {
         return json
     }
 
-    fun total_test_count(path: String, json: JsonObject): Int {
+    fun total_test_count(logContent: LogContent, json: JsonObject): Int {
         return json.getJsonObject("testsuite")
                 .getString("tests")
                 .toInt()
     }
 
-    fun failed_test_count(path: String, json: JsonObject): Int {
+    fun failed_test_count(logContent: LogContent, json: JsonObject): Int {
         return json.getJsonObject("testsuite")
                 .getString("failures")
                 .toInt()

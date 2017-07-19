@@ -27,17 +27,17 @@ class GlobalConfig : Configuration() {
 
     val Debug by DebugConfig()
 
-    class TeamCityConfig : Configuration() {
+    class BuildbotConfig : Configuration() {
         val Host: String by "localhost"
-        val Port: Int by 8111
-        val EndpointRoot: String by "/app/rest"
+        val Port: Int by 8010
+        val EndpointRoot: String by "/api/v2"
 
         val User: String by "kotoed"
         val Password: String by Uninitialized
         val AuthString: String by { "Basic ${base64Encode("$User:$Password")}" }
     }
 
-    val TeamCity by TeamCityConfig()
+    val Buildbot by BuildbotConfig()
 
     class VCSConfig : Configuration() {
         val PendingTimeout: Long by 2000L
@@ -58,7 +58,7 @@ class GlobalConfig : Configuration() {
         val UseSSL: Boolean by false
         val UseTLS: Boolean by false
 
-        val ServerPort: Int by { if(UseTLS) 587 else if(UseSSL) 465 else 25 }
+        val ServerPort: Int by { if (UseTLS) 587 else if (UseSSL) 465 else 25 }
 
         val User: String? by Null
         val Password: String? by Null
