@@ -1,41 +1,63 @@
 import * as React from "react";
 import * as ReactRouter from "react-router"
-
-import {default as FileReviewComponent, FileReviewProps} from "../components/FileReview";
-import {CmMode, groupByLine, guessCmMode} from "../util";
-import * as data_stubs from "../data_stubs"
+import {CmMode, groupByLine, guessCmMode,} from "../util/codemirror";
 import {codeJava, codeKt, codePlain, codeScala, comments} from "../data_stubs";
-import {createStore} from "redux";
+import {combineReducers, createStore, applyMiddleware} from "redux";
 import {connect} from "react-redux";
-import CodeReview from "../components/CodeReview";
+import thunk from 'redux-thunk';
 
-export const store = createStore((state) => {return state});
+import CodeReview, {CodeReviewProps} from "../components/CodeReview";
+import {toBlueprintTreeNodes} from "../util/filetree";
+import {
+    dirCollapse, dirExpand, fetchDirectoryIfNeeded, fetchFileIfNeeded, fileSelect
+} from "../actions";
+import {List} from "immutable";
+import {editorReducer, fileTreeReducer} from "../reducers";
 
-const mapStateToProps = function(store): Partial<FileReviewProps> {
+export const store = createStore(
+    combineReducers({
+        fileTreeState: fileTreeReducer,
+        editorState: editorReducer
+    }),
+    applyMiddleware(thunk)
+);
+
+const mapStateToProps = function(store): Partial<CodeReviewProps> {
+    let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
-        height: 800,
-        comments: groupByLine(comments),
-        value: codeKt,
-        mode: "clike",
-        contentType: "text/x-kotlin",
+        editorHeight: 800,
+        editorComments: groupByLine(comments),
+        editorValue: store.editorState.value,
+        editorMode: mode,
+        editorContentType: contentType,
+        fileTreeNodes: toBlueprintTreeNodes(store.fileTreeState.fileTree)
     }
 };
 
-const mapDispatchToProps = function (dispatch, ownProps) {
+const mapDispatchToProps = function (dispatch): Partial<CodeReviewProps> {
     return {
-        onButtonClick: () => {
-
-        }
+        onDirExpand: (path: number[]) => {
+            dispatch(dirExpand({
+                treePath: List(path)
+            }));
+            dispatch(fetchDirectoryIfNeeded({
+                treePath: List(path)
+            }))
+        },
+        onDirCollapse: (path: number[]) => {
+            dispatch(dirCollapse({
+                treePath: List(path)
+            }));
+        },
+        onFileSelect: (path: number[]) => {
+            dispatch(fileSelect({
+                treePath: List(path)
+            }));
+            dispatch(fetchFileIfNeeded({
+                treePath: List(path)
+            }));
+        },
     }
 };
-
-function chooseCode(mode: CmMode) {
-    switch(mode.contentType) {
-        case "text/x-kotlin": return codeKt;
-        case "text/x-java": return codeJava;
-        case "text/x-scala": return codeScala;
-        default: return codePlain;
-    }
-}
 
 export default connect(mapStateToProps, mapDispatchToProps)(CodeReview);

@@ -3,6 +3,7 @@
  */
 
 import * as moment from 'moment'
+import {List} from "immutable";
 
 
 export type CommentState = "unpublished" | "open" | "closed";
@@ -24,13 +25,24 @@ export interface Comment {
 export type FileType = "file" | "directory"
 
 export interface File {
-    type: "file";
-    name: string;
+    type: string;
+    filename: string
 }
 
-export interface Directory {
-    type: "directory";
-    name: string;
-    children: Array<File | Directory>
+
+export interface StoredFile extends File {
+    isExpanded: boolean
+    isLoaded: boolean
+    children: List<StoredFile>,
+    isSelected: boolean
 }
 
+export function fileToStoredFile(file: File): StoredFile {
+    return {
+        ...file,
+        isExpanded: false,
+        isLoaded: false,
+        children: List(),
+        isSelected: false
+    }
+}

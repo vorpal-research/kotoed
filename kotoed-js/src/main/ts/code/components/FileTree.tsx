@@ -1,108 +1,72 @@
-/*
- * Copyright 2015 Palantir Technologies, Inc. All rights reserved.
- * Licensed under the BSD-3 License as modified (the “License”); you may obtain a copy
- * of the license at https://github.com/palantir/blueprint/blob/master/LICENSE
- * and https://github.com/palantir/blueprint/blob/master/PATENTS
- */
-
 import * as React from "react";
 
-import { Classes, ITreeNode, Tooltip, Tree } from "@blueprintjs/core";
+import { Classes, ITreeNode,  Tree } from "@blueprintjs/core";
 
-export interface ITreeExampleState {
-    nodes: ITreeNode[];
+export type FileTreeNode = LoadingNode | FileNode;
+
+export interface LoadingNode extends ITreeNode {
+    kind: "loading"
 }
 
-export default class FileTree extends React.Component<{}, any> {
-    public constructor() {
-        super();
-        const tooltipLabel = <Tooltip content="An eye!"><span className="pt-icon-standard pt-icon-eye-open"/></Tooltip>;
-        const longLabel = "Organic meditation gluten-free, sriracha VHS drinking vinegar beard man.";
-        /* tslint:disable:object-literal-sort-keys so childNodes can come last */
-        this.state = {
-            nodes: [
-                {
-                    hasCaret: true,
-                    iconName: "folder-close",
-                    label: "Folder 0",
-                },
-                {
-                    iconName: "folder-close",
-                    isExpanded: true,
-                    label: <Tooltip content="I'm a folder <3">Folder 1</Tooltip>,
-                    childNodes: [
-                        { iconName: "document", label: "Item 0", secondaryLabel: tooltipLabel },
-                        { iconName: "pt-icon-tag", label: longLabel },
-                        {
-                            hasCaret: true,
-                            iconName: "pt-icon-folder-close",
-                            label: <Tooltip content="foo">Folder 2</Tooltip>,
-                            childNodes: [
-                                { label: "No-Icon Item" },
-                                { iconName: "pt-icon-tag", label: "Item 1" },
-                                {
-                                    hasCaret: true, iconName: "pt-icon-folder-close", label: "Folder 3",
-                                    childNodes:  [
-                                        { iconName: "document", label: "Item 0" },
-                                        { iconName: "pt-icon-tag", label: "Item 1" },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        };
-        /* tslint:enable:object-literal-sort-keys */
-        let i = 0;
-        this.forEachNode(this.state.nodes, (n) => n.id = i++);
-    }
+export interface FileNode extends ITreeNode {
+    kind: "filetree"
+    type: "file" | "directory"
+    childNodes?: Array<FileTreeNode | LoadingNode>
+    filename: string
+    isLoaded: boolean
+}
 
+export interface FileTreeProps {
+    nodes: Array<FileTreeNode | LoadingNode>;
+    // onNodeClick: (nodeData: FileTreeNode, path: number[]) => void
+    // onNodeCollapse: (nodeData: FileTreeNode, path: number[]) => void
+    // onNodeExpand: (nodeData: FileTreeNode, path: number[]) => void
+    onDirExpand(path: number[])
+    onDirCollapse(path: number[])
+    onFileSelect(path: number[])
+
+}
+
+export default class FileTree extends React.Component<FileTreeProps, {}> {
     // override @PureRender because nodes are not a primitive type and therefore aren't included in
     // shallow prop comparison
     public shouldComponentUpdate() {
         return true;
     }
 
+    private onNodeClick = (nodeData: FileTreeNode, path: number[]) => {
+        if (nodeData.kind === "filetree") {
+            if (nodeData.type === "file" && !nodeData.isSelected) {
+                this.props.onFileSelect(path);
+            } else if (nodeData.type === "directory" && nodeData.isExpanded) {
+                this.props.onDirCollapse(path);
+            } else if (nodeData.type === "directory" && !nodeData.isExpanded) {
+                this.props.onDirExpand(path);
+            }
+        }
+    };
+
+    private onNodeCollapse = (nodeData: FileTreeNode, path: number[]) => {
+        if (nodeData.kind === "filetree" && nodeData.type === "directory") {
+            this.props.onDirCollapse(path);
+        }
+    };
+
+    private onNodeExpand = (nodeData: FileTreeNode, path: number[]) => {
+        if (nodeData.kind === "filetree" && nodeData.type === "directory") {
+            this.props.onDirExpand(path);
+        }
+    };
+
     render() {
         return (
             <Tree
-                contents={this.state.nodes}
-                onNodeClick={this.handleNodeClick}
-                onNodeCollapse={this.handleNodeCollapse}
-                onNodeExpand={this.handleNodeExpand}
+                contents={this.props.nodes}
+                onNodeClick={this.onNodeClick}
+                onNodeCollapse={this.onNodeCollapse}
+                onNodeExpand={this.onNodeExpand}
                 className={Classes.ELEVATION_0}
             />
         );
-    }
-
-    private handleNodeClick = (nodeData: ITreeNode, _nodePath: number[], e: React.MouseEvent<HTMLElement>) => {
-        const originallySelected = nodeData.isSelected;
-        if (!e.shiftKey) {
-            this.forEachNode(this.state.nodes, (n) => n.isSelected = false);
-        }
-        nodeData.isSelected = originallySelected == null ? true : !originallySelected;
-        this.setState(this.state);
-    };
-
-    private handleNodeCollapse = (nodeData: ITreeNode) => {
-        nodeData.isExpanded = false;
-        this.setState(this.state);
-    };
-
-    private handleNodeExpand = (nodeData: ITreeNode) => {
-        nodeData.isExpanded = true;
-        this.setState(this.state);
-    };
-
-    private forEachNode(nodes: ITreeNode[], callback: (node: ITreeNode) => void) {
-        if (nodes == null) {
-            return;
-        }
-
-        for (const node of nodes) {
-            callback(node);
-            this.forEachNode(node.childNodes, callback);
-        }
     }
 }
