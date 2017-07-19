@@ -2,10 +2,11 @@ package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
-import org.jetbrains.research.kotoed.data.teamcity.build.TriggerBuild
+import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
@@ -14,7 +15,6 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.teamcity.util.name2build
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
@@ -115,7 +115,15 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         }
 
         try { // FIXME: remove try when triggering builds actually works.
-            Unit.also { sendJsonableAsync(Address.TeamCity.Build.Trigger, TriggerBuild(name2build(project.name), sub.revision)) }
+            Unit.also {
+                sendJsonableAsync(
+                        Address.Buildbot.Build.Trigger,
+                        TriggerBuild(
+                                Kotoed2Buildbot.projectName2schedulerName(project.name),
+                                sub.revision
+                        )
+                )
+            }
         } catch (ex: Exception) {
             log.trace("", ex)
         }
@@ -183,6 +191,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                 return VerificationData.Unknown
             }
         }
+
+        // TODO: do we also need to check the buildbot side of things here?
 
         return VerificationData.Processed
     }
