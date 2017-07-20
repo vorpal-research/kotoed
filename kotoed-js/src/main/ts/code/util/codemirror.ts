@@ -46,6 +46,28 @@ export function guessCmMode(filename: string): CmMode {
                 mode: "clike",
                 contentType: "text/x-java"
             };
+        case "less":
+            return {
+                mode: "css",
+                contentType: "text/x-less"
+            };
+        case "css":
+            return {
+                mode: "css",
+                contentType: "text/x-css"
+            };
+        case "ts":
+            return {
+                mode: "javascript",
+                contentType: "text/typescript"
+            };
+        case "js":
+            return {
+                mode: "javascript",
+                contentType: "text/javascript"
+            };
+
+
         default:
             return {}
     }

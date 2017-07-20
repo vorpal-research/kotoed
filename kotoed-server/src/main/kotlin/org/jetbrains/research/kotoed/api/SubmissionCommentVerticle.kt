@@ -13,7 +13,6 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 @AutoDeployable
 class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
-    // FIXME: insert teamcity calls to build the submission
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Create)
     suspend fun handleCreate(comment: SubmissionCommentRecord): DbRecordWrapper {
         comment.id = null

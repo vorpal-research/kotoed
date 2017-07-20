@@ -6,9 +6,8 @@ import * as $ from 'jquery';
 
 import "bootstrap-less/js/bootstrap.js";
 import "less/kotoed-bootstrap/bootstrap.less";
-import "less/code.less";
+import "less/hello.less";
 
-$(document).ready(function() {
+$(function() {
     console.log("READY!!!");
-    $("#select-me").html("Hello!");
 });

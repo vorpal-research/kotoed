@@ -1,18 +1,17 @@
 import * as React from "react";
 import * as ReactRouter from "react-router"
 import {CmMode, groupByLine, guessCmMode,} from "../util/codemirror";
-import {codeJava, codeKt, codePlain, codeScala, comments} from "../data_stubs";
+import {comments} from "../data_stubs";
 import {combineReducers, createStore, applyMiddleware} from "redux";
 import {connect} from "react-redux";
 import thunk from 'redux-thunk';
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
-import {toBlueprintTreeNodes} from "../util/filetree";
 import {
-    dirCollapse, dirExpand, fetchDirectoryIfNeeded, fetchFileIfNeeded, fileSelect
+    dirCollapse, dirExpand, fetchFileIfNeeded, fetchRoot, fileSelect
 } from "../actions";
-import {List} from "immutable";
 import {editorReducer, fileTreeReducer} from "../reducers";
+import {CodeReviewState} from "../state";
 
 export const store = createStore(
     combineReducers({
@@ -22,7 +21,7 @@ export const store = createStore(
     applyMiddleware(thunk)
 );
 
-const mapStateToProps = function(store): Partial<CodeReviewProps> {
+const mapStateToProps = function(store: CodeReviewState): Partial<CodeReviewProps> {
     let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
         editorHeight: 800,
@@ -30,33 +29,37 @@ const mapStateToProps = function(store): Partial<CodeReviewProps> {
         editorValue: store.editorState.value,
         editorMode: mode,
         editorContentType: contentType,
-        fileTreeNodes: toBlueprintTreeNodes(store.fileTreeState.fileTree)
+        fileTreeNodes: store.fileTreeState.nodes,
+        fileTreeLoading: store.fileTreeState.loading
     }
 };
 
-const mapDispatchToProps = function (dispatch): Partial<CodeReviewProps> {
+const mapDispatchToProps = function (dispatch, ownProps): Partial<CodeReviewProps> {
     return {
         onDirExpand: (path: number[]) => {
             dispatch(dirExpand({
-                treePath: List(path)
+                treePath: path
             }));
-            dispatch(fetchDirectoryIfNeeded({
-                treePath: List(path)
-            }))
         },
         onDirCollapse: (path: number[]) => {
             dispatch(dirCollapse({
-                treePath: List(path)
+                treePath: path
             }));
         },
         onFileSelect: (path: number[]) => {
             dispatch(fileSelect({
-                treePath: List(path)
+                treePath: path
             }));
             dispatch(fetchFileIfNeeded({
-                treePath: List(path)
+                treePath: path,
+                submissionId: parseInt(ownProps.match.params.submissionId)
             }));
         },
+        onFileTreeMount: () => {
+            dispatch(fetchRoot({
+                submissionId: parseInt(ownProps.match.params.submissionId)
+            }));
+        }
     }
 };
 
