@@ -118,4 +118,3 @@ data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async
     suspend operator fun invoke(key: K) = getAsync(key)
 }
 
-

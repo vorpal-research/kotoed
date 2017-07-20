@@ -12,7 +12,7 @@ import java.util.*
 @AutoDeployable
 class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
 
-    private val que = PriorityQueue<TimetableMessage>{ lhv, rhv -> lhv.time.compareTo(rhv.time) }
+    private val que = PriorityQueue<TimetableMessage>(compareBy{ it.time })
 
     override fun start(startFuture: Future<Void>) {
         super.start(startFuture)
@@ -26,7 +26,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
         log.trace("Epoch = ${now.tryToJson()}")
         while(que.isNotEmpty()) {
             val current = que.peek()
-            if(current.time > now) {
+            if(current.time <= now) {
                 que.remove()
                 doSend(current);
             } else break;
