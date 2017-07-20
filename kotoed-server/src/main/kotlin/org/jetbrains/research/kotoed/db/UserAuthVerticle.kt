@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.eventbus.Message
+import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.User
 import io.vertx.ext.auth.jdbc.JDBCAuth
@@ -18,15 +19,13 @@ import org.jooq.Record
 import org.jooq.impl.DSL
 
 @AutoDeployable
-class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
-    val ds get() = vertx.getSharedDataSource()
-
+class UserAuthVerticle : DatabaseVerticle<DenizenRecord>(Tables.DENIZEN), Loggable {
     // FIXME akhin move to extension
     val authProvider: JDBCAuth
-        get() = JDBCClient.create(vertx, ds)
+        get() = JDBCClient.create(vertx, dataSource)
                 .let { JDBCAuth.create(vertx, it) }
                 .apply {
-                    setAuthenticationQuery("SELECT password, salt FROM denizen WHERE denizen_id = ?")
+                    setAuthenticationQuery("SELECT password, salt FROM Denizen WHERE denizen_id = ?")
                 }
 
     private fun DenizenRecord.cleanup() = apply {
@@ -42,9 +41,9 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
             password = authProvider.computeHash(signUpMsg.password, salt)
         }
 
-        return jooq(ds).use {
+        return db {
             with(Tables.DENIZEN) {
-                it.insertInto(this)
+                insertInto(this)
                         .set(dbData)
                         .returning()
                         .fetchOne()
@@ -59,18 +58,23 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
         val data = msg.rename("denizenId", "username")
 
-        val user = vxa<User> { authProvider.authenticate(data, it) }
+        val user =
+            try {
+                vxa<User> { authProvider.authenticate(data, it) }
+            } catch (t: NoStackTraceThrowable) { // yes, vertx throws THIS b-t throwable here
+                throw Forbidden(t.message ?: "Invalid username/password")
+            }
 
         return user.principal().rename("username", "denizenId")
     }
 
     @JsonableEventBusConsumerFor(Address.User.Auth.Info)
     suspend fun consumeInfo(infoMsg: InfoMsg): DenizenRecord {
-        return jooq(ds).use {
+        return db {
             with(Tables.DENIZEN) {
-                it.selectFrom(this)
+                selectFrom(this)
                         .where(DENIZEN_ID.eq(infoMsg.denizenId))
-                        .fetchKAsync()
+                        .fetch()
                         .firstOrNull()
                         ?.cleanup()
             }
@@ -79,16 +83,16 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.User.OAuth.SignUp)
     suspend fun consumeOAuthSignUp(oauthSignUpMsg: OAuthSignUpMsg): OauthProfileRecord {
-        return jooq(ds).use {
+        return db {
             with(Tables.OAUTH_PROFILE) {
-                it.insertInto(
+                insertInto(
                         this,
                         DENIZEN_ID,
                         OAUTH_PROVIDER_ID,
                         OAUTH_USER_ID
                 )
                         .select(
-                                it.select(
+                                select(
                                         Tables.DENIZEN.ID,
                                         Tables.OAUTH_PROVIDER.ID,
                                         DSL.`val`(oauthSignUpMsg.oauthUser)
@@ -105,8 +109,8 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.User.OAuth.Login)
     suspend fun consumeOAuthLogin(oauthLoginMsg: OAuthLoginMsg): DenizenRecord {
-        return jooq(ds).use {
-            it.select(*Tables.DENIZEN.fields())
+        return db {
+            select(*Tables.DENIZEN.fields())
                     .from(Tables.OAUTH_PROFILE)
                     .join(Tables.OAUTH_PROVIDER)
                     .onKey()
@@ -114,7 +118,7 @@ class UserAuthVerticle : AbstractKotoedVerticle(), Loggable {
                     .onKey()
                     .where(Tables.OAUTH_PROVIDER.NAME.eq(oauthLoginMsg.oauthProvider))
                     .and(Tables.OAUTH_PROFILE.OAUTH_USER_ID.eq(oauthLoginMsg.oauthUser))
-                    .fetchKAsync()
+                    .fetch()
                     .into(DenizenRecord::class.java)
                     .firstOrNull()
                     ?.cleanup()
