@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "module": "commonjs",
+    "noErrorTruncation": true,
+    "sourceMap": true,
+    "target": "es2015"
+  },
+  "include": [
+    "src/main/ts/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
