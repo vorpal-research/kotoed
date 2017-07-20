@@ -37,7 +37,7 @@ const config: webpack.Configuration = {
                     options: {
                         useBabel: true,
                         useCache: true,
-                        cacheDirectory: "target/.awcache"
+                        cacheDirectory: "target/.cache/atsl"
                     }
                 }
             },
@@ -48,7 +48,7 @@ const config: webpack.Configuration = {
                     {
                         loader: "cache-loader",
                         options: {
-                            cacheDirectory: "target/.cache-loader"
+                            cacheDirectory: "target/.cache/jsx"
                         }
                     },
                     "babel-loader"
@@ -63,7 +63,7 @@ const config: webpack.Configuration = {
                         {
                             loader: "cache-loader",
                             options: {
-                                cacheDirectory: "target/.cache-loader"
+                                cacheDirectory: "target/.cache/css"
                             }
                         },
                         {
@@ -86,7 +86,7 @@ const config: webpack.Configuration = {
                         {
                             loader: "cache-loader",
                             options: {
-                                cacheDirectory: "target/.cache-loader"
+                                cacheDirectory: "target/.cache/less"
                             }
                         },
                         {
