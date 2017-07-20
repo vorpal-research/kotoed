@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@types/radium": "^0.18.22"
+  }
+}
