@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import java.io.File
 
 private typealias InnerRemoteRequest = org.jetbrains.research.kotoed.data.vcs.RemoteRequest
 private typealias InnerListRequest = org.jetbrains.research.kotoed.data.vcs.ListRequest
@@ -73,18 +74,26 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             private val data: MutableMap<String, MutableCodeTree> = mutableMapOf()
     ) : MutableMap<String, MutableCodeTree> by data { // it's over 9000!
 
+        private val fileComparator = Comparator<FileRecord> { l, r ->
+            when {
+                (l.type == directory && r.type == file) -> -1
+                (l.type == file && r.type == directory) -> 1
+                else -> l.name.compareTo(r.name)
+            }
+        }
+
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
                 if (value.isEmpty()) FileRecord(type = file, name = key)
                 else FileRecord(
                         type = directory,
                         name = key,
-                        children = value.map { it.toFileRecord() }
+                        children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
                 )
 
         fun toFileRecord() = FileRecord(
                 type = directory,
                 name = "",
-                children = map { it.toFileRecord() }
+                children = map { it.toFileRecord() }.sortedWith(fileComparator)
         )
     }
 
