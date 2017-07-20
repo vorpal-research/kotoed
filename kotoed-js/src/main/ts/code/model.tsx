@@ -25,24 +25,7 @@ export interface Comment {
 export type FileType = "file" | "directory"
 
 export interface File {
-    type: string;
-    filename: string
-}
-
-
-export interface StoredFile extends File {
-    isExpanded: boolean
-    isLoaded: boolean
-    children: List<StoredFile>,
-    isSelected: boolean
-}
-
-export function fileToStoredFile(file: File): StoredFile {
-    return {
-        ...file,
-        isExpanded: false,
-        isLoaded: false,
-        children: List(),
-        isSelected: false
-    }
+    type: FileType;
+    name: string,
+    children?: Array<File> | null
 }

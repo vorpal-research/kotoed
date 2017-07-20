@@ -25,7 +25,7 @@ render(
     <Provider store={store}>
         <BrowserRouter basename="/codereview">
             <Switch>
-                <Route path="/:submission/:path*" component={CodeReviewContainer}/>
+                <Route exact path="/:submissionId(\\d+)/:path*" component={CodeReviewContainer}/>
             </Switch>
         </BrowserRouter>
     </Provider>,

@@ -2,30 +2,80 @@
  * Created by gagarski on 7/18/17.
  */
 import * as React from "react"
-import {List, Map, Seq, Iterable} from "immutable"
-import {StoredFile} from "../model";
+import {File} from "../model";
 import {FileNode, FileTreeNode, LoadingNode} from "../components/FileTree";
 import {Spinner} from "@blueprintjs/core";
-import {FileTree, ImmutableStoredFile} from "../state";
 
-export type FileTreePath = List<number>;
+export type FileTreePath = Array<number>;
 
-export function nodePathToStoragePath(numPath: List<number>): List<number|string> {
-    return numPath.map(val => val as number|string).toList().interpose("children").toList();
+export function visitNodePath(fileTree: Array<FileNode>,
+                              numPath: FileTreePath,
+                              callback: (node: FileNode) => void): FileNode|null {
+    let children = fileTree;
+    let node = null;
+    numPath.forEach((index) => {
+        node = children[index];
+        callback(node);
+        children = node.childNodes; // will be undef for last but we don't care
+    });
+    return node;
 }
 
-export function nodePathToFilePath(fileTree: FileTree, numPath: List<number>): string {
-    let path = [];
-    let children = fileTree;
-    numPath.forEach((index) => {
-        path.push(children.getIn([index, "filename"]));
-        children = children.getIn([index, "children"]); // will be undef for last but we don't care
-    });
+export function getNodeAt(fileTree: Array<FileNode>,
+                          numPath: FileTreePath): FileNode|null {
+    return visitNodePath(fileTree, numPath, () => {});
+}
 
+export function nodePathToFilePath(fileTree: Array<FileNode>, numPath: FileTreePath): string {
+    let path = [];
+    visitNodePath(fileTree, numPath, node => path.push(node.filename));
     return path.join("/");
 }
 
-function makeLoadingNode(idGen: (() => number)): LoadingNode {
+function setDirIsExpanded(fileTree: Array<FileNode>, numPath: FileTreePath, value: boolean): void {
+    let node = getNodeAt(fileTree, numPath);
+    if (node !== null) {
+        node.isExpanded = value;
+    }
+}
+
+export function collapseDir(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    setDirIsExpanded(fileTree, numPath, false);
+}
+
+export function expandDir(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    setDirIsExpanded(fileTree, numPath, true);
+}
+
+export function expandEverything(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    visitNodePath(fileTree, numPath, node => {
+        switch (node.type) {
+            case "directory":
+                node.isExpanded = true;
+                break;
+            case "file":
+                node.isSelected = true;
+                break;
+        }
+    });
+}
+
+function setFileIsSelected(fileTree: Array<FileNode>, numPath: FileTreePath, value: boolean): void {
+    let node = getNodeAt(fileTree, numPath);
+    if (node !== null && node.type === "file") {
+        node.isSelected = value;
+    }
+}
+
+export function selectFile(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    setFileIsSelected(fileTree, numPath, true)
+}
+
+export function unselectFile(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    setFileIsSelected(fileTree, numPath, false)
+}
+
+export function makeLoadingNode(idGen: (() => number)): LoadingNode {
     return {
         kind: "loading",
         id: idGen(),
@@ -33,9 +83,8 @@ function makeLoadingNode(idGen: (() => number)): LoadingNode {
     }
 }
 
-export function toBlueprintTreeNodes(fileNodes: List<ImmutableStoredFile>, idGen: (() => number)|null = null): Array<FileTreeNode> {
-    // TODO make Blueprint use Immutable.js or change storage format
-    let ret: Array<FileTreeNode> = [];
+export function makeBlueprintTreeState(fileNodes: Array<File>, idGen: (() => number)|null = null): Array<FileNode> {
+    let ret: Array<FileNode> = [];
 
     if (idGen == null) {
         let id = 0;
@@ -45,22 +94,17 @@ export function toBlueprintTreeNodes(fileNodes: List<ImmutableStoredFile>, idGen
     }
     fileNodes.forEach((node) => {
         let bpNode: FileNode = {
-            kind: "filetree",
+            kind: "file",
             id: idGen(),
-            filename: node.get("filename"),
-            isLoaded: node.get("isLoaded"),
-            isExpanded: node.get("isExpanded"),
-            isSelected: node.get("isSelected"),
-            label: node.get("filename"),
-            type: node.get("type"),
-            hasCaret: node.get("type") == "directory",
-            iconName: node.get("type") == "file" ? "pt-icon-document" : node.get("isExpanded") ? "pt-icon-folder-open" : "pt-icon-folder-close",
-            childNodes: toBlueprintTreeNodes(node.get("children"), idGen)
+            filename: node.name,
+            isExpanded: false,
+            isSelected: false,
+            label: node.name,
+            type: node.type,
+            hasCaret: node.type === "directory",
+            iconName: node.type == "file" ? "pt-icon-document" : "pt-icon-folder-close",
+            childNodes: makeBlueprintTreeState(node.children || [], idGen)
         };
-        // TODO Probably we should do it on dir fetch started, not here
-        if (!node.get("isLoaded")) {
-            bpNode.childNodes.push(makeLoadingNode(idGen));
-        }
         ret.push(bpNode);
     });
     return ret;
