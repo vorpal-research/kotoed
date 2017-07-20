@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.data.api
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.UpdatableRecord
@@ -58,8 +59,14 @@ inline fun <reified R : UpdatableRecord<R>> DbRecordWrapper(
         verificationData: VerificationData = VerificationData.Unknown
 ) = DbRecordWrapper(record.toJson(), verificationData)
 
-data class SubmissionCodeRemoteRequest(val submissionId: Int): Jsonable
-data class SubmissionCodeReadRequest(val submissionId: Int, val path: String): Jsonable
-data class SubmissionCodeReadResponse(val contents: String): Jsonable
-data class SubmissionCodeListRequest(val submissionId: Int): Jsonable
-data class SubmissionCodeListResponse(val files: List<String>): Jsonable
+object SubmissionCode {
+    data class RemoteRequest(val submissionId: Int): Jsonable
+    data class ReadRequest(val submissionId: Int, val path: String): Jsonable
+    data class ReadResponse(val contents: String, val status: CloneStatus): Jsonable
+    data class ListRequest(val submissionId: Int): Jsonable
+
+    enum class FileType { file, directory }
+    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
+    data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
+}
+
