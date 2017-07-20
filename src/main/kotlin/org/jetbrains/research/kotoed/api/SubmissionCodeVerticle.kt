@@ -51,7 +51,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
     suspend fun handleSubmissionCodeRead(message: ReadRequest): ReadResponse {
         val repoInfo = getCommitInfo(message.submissionId)
         when (repoInfo.cloneStatus) {
-            CloneStatus.done -> return ReadResponse("", repoInfo.cloneStatus)
+            CloneStatus.pending -> return ReadResponse("", repoInfo.cloneStatus)
             CloneStatus.failed -> throw NotFound("Repository not found")
             else -> {
             }
