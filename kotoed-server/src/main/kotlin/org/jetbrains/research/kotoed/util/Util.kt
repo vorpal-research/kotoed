@@ -13,6 +13,7 @@ import kotlin.reflect.KClass
 /******************************************************************************/
 
 inline fun <reified T : Any> klassOf() = T::class
+inline fun<T> tryOrNull(body: () -> T) = try { body() } catch (_: Exception) { null }
 
 /******************************************************************************/
 
@@ -116,3 +117,5 @@ data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async
     suspend fun getAsync(key: K) = cache.getOrPut(key){ async(key) }
     suspend operator fun invoke(key: K) = getAsync(key)
 }
+
+

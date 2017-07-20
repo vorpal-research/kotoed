@@ -29,11 +29,23 @@ object Address {
                 const val Create = "kotoed.api.submission.comment.create"
             }
 
+            object Code {
+                const val Download = "kotoed.api.submission.code.download"
+                const val Read = "kotoed.api.submission.code.read"
+                const val List = "kotoed.api.submission.code.list"
+            }
+
         }
 
         object Denizen {
             const val Create = "kotoed.api.denizen.create"
             const val Read = "kotoed.api.denizen.read"
+        }
+
+        object Notification {
+            const val Create = "kotoed.api.notification.create"
+            const val Current = "kotoed.api.notification.current"
+            const val MarkRead = "kotoed.api.notification.markRead"
         }
     }
 
