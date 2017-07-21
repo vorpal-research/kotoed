@@ -15,7 +15,6 @@ import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import java.io.File
 
 private typealias InnerRemoteRequest = org.jetbrains.research.kotoed.data.vcs.RemoteRequest
 private typealias InnerListRequest = org.jetbrains.research.kotoed.data.vcs.ListRequest
