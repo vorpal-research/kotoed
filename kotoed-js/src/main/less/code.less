@@ -1,0 +1,39 @@
+@import "./kotoed-bootstrap/variables.less";
+
+@review-background: white;
+@review-border-color:  @brand-danger;
+
+#editor {
+  height: 800px;
+}
+
+.line-comments {
+  border: solid 2px @review-border-color;
+  background: @review-background;
+  font-family: @font-family-base;
+  font-size: @font-size-base;
+  margin-top: 5px;
+  border-radius: 5px;
+  padding: 5px;
+  width: 100%;
+}
+
+.line-comments-arrow {
+  // Kill me pls
+  position: absolute;
+  border-bottom: solid 5px @review-border-color;
+  border-top: solid 5px transparent;
+  border-left: solid 5px transparent;
+  border-right: solid 5px transparent;
+  top: -5px;
+}
+
+.review-gutter {
+  background: #face8d; // For debug purposes
+  width: 2em
+}
+
+.comments-counter-wrapper {
+  width: 100%;
+  text-align: center;
+}
