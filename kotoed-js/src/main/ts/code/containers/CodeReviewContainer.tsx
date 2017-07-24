@@ -71,7 +71,7 @@ const mapDispatchToProps = function (dispatch, ownProps): Partial<RoutingCodeRev
 class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
     componentDidMount() {
         let {submissionId, path} = this.props.match.params;
-        this.props.onRoute(parseInt(submissionId), path);
+        this.props.onRoute(parseInt(submissionId), path || "");
     }
 
     componentDidUpdate(prevProps: RoutingCodeReviewProps) {
@@ -79,7 +79,7 @@ class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
         let {submissionId, path} = this.props.match.params;
 
         if (prevSubmissionId !== submissionId || prevPath !== path) {
-            this.props.onRoute(parseInt(submissionId), path);
+            this.props.onRoute(parseInt(submissionId), path  || "");
         }
     }
 
