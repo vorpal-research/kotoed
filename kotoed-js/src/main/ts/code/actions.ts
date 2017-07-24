@@ -129,7 +129,7 @@ export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) 
             filename
         }));  // Not used yet
         // TODO save file locally?
-        fetchFile(3, filename).then(result => {  // TODO get submission id from URL
+        fetchFile(payload.submissionId, filename).then(result => {
             dispatch(fileFetch.done({
                 params: {
                     submissionId: payload.submissionId,
