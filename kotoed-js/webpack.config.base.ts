@@ -10,8 +10,8 @@ const dst_path = path.resolve(__dirname, "target/js/webroot/static/");
 const config: webpack.Configuration = {
     context: src_main,
     entry: {
-        hello: "./ts/hello.ts",
-        code: "./ts/code/index.tsx"
+        hello: ["babel-polyfill", "./ts/hello.ts"],
+        code: ["babel-polyfill", "./ts/code/index.tsx"]
     },
     output: {
         path: dst_path,
@@ -33,6 +33,7 @@ const config: webpack.Configuration = {
                 test: /\.tsx?$/,
                 exclude: path.resolve(__dirname, "node_modules/"),
                 use: [
+                    "babel-loader",
                     {
                         loader: "awesome-typescript-loader",
                         options: {
