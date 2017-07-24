@@ -7,7 +7,6 @@ import {FileNodes} from "../util/filetree";
 export class CodeReviewProps {
     // TODO decompose this shit
     editorValue: string;
-    editorPath: string;
     editorMode?: string;
     editorContentType?: string;
     editorHeight: number;
@@ -17,15 +16,10 @@ export class CodeReviewProps {
     onDirExpand: (path: number[]) => void;
     onDirCollapse: (path: number[]) => void;
     onFileSelect: (path: number[]) => void;
-    onMount: () => void
 }
 
 export default class CodeReview extends React.Component<CodeReviewProps> {
 
-    componentDidMount() {
-        this.props.onMount();
-    }
-    
     render() {
         return (
             <div className="row">
