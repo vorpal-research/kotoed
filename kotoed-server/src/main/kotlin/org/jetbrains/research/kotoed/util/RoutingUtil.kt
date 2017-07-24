@@ -12,7 +12,6 @@ import io.vertx.ext.web.templ.TemplateEngine
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
-import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
 import org.slf4j.LoggerFactory
@@ -47,8 +46,10 @@ annotation class Templatize(val templateName: String, val withHelpers: Boolean =
 
 annotation class JsBundle(val bundleName: String,
                           val withHash: Boolean = true,
-                          val withVendor: Boolean = true,
+                          val withJs: Boolean = true,
+                          val withVendorJs: Boolean = true,
                           val withCss: Boolean = true,
+                          val withVendorCss: Boolean = true,
                           val vendorName: String = "vendor")
 
 annotation class LoginRequired
@@ -204,27 +205,30 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                                         throw IllegalStateException("In order to use JsBundle annotation " +
                                                 "config.staticFilesHelper must be provided")
 
-                        val vendorJs = if (withVendor)
+                        val vendorJs = if (withVendorJs)
                             staticFilesHelper.jsBundlePath(vendorName, withHash) else
                             null
 
-                        val js = staticFilesHelper.jsBundlePath(bundleName, withHash)
+                        val js = if (withJs)
+                            staticFilesHelper.jsBundlePath(bundleName, withHash) else
+                            null
 
                         val vendorCss = if (withCss)
                             staticFilesHelper.cssBundlePath(vendorName, withHash) else
                             null
 
-                        val css = if (withVendor && withCss)
+                        val css = if (withVendorCss)
                             staticFilesHelper.cssBundlePath(bundleName, withHash) else
                             null
 
                         makeRoute(method).handler {
-                            if (withVendor)
+                            if (withVendorJs)
                                 it.put("vendorJs", vendorJs)
 
-                            it.put("js", js)
+                            if (withJs)
+                                it.put("js", js)
 
-                            if (withVendor && withCss)
+                            if (withVendorCss)
                                 it.put("vendorCss", vendorCss)
 
                             if (withCss)
