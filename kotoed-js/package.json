@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@blueprintjs/core": "^1.23.0",
+    "@types/vertx3-eventbus-client": "^3.4.0",
     "axios": "^0.16.2",
     "babel-preset-es2017": "^6.24.1",
     "bootstrap-less": "^3.3.8",
@@ -60,6 +61,7 @@
     "react-router-redux": "next",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
-    "typescript-fsa": "^2.4.0"
+    "typescript-fsa": "^2.4.0",
+    "vertx3-eventbus-client": "^3.4.2"
   }
 }

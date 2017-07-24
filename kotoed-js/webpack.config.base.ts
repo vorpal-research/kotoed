@@ -32,14 +32,16 @@ const config: webpack.Configuration = {
             {
                 test: /\.tsx?$/,
                 exclude: path.resolve(__dirname, "node_modules/"),
-                use: {
-                    loader: "awesome-typescript-loader",
-                    options: {
-                        useBabel: true,
-                        useCache: true,
-                        cacheDirectory: "target/.cache/atsl"
+                use: [
+                    {
+                        loader: "awesome-typescript-loader",
+                        options: {
+                            useBabel: true,
+                            useCache: true,
+                            cacheDirectory: "target/.cache/atsl"
+                        }
                     }
-                }
+                ]
             },
             {
                 test: /\.jsx?$/,
