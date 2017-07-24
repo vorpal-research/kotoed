@@ -4,26 +4,28 @@ import {comments} from "../data_stubs";
 import {combineReducers, createStore, applyMiddleware} from "redux";
 import {connect} from "react-redux";
 import thunk from 'redux-thunk';
-import {routerMiddleware, push} from 'react-router-redux'
+import {routerMiddleware} from 'react-router-redux'
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
-    dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize
+    dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize, setPath
 } from "../actions";
-import {editorReducer, fileTreeReducer} from "../reducers";
 import {CodeReviewState} from "../state";
-import createHistory from 'history/createBrowserHistory'
+import {RouteComponentProps} from "react-router-dom";
 
-export const store = createStore(
-    combineReducers({
-        fileTreeState: fileTreeReducer,
-        editorState: editorReducer
-    }),
-    applyMiddleware(thunk),
-    applyMiddleware(routerMiddleware(createHistory()))
-);
 
-const mapStateToProps = function(store: CodeReviewState): Partial<CodeReviewProps> {
+interface OnRoute {
+    onRoute(submissionId: number, filename: string)
+}
+
+interface CodeReviewUrl {
+    submissionId: string
+    path: string
+}
+
+type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUrl> & OnRoute;
+
+const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
         editorHeight: 800,
@@ -36,7 +38,7 @@ const mapStateToProps = function(store: CodeReviewState): Partial<CodeReviewProp
     }
 };
 
-const mapDispatchToProps = function (dispatch, ownProps): Partial<CodeReviewProps> {
+const mapDispatchToProps = function (dispatch, ownProps): Partial<RoutingCodeReviewProps> {
     return {
         onDirExpand: (path: number[]) => {
             dispatch(dirExpand({
@@ -52,18 +54,38 @@ const mapDispatchToProps = function (dispatch, ownProps): Partial<CodeReviewProp
             dispatch(fileSelect({
                 treePath: path
             }));
-            dispatch(fetchFileIfNeeded({
+            dispatch(setPath({
                 treePath: path,
                 submissionId: parseInt(ownProps.match.params.submissionId)
             }));
         },
-        onMount: () => {
+        onRoute: (submissionId, filename) => {
             dispatch(initialize({
-                submissionId: parseInt(ownProps.match.params.submissionId),
-                filename: ownProps.match.params.path || ""
+                submissionId,
+                filename
             }));
         }
     }
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(CodeReview);
+class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
+    componentDidMount() {
+        let {submissionId, path} = this.props.match.params;
+        this.props.onRoute(parseInt(submissionId), path);
+    }
+
+    componentDidUpdate(prevProps: RoutingCodeReviewProps) {
+        let {submissionId: prevSubmissionId, path: prevPath} = prevProps.match.params;
+        let {submissionId, path} = this.props.match.params;
+
+        if (prevSubmissionId !== submissionId || prevPath !== path) {
+            this.props.onRoute(parseInt(submissionId), path);
+        }
+    }
+
+    render() {
+        return <CodeReview {...this.props}/>
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(RoutingContainer);

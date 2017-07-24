@@ -114,6 +114,13 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
     }
 }
 
+export function setPath(payload: NodePathPayload & SubmissionPayload) {
+    return (dispatch, getState: () => CodeReviewState) => {
+        let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
+        dispatch(push(`/${payload.submissionId}/${filename}`))
+    }
+}
+
 export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) {
     return (dispatch, getState: () => CodeReviewState) => {
         let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
@@ -130,8 +137,6 @@ export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) 
                 },
                 result: {value: result}
             }));
-        }).then(() => {
-            dispatch(push(`/${payload.submissionId}/${filename}`))
         });
 
     }
