@@ -9,11 +9,13 @@ import io.vertx.ext.web.handler.ErrorHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.handler.StaticHandler
+import io.vertx.ext.web.handler.sockjs.SockJSHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
 import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.ext.web.templ.TemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
+import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
@@ -75,6 +77,15 @@ class RootVerticle : AbstractVerticle(), Loggable {
             override val sessionStore = LocalSessionStore.create(vertx)
             override val sessionProlongator = SessionProlongator.create()
         })
+
+        // TODO move me somewhere
+
+        val sockJSHandler = SockJSHandler.create(vertx)
+        val options = BridgeOptions()
+        sockJSHandler.bridge(options)
+        router.route("/eventbus/*").handler(sockJSHandler)
+
+        // TODO
 
         vertx.createHttpServer()
                 .requestHandler({ router.accept(it) })

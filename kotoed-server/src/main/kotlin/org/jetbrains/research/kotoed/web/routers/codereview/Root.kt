@@ -8,7 +8,7 @@ import org.jetbrains.research.kotoed.util.Templatize
 
 @HandlerFor("/codereview/*")
 @Templatize("code.jade")
-@LoginRequired
+//@LoginRequired
 @JsBundle("code")
 fun handleCode(context: RoutingContext) {
     // Just rendering template. React will do the rest on the client side
