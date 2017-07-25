@@ -5,7 +5,7 @@ import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
 import {
-    collapseDir, expandDir, expandEverything, makeBlueprintTreeState, selectFile,
+    collapseDir, collapseEverything, expandDir, expandEverything, makeBlueprintTreeState, selectFile,
     unselectFile
 } from "./util/filetree";
 
@@ -24,7 +24,7 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
         return newState;
     } else if (isType(action, dirCollapse)) {
         let newState = _.cloneDeep(state);
-        collapseDir(newState.nodes, action.payload.treePath);
+        collapseEverything(newState.nodes, action.payload.treePath);
         return newState;
     } else if (isType(action, fileSelect)) {
         let newState = _.cloneDeep(state);
