@@ -5,43 +5,60 @@
 import  axios , {AxiosResponse} from "axios"
 import {sleep} from "../util";
 import {File} from "./model";
+import {AsyncEventBus, EventBusError} from "../util/vertx";
+import {fromLocationHost} from "../util/url";
 
-// TODO switch from debug API
-const READY_URL = "/debug/eventbus/kotoed.api.submission.code.download";
-const LIST_URL = "/debug/eventbus/kotoed.api.submission.code.list";
-const FILE_URL = "/debug/eventbus/kotoed.api.submission.code.read";
-const COMMENTS_URL = "/debug/eventbus/kotoed.api.submission.comments";
+const READY_ADDRESS = "kotoed.api.submission.code.download";
+const LIST_ADDRESS = "kotoed.api.submission.code.list";
+const FILE_ADDRESS = "kotoed.api.submission.code.read";
+const COMMENTS_ADDRESS = "kotoed.api.submission.comments";
 
+type ResponseStatus = "done" | "pending" | "failed"
 
 interface ResponseWithStatus {
-    status: "done" | "pending" | "failed"
+    status: ResponseStatus
 }
+
+interface SubmissionIdRequest {
+    submission_id: number
+}
+
+type RootDirRequest = SubmissionIdRequest
 
 interface RootDirResponse extends ResponseWithStatus {
     root: File
+}
+
+interface FileRequest extends SubmissionIdRequest {
+    path: string
 }
 
 interface FileResponse extends ResponseWithStatus {
     contents: string
 }
 
+type IsReadyRequest = SubmissionIdRequest
+
+type IsReadyResponse = ResponseWithStatus
+
+const eventBus = new AsyncEventBus(fromLocationHost("eventbus"));
+
 const AWAIT_READY_DELAY = 500;
 
-async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Promise<AxiosResponse>): Promise<T> {
+async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Promise<T>): Promise<T> {
     while(true) {
         let response = await doRequest();
-        let data = response.data as T;
-        if (data.status === "failed")
-            throw "Fetch failed =("; // TODO replace with proper handling
-        if (data.status === "done")
-            return data;
+        if (response.status === "failed")
+            throw new EventBusError("Fetch failed"); // TODO replace with proper handling
+        if (response.status === "done")
+            return response;
         await sleep(AWAIT_READY_DELAY);
     }
 }
 
 export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
     let res = await repeatTillReady<RootDirResponse>(() => {
-        return axios.post(LIST_URL, {
+        return eventBus.send<RootDirRequest, RootDirResponse>(LIST_ADDRESS, {
             submission_id: submissionId
         })
     });
@@ -50,18 +67,19 @@ export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
 
 export async function fetchFile(submissionId: number, path: string): Promise<string> {
     let res = await repeatTillReady<FileResponse>(() => {
-        return axios.post(FILE_URL, {
+        return eventBus.send<FileRequest, FileResponse>(FILE_ADDRESS, {
             submission_id: submissionId,
             path
         })
+
     });
     return res.contents;
 }
 
 export async function waitTillReady(submissionId: number): Promise<void> {
     await repeatTillReady<ResponseWithStatus>(() => {
-        return axios.post(READY_URL, {
-            submission_id: submissionId
+        return eventBus.send<IsReadyRequest, IsReadyResponse>(READY_ADDRESS, {
+            submission_id: submissionId,
         })
     });
 }

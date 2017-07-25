@@ -16,6 +16,7 @@ import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.ext.web.templ.TemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
+import io.vertx.kotlin.ext.web.handler.sockjs.PermittedOptions
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
@@ -81,7 +82,8 @@ class RootVerticle : AbstractVerticle(), Loggable {
         // TODO move me somewhere
 
         val sockJSHandler = SockJSHandler.create(vertx)
-        val options = BridgeOptions()
+        val po = PermittedOptions().setAddressRegex(".*")
+        val options = BridgeOptions().addInboundPermitted(po)
         sockJSHandler.bridge(options)
         router.route("/eventbus/*").handler(sockJSHandler)
 
