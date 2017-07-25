@@ -12,7 +12,7 @@ export interface FileReviewProps {
     value: string,
     mode?: string,
     contentType?: string,
-    height: number,
+    height: number | string,
     comments: Comment[][],
 
 }
