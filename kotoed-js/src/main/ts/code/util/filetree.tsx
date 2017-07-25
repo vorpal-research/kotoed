@@ -38,7 +38,7 @@ export function visitNodePath(fileTree: FileNodes,
 }
 
 export function getNodeAt(fileTree: Array<FileNode>,
-                          numPath: FileTreePath): FileNode|null {
+                          numPath: FileTreePath): FileNode | null {
     return visitNodePath(fileTree, numPath, () => {});
 }
 
