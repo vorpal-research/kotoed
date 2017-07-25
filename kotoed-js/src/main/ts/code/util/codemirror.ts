@@ -1,4 +1,5 @@
 import {Comment} from "../model"
+import {Map} from "immutable"
 
 export function groupByLine(comments: Comment[]): Comment[][] {
     let grouped: Comment[][] = [];
@@ -25,50 +26,74 @@ export interface CmMode {
     contentType?: string
 }
 
+const CM_MODES_BY_EXT: Map<string, CmMode> = Map([
+    ["kt", {
+        mode: "clike",
+        contentType: "text/x-kotlin"
+    }],
+    ["java", {
+        mode: "clike",
+        contentType: "text/x-java"
+    }],
+    ["scala", {
+        mode: "clike",
+        contentType: "text/x-scala"
+    }],
+    ["less", {
+        mode: "css",
+        contentType: "text/x-less"
+    }],
+    ["css", {
+        mode: "css",
+        contentType: "text/x-css"
+    }],
+    ["ts", {
+        mode: "javascript",
+        contentType: "text/typescript"
+    }],
+    ["js", {
+        mode: "javascript",
+        contentType: "text/javascript"
+    }],
+    ["tsx", {
+        mode: "jsx",
+        contentType: "text/typescript-jsx"
+    }],
+    ["jsx", {
+        mode: "jsx",
+        contentType: "text/jsx"
+    }],
+    ["yml", {
+        mode: "yaml",
+        contentType: "text/x-yaml"
+    }],
+    ["py", {
+        mode: "python",
+        contentType: "text/x-python"
+    }],
+    ["sql", {
+        mode: "sql",
+        contentType: "text/x-sql"
+    }],
+    ["json", {
+        mode: "javascript",
+        contentType: "application/json"
+    }],
+    ["pug", {
+        mode: "pug",
+        contentType: "text/x-pug"
+    }],
+    ["jade", {
+        mode: "pug",
+        contentType: "text/x-pug"
+    }],
+
+]);
+
 export function guessCmMode(filename: string): CmMode {
     let match = filename.match(/(.*)[\/\\]([^\/\\]+)\.(\w+)$/);
     if (!match || match.length < 4)
         return {};
 
-    switch (match[3]) {
-        case "kt":
-            return {
-                mode: "clike",
-                contentType: "text/x-kotlin"
-            };
-        case "scala":
-            return {
-                mode: "clike",
-                contentType: "text/x-scala"
-            };
-        case "java":
-            return {
-                mode: "clike",
-                contentType: "text/x-java"
-            };
-        case "less":
-            return {
-                mode: "css",
-                contentType: "text/x-less"
-            };
-        case "css":
-            return {
-                mode: "css",
-                contentType: "text/x-css"
-            };
-        case "ts":
-            return {
-                mode: "javascript",
-                contentType: "text/typescript"
-            };
-        case "js":
-            return {
-                mode: "javascript",
-                contentType: "text/javascript"
-            };
-
-
-        default:
-            return {}
-    }
+    return CM_MODES_BY_EXT.get(match[3], {});
 }
