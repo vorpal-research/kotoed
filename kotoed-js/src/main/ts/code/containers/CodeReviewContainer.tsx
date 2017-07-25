@@ -28,7 +28,6 @@ type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUr
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
-        editorHeight: 800,
         editorComments: groupByLine(comments),
         editorValue: store.editorState.value,
         editorMode: mode,
