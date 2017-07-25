@@ -4,7 +4,9 @@
     "module": "commonjs",
     "noErrorTruncation": true,
     "sourceMap": true,
-    "target": "es2017"
+    "target": "es2017",
+    "alwaysStrict": true,
+    "strict": true
   },
   "include": [
     "src/main/ts/**/*"

@@ -25,10 +25,7 @@ interface FileResponse extends ResponseWithStatus {
     contents: string
 }
 
-
-
 const AWAIT_READY_DELAY = 500;
-
 
 async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Promise<AxiosResponse>): Promise<T> {
     while(true) {
@@ -48,7 +45,7 @@ export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
             submission_id: submissionId
         })
     });
-    return res.root.children;
+    return res.root.children || [];
 }
 
 export async function fetchFile(submissionId: number, path: string): Promise<string> {

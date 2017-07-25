@@ -1,7 +1,8 @@
 import * as webpack from 'webpack';
 import * as path from 'path';
 import * as ExtractTextPlugin from "extract-text-webpack-plugin"
-declare const __dirname;
+
+declare const __dirname: string;
 
 const src_main = path.resolve(__dirname, "src/main/");
 // Maybe we should put it to webroot/static in kotoed-server's pom.xml
@@ -75,8 +76,7 @@ const config: webpack.Configuration = {
                                 sourceMap: true
                             }
                         }
-                    ],
-                    allChunks: true
+                    ]
                 })
             },
             {
@@ -100,8 +100,7 @@ const config: webpack.Configuration = {
                             }
                         },
                         'less-loader?sourceMap'
-                    ],
-                    allChunks: true
+                    ]
                 })
             },
 

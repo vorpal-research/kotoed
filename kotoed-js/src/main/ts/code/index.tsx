@@ -25,15 +25,10 @@ import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
 import "less/unblueprint.less"
-import * as EventBus from "vertx3-eventbus-client";
-import {sleep} from "../util";
 
 export const history = createHistory({
     basename: "/codereview"
 });
-
-// Build the middleware for intercepting and dispatching navigation actions
-
 
 export const store = createStore(
     combineReducers({

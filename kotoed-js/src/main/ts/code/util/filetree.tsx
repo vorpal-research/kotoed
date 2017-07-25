@@ -25,12 +25,14 @@ export type FileTreePath = Array<number>;
 export function visitNodePath(fileTree: FileNodes,
                               numPath: FileTreePath,
                               callback: (node: FileNode) => void): FileNode | null {
-    let children = fileTree;
-    let node = null;
+    let children: FileNodes = fileTree;
+
+    let node: FileNode | null = null;
     numPath.forEach((index) => {
         node = children[index];
         callback(node);
-        children = node.childNodes; // will be undef for last but we don't care
+        if (node.childNodes)
+            children = node.childNodes;
     });
     return node;
 }
@@ -41,7 +43,7 @@ export function getNodeAt(fileTree: Array<FileNode>,
 }
 
 export function nodePathToFilePath(fileTree: Array<FileNode>, numPath: FileTreePath): string {
-    let path = [];
+    let path: Array<string> = [];
     visitNodePath(fileTree, numPath, node => path.push(node.filename));
     return path.join("/");
 }
@@ -65,7 +67,9 @@ export function filePathToNodePath(fileTree: Array<FileNode>, filePath: string):
         let child = children[childIx];
 
         numPath.push(childIx);
-        children = child.childNodes;
+
+        if (child.childNodes)
+            children = child.childNodes;
     }
     return numPath
 }
@@ -124,16 +128,12 @@ export function makeLoadingNode(idGen: (() => number)): LoadingNode {
 export function makeBlueprintTreeState(fileNodes: Array<File>, idGen: (() => number)|null = null): Array<FileNode> {
     let ret: Array<FileNode> = [];
 
-    if (idGen == null) {
-        let id = 0;
-        idGen = () => {
-            return ++id;
-        }
-    }
+    let id = 0;
+    let idGenF = idGen ? idGen : () => {return ++id;};
     fileNodes.forEach((node) => {
         let bpNode: FileNode = {
             kind: "file",
-            id: idGen(),
+            id: idGenF(),
             filename: node.name,
             isExpanded: false,
             isSelected: false,

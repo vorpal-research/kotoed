@@ -28,7 +28,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
 
-    constructor(props) {
+    constructor(props: FileReviewProps) {
         super(props);
         this.state = {
             expanded: []
@@ -45,7 +45,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         }
 
         if (lineInfo.gutterMarkers && lineInfo.gutterMarkers[REVIEW_GUTTER]) {
-            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null);
+            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null as any);  // wrong typing for last argument
         }
 
     };
@@ -111,14 +111,17 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.arrowOffset = 0.0;
         $(this.editor.getGutterElement()).children().each((ix, elem) => {
             let jqel = $(elem);
-            if (!jqel.hasClass("review-gutter")) {
-                this.arrowOffset += jqel.width();
-            } else {
-                this.arrowOffset += jqel.width() / 2;
-                return false;
+            let width = jqel.width();
+            if (width !== undefined) {
+                if (!jqel.hasClass("review-gutter")) {
+                    this.arrowOffset += width;
+                } else {
+                    this.arrowOffset += width / 2;
+                    return false;
+                }
             }
         });
-        this.arrowOffset -= 5;  // TODo find a way to remove hardcoded 5
+        this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
 
 
 
@@ -157,7 +160,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
     render() {
         return (
-            <textarea ref={ref => this.textAreaNode = ref} defaultValue={this.props.value}/>
+            <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
         )
     }
 }

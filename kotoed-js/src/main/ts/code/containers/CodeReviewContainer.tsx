@@ -1,7 +1,7 @@
 import * as React from "react";
 import {groupByLine, guessCmMode,} from "../util/codemirror";
 import {comments} from "../data_stubs";
-import {combineReducers, createStore, applyMiddleware} from "redux";
+import {combineReducers, createStore, applyMiddleware, Dispatch} from "redux";
 import {connect} from "react-redux";
 import thunk from 'redux-thunk';
 import {routerMiddleware} from 'react-router-redux'
@@ -15,7 +15,7 @@ import {RouteComponentProps} from "react-router-dom";
 
 
 interface OnRoute {
-    onRoute(submissionId: number, filename: string)
+    onRoute(submissionId: number, filename: string): void
 }
 
 interface CodeReviewUrl {
@@ -38,7 +38,8 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
     }
 };
 
-const mapDispatchToProps = function (dispatch, ownProps): Partial<RoutingCodeReviewProps> {
+const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
+                                     ownProps: RouteComponentProps<CodeReviewUrl>): Partial<RoutingCodeReviewProps> {
     return {
         onDirExpand: (path: number[]) => {
             dispatch(dirExpand({

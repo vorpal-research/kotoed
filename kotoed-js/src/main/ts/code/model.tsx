@@ -27,5 +27,5 @@ export type FileType = "file" | "directory"
 export interface File {
     type: FileType;
     name: string,
-    children?: Array<File> | null
+    children: Array<File> | null
 }

@@ -6,6 +6,7 @@
   "devDependencies": {
     "@types/bootstrap": "^3.3.34",
     "@types/codemirror": "^0.0.41",
+    "@types/extract-text-webpack-plugin": "^2.1.0",
     "@types/jquery": "^3.2.5",
     "@types/lodash": "^4.14.70",
     "@types/node": "^8.0.3",
