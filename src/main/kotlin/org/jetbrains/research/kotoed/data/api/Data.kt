@@ -65,7 +65,7 @@ object SubmissionCode {
     data class ReadResponse(val contents: String, val status: CloneStatus): Jsonable
     data class ListRequest(val submissionId: Int): Jsonable
 
-    enum class FileType { file, directory }
+    enum class FileType { directory, file } // directory < file, used in comparisons
     data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
     data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
 }
