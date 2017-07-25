@@ -11,8 +11,8 @@ interface LineMarkerProps {
     editor: cm.Editor,
     arrowOffset: number,
     expanded: boolean,
-    onExpand: (number) => void
-    onCollapse: (number) => void
+    onExpand: (number: number) => void
+    onCollapse: (number: number) => void
 }
 
 interface LineMarkerState {
@@ -20,7 +20,7 @@ interface LineMarkerState {
 }
 
 export default class LineMarkerComponent extends React.Component<LineMarkerProps, LineMarkerState> {
-    constructor(props) {
+    constructor(props: LineMarkerProps) {
         super(props);
         this.state = {
             expanded: props.expanded
@@ -32,7 +32,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             this.doExpand()
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate(prevProps: LineMarkerProps, prevState: LineMarkerState) {
         // todo think
     }
 

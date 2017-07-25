@@ -9,9 +9,9 @@ export interface FileTreeProps {
 }
 
 export interface FileTreeCallbacks {
-    onDirExpand(path: number[])
-    onDirCollapse(path: number[])
-    onFileSelect(path: number[])
+    onDirExpand(path: number[]): void
+    onDirCollapse(path: number[]): void
+    onFileSelect(path: number[]): void
 }
 
 export default class FileTree extends React.Component<FileTreeProps & FileTreeCallbacks, {}> {

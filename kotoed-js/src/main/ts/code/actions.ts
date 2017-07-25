@@ -12,6 +12,7 @@ import {CodeReviewState} from "./state";
 import {waitTillReady, fetchRootDir, fetchFile} from "./data_fetch";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
+import {Dispatch} from "redux";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -44,7 +45,7 @@ export const fileFetch = actionCreator.async<FilePathPayload & SubmissionPayload
 
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
-    return (dispatch, getState: () => CodeReviewState) => {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(rootFetch.started({
             submissionId: payload.submissionId
         }));
@@ -55,7 +56,7 @@ export function initialize(payload: SubmissionPayload & FilePathPayload) {
 }
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
-    return (dispatch, getState: () => CodeReviewState) => {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         if (!getState().fileTreeState.loading)
             return Promise.resolve();
 
@@ -73,7 +74,7 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
 }
 
 export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPayload) {
-    return (dispatch, getState: () => CodeReviewState) => {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let numPath: FileTreePath;
         try {
             numPath = filePathToNodePath(getState().fileTreeState.nodes, payload.filename);
@@ -115,14 +116,14 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
 }
 
 export function setPath(payload: NodePathPayload & SubmissionPayload) {
-    return (dispatch, getState: () => CodeReviewState) => {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
         dispatch(push(`/${payload.submissionId}/${filename}`))
     }
 }
 
 export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) {
-    return (dispatch, getState: () => CodeReviewState) => {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
         dispatch(fileFetch.started({
             submissionId: payload.submissionId,
