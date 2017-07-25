@@ -1,10 +1,7 @@
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.teamcity.project.BuildConfig
-import org.jetbrains.research.kotoed.data.teamcity.project.CreateProject
-import org.jetbrains.research.kotoed.data.teamcity.project.Project
-import org.jetbrains.research.kotoed.data.teamcity.project.VcsRoot
+import org.jetbrains.research.kotoed.data.buildbot.project.CreateProject
 import org.junit.Test
 import java.io.File
 import kotlin.reflect.KClass
@@ -174,29 +171,19 @@ class JsonUtilTest {
         assertEquals(
                 fromJson(JsonObject("""
                     {
-                        "project": {
-                            "id": "Test",
-                            "name": "Test project",
-                            "root_project_id": "_Root"
-                        },
-                        "vcs_root": {
-                            "id": "Test_VCS",
-                            "name": "Test project VCS",
-                            "type": "mercurial",
-                            "url": "https://bitbucket.org/vorpal-research/kotoed",
-                            "project_id": "Test"
-                        },
-                        "build_config": {
-                            "id": "Test_Build",
-                            "name": "Test project build config",
-                            "template_id": "Test_Default_Build_Template"
-                        }
+                        "id": 42,
+                        "course_name": "KotlinAsFirst-2017",
+                        "name": "YaSdelal'",
+                        "repo_url": "https://bitbucket.org/vorpal-research/kotoed",
+                        "repo_type": "mercurial"
                     }
                 """)),
                 CreateProject(
-                        Project("Test", "Test project", "_Root"),
-                        VcsRoot("Test_VCS", "Test project VCS", "mercurial", "https://bitbucket.org/vorpal-research/kotoed", "Test"),
-                        BuildConfig("Test_Build", "Test project build config", "Test_Default_Build_Template")
+                        42,
+                        "KotlinAsFirst-2017",
+                        "YaSdelal'",
+                        "https://bitbucket.org/vorpal-research/kotoed",
+                        "mercurial"
                 )
         )
 

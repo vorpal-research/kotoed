@@ -8,7 +8,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import java.util.concurrent.Future
 
-class TeamCityInteropTestIntegration : Loggable {
+class BuildbotInteropTestIntegration : Loggable {
 
     companion object {
         lateinit var server: Future<Vertx>
@@ -27,7 +27,8 @@ class TeamCityInteropTestIntegration : Loggable {
     }
 
     @Test
-    fun pingTeamCity() {
-        println(wpost("debug/eventbus/${Address.TeamCity.Build.Info}", payload = "{}"))
+    fun pingBuildbot() {
+        wpost("debug/eventbus/${Address.Buildbot.Build.RequestInfo}",
+                payload = """{ "build_request_id": -1 }""")
     }
 }

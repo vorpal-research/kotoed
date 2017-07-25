@@ -8,7 +8,7 @@ data class TriggerBuild(
 ) : EventBusDatum<TriggerBuild>()
 
 data class BuildRequestInfo(
-        val buildRequestId: String
+        val buildRequestId: Int
 ) : EventBusDatum<BuildRequestInfo>()
 
 data class BuildCrawl(
