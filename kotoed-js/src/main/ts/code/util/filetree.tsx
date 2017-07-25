@@ -6,6 +6,12 @@ import {File, FileType} from "../model";
 import {Spinner, ITreeNode} from "@blueprintjs/core";
 import {FileNotFoundError} from "../errors";
 
+export class FileTreeError extends Error {
+    constructor(numPath: FileTreePath) {
+        super(`Path ${numPath.join(".")} not found in tree.`)
+    }
+}
+
 export type FileTreeNode = LoadingNode | FileNode;
 
 export interface LoadingNode extends ITreeNode {
@@ -35,6 +41,13 @@ export function visitNodePath(fileTree: FileNodes,
             children = node.childNodes;
     });
     return node;
+}
+
+export function visitSubtree(fileTree: FileNode,
+                             callback: (node: FileNode) => boolean): void {
+    if (callback(fileTree) && fileTree.childNodes) {
+        fileTree.childNodes.forEach(child => visitSubtree(child, callback));
+    }
 }
 
 export function getNodeAt(fileTree: Array<FileNode>,
@@ -100,6 +113,25 @@ export function expandEverything(fileTree: Array<FileNode>, numPath: FileTreePat
                 break;
         }
     });
+}
+
+export function collapseEverything(fileTree: Array<FileNode>, numPath: FileTreePath): void {
+    let toCollapse = getNodeAt(fileTree, numPath);
+
+    if (toCollapse === null)
+        throw new FileTreeError(numPath);
+
+    visitSubtree(toCollapse, node => {
+        if (node.type === "file")
+            return false;
+        // If we collapse using only this function then this should work fine
+        // Otherwise this won't collapse everything
+        if (node.type === "directory" && !node.isExpanded)
+            return false;
+
+        node.isExpanded = false;
+        return true;
+    })
 }
 
 function setFileIsSelected(fileTree: Array<FileNode>, numPath: FileTreePath, value: boolean): void {
