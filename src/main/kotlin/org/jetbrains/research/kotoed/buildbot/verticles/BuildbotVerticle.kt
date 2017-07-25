@@ -27,6 +27,7 @@ class BuildbotVerticle : AbstractKotoedVerticle(), Loggable {
 
         val res = vxa<HttpResponse<Buffer>> {
             wc.post(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Empty + endpointLocator)
+                    .putDefaultBBHeaders()
                     .sendForm(
                             mapOf(
                                     "name" to projectCreate.name,
@@ -93,7 +94,27 @@ class BuildbotVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Buildbot.Build.RequestInfo)
     suspend fun consumeBuildRequestInfo(buildRequestInfo: BuildRequestInfo): JsonObject {
-        TODO()
+
+        val wc = WebClient.create(vertx)
+
+        val res = vxa<HttpResponse<Buffer>> {
+            wc.get(Config.Buildbot.Port, Config.Buildbot.Host,
+                    BuildbotApi.BuildRequests + IntLocator(buildRequestInfo.buildRequestId))
+                    .putDefaultBBHeaders()
+                    .send(it)
+        }
+
+        if (res.statusCode() == HttpResponseStatus.OK.code()) {
+            return JsonObject(
+                    "result" to "success"
+            ).mergeIn(res.bodyAsJsonObject())
+
+        } else {
+            throw KotoedException(
+                    res.statusCode(),
+                    res.bodyAsString()
+            )
+        }
     }
 
 }

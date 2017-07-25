@@ -17,6 +17,10 @@ data class StringLocator(val data: String) : Locator {
     override fun toString(): String = "$data"
 }
 
+data class IntLocator(val data: Int) : Locator {
+    override fun toString(): String = "$data"
+}
+
 data class DimensionLocator(val dimension: String, val value: String) : Locator {
     override fun toString(): String = "$dimension/$value"
 
@@ -50,4 +54,5 @@ object BuildbotApi {
     val Empty = "/"
     val Root = ApiEndpoint("$endpointRoot")
     val ForceSchedulers = +"forceschedulers"
+    val BuildRequests = +"buildrequests"
 }

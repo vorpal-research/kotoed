@@ -28,12 +28,6 @@ class SubmissionDatabaseTestIntegration : Loggable {
         fun before() {
             server = startServer()
             server.get()
-
-            try {
-                setupTC()
-            } catch (ex: Exception) {
-            }
-
         }
 
         @JvmStatic
@@ -70,9 +64,9 @@ class SubmissionDatabaseTestIntegration : Loggable {
         val course = makeDbNew(
             "course",
             object: Jsonable {
-                val name = "Transmogrification 101"
-                val buildTemplateId = "Test_build_template_id"
-                val rootProjectId = "_Root"
+                val name = "KotlinAsFirst-2017"
+                val buildTemplateId = "None"
+                val rootProjectId = "None"
             }
         )
 
