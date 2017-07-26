@@ -1,0 +1,14 @@
+{
+  "buildbot": {
+    "user": "admin",
+    "password": "admin"
+  },
+
+  "debug": {
+    "database": {
+      "url": "jdbc:postgresql://localhost/kotoed-test",
+      "user": "kotoed",
+      "password": "kotoed"
+    }
+  }
+}
