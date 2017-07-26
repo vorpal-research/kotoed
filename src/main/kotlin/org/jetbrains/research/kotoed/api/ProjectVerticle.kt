@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import ru.spbstu.ktuples.Tuple
 
 @AutoDeployable
 class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
