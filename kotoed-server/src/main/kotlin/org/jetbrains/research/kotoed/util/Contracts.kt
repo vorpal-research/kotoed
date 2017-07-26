@@ -13,5 +13,5 @@ inline fun <T> expectNotNull(v: T?, message: String = "Expectation failed: objec
 inline fun <T> T.expecting(message: String = "Expectation failed", pred: (T) -> Boolean) =
         if (pred(this)) this else throw ExpectationFailed(message)
 
-inline fun <reified U> Any.expectingIs(message: String = "Expectation failed: expected ${U::class}, got ${this::class}") =
-        if (this is U) (this as U) else throw ExpectationFailed(message)
+inline fun <reified U> Any.expectingIs(message: String = "Expectation failed: expected ${U::class}, got ${this::class}"): U =
+        if (this is U) this else throw ExpectationFailed(message)

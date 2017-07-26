@@ -1,4 +1,4 @@
-package org.jetbrains.research.kotoed.teamcity.util
+package org.jetbrains.research.kotoed.buildbot.util
 
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.Jsonable
@@ -17,8 +17,12 @@ data class StringLocator(val data: String) : Locator {
     override fun toString(): String = "$data"
 }
 
+data class IntLocator(val data: Int) : Locator {
+    override fun toString(): String = "$data"
+}
+
 data class DimensionLocator(val dimension: String, val value: String) : Locator {
-    override fun toString(): String = "$dimension:$value"
+    override fun toString(): String = "$dimension/$value"
 
     companion object {
         fun from(dimension: String, value: String?) =
@@ -41,19 +45,14 @@ operator infix fun Locator.div(locator: Locator) =
         else if (locator is EmptyLocator) this
         else StringLocator("$this/$locator")
 
-fun Locator.all() =
-        if (this is EmptyLocator) this else StringLocator("?locator=$this")
-
-object TeamCityApi {
-    private val endpointRoot = Config.TeamCity.EndpointRoot
+object BuildbotApi {
+    private val endpointRoot = Config.Buildbot.EndpointRoot
 
     private operator fun String.unaryPlus() = ApiEndpoint("$endpointRoot/$this")
     private operator fun String.unaryMinus() = StringLocator(this)
 
-    val Projects = +"projects"
-    val VcsRoots = +"vcs-roots"
-    val BuildTypes = +"buildTypes"
-    val BuildQueue = +"buildQueue"
-    val Builds = +"builds"
-    val Changes = +"changes"
+    val Empty = "/"
+    val Root = ApiEndpoint("$endpointRoot")
+    val ForceSchedulers = +"forceschedulers"
+    val BuildRequests = +"buildrequests"
 }

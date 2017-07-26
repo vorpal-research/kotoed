@@ -54,11 +54,20 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
         log.info("Alive and standing")
         
-        router.route("/static/*").handler(StaticHandler.create("webroot/static"))
+        router.initRoutes()
 
+        vertx.createHttpServer()
+                .requestHandler({ router.accept(it) })
+                .listen(Config.Root.Port)
+
+        startFuture.complete()
+    }
+
+
+    fun Router.initRoutes() {
         val authProvider = UavAuthProvider(vertx)
         val staticFilesHelper = StaticFilesHelper(vertx)
-        val routingShared = RoutingConfig(
+        val routingConfig = RoutingConfig(
                 templateEngine = JadeTemplateEngine.create(),
                 authProvider = authProvider,
                 sessionStore = LocalSessionStore.create(vertx),
@@ -71,15 +80,29 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 )
         )
 
-        router.routeProto().enableLogging(routingShared)
-        router.createLoginPageRoute(routingShared)
-        router.createLogoutPageRoute(routingShared)
+        route("/static/*").handler(StaticHandler.create("webroot/static"))
 
-        router.autoRegisterHandlers(routingShared)
+        routeProto().enableLogging(routingConfig)
+
+        createLoginRoute(routingConfig)
+        createLogoutRoute(routingConfig)
+
+
+        val b = routeProto().path("/bitch/*")
+
+        b.requireLogin(routingConfig)
+
+        b.makeRoute().handler { context ->
+            context.request().response().end("Bitch!")
+        }
 
         val sockJSHandler = SockJSHandler.create(vertx)
         val po = PermittedOptions().setAddressRegex(".*")
         val options = BridgeOptions().addInboundPermitted(po)
+        val ebRouteProto = routeProto().path("/eventbus/*")
+
+//        ebRouteProto.requireLogin(routingConfig)
+
         sockJSHandler.bridge(options) { be ->
             log.debug("------------------------")
             log.debug(be.type())
@@ -89,16 +112,9 @@ class RootVerticle : AbstractVerticle(), Loggable {
             be.complete(true)
         }
 
+        ebRouteProto.makeRoute().handler(sockJSHandler)
 
-        router.route("/eventbus/*").handler(sockJSHandler)
 
-        // TODO
-
-        vertx.createHttpServer()
-                .requestHandler({ router.accept(it) })
-                .listen(Config.Root.Port)
-
-        startFuture.complete()
+        autoRegisterHandlers(routingConfig)
     }
-
 }

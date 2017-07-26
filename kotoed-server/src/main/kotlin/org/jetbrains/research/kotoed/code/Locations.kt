@@ -25,9 +25,8 @@ fun Location.applyDiffs(diffs: Sequence<Diff>): Location {
     relevant ?: return this
 
     var adj: Int = 0
-    var curLine: Int = 0
     for(hunk in relevant.hunks) {
-        curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
+        val curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
 
         if(curLine > line) {
             return Location(relevant.toFileName.asFilename(), line + adj, col)

@@ -17,7 +17,6 @@
         <project.reporting.outputEncoding>
             UTF-8
         </project.reporting.outputEncoding>
-        <kotlin.version>1.1.2</kotlin.version>
         <exec.mainClass>none</exec.mainClass>
         <debug>false</debug>
     </properties>
