@@ -76,8 +76,8 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 val name = "Da_supa_mega_project"
                 val denizen_id = user.id
                 val course_id = course.id
-                val repo_type = "mercurial"
-                val repo_url = "http://bitbucket.org/vorpal-research/kotoed"
+                val repo_type = "git"
+                val repo_url = "https://github.com/Kotlin-Polytech/KotlinAsFirst2016"
             }
         )
 
@@ -86,7 +86,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
             "submission",
             object : Jsonable {
                 val projectId = project.id
-                val revision = "1942a948d720fb786fc8c2e58af335eea2e2fe90"
+                val revision = "153653"
             }
         )
 
@@ -107,7 +107,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 object : Jsonable {
                     val parent_submission_id = submission.id
                     val project_id = project.id
-                    val revision = "82b75aa179ef4d20b2870df88c37657ecb2b9f6b"
+                    val revision = "fa8175"
                 }
         ).getJsonObject("record")
 
@@ -140,7 +140,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 object : Jsonable {
                     val parent_submission_id = resubmission.id
                     val project_id = project.id
-                    val revision = "9fc0841dcdfaf274fc9b71a790dd6a46d21731d8"
+                    val revision = "26cbba"
                 }
         ).getJsonObject("record")
 
