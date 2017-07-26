@@ -5,7 +5,7 @@ pipelines:
     - step:
         script:
           - start_postgresql.sh
-          - start_teamcity.sh
+          - start_buildbot.sh
           - createuser kotoed -U postgres
           - createdb kotoed -U postgres -O kotoed
           - createdb kotoed-test -U postgres -O kotoed
