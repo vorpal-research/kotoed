@@ -54,31 +54,6 @@ paths:
           description: Entity not found
           schema:
             $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a course by its id
-      parameters:
-        - name: id
-          in: query
-          description: Primary key
-          required: true
-          type: integer
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/Course'
-        '400':
-          description: Incorrect request
-          schema:
-            $ref: '#/definitions/RequestError'
-        '404':
-          description: Entity not found
-          schema:
-            $ref: '#/definitions/NotFoundError'
   /eventbus/kotoed.api.course.error:
     post:
       description: Get errors associated with a course
@@ -131,30 +106,6 @@ paths:
           name: body
           schema:
             $ref: '#/definitions/HasId'
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/Project'
-        '400':
-          description: Incorrect request
-          schema:
-            $ref: '#/definitions/RequestError'
-        '404':
-          description: Entity not found
-          schema:
-            $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a project by its id
-      parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
       responses:
         '200':
           description: OK
@@ -241,22 +192,6 @@ paths:
           description: Entity not found
           schema:
             $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a user by its id
-      parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/Denizen'
   /eventbus/kotoed.api.submission.create:
     post:
       description: Create a new user
@@ -303,30 +238,6 @@ paths:
           description: Entity not found
           schema:
             $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a submission by its id
-      parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/Submission'
-        '400':
-          description: Incorrect request
-          schema:
-            $ref: '#/definitions/RequestError'
-        '404':
-          description: Entity not found
-          schema:
-            $ref: '#/definitions/NotFoundError'
   /eventbus/kotoed.api.submission.last:
     post:
       description: Query the last corresponding submission for any submission with this id
@@ -335,30 +246,6 @@ paths:
           name: body
           schema:
             $ref: '#/definitions/HasId'
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/Submission'
-        '400':
-          description: Incorrect request
-          schema:
-            $ref: '#/definitions/RequestError'
-        '404':
-          description: Entity not found
-          schema:
-            $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a user by its id
-      parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
       responses:
         '200':
           description: OK
@@ -399,20 +286,101 @@ paths:
           description: Entity not found
           schema:
             $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a user by its id
+  /eventbus/kotoed.api.submission.code.download:
+    post:
+      description: Download the source code for current submission
       parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
       responses:
         '200':
           description: OK
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/SubmissionComment'
+            $ref: '#/definitions/RepositoryInfo'
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.code.read:
+    post:
+      description: Get specified file contents for current submission
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+              - path
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
+              path:
+                type: string
+                description: Path to file
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - contents
+              - status
+            properties:
+              status:
+                type: string
+                enum:
+                  - done
+                  - pending
+              contents:
+                type: string
+        '400':
+          description: Incorrect request
+          schema:
+            $ref: '#/definitions/RequestError'
+        '404':
+          description: Entity not found
+          schema:
+            $ref: '#/definitions/NotFoundError'
+  /eventbus/kotoed.api.submission.code.list:
+    post:
+      description: Get all the files in submission
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            required:
+              - submission_id
+            properties:
+              submission_id:
+                type: integer
+                description: The id of submission
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - files
+            properties:
+              files:
+                type: array
+                items:
+                  type: string
         '400':
           description: Incorrect request
           schema:
@@ -473,30 +441,6 @@ paths:
           name: body
           schema:
             $ref: '#/definitions/HasId'
-      responses:
-        '200':
-          description: OK
-          schema:
-            allOf:
-              - $ref: '#/definitions/DbRecordWrapper'
-              - properties:
-                  record:
-                    $ref: '#/definitions/SubmissionComment'
-        '400':
-          description: Incorrect request
-          schema:
-            $ref: '#/definitions/RequestError'
-        '404':
-          description: Entity not found
-          schema:
-            $ref: '#/definitions/NotFoundError'
-    get:
-      description: Query a submission comment by its id
-      parameters:
-        - in: query
-          name: id
-          type: integer
-          description: Primary key
       responses:
         '200':
           description: OK
@@ -757,3 +701,34 @@ definitions:
             description: Id of submission for the first version of this comment
             default: submission_id
       - $ref: '#/definitions/SubmissionCommentBase'
+  RepositoryInfo:
+    type: object
+    required:
+      - status
+      - uid
+      - url
+    properties:
+      status:
+        type: string
+        enum:
+          - pending
+          - done
+          - failed
+      uid:
+        type: string
+        format: uuid
+      url:
+        type: string
+        format: url
+      vcs:
+        type: string
+        default: null
+        enum:
+          - git
+          - mercurial
+      errors:
+        type: array
+        default: []
+        items:
+          type: string
+

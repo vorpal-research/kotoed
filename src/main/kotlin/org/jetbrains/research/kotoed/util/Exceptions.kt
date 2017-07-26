@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.util.StatusCodes.FORBIDDEN
 import org.jetbrains.research.kotoed.util.StatusCodes.NOT_FOUND
 
 object StatusCodes {
@@ -18,6 +19,7 @@ data class KotoedException(val code: Int, override val message: String) : Except
 data class WrappedException(val inner: Throwable?) : Exception(inner)
 
 fun NotFound(message: String) = KotoedException(code = NOT_FOUND, message = message)
+fun Forbidden(message: String) = KotoedException(code = FORBIDDEN, message = message)
 
 val Throwable.unwrapped
     get() =
@@ -42,6 +44,7 @@ fun codeFor(ex: Throwable): Int =
 inline fun Loggable.handleException(handler: (Throwable) -> Unit, t: Throwable) {
     val exception = t.unwrapped
     log.error("Exception caught", exception)
+    log.error("Code: ${codeFor(exception)}")
     handler(exception)
 }
 
@@ -56,6 +59,7 @@ fun <U> Loggable.handleException(msg: Message<U>, t: Throwable) {
     val exception = t.unwrapped
     log.error("Exception caught while handling message:\n" +
             "${msg.body()} sent to ${msg.address()}", exception)
+    log.error("Code: ${codeFor(exception)}")
     msg.fail(
             codeFor(exception),
             exception.message
@@ -72,6 +76,7 @@ fun <T, U> Loggable.withExceptions(msg: Message<U>, body: () -> T) =
 fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     val exception = t.unwrapped
     log.error("Exception caught while handling request to ${ctx.request().uri()}", exception)
+    log.error("Code: ${codeFor(exception)}")
     ctx.fail(exception)
 }
 
