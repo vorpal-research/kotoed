@@ -73,13 +73,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             private val data: MutableMap<String, MutableCodeTree> = mutableMapOf()
     ) : MutableMap<String, MutableCodeTree> by data { // it's over 9000!
 
-        private val fileComparator = Comparator<FileRecord> { l, r ->
-            when {
-                (l.type == directory && r.type == file) -> -1
-                (l.type == file && r.type == directory) -> 1
-                else -> l.name.compareTo(r.name)
-            }
-        }
+        private val fileComparator = compareBy<FileRecord> { it.type }.thenBy { it.name }
 
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
                 if (value.isEmpty()) FileRecord(type = file, name = key)
