@@ -1,19 +1,13 @@
 package org.jetbrains.research.kotoed
 
 import io.vertx.core.*
-import io.vertx.core.json.JsonArray
-import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.Router
-import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.ErrorHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.ext.web.handler.sockjs.SockJSHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
-import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
-import io.vertx.ext.web.templ.TemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
 import io.vertx.kotlin.ext.web.handler.sockjs.PermittedOptions
@@ -21,10 +15,9 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.template.TemplateHelper
+import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
-import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -64,27 +57,39 @@ class RootVerticle : AbstractVerticle(), Loggable {
         router.route("/static/*").handler(StaticHandler.create("webroot/static"))
 
         val authProvider = UavAuthProvider(vertx)
+        val staticFilesHelper = StaticFilesHelper(vertx)
+        val routingShared = RoutingConfig(
+                templateEngine = JadeTemplateEngine.create(),
+                authProvider = authProvider,
+                sessionStore = LocalSessionStore.create(vertx),
+                templateHelpers = mapOf("static" to staticFilesHelper),
+                staticFilesHelper = staticFilesHelper,
+                loggingHandler = LoggerHandler.create(LoggerFormat.SHORT),
+                loginTemplate = "login.jade",
+                loginBundleConfig = JsBundleConfig(
+                        jsBundleName = "hello"
+                )
+        )
 
-        router.autoRegisterHandlers(object: RoutingConfig {
-            override val templateEngine =
-                    JadeTemplateEngine.create()
-            override val jsonFailureHandler =
-                    Handler<RoutingContext> { routingContext -> handleFailure(routingContext) }
-            override val htmlFailureHandler = ErrorHandler.create()
-            override val loggingHandler = LoggerHandler.create(LoggerFormat.SHORT)
-            override val staticFilesHelper = StaticFilesHelper(vertx)
-            override val templateHelpers = mapOf("static" to staticFilesHelper)
-            override val authProvider = authProvider
-            override val sessionStore = LocalSessionStore.create(vertx)
-            override val sessionProlongator = SessionProlongator.create()
-        })
+        router.routeProto().enableLogging(routingShared)
+        router.createLoginPageRoute(routingShared)
+        router.createLogoutPageRoute(routingShared)
 
-        // TODO move me somewhere
+        router.autoRegisterHandlers(routingShared)
 
         val sockJSHandler = SockJSHandler.create(vertx)
         val po = PermittedOptions().setAddressRegex(".*")
         val options = BridgeOptions().addInboundPermitted(po)
-        sockJSHandler.bridge(options)
+        sockJSHandler.bridge(options) { be ->
+            log.debug("------------------------")
+            log.debug(be.type())
+            log.debug(be.rawMessage)
+            log.debug(be.socket().webUser())
+            log.debug("------------------------")
+            be.complete(true)
+        }
+
+
         router.route("/eventbus/*").handler(sockJSHandler)
 
         // TODO
@@ -96,22 +101,4 @@ class RootVerticle : AbstractVerticle(), Loggable {
         startFuture.complete()
     }
 
-    fun handleFailure(ctx: RoutingContext) {
-        val ex = ctx.failure().unwrapped
-        log.error("Exception caught while handling request to ${ctx.request().uri()}", ex)
-        ctx.jsonResponse()
-                .setStatus(ex)
-                .end(
-                        JsonObject(
-                                "success" to false,
-                                "error" to ex.message,
-                                "code" to codeFor(ex),
-                                "stacktrace" to JsonArray(
-                                        ex.stackTrace
-                                                .map { it.toString() }
-                                                .toList()
-                                )
-                        )
-                )
-    }
 }

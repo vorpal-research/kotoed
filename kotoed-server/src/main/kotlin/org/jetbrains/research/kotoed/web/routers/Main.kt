@@ -1,10 +1,10 @@
 package org.jetbrains.research.kotoed.web.routers
 
 import io.vertx.ext.web.RoutingContext
-import org.jetbrains.research.kotoed.util.HandlerFor
-import org.jetbrains.research.kotoed.util.JsBundle
-import org.jetbrains.research.kotoed.util.LoginRequired
-import org.jetbrains.research.kotoed.util.Templatize
+import org.jetbrains.research.kotoed.util.routing.HandlerFor
+import org.jetbrains.research.kotoed.util.routing.JsBundle
+import org.jetbrains.research.kotoed.util.routing.LoginRequired
+import org.jetbrains.research.kotoed.util.routing.Templatize
 
 @HandlerFor("/")
 @Templatize("main.jade")

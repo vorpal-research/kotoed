@@ -7,6 +7,7 @@ import io.vertx.ext.web.RoutingContext
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.routing.HandlerFor
 
 @HandlerFor("/teamcity/:address")
 suspend fun RoutingContext.handleTeamcity() {

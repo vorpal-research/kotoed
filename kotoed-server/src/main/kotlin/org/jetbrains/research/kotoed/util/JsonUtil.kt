@@ -35,6 +35,7 @@ inline operator fun JsonArray.get(index: Int): Any? = this.getValue(index)
 inline operator fun JsonArray.set(index: Int, value: Any?) = this.list.set(index, value)
 inline operator fun JsonObject.get(key: String): Any? = this.getValue(camelToKey(key))
 inline operator fun JsonObject.set(key: String, value: Any?) = this.put(camelToKey(key), value)
+inline operator fun JsonObject.contains(key: String) = this.containsKey(camelToKey(key))
 
 /******************************************************************************/
 
