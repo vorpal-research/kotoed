@@ -49,18 +49,18 @@ object Address {
         }
     }
 
-    object TeamCity {
-        const val Proxy = "kotoed.teamcity.proxy"
-
+    object Buildbot {
         object Project {
-            const val Create = "kotoed.teamcity.project.create"
+            const val Create = "kotoed.buildbot.project.create"
         }
 
         object Build {
-            const val Trigger = "kotoed.teamcity.build.trigger"
-            const val Info = "kotoed.teamcity.build.info"
-            const val Crawl = "kotoed.teamcity.build.crawl"
-            const val Artifact = "kotoed.teamcity.build.artifact"
+            const val Trigger = "kotoed.buildbot.build.trigger"
+            const val RequestInfo = "kotoed.buildbot.build.requestinfo"
+            const val BuildCrawl = "kotoed.buildbot.build.buildcrawl"
+            const val StepCrawl = "kotoed.buildbot.build.stepcrawl"
+            const val LogCrawl = "kotoed.buildbot.build.logcrawl"
+            const val LogContent = "kotoed.buildbot.build.logcontent"
         }
     }
 

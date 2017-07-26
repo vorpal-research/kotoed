@@ -21,12 +21,6 @@ class OAuthTestIntegration {
         fun before() {
             server = startServer()
             server.get()
-
-            try {
-                setupTC()
-            } catch (ex: Exception) {
-            }
-
         }
 
         @JvmStatic

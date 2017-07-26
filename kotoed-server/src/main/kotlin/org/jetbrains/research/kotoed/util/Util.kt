@@ -3,10 +3,11 @@
 package org.jetbrains.research.kotoed.util
 
 import com.hazelcast.util.Base64
-import io.vertx.core.eventbus.Message
+import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
-import java.io.*
+import java.io.BufferedReader
+import java.io.InputStream
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
@@ -107,14 +108,23 @@ fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
 
 /******************************************************************************/
 
+inline fun Map<String, String>.asMultiMap() =
+        MultiMap.caseInsensitiveMultiMap().addAll(this)
+
+@JvmName("asMultiMap4KV")
+inline fun <K, V> Map<K, V>.asMultiMap() =
+        MultiMap.caseInsensitiveMultiMap().addAll(
+                this.mapKeys { toString() }.mapValues { toString() })
+
+/******************************************************************************/
+
 @Suppress("UNCHECKED_CAST")
 inline fun <D> Any?.cast(): D = this as D
 
-inline fun<T> forceType(v: T) = v
+inline fun <T> forceType(v: T) = v
 
 // XXX: think
 data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async: suspend (K) -> V) {
-    suspend fun getAsync(key: K) = cache.getOrPut(key){ async(key) }
+    suspend fun getAsync(key: K) = cache.getOrPut(key) { async(key) }
     suspend operator fun invoke(key: K) = getAsync(key)
 }
-

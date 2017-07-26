@@ -37,20 +37,24 @@ class RoutingConfig(
     private val sessionProlongator = SessionProlongator.create()
     private val putHelpersHandler  = PutHelpersHandler(templateHelpers)
 
-
-    fun requireLogin(routeProto: RouteProto) {
+    fun enableSessions(routeProto: RouteProto) {
         routeProto.makeRoute().handler(cookieHandler)
         routeProto.makeRoute().handler(sessionHandler)
         routeProto.makeRoute().handler(userSessionHandler)
-        routeProto.makeRoute().handler(sessionProlongator)
+//        routeProto.makeRoute().handler(sessionProlongator)
+    }
+
+    fun requireLogin(routeProto: RouteProto) {
+        enableSessions(routeProto)
         routeProto.makeRoute().handler(authHandler)
     }
 
     fun enableLogging(routeProto: RouteProto) {
+        enableSessions(routeProto)
         routeProto.makeRoute().handler(loggingHandler)
     }
 
-    fun createLoginPageRoute(router: Router) {
+    fun createLoginRoute(router: Router) {
         val routeProto = router.routeProto().path(loginPath)
         val routeProtoWithPost = routeProto.branch().method(HttpMethod.POST)
 
@@ -58,7 +62,7 @@ class RoutingConfig(
         routeProto.makeRoute().handler(sessionHandler)
         routeProto.makeRoute().handler(userSessionHandler)
         routeProtoWithPost.makeRoute().handler(BodyHandler.create())
-        routeProto.makeRoute().handler(sessionProlongator)
+//        routeProto.makeRoute().handler(sessionProlongator)
         routeProtoWithPost.makeRoute().handler(
                 FormLoginHandler.create(authProvider)
                         .setDirectLoggedInOKURL(mainPath))
@@ -67,7 +71,7 @@ class RoutingConfig(
         templatize(routeProto, loginTemplate)
     }
 
-    fun createLogoutPageRoute(router: Router) {
+    fun createLogoutRoute(router: Router) {
         router.route(logoutPath).handler(LogoutHandler(mainPath))
     }
 
@@ -108,12 +112,12 @@ fun RouteProto.enableLogging(config: RoutingConfig) = apply {
     config.enableLogging(this)
 }
 
-fun Router.createLoginPageRoute(config: RoutingConfig) = apply {
-    config.createLoginPageRoute(this)
+fun Router.createLoginRoute(config: RoutingConfig) = apply {
+    config.createLoginRoute(this)
 }
 
-fun Router.createLogoutPageRoute(config: RoutingConfig) = apply {
-    config.createLogoutPageRoute(this)
+fun Router.createLogoutRoute(config: RoutingConfig) = apply {
+    config.createLogoutRoute(this)
 }
 
 fun RouteProto.enableHelpers(config: RoutingConfig) = apply {

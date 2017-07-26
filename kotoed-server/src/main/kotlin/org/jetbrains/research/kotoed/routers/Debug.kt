@@ -300,9 +300,9 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                         bsContainer {
                             bsListGroup {
                                 if (path.isNotEmpty())
-                                    bsListGroupItem(href = "/debug/code/$uid/$revision/${path}/..") { +"[up]" }
+                                    bsListGroupItem(href = "/debug/code/$uid/$revision/$path/..") { +"[up]" }
                             }
-                            pre { code(classes = path?.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
+                            pre { code(classes = path.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
                         }
                     } else if(res.containsKey("files")) {
                         val prep = res

@@ -69,4 +69,3 @@ object SubmissionCode {
     data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
     data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
 }
-
