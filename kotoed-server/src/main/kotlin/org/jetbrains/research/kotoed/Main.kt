@@ -87,15 +87,6 @@ class RootVerticle : AbstractVerticle(), Loggable {
         createLoginRoute(routingConfig)
         createLogoutRoute(routingConfig)
 
-
-        val b = routeProto().path("/bitch/*")
-
-        b.requireLogin(routingConfig)
-
-        b.makeRoute().handler { context ->
-            context.request().response().end("Bitch!")
-        }
-
         val sockJSHandler = SockJSHandler.create(vertx)
         val po = PermittedOptions().setAddressRegex(".*")
         val options = BridgeOptions().addInboundPermitted(po)
