@@ -61,7 +61,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
         super.start(startFuture)
     }
 
-    open fun handleDelete(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+    open fun handleDelete(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
 
@@ -76,14 +76,14 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
         message.reply(resp)
     }.ignore()
 
-    open fun handleRead(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+    open fun handleRead(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
         val resp = db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         message.reply(resp)
     }.ignore()
 
-    open fun handleFind(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+    open fun handleFind(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
         val query = message.body().toRecord(table.recordType.kotlin)
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
@@ -102,7 +102,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
         message.reply(resp)
     }.ignore()
 
-    open fun handleUpdate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+    open fun handleUpdate(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
         val id = message.body().getValue(pk.name)
         log.trace("Update requested for id = $id in table ${table.name}:\n" +
                 message.body().encodePrettily())
@@ -117,7 +117,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
         message.reply(resp)
     }.ignore()
 
-    open fun handleCreate(message: Message<JsonObject>) = launch(UnconfinedWithExceptions(message)) {
+    open fun handleCreate(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
         val mbody = message.body()
         log.trace("Create requested in table ${table.name}:\n" +
                 mbody.encodePrettily())
@@ -216,3 +216,6 @@ class OAuthProviderVerticle : CrudDatabaseVerticle<OauthProviderRecord>(Tables.O
 
 @AutoDeployable
 class OAuthProfileVerticle : CrudDatabaseVerticleWithReferences<OauthProfileRecord>(Tables.OAUTH_PROFILE)
+
+@AutoDeployable
+class NotificationVerticle : CrudDatabaseVerticleWithReferences<NotificationRecord>(Tables.NOTIFICATION)

@@ -44,6 +44,7 @@ class GlobalConfig : Configuration() {
         val CloneExpire: Long by 86400000L
         val CloneCapacity: Long by 100L
         val StoragePath: String by "vcs"
+        val BuildPath: String by "vcs_build"
 
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
     }

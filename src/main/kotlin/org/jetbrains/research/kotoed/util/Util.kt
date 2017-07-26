@@ -14,6 +14,7 @@ import kotlin.reflect.KClass
 /******************************************************************************/
 
 inline fun <reified T : Any> klassOf() = T::class
+inline fun<T> tryOrNull(body: () -> T) = try { body() } catch (_: Exception) { null }
 
 /******************************************************************************/
 
