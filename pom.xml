@@ -40,6 +40,8 @@
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
         <ktuples.version>0.0.1.2</ktuples.version>
         <simple-java-mail.version>4.2.3</simple-java-mail.version>
+        <kootstrap.version>0.0.0.1</kootstrap.version>
+        <suffixtree.version>1.0.2</suffixtree.version>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
     </properties>
@@ -212,6 +214,16 @@
             <groupId>ru.spbstu</groupId>
             <artifactId>ktuples</artifactId>
             <version>${ktuples.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>kootstrap</artifactId>
+            <version>${kootstrap.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.suhininalex</groupId>
+            <artifactId>suffixtree</artifactId>
+            <version>${suffixtree.version}</version>
         </dependency>
 
     </dependencies>
