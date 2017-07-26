@@ -73,6 +73,8 @@ object Address {
         const val Info = "kotoed.code.info"
         const val LocationDiff = "kotoed.code.diff.location"
         const val PurgeCache = "kotoed.code.purgecache"
+
+        const val KloneCheck = "kotoed.code.klonecheck"
     }
 
     object User {
