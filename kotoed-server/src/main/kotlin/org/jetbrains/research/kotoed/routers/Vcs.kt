@@ -4,6 +4,8 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.routing.HandlerFor
+import org.jetbrains.research.kotoed.util.routing.JsonResponse
 
 @HandlerFor("/vcs/ping/:vcs")
 @JsonResponse
