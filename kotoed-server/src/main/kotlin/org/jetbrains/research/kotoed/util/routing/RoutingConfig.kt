@@ -33,7 +33,8 @@ class RoutingConfig(
     private val cookieHandler = CookieHandler.create()
     private val sessionHandler = SessionHandler.create(sessionStore)
     private val userSessionHandler = UserSessionHandler.create(authProvider)
-    private val authHandler = RedirectAuthHandler.create(authProvider, loginPath)
+    private val redirectAuthHandler = RedirectAuthHandler.create(authProvider, loginPath)
+    private val rejectAuthHandler = RejectAnonymousHandler.create(authProvider)
     private val sessionProlongator = SessionProlongator.create()
     private val putHelpersHandler  = PutHelpersHandler(templateHelpers)
 
@@ -44,9 +45,13 @@ class RoutingConfig(
         routeProto.makeRoute().handler(sessionProlongator)
     }
 
-    fun requireLogin(routeProto: RouteProto) {
+    fun requireLogin(routeProto: RouteProto, rejectAnon: Boolean = false) {
         enableSessions(routeProto)
-        routeProto.makeRoute().handler(authHandler)
+        if (rejectAnon)
+            // Basic auth handler might work here but we don't want to bypass login form with basic auth
+            routeProto.makeRoute().handler(rejectAuthHandler)
+        else
+            routeProto.makeRoute().handler(redirectAuthHandler)
     }
 
     fun enableLogging(routeProto: RouteProto) {
@@ -109,8 +114,8 @@ fun RouteProto.enableSessions(config: RoutingConfig) = apply {
     config.enableSessions(this)
 }
 
-fun RouteProto.requireLogin(config: RoutingConfig) = apply {
-    config.requireLogin(this)
+fun RouteProto.requireLogin(config: RoutingConfig, rejectAnon: Boolean = false) = apply {
+    config.requireLogin(this, rejectAnon)
 }
 
 fun RouteProto.enableLogging(config: RoutingConfig) = apply {

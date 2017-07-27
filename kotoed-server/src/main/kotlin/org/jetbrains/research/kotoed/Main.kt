@@ -94,17 +94,18 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val options = BridgeOptions().addInboundPermitted(po)
         val ebRouteProto = routeProto().path("/eventbus/*")
 
-//        ebRouteProto.requireLogin(routingConfig)
+        ebRouteProto.requireLogin(routingConfig, rejectAnon = true)
 
         sockJSHandler.bridge(options) { be ->
             log.debug("------------------------")
             log.debug(be.type())
             log.debug(be.rawMessage)
-            log.debug(be.socket().webUser())
+            log.debug(be.socket().webUser().principal())
             log.debug("------------------------")
             be.complete(true)
         }
 
+        ebRouteProto.makeRoute().failureHandler(JsonFailureHandler)
         ebRouteProto.makeRoute().handler(sockJSHandler)
 
 
