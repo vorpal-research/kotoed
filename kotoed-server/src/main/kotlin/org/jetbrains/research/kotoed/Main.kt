@@ -84,6 +84,8 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
         routeProto().enableLogging(routingConfig)
 
+        routeProto().path("/").enableSessions(routingConfig)
+
         createLoginRoute(routingConfig)
         createLogoutRoute(routingConfig)
 
