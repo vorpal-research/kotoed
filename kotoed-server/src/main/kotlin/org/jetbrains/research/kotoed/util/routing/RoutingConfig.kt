@@ -41,7 +41,7 @@ class RoutingConfig(
         routeProto.makeRoute().handler(cookieHandler)
         routeProto.makeRoute().handler(sessionHandler)
         routeProto.makeRoute().handler(userSessionHandler)
-//        routeProto.makeRoute().handler(sessionProlongator)
+        routeProto.makeRoute().handler(sessionProlongator)
     }
 
     fun requireLogin(routeProto: RouteProto) {
@@ -103,6 +103,10 @@ class RoutingConfig(
         routeProto.makeRoute().handler(NamedTemplateHandler.create(templateEngine, templateName))
     }
 
+}
+
+fun RouteProto.enableSessions(config: RoutingConfig) = apply {
+    config.enableSessions(this)
 }
 
 fun RouteProto.requireLogin(config: RoutingConfig) = apply {

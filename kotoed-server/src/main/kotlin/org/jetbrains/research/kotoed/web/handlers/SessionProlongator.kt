@@ -28,6 +28,7 @@ internal class SessionProlongatorImpl(private var maxAge: Long,
     override fun handle(context: RoutingContext) {
         val cookie = context.getCookie(sessionCookieName)
         cookie.setMaxAge(maxAge)
+        cookie.path = "/" // TODO maybe this should be a parameter but it's also hardcoded in SessionHandlerImpl
         context.next()
     }
 
