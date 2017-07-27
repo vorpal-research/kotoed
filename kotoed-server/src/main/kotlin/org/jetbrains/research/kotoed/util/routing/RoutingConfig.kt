@@ -61,7 +61,7 @@ class RoutingConfig(
         routeProto.makeRoute().handler(sessionHandler)
         routeProto.makeRoute().handler(userSessionHandler)
         routeProtoWithPost.makeRoute().handler(BodyHandler.create())
-//        routeProto.makeRoute().handler(sessionProlongator)
+        routeProto.makeRoute().handler(sessionProlongator)
         routeProtoWithPost.makeRoute().handler(
                 FormLoginHandler.create(authProvider)
                         .setDirectLoggedInOKURL(mainPath))
