@@ -70,7 +70,7 @@ class RoutingConfig(
         routeProtoWithPost.makeRoute().handler(BodyHandler.create())
         routeProto.makeRoute().handler(sessionProlongator)
         routeProtoWithPost.makeRoute().handler(
-                FormLoginHandlerWithRepeat.create(authProvider).setDirectLoggedInOKURL(mainPath))
+                FormLoginHandlerWithRepeat.create(authProvider, directLoggedInOKURL = mainPath))
         enableHelpers(routeProto)
         enableJsBundle(routeProto, loginBundleConfig, true)
         templatize(routeProto, loginTemplate)
