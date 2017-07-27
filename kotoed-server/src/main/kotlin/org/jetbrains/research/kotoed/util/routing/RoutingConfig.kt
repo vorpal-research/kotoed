@@ -13,6 +13,8 @@ import org.jetbrains.research.kotoed.util.routeProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
+import org.jetbrains.research.kotoed.web.handlers.FormLoginHandlerWithRepeat
+import org.jetbrains.research.kotoed.web.handlers.RejectAnonymousHandler
 import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
 class RoutingConfig(
@@ -68,8 +70,7 @@ class RoutingConfig(
         routeProtoWithPost.makeRoute().handler(BodyHandler.create())
         routeProto.makeRoute().handler(sessionProlongator)
         routeProtoWithPost.makeRoute().handler(
-                FormLoginHandler.create(authProvider)
-                        .setDirectLoggedInOKURL(mainPath))
+                FormLoginHandlerWithRepeat.create(authProvider).setDirectLoggedInOKURL(mainPath))
         enableHelpers(routeProto)
         enableJsBundle(routeProto, loginBundleConfig, true)
         templatize(routeProto, loginTemplate)

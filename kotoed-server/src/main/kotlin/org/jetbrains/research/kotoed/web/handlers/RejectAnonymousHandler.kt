@@ -1,4 +1,4 @@
-package org.jetbrains.research.kotoed.util.routing
+package org.jetbrains.research.kotoed.web.handlers
 
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.RoutingContext
@@ -22,7 +22,7 @@ private class RejectAnonymousHandlerImpl(authProvider: AuthProvider) : AuthHandl
                 authorise(user, context)
             } else {
                 // Now redirect to the login url - we'll get redirected back here after successful login
-                context.response().setStatusCode(HttpStatus.SC_FORBIDDEN).end()
+                context.response().setStatusCode(HttpStatus.SC_UNAUTHORIZED).end()
             }
         } else {
             context.fail(NullPointerException("No session - did you forget to include a SessionHandler?"))

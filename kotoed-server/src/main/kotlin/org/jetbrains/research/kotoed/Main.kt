@@ -97,12 +97,16 @@ class RootVerticle : AbstractVerticle(), Loggable {
         ebRouteProto.requireLogin(routingConfig, rejectAnon = true)
 
         sockJSHandler.bridge(options) { be ->
-            log.debug("------------------------")
-            log.debug(be.type())
-            log.debug(be.rawMessage)
-            log.debug(be.socket().webUser().principal())
-            log.debug("------------------------")
-            be.complete(true)
+            if (be.socket().webSession() == null || be.socket().webSession().isDestroyed) {
+                be.complete(false)
+            } else {
+                log.debug("------------------------")
+                log.debug(be.type())
+                log.debug(be.rawMessage)
+                log.debug(be.socket().webUser().principal())
+                log.debug("------------------------")
+                be.complete(true)
+            }
         }
 
         ebRouteProto.makeRoute().failureHandler(JsonFailureHandler)
