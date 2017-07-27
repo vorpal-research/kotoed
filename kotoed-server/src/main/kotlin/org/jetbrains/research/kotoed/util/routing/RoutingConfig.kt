@@ -50,7 +50,6 @@ class RoutingConfig(
     }
 
     fun enableLogging(routeProto: RouteProto) {
-        enableSessions(routeProto)
         routeProto.makeRoute().handler(loggingHandler)
     }
 
@@ -72,7 +71,9 @@ class RoutingConfig(
     }
 
     fun createLogoutRoute(router: Router) {
-        router.route(logoutPath).handler(LogoutHandler(mainPath))
+        val routeProto = router.routeProto().path(logoutPath)
+        enableSessions(routeProto)
+        routeProto.makeRoute().handler(LogoutHandler(mainPath))
     }
 
     fun enableHelpers(routeProto: RouteProto) {
