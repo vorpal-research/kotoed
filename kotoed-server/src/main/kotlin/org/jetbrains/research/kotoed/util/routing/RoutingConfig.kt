@@ -38,7 +38,7 @@ class RoutingConfig(
     private val redirectAuthHandler = RedirectAuthHandler.create(authProvider, loginPath)
     private val rejectAuthHandler = RejectAnonymousHandler.create(authProvider)
     private val sessionProlongator = SessionProlongator.create()
-    private val putHelpersHandler  = PutHelpersHandler(templateHelpers)
+    private val putHelpersHandler  = PutHelpersHandler.create(templateHelpers)
 
     fun enableSessions(routeProto: RouteProto) {
         routeProto.makeRoute().handler(cookieHandler)

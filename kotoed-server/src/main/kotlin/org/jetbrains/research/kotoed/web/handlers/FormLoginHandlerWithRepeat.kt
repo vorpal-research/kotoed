@@ -13,13 +13,13 @@ import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
 
 /**
- * Monkey-patched FormLoginHandlerImpl that does not return 403 on auth failure
+ * Monkey-patched and Kotlinified FormLoginHandlerImpl that does not return 403 on auth failure
  */
 class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
-                                 private val usernameParam: String,
-                                 private val passwordParam: String,
-                                 private val returnURLParam: String,
-                                 private val directLoggedInOKURL: String?) : Handler<RoutingContext>, Loggable {
+                                 private val usernameParam: String = DEFAULT_USERNAME_PARAM,
+                                 private val passwordParam: String = DEFAULT_PASSWORD_PARAM,
+                                 private val returnURLParam: String = DEFAULT_RETURN_URL_PARAM,
+                                 private val directLoggedInOKURL: String? = null) : Handler<RoutingContext>, Loggable {
 
     override fun handle(context: RoutingContext) {
         val req = context.request()
@@ -81,6 +81,7 @@ class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
         val DEFAULT_RETURN_URL_PARAM = "return_url"
 
         private val DEFAULT_DIRECT_LOGGED_IN_OK_PAGE = "" + "<html><body><h1>Login successful</h1></body></html>"
+
         fun create(authProvider: AuthProvider,
                    usernameParam: String = DEFAULT_USERNAME_PARAM,
                    passwordParam: String = DEFAULT_PASSWORD_PARAM,

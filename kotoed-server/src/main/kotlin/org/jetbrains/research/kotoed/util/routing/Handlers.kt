@@ -14,6 +14,8 @@ object PutJsonHeaderHandler : Handler<RoutingContext> {
         context.jsonResponse()
         context.next()
     }
+
+    fun create() = this
 }
 
 object JsonFailureHandler: Handler<RoutingContext>, Loggable {
@@ -35,6 +37,8 @@ object JsonFailureHandler: Handler<RoutingContext>, Loggable {
                         )
                 )
     }
+
+    fun create() = this
 }
 
 class LogoutHandler(val redirectTo: String): Handler<RoutingContext> {
@@ -42,12 +46,20 @@ class LogoutHandler(val redirectTo: String): Handler<RoutingContext> {
         context.session().destroy()
         context.response().setStatus(HttpResponseStatus.FOUND).putHeader(HttpHeaders.LOCATION, redirectTo).end()
     }
+
+    companion object {
+        fun create(redirectTo: String) = LogoutHandler(redirectTo)
+    }
 }
 
 class PutHelpersHandler(val helpers: Map<String, TemplateHelper>): Handler<RoutingContext> {
     override fun handle(context: RoutingContext) {
         context.put("helpers", helpers)
         context.next()
+    }
+
+    companion object {
+        fun create(helpers: Map<String, TemplateHelper>) = PutHelpersHandler(helpers)
     }
 }
 
@@ -58,9 +70,18 @@ class PutJsBundle(val processedJsBundleConfig: JsBundleConfig): Handler<RoutingC
         processedJsBundleConfig.vendorJsBundleName?.run { context.put("vendorJs", this) }
         processedJsBundleConfig.vendorCssBundleName?.run { context.put("vendorCss", this) }
 
-
         context.next()
+    }
+
+    companion object {
+        fun create(processedJsBundleConfig: JsBundleConfig) = PutJsBundle(processedJsBundleConfig)
     }
 }
 
-val HtmlFailureHandler = ErrorHandler.create()
+
+object HtmlFailureHandler : Handler<RoutingContext> {
+    private val handler = ErrorHandler.create()
+    override fun handle(event: RoutingContext?) = handler.handle(event)  // Any other way to delegate it?
+
+    fun create() = this
+}
