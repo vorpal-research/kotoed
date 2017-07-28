@@ -80,7 +80,7 @@ class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
         val DEFAULT_PASSWORD_PARAM = "password"
         val DEFAULT_RETURN_URL_PARAM = "return_url"
 
-        private val DEFAULT_DIRECT_LOGGED_IN_OK_PAGE = "" + "<html><body><h1>Login successful</h1></body></html>"
+        private val DEFAULT_DIRECT_LOGGED_IN_OK_PAGE = "<html><body><h1>Login successful</h1></body></html>"
 
         fun create(authProvider: AuthProvider,
                    usernameParam: String = DEFAULT_USERNAME_PARAM,
