@@ -58,7 +58,7 @@ fun wpost(path: String,
         wdoit(HttpMethod.POST, path, mediaType, payload = payload, port = port, additionalHeaders = additionalHeaders)
 
 fun wdelete(path: String,
-          mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
-          port: Int = Config.Root.Port,
-          additionalHeaders: Map<String, String> = mapOf()): String =
+            mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
+            port: Int = Config.Root.Port,
+            additionalHeaders: Map<String, String> = mapOf()): String =
         wdoit(HttpMethod.DELETE, path, mediaType, port = port, additionalHeaders = additionalHeaders)
