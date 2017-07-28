@@ -45,7 +45,7 @@ suspend fun EventBus.sendAsync(address: String, message: Jsonable): Unit = Unit
 @Deprecated("Forgot to call .toJson()?",
         level = DeprecationLevel.ERROR,
         replaceWith = ReplaceWith("reply(message.toJson())"))
-@Suppress("UNUSED_PARAMETER")
+@Suppress("UNUSED_PARAMETER", "EXTENSION_SHADOWED_BY_MEMBER")
 suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 
 fun EventBus.sendJsonable(address: String, message: Jsonable) =
@@ -73,7 +73,7 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
             { JsonObject() }
         }
 
-    // collections
+        // collections
         klazz == JsonArray::class -> {
             { it }
         }
@@ -109,7 +109,7 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
             {}
         }
 
-    // collections
+        // collections
         klazz == JsonArray::class -> {
             { it.expectingIs<JsonArray>() }
         }
@@ -186,6 +186,7 @@ object DebugInterceptor: Handler<SendContext<*>>, Loggable {
     }
 }
 
+@Suppress("DEPRECATION")
 open class AbstractKotoedVerticle : AbstractVerticle() {
     override fun start(startFuture: Future<Void>) {
         registerAllConsumers()
