@@ -34,9 +34,9 @@ class UserDatabaseTestIntegration : Loggable {
             wpost("debug/eventbus/${Address.DB.create("denizen")}",
                     payload = JsonObject("denizen_id" to login, "password" to password, "salt" to salt).encodePrettily())
 
-    fun makeStupidCourse(name: String, buildTemplateId: String = "") =
+    fun makeStupidCourse(name: String) =
             wpost("debug/eventbus/${Address.DB.create("course")}",
-                    payload = JsonObject("name" to name, "build_template_id" to buildTemplateId).encodePrettily())
+                    payload = JsonObject("name" to name).encodePrettily())
 
     fun makeStupidProject(denizenId: Int, courseId: Int, repo: String = "git", repourl: String = "http://localhost") =
             wpost("debug/eventbus/${Address.DB.create("project")}",
