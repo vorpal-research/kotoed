@@ -6,7 +6,6 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import io.vertx.ext.web.handler.sockjs.BridgeOptions
 import io.vertx.ext.web.handler.sockjs.SockJSHandler
-import org.jetbrains.research.kotoed.util.RouteProto
 
 class EventBusBridge(
         vertx: Vertx,
