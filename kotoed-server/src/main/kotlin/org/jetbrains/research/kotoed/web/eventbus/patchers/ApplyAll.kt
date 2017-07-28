@@ -4,7 +4,7 @@ import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import java.util.*
 
 class ApplyAll(private vararg val patchers: BridgeEventPatcher) : BridgeEventPatcher {
-    override fun patch(be: BridgeEvent) {
+    override suspend fun patch(be: BridgeEvent) {
         for (patcher in patchers)
             patcher.patch(be)
     }

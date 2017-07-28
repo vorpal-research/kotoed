@@ -4,7 +4,7 @@ import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.util.Loggable
 
 interface BridgeEventPatcher : Loggable {
-    fun patch(be: BridgeEvent)
+    suspend fun patch(be: BridgeEvent)
 
     companion object {
         fun noop() = Noop
