@@ -10,7 +10,7 @@ class PerAddress(
 
     private val filtersByAddress = mapOf(*filters)
 
-    override fun isAllowed(be: BridgeEvent): Boolean {
+    override suspend fun isAllowed(be: BridgeEvent): Boolean {
         val address = be.rawMessage?.get("address")
 
         return (if (address in filtersByAddress)

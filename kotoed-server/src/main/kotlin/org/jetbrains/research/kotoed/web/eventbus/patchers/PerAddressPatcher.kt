@@ -7,7 +7,7 @@ class PerAddressPatcher(vararg filters: Pair<String, BridgeEventPatcher>) : Brid
 
     val patchersByAddress = mapOf(*filters)
 
-    override fun patch(be: BridgeEvent) {
+    override suspend fun patch(be: BridgeEvent) {
         be.rawMessage?.get("address")?.let {
             patchersByAddress[it]?.patch(be)?.also {
                 logPatch(be)

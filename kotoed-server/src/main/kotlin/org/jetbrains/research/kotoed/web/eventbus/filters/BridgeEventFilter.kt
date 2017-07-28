@@ -4,7 +4,7 @@ import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.util.Loggable
 
 interface BridgeEventFilter : Loggable {
-    fun isAllowed(be: BridgeEvent): Boolean
+    suspend fun isAllowed(be: BridgeEvent): Boolean
 
     companion object {
         fun permissive() = Permissive
