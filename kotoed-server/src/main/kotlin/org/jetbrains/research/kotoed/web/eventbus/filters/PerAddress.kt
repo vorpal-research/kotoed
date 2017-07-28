@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.web.eventbus.filters
 
-import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import io.vertx.ext.web.handler.sockjs.PermittedOptions
 import org.jetbrains.research.kotoed.util.get

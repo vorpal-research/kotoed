@@ -2,7 +2,6 @@ package org.jetbrains.research.kotoed.web.eventbus.patchers
 
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.util.Loggable
-import java.util.*
 
 interface BridgeEventPatcher : Loggable {
     fun patch(be: BridgeEvent)
