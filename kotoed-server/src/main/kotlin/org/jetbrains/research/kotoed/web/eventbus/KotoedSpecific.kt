@@ -43,6 +43,9 @@ object CommentCreatePatcher : BridgeEventPatcher {
         be.rawMessage = rawMessage
     }
 
+    override fun toString(): String {
+        return "CommentCreatePatcher"
+    }
 }
 
 val KotoedPerAddressPatcher = PerAddressPatcher(
