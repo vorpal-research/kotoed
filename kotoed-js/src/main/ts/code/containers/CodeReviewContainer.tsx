@@ -1,16 +1,16 @@
 import * as React from "react";
 import {groupByLine, guessCmMode,} from "../util/codemirror";
-import {comments} from "../data_stubs";
 import {combineReducers, createStore, applyMiddleware, Dispatch} from "redux";
 import {connect} from "react-redux";
 import thunk from 'redux-thunk';
 import {routerMiddleware} from 'react-router-redux'
+import {Map} from "immutable";
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
     dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize, setPath
 } from "../actions";
-import {CodeReviewState} from "../state";
+import {CodeReviewState, LineCommentsState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 
 
@@ -28,7 +28,7 @@ type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUr
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
-        editorComments: groupByLine(comments),
+        editorComments: store.comments.get(store.editorState.fileName, Map<number, LineCommentsState>()),
         editorValue: store.editorState.value,
         editorMode: mode,
         editorContentType: contentType,

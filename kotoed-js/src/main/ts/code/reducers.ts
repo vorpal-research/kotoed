@@ -1,9 +1,10 @@
 import * as _ from "lodash"
+import {List, Map} from "immutable";
 
-import {EditorState, FileTreeState} from "./state";
+import {EditorState, FileComments, FileTreeState, LineCommentsState, ReviewComments} from "./state";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
-import {dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
+import {commentFetch, dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
 import {
     collapseDir, collapseEverything, expandDir, expandEverything, makeBlueprintTreeState, selectFile,
     unselectFile
@@ -48,6 +49,13 @@ export const editorReducer = (state: EditorState = {value: "", fileName: ""}, ac
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
         return newState;
+    }
+    return state;
+};
+
+export const commentsReducer = (state: ReviewComments = Map<string, FileComments>(), action: Action) => {
+    if (isType(action, commentFetch.done)) {
+        return action.payload.result;
     }
     return state;
 };

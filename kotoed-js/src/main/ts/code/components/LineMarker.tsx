@@ -2,11 +2,12 @@ import * as React from "react";
 import * as cm from "codemirror"
 import {render} from "react-dom";
 
-import {Comment} from "../model"
 import LineComments from "./LineComments";
+import {List} from "immutable";
+import {Comment} from "../state";
 
 interface LineMarkerProps {
-    comments: Array<Comment>,
+    comments: List<Comment>,
     lineNumber: number,
     editor: cm.Editor,
     arrowOffset: number,
@@ -84,7 +85,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         return (
             <div className="comments-counter-wrapper">
                 <span className={`comments-counter label ${this.getClassNames()}`} onClick={this.onClick}>
-                    {this.props.comments.length}
+                    {this.props.comments.size}
                 </span>
             </div>
         );

@@ -3,13 +3,14 @@ import {FileReviewProps, default as FileReview} from "./FileReview";
 import FileTree, {FileTreeProps} from "./FileTree";
 import {Comment} from "../model"
 import {FileNodes} from "../util/filetree";
+import {FileComments} from "../state";
 
 export class CodeReviewProps {
     // TODO decompose this shit
     editorValue: string;
     editorMode?: string;
     editorContentType?: string;
-    editorComments: Comment[][];
+    editorComments: FileComments;
     fileTreeLoading: boolean;
     fileTreeNodes: FileNodes;
     onDirExpand: (path: number[]) => void;

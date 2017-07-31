@@ -2,9 +2,10 @@ import * as React from "react";
 import * as cm from "codemirror"
 import {render} from "react-dom";
 
-import {Comment} from "../model";
 import LineMarker from "./LineMarker";
 import {fromCmLine, toCmLine} from "../util/codemirror";
+import {Comment, FileComments, LineCommentsState} from "../state";
+import {List} from "immutable";
 
 
 // TODO unexport
@@ -13,7 +14,7 @@ export interface FileReviewProps {
     mode?: string,
     contentType?: string,
     height: number | string,
-    comments: Comment[][],
+    comments: FileComments,
 
 }
 
@@ -73,11 +74,11 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             // TODO try to be more smart here
             let cmLine = i;
             let reviewLine = fromCmLine(i);
-            let comments: Array<Comment> = this.props.comments[reviewLine] || [];
+            let comments: LineCommentsState = this.props.comments.get(reviewLine, List<Comment>());
 
             this.cleanUpLine(cmLine);
 
-            if (comments.length > 0) {
+            if (comments.size > 0) {
                 let badge = document.createElement("div");
                 render(<LineMarker
                         comments={comments}
