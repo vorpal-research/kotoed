@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.api
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissioncommentstate
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
@@ -46,7 +47,19 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Read)
-    suspend fun handleRead(comment: SubmissionCommentRecord) = DbRecordWrapper(dbFetchAsync(comment), VerificationData.Processed)
+    suspend fun handleRead(comment: SubmissionCommentRecord) =
+            DbRecordWrapper(dbFetchAsync(comment), VerificationData.Processed)
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Update)
+    suspend fun handleUpdate(comment: SubmissionCommentRecord): DbRecordWrapper {
+        val existing = fetchByIdAsync(Tables.SUBMISSION_COMMENT, comment.id)
+        comment.datetime             = existing.datetime
+        comment.sourcefile           = existing.sourcefile
+        comment.sourceline           = existing.sourceline
+        comment.authorId             = existing.authorId
+        comment.persistentCommentId  = existing.persistentCommentId
+        return DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
+    }
 
 
 }
