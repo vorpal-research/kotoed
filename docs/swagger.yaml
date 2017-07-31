@@ -275,9 +275,7 @@ paths:
         '200':
           description: OK
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/SubmissionComment'
+            $ref: '#/definitions/GroupedSubmissionComments'
         '400':
           description: Incorrect request
           schema:
@@ -701,6 +699,39 @@ definitions:
             description: Id of submission for the first version of this comment
             default: submission_id
       - $ref: '#/definitions/SubmissionCommentBase'
+  SubmissionCommentWithDenizenId:
+    allOf:
+      - $ref: '#/definitions/SubmissionComment'
+      - type: object
+        properties:
+          denizen_id:
+            type: string
+            description: "Denizen ID (username)"
+  SubmissionCommentsForLine:
+    type: object
+    properties:
+      line:
+        type: integer
+        description: "Source line number"
+      comments:
+        type: array
+        description: "Comments for line"
+        items:
+          $ref: '#/definitions/SubmissionCommentWithDenizenId'
+  SubmissionCommentsForFile:
+    type: object
+    properties:
+      filename:
+        type: string
+        description: "Filename"
+      by_line:
+        type: array
+        description: "Comments for filename by line"
+        items:
+          $ref: '#/definitions/SubmissionCommentsForLine'
+  GroupedSubmissionComments:
+    type: array
+    items: '#/definitions/SubmissionCommentsForFile'
   RepositoryInfo:
     type: object
     required:
