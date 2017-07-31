@@ -5,7 +5,7 @@ import org.jetbrains.research.kotoed.util.get
 
 class PerAddressPatcher(vararg filters: Pair<String, BridgeEventPatcher>) : BridgeEventPatcher {
 
-    val patchersByAddress = mapOf(*filters)
+    private val patchersByAddress = mapOf(*filters)
 
     override suspend fun patch(be: BridgeEvent) {
         be.rawMessage?.get("address")?.let {
