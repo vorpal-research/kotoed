@@ -126,6 +126,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                     val sourcefile = "pom.xml"
                     val sourceline = 2
                     val text = "tl;dr"
+                    val author_id = user.id
                 }
         ).getJsonObject("record")
 
@@ -160,7 +161,20 @@ class SubmissionDatabaseTestIntegration : Loggable {
         )
 
         assertEquals(1, comments.size())
-        assertEquals(comment.getString("text"), comments.getJsonObject(0).getString("text"))
+        assertEquals("pom.xml", comments[0]["filename"])
+
+        val byLine = comments[0]["by_line"] as? JsonArray
+        assertEquals(1, byLine?.size())
+
+        val firstByLine = byLine?.get(0)
+        assertEquals(2, firstByLine["line"])
+
+        val fblComments = firstByLine?.get("comments") as? JsonArray
+        assertEquals(1, fblComments?.size())
+
+        val theComment = fblComments[0] as JsonObject
+
+        assertEquals(comment.getString("text"), theComment.getString("text"))
     }
 
 }
