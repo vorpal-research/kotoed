@@ -1,0 +1,19 @@
+syntax: glob
+
+logs
+target
+
+.g8
+.vertx
+
+.idea
+.idea_modules
+*.iml
+.classpath
+.project
+.settings
+
+RUNNING_PID
+
+node_modules
+yarn.lock
