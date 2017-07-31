@@ -15,4 +15,9 @@ class PerAddressPatcher(vararg filters: Pair<String, BridgeEventPatcher>) : Brid
         }
     }
 
+    override fun toString(): String {
+        return "PerAddressPatcher(patchersByAddress=$patchersByAddress)"
+    }
+
+
 }
