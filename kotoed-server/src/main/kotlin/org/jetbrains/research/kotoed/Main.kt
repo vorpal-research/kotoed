@@ -20,7 +20,7 @@ import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
 import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
 import org.jetbrains.research.kotoed.web.eventbus.KotoedFilter
 import org.jetbrains.research.kotoed.web.eventbus.KotoedPatcher
-import org.jetbrains.research.kotoed.web.eventbus.KotoedPerAddress
+import org.jetbrains.research.kotoed.web.eventbus.KotoedPerAddressFilter
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -101,7 +101,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
     fun Router.initEventBusBridge(routingConfig: RoutingConfig) {
         val bo = BridgeOptions().apply {
-            for (po in KotoedPerAddress.makePermittedOptions())
+            for (po in KotoedPerAddressFilter.makePermittedOptions())
                 addInboundPermitted(po)
         }
 

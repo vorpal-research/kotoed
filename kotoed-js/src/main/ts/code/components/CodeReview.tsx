@@ -2,13 +2,15 @@ import * as React from "react";
 import {FileReviewProps, default as FileReview} from "./FileReview";
 import FileTree, {FileTreeProps} from "./FileTree";
 import {Comment} from "../model"
-import {FileNodes} from "../util/filetree";
+import {FileNodes, FileTreePath} from "../util/filetree";
 import {FileComments} from "../state";
 
-export class CodeReviewProps {
+export interface CodeReviewProps {
     // TODO decompose this shit
     editorValue: string;
     editorMode?: string;
+    filePath: string;
+    nodePath: FileTreePath;
     editorContentType?: string;
     editorComments: FileComments;
     fileTreeLoading: boolean;
@@ -16,6 +18,7 @@ export class CodeReviewProps {
     onDirExpand: (path: number[]) => void;
     onDirCollapse: (path: number[]) => void;
     onFileSelect: (path: number[]) => void;
+    onCommentSubmit: (file: string, line: number, text: string) => void
 }
 
 export default class CodeReview extends React.Component<CodeReviewProps> {
@@ -37,6 +40,7 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                                 contentType={this.props.editorContentType}
                                 height="100%"
                                 comments={this.props.editorComments}
+                                onSubmit={(line, text) => this.props.onCommentSubmit(this.props.filePath, line, text)}
                     />
                 </div>
             </div>

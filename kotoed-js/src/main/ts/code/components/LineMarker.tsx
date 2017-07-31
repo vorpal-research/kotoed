@@ -14,6 +14,7 @@ interface LineMarkerProps {
     expanded: boolean,
     onExpand: (number: number) => void
     onCollapse: (number: number) => void
+    onSubmit: (line: number, comment: string) => void
 }
 
 interface LineMarkerState {
@@ -50,8 +51,8 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         render(
             <LineComments
                 comments={this.props.comments}
-                canClose={true}
                 arrowOffset={this.props.arrowOffset}
+                onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
             />,
             div);
         this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
@@ -81,7 +82,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         }));
     };
 
-    render() {
+    renderCounter() {
         return (
             <div className="comments-counter-wrapper">
                 <span className={`comments-counter label ${this.getClassNames()}`} onClick={this.onClick}>
@@ -89,5 +90,19 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 </span>
             </div>
         );
+    }
+    renderPencil() {
+        return (
+            <div className="comments-pencil-wrapper">
+                <span className={`comments-pencil glyphicon glyphicon-pencil`} onClick={this.onClick}/>
+            </div>
+        );
+    }
+
+    render() {
+        if (this.props.comments.size == 0)
+            return this.renderPencil();
+        else
+            return this.renderCounter();
     }
 }
