@@ -114,8 +114,9 @@ private fun Any?.tryFromJson(klass: KType): Any? {
             when {
                 erasure.isSubclassOf(JsonObject::class) -> this
                 erasure.isSubclassOf(VariantBase::class) -> {
-                    val index = this.getInteger("index")
-                    Variant(index, this.getJsonObject("value").tryFromJson(klass.arguments[index].type!!))
+                    val index = this.getInteger("index") ?: die()
+                    val value = this.getJsonObject("value") ?: die()
+                    Variant(index, value.tryFromJson(klass.arguments[index].type!!))
                 }
                 companion is JsonableCompanion<*> -> companion.fromJson(this)
                 klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
