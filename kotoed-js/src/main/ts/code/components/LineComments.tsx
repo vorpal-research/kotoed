@@ -2,11 +2,12 @@ import * as React from "react";
 
 import CommentComponent from "./CommentComponent";
 import {Comment, LineCommentsState} from "../state";
+import {CommentForm} from "./CommentForm";
 
 interface LineCommentsProps {
-    comments: LineCommentsState,
-    canClose: boolean,
+    comments: LineCommentsState
     arrowOffset: number
+    onSubmit: (text: string) => void
 }
 
 export default class LineComments extends React.Component<LineCommentsProps, {}> {
@@ -19,6 +20,7 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
             <div>
                 <div className="line-comments">
                     {commentComps}
+                    <CommentForm onSubmit={this.props.onSubmit}/>
                 </div>
                 <div className="line-comments-arrow" style={{left: this.props.arrowOffset}}/>
             </div>

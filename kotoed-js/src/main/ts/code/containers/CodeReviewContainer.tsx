@@ -8,10 +8,11 @@ import {Map} from "immutable";
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
-    dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize, setPath
+    dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize, postComment, setPath
 } from "../actions";
 import {CodeReviewState, LineCommentsState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
+import {nodePathToFilePath} from "../util/filetree";
 
 
 interface OnRoute {
@@ -33,7 +34,9 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
         editorMode: mode,
         editorContentType: contentType,
         fileTreeNodes: store.fileTreeState.nodes,
-        fileTreeLoading: store.fileTreeState.loading
+        fileTreeLoading: store.fileTreeState.loading,
+        filePath: nodePathToFilePath(store.fileTreeState.nodes, store.fileTreeState.selectedPath),
+        nodePath: store.fileTreeState.selectedPath
     }
 };
 
@@ -64,6 +67,14 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 submissionId,
                 filename
             }));
+        },
+        onCommentSubmit: (sourcefile, sourceline, text) => {
+            dispatch(postComment({
+                submissionId: parseInt(ownProps.match.params.submissionId),
+                sourcefile,
+                sourceline,
+                text
+            }))
         }
     }
 };

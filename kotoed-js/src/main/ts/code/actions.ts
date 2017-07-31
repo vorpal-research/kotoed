@@ -8,13 +8,13 @@ import {
     selectFile
 } from "./util/filetree";
 import {File} from "./model"
-import {CodeReviewState, ReviewComments} from "./state";
-import {waitTillReady, fetchRootDir, fetchFile} from "./fetch/code";
+import {CodeReviewState, CommentState, ReviewComments} from "./state";
+import {waitTillReady, fetchRootDir, fetchFile} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
 import {commentsResponseToState} from "./util/comments";
-import {fetchComments} from "./fetch/comments";
+import {CommentToPost, CommentToRead, fetchComments, postComment as doPostComment} from "./remote/comments";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -37,6 +37,23 @@ interface FileFetchResult {
     value: string
 }
 
+interface PostCommentPayload {
+    submissionId: number
+    text: string
+    sourcefile: string
+    sourceline: number
+}
+
+interface PostCommentResponse {
+    id: number
+    authorId: number
+    dateTime: number
+    state: CommentState
+    sourcefile: string
+    sourceline: number
+    text: string
+}
+
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
@@ -44,6 +61,8 @@ export const dirFetch = actionCreator.async<NodePathPayload, DirFetchResult, {}>
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileFetch = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_FETCH');
 export const commentFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
+export const commentPost = actionCreator.async<PostCommentPayload, PostCommentResponse, {}>('COMMENT_POST');
+
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
@@ -145,7 +164,7 @@ export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) 
 }
 
 export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {;
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(commentFetch.started({
             submissionId: payload.submissionId
         }));  // Not used yet
@@ -156,6 +175,28 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
                     submissionId: payload.submissionId,
                 },
                 result: commentsResponseToState(result)
+            }));
+        });
+
+    }
+}
+
+export function postComment(payload: PostCommentPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentPost.started(payload));  // Not used yet
+
+        doPostComment(payload.submissionId, payload.sourcefile, payload.sourceline, payload.text).then(result => {
+            dispatch(commentPost.done({
+                params: payload,
+                result: {
+                    id: result.id,
+                    authorId: result.author_id,
+                    dateTime: result.datetime,
+                    state: result.state,
+                    sourcefile: result.sourcefile,
+                    sourceline: result.sourceline,
+                    text: result.text
+                }
             }));
         });
 

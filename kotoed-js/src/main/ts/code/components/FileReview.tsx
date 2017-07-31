@@ -7,15 +7,13 @@ import {fromCmLine, toCmLine} from "../util/codemirror";
 import {Comment, FileComments, LineCommentsState} from "../state";
 import {List} from "immutable";
 
-
-// TODO unexport
 export interface FileReviewProps {
     value: string,
     mode?: string,
     contentType?: string,
     height: number | string,
     comments: FileComments,
-
+    onSubmit: (line: number, comment: string) => void
 }
 
 interface FileReviewComponentState {
@@ -78,20 +76,20 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
             this.cleanUpLine(cmLine);
 
-            if (comments.size > 0) {
-                let badge = document.createElement("div");
-                render(<LineMarker
-                        comments={comments}
-                        lineNumber={reviewLine}
-                        editor={this.editor}
-                        arrowOffset={this.arrowOffset}
-                        expanded={this.state.expanded[reviewLine]}
-                        onExpand={this.handleMarkerExpand}
-                        onCollapse={this.handleMarkerCollapse}
-                    />,
-                    badge);
-                this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
-            }
+            let badge = document.createElement("div");
+            render(<LineMarker
+                    comments={comments}
+                    lineNumber={reviewLine}
+                    editor={this.editor}
+                    arrowOffset={this.arrowOffset}
+                    expanded={this.state.expanded[reviewLine]}
+                    onExpand={this.handleMarkerExpand}
+                    onCollapse={this.handleMarkerCollapse}
+                    onSubmit={this.props.onSubmit}
+                />,
+                badge);
+            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
+
         }
     };
 

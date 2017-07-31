@@ -14,5 +14,5 @@ interface BridgeEventPatcher : Loggable {
 }
 
 fun BridgeEventPatcher.logPatch(be: BridgeEvent) {
-    log.trace("Bridge event ${be.type()} (${be.rawMessage}) is patched by {$this}")
+    log.trace("Bridge event ${be.type()} (${be.rawMessage}) is patched by $this")
 }

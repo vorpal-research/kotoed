@@ -1,10 +1,10 @@
 import * as _ from "lodash"
 import {List, Map} from "immutable";
 
-import {EditorState, FileComments, FileTreeState, LineCommentsState, ReviewComments} from "./state";
+import {EditorState, FileComments, FileTreeState, LineCommentsState, ReviewComments, Comment} from "./state";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
-import {commentFetch, dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
+import {commentFetch, commentPost, dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
 import {
     collapseDir, collapseEverything, expandDir, expandEverything, makeBlueprintTreeState, selectFile,
     unselectFile
@@ -53,9 +53,22 @@ export const editorReducer = (state: EditorState = {value: "", fileName: ""}, ac
     return state;
 };
 
-export const commentsReducer = (state: ReviewComments = Map<string, FileComments>(), action: Action) => {
+export const commentsReducer = (reviewState: ReviewComments = Map<string, FileComments>(), action: Action) => {
     if (isType(action, commentFetch.done)) {
         return action.payload.result;
+    } else if (isType(action, commentPost.done)) {
+        let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
+        let comments = reviewState.getIn([sourcefile, sourceline], List<Comment>()) as List<Comment>;
+        comments = comments.push({
+            authorId,
+            state,
+            authorName: "Me",  // TODO replace with proper name
+            id,
+            text,
+            dateTime
+        });
+        reviewState = reviewState.setIn([sourcefile, sourceline], comments);
+        return reviewState;
     }
-    return state;
+    return reviewState;
 };

@@ -1,5 +1,5 @@
 
-import {ReviewComments as ServerReviewComments} from "../fetch/comments";
+import {ReviewComments as ServerReviewComments} from "../remote/comments";
 import {ReviewComments, FileComments, LineCommentsState, Comment} from "../state";
 import {List, Map} from "immutable";
 
