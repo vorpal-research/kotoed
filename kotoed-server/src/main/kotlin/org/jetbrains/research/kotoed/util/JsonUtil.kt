@@ -5,6 +5,8 @@ package org.jetbrains.research.kotoed.util
 import com.google.common.base.CaseFormat
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.util.database.toJson
+import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
 import org.jooq.TableField
 import ru.spbstu.ktuples.*
@@ -70,6 +72,7 @@ internal fun Any?.tryToJson(): Any? =
         when (this) {
             null -> null
             is Jsonable -> toJson()
+            is Record -> toJson<Record>()
             is JsonObject -> this
             is JsonArray -> this
             is Collection<*> -> JsonArray(this.map { it.tryToJson() })
@@ -116,6 +119,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 companion is JsonableCompanion<*> -> companion.fromJson(this)
                 klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
+                klass.jvmErasure.isSubclassOf(Record::class) -> toRecord<Record>(klass.jvmErasure as KClass<Record>)
                 else -> die()
             }
         }
