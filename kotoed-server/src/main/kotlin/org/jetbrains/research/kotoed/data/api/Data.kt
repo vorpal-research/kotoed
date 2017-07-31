@@ -2,9 +2,12 @@ package org.jetbrains.research.kotoed.data.api
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
+import org.jetbrains.research.kotoed.database.enums.Submissioncommentstate
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.UpdatableRecord
+import java.time.Instant
 
 enum class VerificationStatus {
     Unknown,
@@ -68,4 +71,9 @@ object SubmissionCode {
     enum class FileType { directory, file } // directory < file, used in comparisons
     data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
     data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
+}
+
+object SubmissionComments {
+    data class LineComments(val line: Int, val comments: List<JsonObject>): Jsonable
+    data class FileComments(val filename: String, val byLine: List<LineComments>): Jsonable
 }

@@ -5,12 +5,10 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.handler.StaticHandler
-import io.vertx.ext.web.handler.sockjs.SockJSHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
-import io.vertx.kotlin.ext.web.handler.sockjs.PermittedOptions
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
@@ -18,6 +16,11 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
+import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
+import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
+import org.jetbrains.research.kotoed.web.eventbus.KotoedFilter
+import org.jetbrains.research.kotoed.web.eventbus.KotoedPatcher
+import org.jetbrains.research.kotoed.web.eventbus.KotoedPerAddress
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -68,7 +71,9 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val authProvider = UavAuthProvider(vertx)
         val staticFilesHelper = StaticFilesHelper(vertx)
         val routingConfig = RoutingConfig(
-                templateEngine = JadeTemplateEngine.create(),
+                templateEngine = JadeTemplateEngine.create().apply {
+                    this.jadeConfiguration.isPrettyPrint = true
+                },
                 authProvider = authProvider,
                 sessionStore = LocalSessionStore.create(vertx),
                 templateHelpers = mapOf("static" to staticFilesHelper),
@@ -89,30 +94,23 @@ class RootVerticle : AbstractVerticle(), Loggable {
         createLoginRoute(routingConfig)
         createLogoutRoute(routingConfig)
 
-        val sockJSHandler = SockJSHandler.create(vertx)
-        val po = PermittedOptions().setAddressRegex(".*")
-        val options = BridgeOptions().addInboundPermitted(po)
+        initEventBusBridge(routingConfig)
+
+        autoRegisterHandlers(routingConfig)
+    }
+
+    fun Router.initEventBusBridge(routingConfig: RoutingConfig) {
+        val bo = BridgeOptions().apply {
+            for (po in KotoedPerAddress.makePermittedOptions())
+                addInboundPermitted(po)
+        }
+
         val ebRouteProto = routeProto().path("/eventbus/*")
 
         ebRouteProto.requireLogin(routingConfig, rejectAnon = true)
 
-        sockJSHandler.bridge(options) { be ->
-            if (be.socket().webSession() == null || be.socket().webSession().isDestroyed) {
-                be.complete(false)
-            } else {
-                log.debug("------------------------")
-                log.debug(be.type())
-                log.debug(be.rawMessage)
-                log.debug(be.socket().webUser().principal())
-                log.debug("------------------------")
-                be.complete(true)
-            }
-        }
-
         ebRouteProto.makeRoute().failureHandler(JsonFailureHandler)
-        ebRouteProto.makeRoute().handler(sockJSHandler)
 
-
-        autoRegisterHandlers(routingConfig)
+        ebRouteProto.makeRoute().handler(EventBusBridge(vertx, bo, BridgeGuardian(KotoedFilter, KotoedPatcher)))
     }
 }
