@@ -1,10 +1,11 @@
 package org.jetbrains.research.kotoed.api
 
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
-import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.Submissionstate
+import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
@@ -64,7 +65,21 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     .map { dbFetchAsync(SubmissionStatusRecord().apply { id = it }) }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comments)
-    suspend fun handleComments(message: SubmissionRecord): List<SubmissionCommentRecord> =
-            dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id })
-
+    suspend fun handleComments(message: SubmissionRecord): List<SubmissionComments.FileComments> =
+            dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).groupBy {
+                it.sourcefile
+            }.mapValues { (_, fileComments) ->
+                fileComments.groupBy {
+                    it.sourceline
+                }.map { (line, lineComments) ->
+                    SubmissionComments.LineComments(line, lineComments.map {
+                        val denizen = dbFetchAsync(DenizenRecord().apply { id = it.authorId })
+                        it.toJson().apply {
+                            this["denizenId"] = denizen.denizenId
+                        }
+                    })
+                }
+            }.map { (file, fileComments) ->
+                SubmissionComments.FileComments(file, fileComments)
+            }
 }
