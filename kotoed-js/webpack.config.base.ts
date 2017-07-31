@@ -4,27 +4,35 @@ import * as ExtractTextPlugin from "extract-text-webpack-plugin"
 
 declare const __dirname: string;
 
-const src_main = path.resolve(__dirname, "src/main/");
+const srcMain = path.resolve(__dirname, "src/main/");
 // Maybe we should put it to webroot/static in kotoed-server's pom.xml
-const dst_path = path.resolve(__dirname, "target/js/webroot/static/");
+const dstPath = path.resolve(__dirname, "target/js/webroot/static/");
+
+const alwaysPutInVendorBundle: Array<RegExp> = [
+    /.*kotoed-bootstrap.*/
+];
+
+const neverPutInVendorBundle: Array<RegExp> = [
+    /.*@blueprintjs.*/ // Sets global styles without classes
+];
 
 const config: webpack.Configuration = {
-    context: src_main,
+    context: srcMain,
     entry: {
         hello: ["babel-polyfill", "./ts/hello.ts"],
         code: ["babel-polyfill", "./ts/code/index.tsx"]
     },
     output: {
-        path: dst_path,
+        path: dstPath,
         filename: 'js/[name].bundle.js'
     },
     resolve: {
         extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".jsx", ".css", ".less"],
         alias: {
-            css: path.resolve(src_main, "css"),
-            ts: path.resolve(src_main, "ts"),
-            js: path.resolve(src_main, "js"),
-            less: path.resolve(src_main, "less"),
+            css: path.resolve(srcMain, "css"),
+            ts: path.resolve(srcMain, "ts"),
+            js: path.resolve(srcMain, "js"),
+            less: path.resolve(srcMain, "less"),
 
         }
     },
@@ -117,7 +125,7 @@ const config: webpack.Configuration = {
         ]
     },
     plugins: [
-        new webpack.ProvidePlugin({  // TODO this is shit
+        new webpack.ProvidePlugin({  // TODO this is shit but Bootstrap JS does not work without it
             jQuery: 'jquery',
             $: 'jquery',
             jquery: 'jquery'
@@ -126,10 +134,17 @@ const config: webpack.Configuration = {
         new webpack.optimize.CommonsChunkPlugin({
             name: "vendor",
             minChunks: function (module) {
+
+                if (module.resource && alwaysPutInVendorBundle.some(re => re.test(module.resource)))
+                    return true;
+
+
+                if (module.resource && neverPutInVendorBundle.some(re => re.test(module.resource)))
+                    return false;
+
+
                 // this assumes your vendor imports exist in the node_modules directory
-                return (module.context && module.context.indexOf("node_modules") !== -1) ||
-                    // TODO maybe there is a better way of detecting kotoed-bootstrap
-                    (module.resource && module.resource.indexOf("kotoed-bootstrap") !== -1);
+                return (module.context && module.context.indexOf("node_modules") !== -1);
             }
         }),
         new ExtractTextPlugin({

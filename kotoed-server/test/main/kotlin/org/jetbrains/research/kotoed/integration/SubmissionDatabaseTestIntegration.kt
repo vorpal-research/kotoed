@@ -65,8 +65,6 @@ class SubmissionDatabaseTestIntegration : Loggable {
             "course",
             object: Jsonable {
                 val name = "KotlinAsFirst-2017"
-                val buildTemplateId = "None"
-                val rootProjectId = "None"
             }
         )
 

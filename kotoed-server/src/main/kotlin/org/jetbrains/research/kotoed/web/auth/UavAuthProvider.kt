@@ -26,6 +26,7 @@ class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
             handler.handle(Future.failedFuture(e.message))
             return
         }
+
         val denizenId: String? = userLoginReply?.get("denizenId") as? String
 
         if (denizenId == null) {
