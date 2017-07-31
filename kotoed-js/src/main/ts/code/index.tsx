@@ -17,7 +17,7 @@ import "codemirror/addon/fold/brace-fold"
 import "codemirror/addon/fold/comment-fold"
 
 import CodeReviewContainer from "./containers/CodeReviewContainer";
-import {editorReducer, fileTreeReducer} from "./reducers";
+import {commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
 import '@blueprintjs/core/dist/blueprint.css';
 import "less/kotoed-bootstrap/bootstrap.less";
@@ -34,6 +34,7 @@ export const store = createStore(
     combineReducers({
         fileTreeState: fileTreeReducer,
         editorState: editorReducer,
+        comments: commentsReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),

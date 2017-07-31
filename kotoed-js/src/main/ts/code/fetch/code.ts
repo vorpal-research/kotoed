@@ -2,26 +2,16 @@
  * Created by gagarski on 7/20/17.
  */
 
-import  axios , {AxiosResponse} from "axios"
-import {sleep} from "../util";
-import {File} from "./model";
-import {AsyncEventBus, EventBusError} from "../util/vertx";
-import {fromLocationHost} from "../util/url";
+import {sleep} from "../../util";
+import {File} from "../model";
+import {EventBusError} from "../../util/vertx";
+import {eventBus} from "../../eventBus";
+import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 
 const READY_ADDRESS = "kotoed.api.submission.code.download";
 const LIST_ADDRESS = "kotoed.api.submission.code.list";
 const FILE_ADDRESS = "kotoed.api.submission.code.read";
-const COMMENTS_ADDRESS = "kotoed.api.submission.comments";
 
-type ResponseStatus = "done" | "pending" | "failed"
-
-interface ResponseWithStatus {
-    status: ResponseStatus
-}
-
-interface SubmissionIdRequest {
-    submission_id: number
-}
 
 type RootDirRequest = SubmissionIdRequest
 
@@ -40,8 +30,6 @@ interface FileResponse extends ResponseWithStatus {
 type IsReadyRequest = SubmissionIdRequest
 
 type IsReadyResponse = ResponseWithStatus
-
-const eventBus = new AsyncEventBus(fromLocationHost("eventbus"));
 
 const AWAIT_READY_DELAY = 500;
 

@@ -1,17 +1,17 @@
 import * as React from "react";
 
-import {Comment} from "../model"
 import CommentComponent from "./CommentComponent";
+import {Comment, LineCommentsState} from "../state";
 
 interface LineCommentsProps {
-    comments: Array<Comment>,
+    comments: LineCommentsState,
     canClose: boolean,
     arrowOffset: number
 }
 
 export default class LineComments extends React.Component<LineCommentsProps, {}> {
     render() {
-        const commentComps = this.props.comments.map((comment) => {
+        const commentComps = this.props.comments.map((comment: Comment) => {
             return (<CommentComponent key={comment.id} {...comment}/>);
         });
 

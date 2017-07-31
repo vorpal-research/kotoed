@@ -8,11 +8,13 @@ import {
     selectFile
 } from "./util/filetree";
 import {File} from "./model"
-import {CodeReviewState} from "./state";
-import {waitTillReady, fetchRootDir, fetchFile} from "./data_fetch";
+import {CodeReviewState, ReviewComments} from "./state";
+import {waitTillReady, fetchRootDir, fetchFile} from "./fetch/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
+import {commentsResponseToState} from "./util/comments";
+import {fetchComments} from "./fetch/comments";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -40,18 +42,17 @@ export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
 export const dirFetch = actionCreator.async<NodePathPayload, DirFetchResult, {}>('DIR_FETCH');
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
-
 export const fileFetch = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_FETCH');
-
+export const commentFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
         dispatch(rootFetch.started({
             submissionId: payload.submissionId
         }));
-        fetchRootDirIfNeeded(payload)(dispatch, getState).then(
-            () => expandAndLoadIfNeeded(payload)(dispatch, getState)
-        );
+        await fetchRootDirIfNeeded(payload)(dispatch, getState);
+        await expandAndLoadIfNeeded(payload)(dispatch, getState);
+        await fetchCommentsIfNeeded(payload)(dispatch, getState);
     }
 }
 
@@ -137,6 +138,24 @@ export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) 
                     filename
                 },
                 result: {value: result}
+            }));
+        });
+
+    }
+}
+
+export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {;
+        dispatch(commentFetch.started({
+            submissionId: payload.submissionId
+        }));  // Not used yet
+
+        fetchComments(payload.submissionId).then(result => {
+            dispatch(commentFetch.done({
+                params: {
+                    submissionId: payload.submissionId,
+                },
+                result: commentsResponseToState(result)
             }));
         });
 
