@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jooq.Record
 import org.jooq.TableField
+import ru.spbstu.ktuples.*
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -78,6 +79,8 @@ internal fun Any?.tryToJson(): Any? =
             is Map.Entry<*, *> -> jsonArrayOf(key.tryToJson(), value.tryToJson())
             is Pair<*, *> -> jsonArrayOf(first.tryToJson(), second.tryToJson())
             is Triple<*, *, *> -> jsonArrayOf(first.tryToJson(), second.tryToJson(), third.tryToJson())
+            is Tuple -> JsonArray(toArray().map { it.tryToJson() })
+            is VariantBase -> JsonObject("index" to index, "value" to value.tryToJson())
             is Number, is String, is Boolean -> this
             is Enum<*> -> toString()
             is Date -> time
@@ -107,6 +110,10 @@ private fun Any?.tryFromJson(klass: KType): Any? {
         is JsonObject -> {
             when {
                 erasure.isSubclassOf(JsonObject::class) -> this
+                erasure.isSubclassOf(VariantBase::class) -> {
+                    val index = this.getInteger("index")
+                    Variant(index, this.getJsonObject("value").tryFromJson(klass.arguments[index].type!!))
+                }
                 companion is JsonableCompanion<*> -> companion.fromJson(this)
                 klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
                 else -> die()
@@ -152,6 +159,13 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                             second.tryFromJson(secondArg.type ?: die()),
                             third.tryFromJson(thirdArg.type ?: die())
                     )
+                }
+                erasure.isSubclassOf(Tuple::class) -> {
+                    val elementTypes = klass.arguments
+                    val elements = this as Iterable<Any?>
+                    (elementTypes zip elements).map { (t, v) ->
+                        v.tryFromJson(t.type ?: die())
+                    }.let { Tuple.ofList(it) }
                 }
                 else -> die()
             }

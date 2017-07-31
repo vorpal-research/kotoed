@@ -37,7 +37,7 @@
         <jersey-client.version>1.8</jersey-client.version>
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
         <commons.codec.version>1.10</commons.codec.version>
-        <ktuples.version>0.0.1.2</ktuples.version>
+        <ktuples.version>0.0.1.4</ktuples.version>
         <simple-java-mail.version>4.2.3</simple-java-mail.version>
         <kootstrap.version>0.0.0.1</kootstrap.version>
         <suffixtree.version>1.0.2</suffixtree.version>
