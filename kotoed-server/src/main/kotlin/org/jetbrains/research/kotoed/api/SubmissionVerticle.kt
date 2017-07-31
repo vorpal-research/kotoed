@@ -72,7 +72,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 fileComments.groupBy {
                     it.sourceline
                 }.map { (line, lineComments) ->
-                    SubmissionComments.LineComments(line, lineComments.map {
+                    SubmissionComments.LineComments(line, lineComments.sortedBy { it.datetime }.map {
                         val denizen = dbFetchAsync(DenizenRecord().apply { id = it.authorId })
                         it.toJson().apply {
                             this["denizenId"] = denizen.denizenId
