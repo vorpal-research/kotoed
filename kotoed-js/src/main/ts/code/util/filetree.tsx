@@ -1,32 +1,14 @@
-/**
- * Created by gagarski on 7/18/17.
- */
 import * as React from "react"
-import {File, FileType} from "../model";
+import {File, FileType} from "../remote/code";
 import {Spinner, ITreeNode} from "@blueprintjs/core";
 import {FileNotFoundError} from "../errors";
+import {FileNode, FileNodes, FileTreePath, LoadingNode} from "../state";
 
 export class FileTreeError extends Error {
     constructor(numPath: FileTreePath) {
         super(`Path ${numPath.join(".")} not found in tree.`)
     }
 }
-
-export type FileTreeNode = LoadingNode | FileNode;
-
-export interface LoadingNode extends ITreeNode {
-    kind: "loading"
-}
-
-export interface FileNode extends ITreeNode {
-    kind: "file"
-    type: FileType
-    childNodes?: FileNodes
-    filename: string
-}
-
-export type FileNodes = Array<FileNode>
-export type FileTreePath = Array<number>;
 
 export function visitNodePath(fileTree: FileNodes,
                               numPath: FileTreePath,

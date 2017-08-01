@@ -1,19 +1,13 @@
 import * as React from "react";
-import {groupByLine, guessCmMode,} from "../util/codemirror";
-import {combineReducers, createStore, applyMiddleware, Dispatch} from "redux";
+import {guessCmMode} from "../util/codemirror";
+import {Dispatch} from "redux";
 import {connect} from "react-redux";
-import thunk from 'redux-thunk';
-import {routerMiddleware} from 'react-router-redux'
-import {Map} from "immutable";
+
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
-import {
-    dirCollapse, dirExpand, loadFileToEditor, fileSelect, initialize, postComment, setPath
-} from "../actions";
+import {dirCollapse, dirExpand, fileSelect, initialize, postComment, setPath} from "../actions";
 import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
-import {nodePathToFilePath} from "../util/filetree";
-
 
 interface OnRoute {
     onRoute(submissionId: number, filename: string): void

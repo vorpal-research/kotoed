@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import { Classes,  Tree } from "@blueprintjs/core";
-import {FileNodes, FileTreeNode, makeLoadingNode} from "../util/filetree";
-
+import {Classes, Tree} from "@blueprintjs/core";
+import {FileNodes, FileTreeNode} from "../state";
+import {makeLoadingNode} from "../util/filetree";
 export interface FileTreeProps {
     loading: boolean
     nodes: FileNodes

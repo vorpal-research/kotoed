@@ -1,10 +1,10 @@
-
-import {CommentState} from "../state";
 import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 
 const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
+
+type CommentState = "open" | "closed";
 
 interface BaseComment {
     submission_id: number

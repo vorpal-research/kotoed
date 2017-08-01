@@ -1,9 +1,4 @@
-/**
- * Created by gagarski on 7/20/17.
- */
-
 import {sleep} from "../../util";
-import {File} from "../model";
 import {EventBusError} from "../../util/vertx";
 import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
@@ -11,6 +6,15 @@ import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 const READY_ADDRESS = "kotoed.api.submission.code.download";
 const LIST_ADDRESS = "kotoed.api.submission.code.list";
 const FILE_ADDRESS = "kotoed.api.submission.code.read";
+
+
+export type FileType = "file" | "directory"
+
+export interface File {
+    type: FileType;
+    name: string,
+    children: Array<File> | null
+}
 
 
 type RootDirRequest = SubmissionIdRequest

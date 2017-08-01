@@ -1,5 +1,6 @@
 import * as React from "react";
-import moment = require("moment");
+import * as moment from "moment";
+
 import {Comment} from "../state";
 
 
