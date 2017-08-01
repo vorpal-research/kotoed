@@ -99,7 +99,7 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
             List::class, Collection::class, Iterable::class -> list
             Sequence::class -> list.asSequence()
             Set::class -> list.toSet()
-            Map::class -> list.map { it as Pair<*, *> }.toMap()
+            Map::class -> list.filterIsInstance<Pair<*, *>>().toMap()
             else -> throw IllegalArgumentException("Cannot convert json array $list to type $klass")
         }
 

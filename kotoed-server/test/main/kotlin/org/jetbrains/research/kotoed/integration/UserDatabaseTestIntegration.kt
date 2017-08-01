@@ -30,9 +30,9 @@ class UserDatabaseTestIntegration : Loggable {
         }
     }
 
-    fun makeStupidUser(login: String, password: String = "password", salt: String = "sugar") =
-            wpost("debug/eventbus/${Address.DB.create("denizen")}",
-                    payload = JsonObject("denizen_id" to login, "password" to password, "salt" to salt).encodePrettily())
+    fun makeStupidUser(login: String, password: String = "password") =
+            wpost("debug/eventbus/${Address.User.Auth.SignUp}",
+                    payload = JsonObject("denizen_id" to login, "password" to password).encodePrettily())
 
     fun makeStupidCourse(name: String) =
             wpost("debug/eventbus/${Address.DB.create("course")}",
@@ -63,7 +63,7 @@ class UserDatabaseTestIntegration : Loggable {
         val petyasProject1 = makeStupidProject(petya.id, course.id).let(::JsonObject)
         val petyasProject2 = makeStupidProject(petya.id, course.id).let(::JsonObject)
 
-        val refs = wget("debug/eventbus/${Address.DB.read("project")}.for.denizen",
+        val refs = wget("debug/eventbus/${Address.DB.read("project")}.for.denizen_unsafe",
                 params = listOf("denizen_id" to petya.id)).let(::JsonArray)
 
         assertEquals(setOf(petyasProject1, petyasProject2), refs.toSet())
