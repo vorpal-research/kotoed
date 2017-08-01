@@ -9,7 +9,7 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.enums.Submissionstate
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
@@ -86,7 +86,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             dbUpdateAsync(comment)
         }
 
-        parent.state = Submissionstate.obsolete
+        parent.state = SubmissionState.obsolete
 
         dbUpdateAsync(parent)
     }
@@ -183,7 +183,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     .map { it.persistentCommentId }
                     .toSet()
 
-            if (parentSub.state != Submissionstate.obsolete) {
+            if (parentSub.state != SubmissionState.obsolete) {
                 return VerificationData.Unknown
             }
 
