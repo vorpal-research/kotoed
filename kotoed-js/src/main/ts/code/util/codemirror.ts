@@ -1,17 +1,4 @@
-import {Comment} from "../model"
 import {Map} from "immutable"
-
-export function groupByLine(comments: Comment[]): Comment[][] {
-    let grouped: Comment[][] = [];
-
-    for (let comment of comments) {
-        let current = grouped[comment.location.line] || [];
-        current.push(comment);
-        grouped[comment.location.line] = current;
-    }
-
-    return grouped;
-}
 
 export function toCmLine(line: number) {
     return line - 1;

@@ -1,17 +1,13 @@
-/**
- * Created by gagarski on 7/18/17.
- */
 import {List, Map} from "immutable";
 
 
 import actionCreatorFactory from 'typescript-fsa';
 import {
-    expandEverything, filePathToNodePath, FileTreePath, getNodeAt, nodePathToFilePath,
+    expandEverything, filePathToNodePath, getNodeAt, nodePathToFilePath,
     selectFile
 } from "./util/filetree";
-import {File} from "./model"
-import {CodeReviewState, CommentState, FileComments, LineComments, ReviewComments} from "./state";
-import {waitTillReady, fetchRootDir, fetchFile} from "./remote/code";
+import {CodeReviewState, CommentState, FileComments, FileTreePath, LineComments, ReviewComments} from "./state";
+import {waitTillReady, fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";

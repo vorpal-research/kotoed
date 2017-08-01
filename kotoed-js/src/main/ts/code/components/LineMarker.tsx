@@ -1,5 +1,5 @@
-import * as React from "react";
 import * as cm from "codemirror"
+import * as React from "react";
 import {render} from "react-dom";
 
 import LineComments from "./LineComments";

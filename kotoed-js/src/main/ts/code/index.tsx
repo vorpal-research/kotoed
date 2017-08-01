@@ -1,20 +1,11 @@
-import $ = require('jquery');
-
+import createHistory from 'history/createBrowserHistory'
 import * as React from "react";
 import {render} from "react-dom";
-import {BrowserRouter} from "react-router-dom";
 import {Route, Switch} from "react-router";
 import {Provider} from "react-redux";
 import {combineReducers, createStore, applyMiddleware} from "redux";
 import thunk from 'redux-thunk';
-import {routerMiddleware, push, ConnectedRouter, routerReducer} from 'react-router-redux'
-import createHistory from 'history/createBrowserHistory'
-
-import "codemirror/mode/clike/clike"
-import "codemirror/addon/fold/foldcode"
-import "codemirror/addon/fold/foldgutter"
-import "codemirror/addon/fold/brace-fold"
-import "codemirror/addon/fold/comment-fold"
+import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-redux'
 
 import CodeReviewContainer from "./containers/CodeReviewContainer";
 import {commentsReducer, editorReducer, fileTreeReducer} from "./reducers";

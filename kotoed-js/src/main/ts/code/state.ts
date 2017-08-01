@@ -2,6 +2,8 @@ import {List, Map} from "immutable";
 import {FileTreeProps} from "./components/FileTree";
 import moment = require("moment");
 import {CmMode} from "./util/codemirror";
+import {ITreeNode} from "@blueprintjs/core";
+import {FileType} from "./remote/code";
 /**
  * Created by gagarski on 7/18/17.
  */
@@ -42,3 +44,19 @@ export interface Comment {
 export type LineComments = List<Comment>
 export type FileComments = Map<number, LineComments>
 export type ReviewComments = Map<string, FileComments>
+
+export type FileTreeNode = LoadingNode | FileNode;
+
+export interface LoadingNode extends ITreeNode {
+    kind: "loading"
+}
+
+export interface FileNode extends ITreeNode {
+    kind: "file"
+    type: FileType
+    childNodes?: FileNodes
+    filename: string
+}
+
+export type FileNodes = Array<FileNode>
+export type FileTreePath = Array<number>;

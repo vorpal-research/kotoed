@@ -1,7 +1,7 @@
+import {List, Map} from "immutable";
 
 import {ReviewComments as ServerReviewComments} from "../remote/comments";
 import {ReviewComments, FileComments, LineComments, Comment} from "../state";
-import {List, Map} from "immutable";
 
 export function commentsResponseToState(reviewComments: ServerReviewComments): ReviewComments {
     let state: ReviewComments = Map<string, FileComments>();

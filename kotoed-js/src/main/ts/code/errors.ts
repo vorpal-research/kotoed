@@ -1,7 +1,3 @@
-/**
- * Created by gagarski on 7/21/17.
- */
-
 export abstract class CodeReviewError extends Error {
     constructor(message: string) {
         super(message)

@@ -1,11 +1,16 @@
-import * as React from "react";
 import * as cm from "codemirror"
+import {List} from "immutable";
+import * as React from "react";
 import {render} from "react-dom";
+
+import "codemirror/addon/fold/foldcode"
+import "codemirror/addon/fold/foldgutter"
+import "codemirror/addon/fold/brace-fold"
+import "codemirror/addon/fold/comment-fold"
 
 import LineMarker from "./LineMarker";
 import {CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode} from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state";
-import {List} from "immutable";
 
 export interface FileReviewProps {
     value: string,
