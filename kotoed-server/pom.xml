@@ -567,6 +567,7 @@
                                     <types>.*json[^b]*</types>
                                 </forcedType>
                             </forcedTypes>
+                            <syntheticPrimaryKeys>public\.denizen\.id</syntheticPrimaryKeys>
                         </database>
                         <target>
                             <packageName>

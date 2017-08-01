@@ -4,7 +4,7 @@ import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
-import org.jetbrains.research.kotoed.database.enums.Submissionstate
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
@@ -22,7 +22,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val eb = vertx.eventBus()
         submission.id = null
         submission.datetime = null
-        submission.state = Submissionstate.pending
+        submission.state = SubmissionState.pending
         expect(submission.projectId is Int)
 
         val res: SubmissionRecord = dbCreateAsync(submission)
@@ -35,8 +35,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         var res: SubmissionRecord = dbFetchAsync(submission)
         val status: VerificationData = dbProcessAsync(res)
         if(status.status == VerificationStatus.Processed
-                && res.state != Submissionstate.open) {
-            res = dbUpdateAsync(res.apply { state = Submissionstate.open })
+                && res.state != SubmissionState.open) {
+            res = dbUpdateAsync(res.apply { state = SubmissionState.open })
         }
         return DbRecordWrapper(res, status)
     }
