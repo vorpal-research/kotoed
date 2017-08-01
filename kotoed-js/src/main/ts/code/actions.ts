@@ -135,7 +135,7 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
                     treePath: numPath
                 }));
                 loadFileToEditor({
-                    treePath: numPath,
+                    filename: payload.filename,
                     submissionId: payload.submissionId
                 })(dispatch, getState);
 
@@ -151,9 +151,9 @@ export function setPath(payload: NodePathPayload & SubmissionPayload) {
     }
 }
 
-export function loadFileToEditor(payload: NodePathPayload & SubmissionPayload) {
+export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
+        let {filename} = payload;
         dispatch(fileLoad.started({
             submissionId: payload.submissionId,
             filename
