@@ -2,7 +2,7 @@ package org.jetbrains.research.kotoed.data.api
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
-import org.jetbrains.research.kotoed.database.enums.Submissioncommentstate
+import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
