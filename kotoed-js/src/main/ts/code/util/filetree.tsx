@@ -62,17 +62,33 @@ export function nodePathToFilePath(fileTree: Array<FileNode>, numPath: FileTreeP
 }
 
 export function filePathToNodePath(fileTree: Array<FileNode>, filePath: string): FileTreePath {
-    let pathChunks = filePath.split("/");
+
+    function normalizeSlashes(path: string): string {
+        path = path.replace(/\/+/g, '/');
+
+        if (path.length === 0)
+            return path;
+
+        path = path[0] === "/" ? path.slice(1) : path;
+
+        if (path.length === 0)
+            return path;
+
+        path = path[path.length - 1] === "/" ? path.slice(0, -1) : path;
+
+        return path;
+    }
+
+    let leftToProcess = normalizeSlashes(filePath);
     let children = fileTree;
     let numPath: FileTreePath = [];
-    for (let chunk of pathChunks) {
-        if (chunk === "")
-            continue;
-
+    while (leftToProcess !== "") {
         if (children === null)
             throw new FileNotFoundError(filePath);
 
-        let childIx = children.findIndex((child) => child.filename === chunk);
+        let fileIx = children.findIndex((child) => leftToProcess === child.filename);
+        let dirIx = children.findIndex((child) => leftToProcess.startsWith(normalizeSlashes(child.filename) + "/"));
+        let childIx = fileIx !== -1 ? fileIx : dirIx;
 
         if (childIx === -1)
             throw new FileNotFoundError(filePath);
@@ -83,6 +99,13 @@ export function filePathToNodePath(fileTree: Array<FileNode>, filePath: string):
 
         if (child.childNodes)
             children = child.childNodes;
+        else
+            children = [];
+
+        if (fileIx !== -1)
+            leftToProcess = leftToProcess.slice(normalizeSlashes(child.filename).length);
+        else
+            leftToProcess = leftToProcess.slice(normalizeSlashes(child.filename).length + 1);
     }
     return numPath
 }

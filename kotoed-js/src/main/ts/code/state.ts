@@ -1,23 +1,31 @@
 import {List, Map} from "immutable";
 import {FileTreeProps} from "./components/FileTree";
 import moment = require("moment");
+import {CmMode} from "./util/codemirror";
 /**
  * Created by gagarski on 7/18/17.
  */
 
 export interface EditorState {
     fileName: string
-    value: string
+    value: string,
+    displayedComments: FileComments
+    mode: CmMode
 }
 
 export interface FileTreeState extends FileTreeProps {
     selectedPath: Array<number>
 }
 
+export interface CommentsState {
+    comments: ReviewComments
+    commentsFetched: boolean
+}
+
 export interface CodeReviewState {
     fileTreeState: FileTreeState
     editorState: EditorState
-    comments: ReviewComments | null
+    commentsState: CommentsState
 }
 
 export type CommentState = "open" | "closed";
@@ -31,6 +39,6 @@ export interface Comment {
     state: CommentState
 }
 
-export type LineCommentsState = List<Comment>
-export type FileComments = Map<number, LineCommentsState>
+export type LineComments = List<Comment>
+export type FileComments = Map<number, LineComments>
 export type ReviewComments = Map<string, FileComments>

@@ -1,6 +1,6 @@
 
 import {ReviewComments as ServerReviewComments} from "../remote/comments";
-import {ReviewComments, FileComments, LineCommentsState, Comment} from "../state";
+import {ReviewComments, FileComments, LineComments, Comment} from "../state";
 import {List, Map} from "immutable";
 
 export function commentsResponseToState(reviewComments: ServerReviewComments): ReviewComments {
@@ -8,11 +8,11 @@ export function commentsResponseToState(reviewComments: ServerReviewComments): R
 
     state = state.withMutations(function(s) {
         for (let serverFileComments of reviewComments) {
-            let fileComments: FileComments = Map<number, LineCommentsState>();
+            let fileComments: FileComments = Map<number, LineComments>();
 
             fileComments = fileComments.withMutations(function(fc) {
                 for (let serverLineComments of serverFileComments.by_line) {
-                    let lineComments: LineCommentsState = List<Comment>();
+                    let lineComments: LineComments = List<Comment>();
 
                     lineComments = lineComments.withMutations(function(lc) {
                         for (let serverComment of serverLineComments.comments) {
