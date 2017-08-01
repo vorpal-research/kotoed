@@ -6,7 +6,7 @@ import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {commentFetch, commentPost, dirCollapse, dirExpand, dirFetch, fileFetch, fileSelect, rootFetch} from "./actions";
 import {
-    collapseDir, collapseEverything, expandDir, expandEverything, makeBlueprintTreeState, selectFile,
+    collapseEverything, expandEverything, makeBlueprintTreeState, selectFile,
     unselectFile
 } from "./util/filetree";
 
@@ -53,10 +53,10 @@ export const editorReducer = (state: EditorState = {value: "", fileName: ""}, ac
     return state;
 };
 
-export const commentsReducer = (reviewState: ReviewComments = Map<string, FileComments>(), action: Action) => {
+export const commentsReducer = (reviewState: ReviewComments | null = null, action: Action) => {
     if (isType(action, commentFetch.done)) {
         return action.payload.result;
-    } else if (isType(action, commentPost.done)) {
+    } else if (reviewState !== null && isType(action, commentPost.done)) {
         let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
         let comments = reviewState.getIn([sourcefile, sourceline], List<Comment>()) as List<Comment>;
         comments = comments.push({
