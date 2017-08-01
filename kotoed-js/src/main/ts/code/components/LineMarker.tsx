@@ -38,7 +38,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         // todo think
     }
 
-    private getClassNames = () => {
+    private getLabelClasses = () => {
         if (this.state.expanded)
             return "label-default review-shown";
         else
@@ -82,18 +82,26 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         }));
     };
 
+    getPencilWrapperClasses = () => {
+        if (this.state.expanded)
+            return "comment-form-shown";
+        else
+            return "comment-form-hidden";
+    };
+
     renderCounter() {
         return (
             <div className="comments-counter-wrapper">
-                <span className={`comments-counter label ${this.getClassNames()}`} onClick={this.onClick}>
+                <span className={`comments-counter label ${this.getLabelClasses()}`} onClick={this.onClick}>
                     {this.props.comments.size}
                 </span>
             </div>
         );
     }
+
     renderPencil() {
         return (
-            <div className="comments-pencil-wrapper">
+            <div className={`comments-pencil-wrapper ${this.getPencilWrapperClasses()}`}>
                 <span className={`comments-pencil glyphicon glyphicon-pencil`} onClick={this.onClick}/>
             </div>
         );
