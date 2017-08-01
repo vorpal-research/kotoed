@@ -87,7 +87,7 @@ export function guessCmMode(filename: string): CmMode {
 
 export function requireCmMode(mode: CmMode) {
     if (mode.mode)
-        require(`codemirror/mode/${mode}/${mode}`);
+        require(`codemirror/mode/${mode.mode}/${mode.mode}`);
 }
 
 const DEFAULT_MODE = "text/plain";
