@@ -9,7 +9,10 @@ import "codemirror/addon/fold/brace-fold"
 import "codemirror/addon/fold/comment-fold"
 
 import LineMarker from "./LineMarker";
-import {CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode} from "../util/codemirror";
+import {
+    CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode,
+    toCmLine
+} from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state";
 
 export interface FileReviewProps {
@@ -21,13 +24,16 @@ export interface FileReviewProps {
     onSubmit: (line: number, comment: string) => void
 }
 
+interface FileReviewState {
+    expanded: Array<boolean>
+}
+
 const REVIEW_GUTTER = "review-gutter";
 
-export default class FileReview extends React.Component<FileReviewProps, {}> {
+export default class FileReview extends React.Component<FileReviewProps, FileReviewState> {
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
-    private expanded: Array<boolean>;
 
     constructor(props: FileReviewProps) {
         super(props);
@@ -49,7 +55,11 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
     };
 
     private handleMarkerSwitch(lineNo: number, expanded: boolean) {
-        this.expanded[lineNo] = expanded;
+        this.setState((prevState) => {
+            let newState = {...prevState};
+            newState.expanded[toCmLine(lineNo)] = expanded;
+            return newState
+        })
     }
 
     private handleMarkerExpand = (lineNo: number) => {
@@ -75,7 +85,7 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
                     lineNumber={reviewLine}
                     editor={this.editor}
                     arrowOffset={this.arrowOffset}
-                    expanded={this.expanded[reviewLine]}
+                    expanded={this.state.expanded[cmLine]}
                     onExpand={this.handleMarkerExpand}
                     onCollapse={this.handleMarkerCollapse}
                     onSubmit={this.props.onSubmit}
@@ -86,9 +96,15 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
         }
     };
 
-    private resetExpanded = () => {
-        this.expanded = Array<boolean>(this.editor.getDoc().lineCount()).fill(false);
+    private resetExpanded = (value: string) => {
+        this.setState({
+            expanded: Array<boolean>(value.split("\n").length).fill(false)
+        });
     };
+
+    componentWillMount() {
+        this.resetExpanded(this.props.value)
+    }
 
     componentDidMount() {
         requireCmMode(this.props.mode);
@@ -119,8 +135,13 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
         });
         this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
 
-        this.resetExpanded();
         this.renderMarkers();
+    }
+
+    componentWillReceiveProps(props: FileReviewProps) {
+        if (this.props.filePath !== props.filePath) {
+            this.resetExpanded(props.value)
+        }
     }
 
     componentDidUpdate(oldProps: FileReviewProps) {
@@ -136,9 +157,6 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
             this.editor.setValue(this.props.value);
         }
 
-        if (this.props.filePath !== oldProps.filePath) {
-            this.resetExpanded()
-        }
 
         if (this.props.filePath !== oldProps.filePath || this.props.comments !== oldProps.comments) {
             this.renderMarkers();
