@@ -63,6 +63,9 @@ fun HttpServerResponse.end(json: JsonObject) =
 fun HttpServerResponse.end(json: Jsonable) =
         this.end(json.toJson())
 
+fun RoutingContext.fail(status: HttpResponseStatus) =
+        this.fail(status.code())
+
 /******************************************************************************/
 
 object HttpHeaderValuesEx {
