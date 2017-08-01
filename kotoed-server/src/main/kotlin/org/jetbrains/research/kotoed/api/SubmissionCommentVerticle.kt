@@ -4,8 +4,8 @@ import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.enums.Submissioncommentstate
-import org.jetbrains.research.kotoed.database.enums.Submissionstate
+import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -19,12 +19,12 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCreate(comment: SubmissionCommentRecord): DbRecordWrapper {
         comment.id = null
         comment.originalSubmissionId = comment.submissionId // NOTE: this is unconditional for a reason
-        comment.state = Submissioncommentstate.open
+        comment.state = SubmissionCommentState.open
 
         val submission: SubmissionRecord = fetchByIdAsync(SubmissionRecord().table, comment.submissionId)
         val res = when (submission.state) {
-            Submissionstate.open -> dbCreateAsync(comment)
-            Submissionstate.obsolete -> {
+            SubmissionState.open -> dbCreateAsync(comment)
+            SubmissionState.obsolete -> {
                 log.warn("Comment request for an obsolete submission received: " +
                         "Submission id = ${submission.id}")
                 val wrappedSuccessor: DbRecordWrapper =
