@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import CommentComponent from "./CommentComponent";
-import {Comment, LineCommentsState} from "../state";
+import {Comment, LineComments as LineCommentsState} from "../state";
 import {CommentForm} from "./CommentForm";
 
 interface LineCommentsProps {

@@ -3,35 +3,29 @@ import * as cm from "codemirror"
 import {render} from "react-dom";
 
 import LineMarker from "./LineMarker";
-import {fromCmLine, toCmLine} from "../util/codemirror";
-import {Comment, FileComments, LineCommentsState} from "../state";
+import {CmMode, fromCmLine, toCmLine} from "../util/codemirror";
+import {Comment, FileComments, LineComments} from "../state";
 import {List} from "immutable";
 
 export interface FileReviewProps {
     value: string,
-    mode?: string,
-    contentType?: string,
+    mode: CmMode,
     height: number | string,
     comments: FileComments,
+    filePath: string,
     onSubmit: (line: number, comment: string) => void
-}
-
-interface FileReviewComponentState {
-    expanded: Array<boolean>
 }
 
 const REVIEW_GUTTER = "review-gutter";
 
-export default class FileReview extends React.Component<FileReviewProps, FileReviewComponentState> {
+export default class FileReview extends React.Component<FileReviewProps, {}> {
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
+    private expanded: Array<boolean>;
 
     constructor(props: FileReviewProps) {
         super(props);
-        this.state = {
-            expanded: []
-        }
     }
 
     private cleanUpLine = (cmLine: number) => {
@@ -50,13 +44,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
     };
 
     private handleMarkerSwitch(lineNo: number, expanded: boolean) {
-        this.setState((prevState, props) => {
-            let newExpanded = [...prevState.expanded];
-            newExpanded[lineNo] = expanded;
-            return {
-                expanded: newExpanded
-            }
-        });
+        this.expanded[lineNo] = !this.expanded[lineNo];
     }
 
     private handleMarkerExpand = (lineNo: number) => {
@@ -72,7 +60,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             // TODO try to be more smart here
             let cmLine = i;
             let reviewLine = fromCmLine(i);
-            let comments: LineCommentsState = this.props.comments.get(reviewLine, List<Comment>());
+            let comments: LineComments = this.props.comments.get(reviewLine, List<Comment>());
 
             this.cleanUpLine(cmLine);
 
@@ -82,7 +70,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
                     lineNumber={reviewLine}
                     editor={this.editor}
                     arrowOffset={this.arrowOffset}
-                    expanded={this.state.expanded[reviewLine]}
+                    expanded={this.expanded[reviewLine]}
                     onExpand={this.handleMarkerExpand}
                     onCollapse={this.handleMarkerCollapse}
                     onSubmit={this.props.onSubmit}
@@ -93,12 +81,16 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         }
     };
 
+    private resetExpanded = () => {
+        this.expanded = Array<boolean>(this.editor.getDoc().lineCount()).fill(false);
+    };
+
     componentDidMount() {
-        if (this.props.mode)
-            require(`codemirror/mode/${this.props.mode}/${this.props.mode}`);
+        if (this.props.mode.mode)
+            require(`codemirror/mode/${this.props.mode.mode}/${this.props.mode.mode}`);
         this.editor = cm.fromTextArea(this.textAreaNode, {
             lineNumbers: true,
-            mode: this.props.contentType || this.props.mode || "text/plain",
+            mode: this.props.mode.contentType || this.props.mode.mode || "text/plain",
             readOnly: true,
             foldGutter: true,
             gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "review-gutter"],
@@ -122,33 +114,31 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         });
         this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
 
-
-
-        this.setState(() => {
-            let newExpanded: Array<boolean> = Array<boolean>(this.editor.getDoc().lineCount()).fill(false);
-            return {
-                expanded: newExpanded
-            }
-        });
-
+        this.resetExpanded();
         this.renderMarkers();
     }
 
     componentDidUpdate(oldProps: FileReviewProps) {
-        if (this.props.mode && oldProps.mode !== this.props.mode) {
-            require(`codemirror/mode/${this.props.mode}/${this.props.mode}`);
+
+        if (this.props.mode.mode && oldProps.mode.mode !== this.props.mode.mode) {
+            require(`codemirror/mode/${this.props.mode.mode}/${this.props.mode.mode}`);
         }
 
-        if (oldProps.mode !== this.props.mode || oldProps.contentType !== this.props.contentType) {
-            this.editor.setOption("mode", this.props.contentType || this.props.mode || "text/plain");
+        if (oldProps.mode.mode !== this.props.mode.mode || oldProps.mode.contentType !== this.props.mode.contentType) {
+            this.editor.setOption("mode", this.props.mode.contentType || this.props.mode.mode || "text/plain");
         }
 
         if (oldProps.value !== this.props.value) {
             this.editor.setValue(this.props.value);
         }
 
-        if (this.props.comments !== oldProps.comments)
+        if (this.props.filePath !== oldProps.filePath) {
+            this.resetExpanded()
+        }
+
+        if (this.props.filePath !== oldProps.filePath || this.props.comments !== oldProps.comments) {
             this.renderMarkers();
+        }
     }
 
     componentWillUnmount () {

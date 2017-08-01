@@ -34,7 +34,7 @@ export const store = createStore(
     combineReducers({
         fileTreeState: fileTreeReducer,
         editorState: editorReducer,
-        comments: commentsReducer,
+        commentsState: commentsReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),

@@ -8,9 +8,9 @@ import {Map} from "immutable";
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
-    dirCollapse, dirExpand, fetchFileIfNeeded, fileSelect, initialize, postComment, setPath
+    dirCollapse, dirExpand, loadFileToEditor, fileSelect, initialize, postComment, setPath
 } from "../actions";
-import {CodeReviewState, FileComments, LineCommentsState} from "../state";
+import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 import {nodePathToFilePath} from "../util/filetree";
 
@@ -29,14 +29,12 @@ type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUr
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
-        editorComments: (store.comments || Map<string, FileComments>()).
-            get(store.editorState.fileName, Map<number, LineCommentsState>()),
+        editorComments: store.editorState.displayedComments,
         editorValue: store.editorState.value,
-        editorMode: mode,
-        editorContentType: contentType,
+        editorMode: store.editorState.mode,
+        filePath: store.editorState.fileName,
         fileTreeNodes: store.fileTreeState.nodes,
         fileTreeLoading: store.fileTreeState.loading,
-        filePath: nodePathToFilePath(store.fileTreeState.nodes, store.fileTreeState.selectedPath),
         nodePath: store.fileTreeState.selectedPath
     }
 };
