@@ -221,7 +221,7 @@ export function postComment(payload: PostCommentPayload) {
                     sourceline: result.sourceline,
                     text: result.text
                 }
-            })); // todo then update editor comments
+            }));
         }).then(() => updateEditorComments()(dispatch, getState));
 
     }
