@@ -97,3 +97,18 @@ export function guessCmMode(filename: string): CmMode {
 
     return CM_MODES_BY_EXT.get(match[3], {});
 }
+
+export function requireCmMode(mode: CmMode) {
+    if (mode.mode)
+        require(`codemirror/mode/${mode}/${mode}`);
+}
+
+const DEFAULT_MODE = "text/plain";
+
+export function editorModeParam(mode: CmMode): string {
+    return mode.contentType || mode.mode || DEFAULT_MODE;
+}
+
+// Standard gutters
+export const FOLD_GUTTER = "CodeMirror-foldgutter";
+export const LINE_NUMBER_GUTTER = "CodeMirror-linenumbers";

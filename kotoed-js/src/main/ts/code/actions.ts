@@ -193,7 +193,7 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
             submissionId: payload.submissionId
         }));  // Not used yet
 
-        fetchComments(payload.submissionId).then(result => {
+        return fetchComments(payload.submissionId).then(result => {
             dispatch(commentFetch.done({
                 params: {
                     submissionId: payload.submissionId,

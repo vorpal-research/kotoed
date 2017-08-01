@@ -3,7 +3,7 @@ import * as cm from "codemirror"
 import {render} from "react-dom";
 
 import LineMarker from "./LineMarker";
-import {CmMode, fromCmLine, toCmLine} from "../util/codemirror";
+import {CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode} from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state";
 import {List} from "immutable";
 
@@ -44,7 +44,7 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
     };
 
     private handleMarkerSwitch(lineNo: number, expanded: boolean) {
-        this.expanded[lineNo] = !this.expanded[lineNo];
+        this.expanded[lineNo] = expanded;
     }
 
     private handleMarkerExpand = (lineNo: number) => {
@@ -86,14 +86,14 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
     };
 
     componentDidMount() {
-        if (this.props.mode.mode)
-            require(`codemirror/mode/${this.props.mode.mode}/${this.props.mode.mode}`);
+        requireCmMode(this.props.mode);
+
         this.editor = cm.fromTextArea(this.textAreaNode, {
             lineNumbers: true,
-            mode: this.props.mode.contentType || this.props.mode.mode || "text/plain",
+            mode: editorModeParam(this.props.mode),
             readOnly: true,
             foldGutter: true,
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "review-gutter"],
+            gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
             lineWrapping: true,
         });
 
@@ -119,13 +119,12 @@ export default class FileReview extends React.Component<FileReviewProps, {}> {
     }
 
     componentDidUpdate(oldProps: FileReviewProps) {
-
-        if (this.props.mode.mode && oldProps.mode.mode !== this.props.mode.mode) {
-            require(`codemirror/mode/${this.props.mode.mode}/${this.props.mode.mode}`);
+        if (oldProps.mode.mode !== this.props.mode.mode) {
+            requireCmMode(this.props.mode);
         }
 
         if (oldProps.mode.mode !== this.props.mode.mode || oldProps.mode.contentType !== this.props.mode.contentType) {
-            this.editor.setOption("mode", this.props.mode.contentType || this.props.mode.mode || "text/plain");
+            this.editor.setOption("mode", editorModeParam(this.props.mode));
         }
 
         if (oldProps.value !== this.props.value) {
