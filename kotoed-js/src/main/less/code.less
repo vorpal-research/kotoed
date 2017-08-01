@@ -29,7 +29,7 @@
 }
 
 .review-gutter {
-  background: #face8d; // For debug purposes
+  background: lighten(@brand-primary, 20%);
   width: 2em
 }
 
@@ -47,7 +47,7 @@
 }
 
 .comments-pencil-wrapper {
-  &:not(:hover) {
+  &:not(:hover):not(.comment-form-shown) {
     opacity: 0;
   }
   text-align: center;
