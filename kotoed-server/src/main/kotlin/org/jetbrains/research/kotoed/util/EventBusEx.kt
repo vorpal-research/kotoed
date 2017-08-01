@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
 import org.jooq.Table
+import org.jooq.TableRecord
 import org.jooq.UpdatableRecord
 import java.util.*
 import kotlin.reflect.KClass
@@ -228,22 +229,22 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
 
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
-    protected suspend fun <R : UpdatableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
+    protected suspend fun <R : TableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
             sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
+    protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
             sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
+    protected suspend fun <R : TableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
             sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
+    protected suspend fun <R : TableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
             sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
 
-    protected suspend fun <R : UpdatableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+    protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
             sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
 
-    protected suspend fun <R : UpdatableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
+    protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
                                                                   klass: KClass<out R> = instance.recordType.kotlin): R =
             sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
 }

@@ -53,6 +53,9 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Update)
     suspend fun handleUpdate(comment: SubmissionCommentRecord): DbRecordWrapper {
         val existing = fetchByIdAsync(Tables.SUBMISSION_COMMENT, comment.id)
+        existing.id ?: throw NotFound("Comment ${comment.id} not found")
+        if(comment.text == null && existing.text != null) comment.text = existing.text
+        if(comment.state == null) comment.state = existing.state
         comment.datetime             = existing.datetime
         comment.sourcefile           = existing.sourcefile
         comment.sourceline           = existing.sourceline

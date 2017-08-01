@@ -15,7 +15,7 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
 
-abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
+abstract class DatabaseVerticle<R : TableRecord<R>>(
         val table: Table<R>,
         val entityName: String = table.name.toLowerCase()
 ) : AbstractKotoedVerticle(), Loggable {
@@ -27,7 +27,9 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
     val dataSource get() = vertx.getSharedDataSource()
     @Suppress("UNCHECKED_CAST")
-    val pk get() = table.primaryKey.fields.first() as Field<Any>
+    val pk: Field<Any>
+        get() = table.primaryKey?.fields?.first() as? Field<Any>
+                ?: table.field("id") as Field<Any>
 
     protected suspend fun <T> db(body: DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use(body) }
@@ -40,7 +42,7 @@ abstract class DatabaseVerticle<R : UpdatableRecord<R>>(
 
 }
 
-abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
+abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         table: Table<R>,
         entityName: String = table.name.toLowerCase()
 ) : DatabaseVerticle<R>(table, entityName) {
@@ -138,7 +140,7 @@ abstract class CrudDatabaseVerticle<R : UpdatableRecord<R>>(
 
 }
 
-abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
+abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
         table: Table<R>,
         entityName: String = table.name.toLowerCase()
 ) : CrudDatabaseVerticle<R>(table, entityName) {
@@ -188,6 +190,9 @@ abstract class CrudDatabaseVerticleWithReferences<R : UpdatableRecord<R>>(
 class DebugVerticle : CrudDatabaseVerticle<DebugRecord>(Tables.DEBUG)
 
 @AutoDeployable
+class DenizenUnsafeVerticle : CrudDatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UNSAFE)
+
+@AutoDeployable
 class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
 //@AutoDeployable
@@ -197,7 +202,44 @@ class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 class SubmissionStatusVerticle : CrudDatabaseVerticleWithReferences<SubmissionStatusRecord>(Tables.SUBMISSION_STATUS)
 
 @AutoDeployable
-class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT)
+class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT) {
+
+    @JsonableEventBusConsumerFor("kotoed.db.submission_comment.full")
+    suspend fun handle(query: SubmissionCommentRecord): JsonObject {
+        val id = query.id
+
+        val commentTable = Tables.SUBMISSION_COMMENT
+        val authorTable = Tables.DENIZEN.asTable("author")
+        val submissionTable = Tables.SUBMISSION.asTable("submission")
+        val originalSubmissionTable = Tables.SUBMISSION.asTable("originalSubmission")
+
+        val overRecords = db {
+            select(*commentTable.fields(),
+                    *authorTable.fields(),
+                    *submissionTable.fields(),
+                    *originalSubmissionTable.fields())
+                    .from(commentTable)
+                    .join(authorTable).onKey(commentTable.AUTHOR_ID)
+                    .join(submissionTable).onKey(commentTable.SUBMISSION_ID)
+                    .join(originalSubmissionTable).onKey(commentTable.ORIGINAL_SUBMISSION_ID)
+                    .where(commentTable.ID.equal(id))
+                    .fetch()
+        }
+        val overRecord = overRecords.first()
+
+        val comment = overRecord.into(commentTable)
+        val author = overRecord.into(authorTable)
+        val submission = overRecord.into(submissionTable)
+        val originalSubmission = overRecord.into(originalSubmissionTable)
+
+        val ret = comment.toJson().apply {
+            put("author", author.toJson())
+            put("submission", submission.toJson())
+            put("originalSubmission", originalSubmission.toJson())
+        }
+        return ret
+    }
+}
 
 @AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)

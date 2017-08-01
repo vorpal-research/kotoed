@@ -18,3 +18,6 @@ RUNNING_PID
 
 node_modules
 yarn.lock
+
+kotoed-js/src/main/ts/**/*.js
+kotoed-js/src/main/ts/**/*.js.map
