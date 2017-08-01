@@ -75,13 +75,25 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
         private val fileComparator = compareBy<FileRecord> { it.type }.thenBy { it.name }
 
+        private fun FileRecord.squash() =
+            if (type == directory && children?.size == 1 && children[0].type == directory)
+                FileRecord(
+                        type = directory,
+                        name = "$name/${children[0].name}",
+                        children = children[0].children
+                )
+            else
+                this
+
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
                 if (value.isEmpty()) FileRecord(type = file, name = key)
-                else FileRecord(
-                        type = directory,
-                        name = key,
-                        children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
-                )
+                else {
+                    FileRecord(
+                            type = directory,
+                            name = key,
+                            children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
+                    ).squash()
+                }
 
         fun toFileRecord() = FileRecord(
                 type = directory,
