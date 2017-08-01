@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.web.handlers
 
 
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.http.HttpMethod
@@ -8,9 +9,10 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import io.vertx.ext.web.RoutingContext
-import org.apache.http.HttpStatus
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.end
+import org.jetbrains.research.kotoed.util.fail
 
 /**
  * Monkey-patched and Kotlinified FormLoginHandlerImpl that does not return 403 on auth failure
@@ -24,7 +26,7 @@ class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
     override fun handle(context: RoutingContext) {
         val req = context.request()
         if (req.method() != HttpMethod.POST) {
-            context.fail(405) // Must be a POST
+            context.fail(HttpResponseStatus.METHOD_NOT_ALLOWED) // Must be a POST
         } else {
             if (!req.isExpectMultipart) {
                 throw IllegalStateException("Form body not parsed - do you forget to include a BodyHandler?")
@@ -34,7 +36,7 @@ class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
             val password = params.get(passwordParam)
             if (username == null || password == null) {
                 log.warn("No username or password provided in form - did you forget to include a BodyHandler?")
-                context.fail(400)
+                context.fail(HttpResponseStatus.BAD_REQUEST)
             } else {
                 val session = context.session()
                 val authInfo = JsonObject(
@@ -72,7 +74,7 @@ class FormLoginHandlerWithRepeat(private val authProvider: AuthProvider,
     }
 
     private fun doRedirect(response: HttpServerResponse, url: String) {
-        response.putHeader("location", url).setStatusCode(HttpStatus.SC_MOVED_TEMPORARILY).end()
+        response.putHeader("location", url).end(HttpResponseStatus.FOUND)
     }
 
     companion object {
