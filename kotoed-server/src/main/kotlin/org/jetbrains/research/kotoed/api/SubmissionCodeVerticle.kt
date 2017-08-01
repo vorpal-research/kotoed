@@ -87,13 +87,12 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
                 if (value.isEmpty()) FileRecord(type = file, name = key)
-                else {
-                    FileRecord(
-                            type = directory,
-                            name = key,
-                            children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
-                    ).squash()
-                }
+                else FileRecord(
+                        type = directory,
+                        name = key,
+                        children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
+                ).squash()
+
 
         fun toFileRecord() = FileRecord(
                 type = directory,
