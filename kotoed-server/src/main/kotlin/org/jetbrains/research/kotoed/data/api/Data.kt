@@ -6,6 +6,8 @@ import org.jetbrains.research.kotoed.database.enums.Submissioncommentstate
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
+import org.jooq.Record
+import org.jooq.TableRecord
 import org.jooq.UpdatableRecord
 import java.time.Instant
 
@@ -57,7 +59,7 @@ data class DbRecordWrapper(
         val verificationData: VerificationData
 ) : Jsonable
 
-inline fun <reified R : UpdatableRecord<R>> DbRecordWrapper(
+inline fun <reified R : Record> DbRecordWrapper(
         record: R,
         verificationData: VerificationData = VerificationData.Unknown
 ) = DbRecordWrapper(record.toJson(), verificationData)
