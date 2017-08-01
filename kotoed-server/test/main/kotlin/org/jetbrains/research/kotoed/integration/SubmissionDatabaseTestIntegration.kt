@@ -52,12 +52,11 @@ class SubmissionDatabaseTestIntegration : Loggable {
 
     @Test
     fun testSimple() = with(AnyAsJson) {
-        val user = makeDbNew(
-            "denizen",
+        val user = dbPost(
+            Address.User.Auth.SignUp,
             object: Jsonable {
                 val denizenId = "Vasyatka"
                 val password = ""
-                val salt = ""
             }
         )
 
@@ -123,6 +122,7 @@ class SubmissionDatabaseTestIntegration : Loggable {
                 Address.Api.Submission.Comment.Create,
                 object : Jsonable {
                     val submission_id = submission.id
+                    val author_id = user.id
                     val sourcefile = "pom.xml"
                     val sourceline = 2
                     val text = "tl;dr"
@@ -160,7 +160,10 @@ class SubmissionDatabaseTestIntegration : Loggable {
         )
 
         assertEquals(1, comments.size())
-        assertEquals(comment.getString("text"), comments.getJsonObject(0).getString("text"))
+
+        val text = with(AnyAsJson) { comment["byLine"]["comments"]["text"] }
+
+        assertEquals(text, comments.getJsonObject(0).getString("text"))
     }
 
 }
