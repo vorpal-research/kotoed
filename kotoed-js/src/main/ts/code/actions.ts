@@ -165,6 +165,10 @@ export function fetchFileIfNeeded(payload: NodePathPayload & SubmissionPayload) 
 
 export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+
+        if (getState().comments !== null)
+            return;
+
         dispatch(commentFetch.started({
             submissionId: payload.submissionId
         }));  // Not used yet

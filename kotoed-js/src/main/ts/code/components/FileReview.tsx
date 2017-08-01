@@ -147,8 +147,8 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             this.editor.setValue(this.props.value);
         }
 
-
-        this.renderMarkers();
+        if (this.props.comments !== oldProps.comments)
+            this.renderMarkers();
     }
 
     componentWillUnmount () {

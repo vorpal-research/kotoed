@@ -17,7 +17,7 @@ export interface FileTreeState extends FileTreeProps {
 export interface CodeReviewState {
     fileTreeState: FileTreeState
     editorState: EditorState
-    comments: ReviewComments
+    comments: ReviewComments | null
 }
 
 export type CommentState = "open" | "closed";
