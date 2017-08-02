@@ -11,9 +11,6 @@ import org.jetbrains.research.kotoed.util.ignore
 
 @AutoDeployable
 class SubmissionVerticle : CrudDatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION) {
-    override fun handleDelete(message: Message<JsonObject>) =
-            launch(UnconfinedWithExceptions(message)) {
-                throw IllegalArgumentException("Submissions are not deletable")
-            }.ignore()
+    override suspend fun handleDelete(message: JsonObject) =
+            throw IllegalArgumentException("Submissions are not deletable")
 }
-
