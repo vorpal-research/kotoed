@@ -53,44 +53,39 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
 
-    override fun start(startFuture: Future<Void>) {
-        val eb = vertx.eventBus()
-        eb.consumer<JsonObject>(createAddress) { handleCreate(it) }
-        eb.consumer<JsonObject>(updateAddress) { handleUpdate(it) }
-        eb.consumer<JsonObject>(readAddress) { handleRead(it) }
-        eb.consumer<JsonObject>(findAddress) { handleFind(it) }
-        eb.consumer<JsonObject>(deleteAddress) { handleDelete(it) }
-        super.start(startFuture)
-    }
-
-    open fun handleDelete(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
-        val id = message.body().getValue(pk.name)
+    @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
+    suspend fun handleDeleteWrapper(message: JsonObject) = handleDelete(message)
+    protected open suspend fun handleDelete(message: JsonObject): JsonObject {
+        val id = message.getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
 
-        val resp = db {
+        return db {
             delete(table)
                     .where(pk.eq(id))
                     .returning()
-                    .fetchOne()
-                    ?.into(JsonObject::class.java)
+                    .fetch()
+                    .into<JsonObject>()
+                    .firstOrNull()
                     ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         }
-        message.reply(resp)
-    }.ignore()
+    }
 
-    open fun handleRead(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
-        val id = message.body().getValue(pk.name)
+    @JsonableEventBusConsumerForDynamic(addressProperty = "readAddress")
+    suspend fun handleReadWrapper(message: JsonObject) = handleRead(message)
+    protected open suspend fun handleRead(message: JsonObject): JsonObject {
+        val id = message.getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
-        val resp = db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
-        message.reply(resp)
-    }.ignore()
+        return db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
+    }
 
-    open fun handleFind(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
-        val query = message.body().toRecord(table.recordType.kotlin)
+    @JsonableEventBusConsumerForDynamic(addressProperty = "findAddress")
+    suspend fun handleFindWrapper(message: JsonObject) = handleFind(message)
+    protected open suspend fun handleFind(message: JsonObject): JsonArray {
+        val query = message.toRecord(table.recordType.kotlin)
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
-        val queryFields = table.fields().asSequence().filter { message.body().containsKey(it.name) }
+        val queryFields = table.fields().asSequence().filter { message.containsKey(it.name) }
         @Suppress("UNCHECKED_CAST")
         val wherePart = queryFields.map { (it as Field<Any?>).eq(query.get(it)) }.reduce(Condition::and)
         val resp = db {
@@ -101,42 +96,46 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     .let(::JsonArray)
         }
         log.trace("Found ${resp.size()} records")
-        message.reply(resp)
-    }.ignore()
+        return resp
+    }
 
-    open fun handleUpdate(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
-        val id = message.body().getValue(pk.name)
+    @JsonableEventBusConsumerForDynamic(addressProperty = "updateAddress")
+    suspend fun handleUpdateWrapper(message: JsonObject) = handleUpdate(message)
+    protected open suspend fun handleUpdate(message: JsonObject): JsonObject {
+        val id = message.getValue(pk.name)
         log.trace("Update requested for id = $id in table ${table.name}:\n" +
-                message.body().encodePrettily())
-        val resp = db {
+                message.encodePrettily())
+        return db {
             update(table)
-                    .set(newRecord(table, message.body().map))
+                    .set(newRecord(table, message.map))
                     .where(pk.eq(id))
                     .returning()
-                    .fetchOne()
-                    ?.into(JsonObject::class.java)
+                    .fetch()
+                    .into<JsonObject>()
+                    .firstOrNull()
+                    ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         }
-        message.reply(resp)
-    }.ignore()
+    }
 
-    open fun handleCreate(message: Message<JsonObject>): Unit = launch(UnconfinedWithExceptions(message)) {
-        val mbody = message.body()
+    @JsonableEventBusConsumerForDynamic(addressProperty = "createAddress")
+    suspend fun handleCreateWrapper(message: JsonObject) = handleCreate(message)
+    protected open suspend fun handleCreate(message: JsonObject): JsonObject {
         log.trace("Create requested in table ${table.name}:\n" +
-                mbody.encodePrettily())
+                message.encodePrettily())
 
         for (field in table.primaryKey.fieldsArray) {
-            mbody.remove(field.name)
+            message.remove(field.name)
         }
 
-        val resp = db {
+        return db {
             insertInto(table)
-                    .set(newRecord(table, message.body().map))
+                    .set(newRecord(table, message.map))
                     .returning()
-                    .fetchOne()
-                    ?.into(JsonObject::class.java)
+                    .fetch()
+                    .into<JsonObject>()
+                    .first()
         }
-        message.reply(resp)
-    }.ignore()
+    }
 
 }
 
@@ -200,46 +199,6 @@ class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
 @AutoDeployable
 class SubmissionStatusVerticle : CrudDatabaseVerticleWithReferences<SubmissionStatusRecord>(Tables.SUBMISSION_STATUS)
-
-@AutoDeployable
-class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT) {
-
-    @JsonableEventBusConsumerFor("kotoed.db.submission_comment.full")
-    suspend fun handle(query: SubmissionCommentRecord): JsonObject {
-        val id = query.id
-
-        val commentTable = Tables.SUBMISSION_COMMENT
-        val authorTable = Tables.DENIZEN.asTable("author")
-        val submissionTable = Tables.SUBMISSION.asTable("submission")
-        val originalSubmissionTable = Tables.SUBMISSION.asTable("originalSubmission")
-
-        val overRecords = db {
-            select(*commentTable.fields(),
-                    *authorTable.fields(),
-                    *submissionTable.fields(),
-                    *originalSubmissionTable.fields())
-                    .from(commentTable)
-                    .join(authorTable).onKey(commentTable.AUTHOR_ID)
-                    .join(submissionTable).onKey(commentTable.SUBMISSION_ID)
-                    .join(originalSubmissionTable).onKey(commentTable.ORIGINAL_SUBMISSION_ID)
-                    .where(commentTable.ID.equal(id))
-                    .fetch()
-        }
-        val overRecord = overRecords.first()
-
-        val comment = overRecord.into(commentTable)
-        val author = overRecord.into(authorTable)
-        val submission = overRecord.into(submissionTable)
-        val originalSubmission = overRecord.into(originalSubmissionTable)
-
-        val ret = comment.toJson().apply {
-            put("author", author.toJson())
-            put("submission", submission.toJson())
-            put("originalSubmission", originalSubmission.toJson())
-        }
-        return ret
-    }
-}
 
 @AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)

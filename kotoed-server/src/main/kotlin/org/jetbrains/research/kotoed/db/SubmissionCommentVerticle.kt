@@ -1,0 +1,84 @@
+package org.jetbrains.research.kotoed.db
+
+import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
+import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.AutoDeployable
+import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerForDynamic
+import org.jetbrains.research.kotoed.util.database.toJson
+import org.jetbrains.research.kotoed.util.database.and
+import org.jetbrains.research.kotoed.util.database.equal
+import org.jetbrains.research.kotoed.util.database.ne
+import org.jetbrains.research.kotoed.util.database.fetchInto
+import org.jetbrains.research.kotoed.util.expecting
+
+@AutoDeployable
+class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT) {
+
+    val fullAddress get() = Address.DB.full(entityName)
+    val lastAddress get() = Address.DB.last(entityName)
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "fullAddress")
+    suspend fun handleFull(query: SubmissionCommentRecord): JsonObject {
+        val id = query.id
+
+        val commentTable = Tables.SUBMISSION_COMMENT
+        val authorTable = Tables.DENIZEN.`as`("author")
+        val submissionTable = Tables.SUBMISSION.`as`("submission")
+        val originalSubmissionTable = Tables.SUBMISSION.`as`("originalSubmission")
+
+        val overRecords = db {
+            select(*commentTable.fields(),
+                    *authorTable.fields(),
+                    *submissionTable.fields(),
+                    *originalSubmissionTable.fields())
+                    .from(commentTable)
+                    .join(authorTable).onKey(commentTable.AUTHOR_ID)
+                    .join(submissionTable).onKey(commentTable.SUBMISSION_ID)
+                    .join(originalSubmissionTable).onKey(commentTable.ORIGINAL_SUBMISSION_ID)
+                    .where(commentTable.ID equal id)
+                    .fetch()
+        }
+        val overRecord = overRecords.expecting { it.size == 1 }.first()
+
+        val comment = overRecord.into(commentTable)
+        val author = overRecord.into(authorTable)
+        val submission = overRecord.into(submissionTable)
+        val originalSubmission = overRecord.into(originalSubmissionTable)
+
+        val ret = comment.toJson().apply {
+            remove("author_id")
+            put("author", author.toJson())
+            remove("submission_id")
+            put("submission", submission.toJson())
+            remove("original_submission_id")
+            put("original_submission", originalSubmission.toJson())
+        }
+        return ret
+    }
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "lastAddress")
+    suspend fun handleLast(query: SubmissionCommentRecord): SubmissionCommentRecord {
+        val id = query.id
+
+        val comment = Tables.SUBMISSION_COMMENT.`as`("comment")
+        val otherComment = Tables.SUBMISSION_COMMENT.`as`("otherComment")
+        val submission = Tables.SUBMISSION
+
+        val overRecords = db {
+            select(*otherComment.fields())
+                    .from(comment, otherComment, submission)
+                    .where(
+                            (comment.ID equal id)
+                                    and (comment.ORIGINAL_SUBMISSION_ID equal otherComment.ORIGINAL_SUBMISSION_ID)
+                                    and (submission.STATE ne SubmissionState.obsolete)
+                                    and (otherComment.SUBMISSION_ID equal submission.ID)
+                    )
+                    .fetchInto(otherComment)
+        }
+        return overRecords.expecting { it.size == 1 }.first()
+    }
+}
