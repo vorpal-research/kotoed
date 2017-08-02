@@ -80,6 +80,8 @@ class BuildbotVerticle : AbstractKotoedVerticle(), Loggable {
                 val buildId = it[0]
             }
 
+            // TODO: Start artifact crawling
+
             return JsonObject(
                     "result" to "success"
             )

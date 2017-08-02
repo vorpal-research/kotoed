@@ -95,7 +95,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                         cacheMap.replace(id, notReady,
                                 prereqVerificationData
                                         .filter { VerificationStatus.Invalid == it.status }
-                                        .reduce { acc, data -> acc.copy(errors = acc.errors + data.errors) }
+                                        .reduce { acc, datum -> acc.copy(errors = acc.errors + datum.errors) }
                         )
 
                     } else {
