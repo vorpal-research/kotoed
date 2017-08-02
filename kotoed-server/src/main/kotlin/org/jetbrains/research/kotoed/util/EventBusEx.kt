@@ -16,13 +16,10 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
 import org.jooq.Table
 import org.jooq.TableRecord
-import org.jooq.UpdatableRecord
-import java.util.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 import kotlin.reflect.KType
-import kotlin.reflect.full.declaredMemberFunctions
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
@@ -57,6 +54,13 @@ annotation class EventBusConsumerFor(val address: String)
 
 @Target(AnnotationTarget.FUNCTION)
 annotation class JsonableEventBusConsumerFor(val address: String)
+
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class EventBusConsumerForDynamic(val addressProperty: String)
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class JsonableEventBusConsumerForDynamic(val addressProperty: String)
 
 private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
@@ -127,53 +131,99 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     }
 }
 
-fun AbstractVerticle.registerAllConsumers() {
+object ConsumerAutoRegister: Loggable
+
+fun AbstractKotoedVerticle.registerAllConsumers() {
     val klass = this::class
 
-    val eb = vertx.eventBus()
-
-    for (function in klass.declaredMemberFunctions) {
+    for (function in klass.memberFunctions) {
         for (annotation in function.annotations) {
             when (annotation) {
                 is EventBusConsumerFor ->
-                    if (function.isSuspend) {
-                        eb.consumer<JsonObject>(annotation.address) { msg ->
-                            launch(UnconfinedWithExceptions(msg)) {
-                                function.callAsync(this@registerAllConsumers, msg)
-                            }
-                        }
-                    } else {
-                        eb.consumer<JsonObject>(annotation.address) { msg ->
-                            DelegateLoggable(klass.java).withExceptions(msg) {
-                                function.call(this, msg)
-                            }
-                        }
-                    }
-                is JsonableEventBusConsumerFor -> {
-                    // first parameter is the receiver, we need the second one
-                    val parameterType = function.parameters[1].type
-                    val resultType = function.returnType
-                    val toJson = getToJsonConverter(resultType)
-                    val fromJson = getFromJsonConverter(parameterType)
-
-                    if (function.isSuspend) {
-                        eb.consumer<JsonObject>(annotation.address) { msg ->
-                            launch(UnconfinedWithExceptions(msg)) {
-                                val argument = fromJson(msg.body())
-                                val res = expectNotNull(function.callAsync(this@registerAllConsumers, argument))
-                                msg.reply(toJson(res))
-                            }
-                        }
-                    } else {
-                        eb.consumer<JsonObject>(annotation.address) { msg ->
-                            DelegateLoggable(klass.java).withExceptions(msg) {
-                                val argument = fromJson(msg.body())
-                                val res = expectNotNull(function.call(this@registerAllConsumers, argument))
-                                msg.reply(toJson(res))
-                            }
-                        }
-                    }
+                    registerRawConsumer(function, annotation.address)
+                is JsonableEventBusConsumerFor ->
+                    registerJsonableConsumer(function, annotation.address)
+                is EventBusConsumerForDynamic -> {
+                    val address = klass
+                            .memberProperties
+                            .find{ it.name == annotation.addressProperty }
+                            ?.call(this)
+                            as? String
+                            ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
+                    registerRawConsumer(function, address)
                 }
+                is JsonableEventBusConsumerForDynamic -> {
+                    val address = klass
+                            .memberProperties
+                            .find{ it.name == annotation.addressProperty }
+                            ?.call(this)
+                            as? String
+                            ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
+                    registerJsonableConsumer(function, address)
+                }
+            }
+        }
+    }
+}
+
+private fun AbstractVerticle.registerRawConsumer(
+        function: KFunction<*>,
+        address: String
+) {
+    val klass = this::class
+    val eb = vertx.eventBus()
+    ConsumerAutoRegister.log.info(
+            "Auto-registering raw consumer for address $address \n"+
+                    "using function $function"
+    )
+
+    if (function.isSuspend) {
+        eb.consumer<JsonObject>(address) { msg ->
+            launch(UnconfinedWithExceptions(msg)) {
+                function.callAsync(this@registerRawConsumer, msg)
+            }
+        }
+    } else {
+        eb.consumer<JsonObject>(address) { msg ->
+            DelegateLoggable(klass.java).withExceptions(msg) {
+                function.call(this@registerRawConsumer, msg)
+            }
+        }
+    }
+}
+
+private fun AbstractVerticle.registerJsonableConsumer(
+        function: KFunction<*>,
+        address: String
+) {
+    val klass = this::class
+    val eb = vertx.eventBus()
+
+    ConsumerAutoRegister.log.info(
+            "Auto-registering json-based consumer for address $address \n"+
+                    "using function $function"
+    )
+
+    // first parameter is the receiver, we need the second one
+    val parameterType = function.parameters[1].type
+    val resultType = function.returnType
+    val toJson = getToJsonConverter(resultType)
+    val fromJson = getFromJsonConverter(parameterType)
+
+    if (function.isSuspend) {
+        eb.consumer<JsonObject>(address) { msg ->
+            launch(UnconfinedWithExceptions(msg)) {
+                val argument = fromJson(msg.body())
+                val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
+                msg.reply(toJson(res))
+            }
+        }
+    } else {
+        eb.consumer<JsonObject>(address) { msg ->
+            DelegateLoggable(klass.java).withExceptions(msg) {
+                val argument = fromJson(msg.body())
+                val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
+                msg.reply(toJson(res))
             }
         }
     }
