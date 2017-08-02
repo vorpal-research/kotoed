@@ -33,17 +33,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     val cacheMap: ConcurrentMap<Int, VerificationData>
         get() = cache.asMap()
 
-    override fun start(startFuture: Future<Void>) {
-        val eb = vertx.eventBus()
-
-        eb.consumer<JsonObject>(processAddress, this::handleProcess)
-        eb.consumer<JsonObject>(verifyAddress, this::handleVerify)
-
-        super.start(startFuture)
-    }
-
-    fun handleProcess(msg: Message<JsonObject>) = launch(UnconfinedWithExceptions(msg)) {
-        val id: Int by msg.body().delegate
+    @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
+    suspend fun handleProcess(msg: JsonObject): VerificationData {
+        val id: Int by msg.delegate
         val data = db { selectById(id) }
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus.status) {
@@ -51,19 +43,20 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             cacheMap.replace(id, oldStatus, newStatus)
         }
         process(data)
-        msg.reply(cache[id].bang().toJson())
-    }.ignore()
+        return cache[id].bang()
+    }
 
-    fun handleVerify(msg: Message<JsonObject>) = launch(UnconfinedWithExceptions(msg)) {
-        val id: Int by msg.body().delegate
+    @JsonableEventBusConsumerForDynamic(addressProperty = "verifyAddress")
+    suspend fun handleVerify(msg: JsonObject): VerificationData {
+        val id: Int by msg.delegate
         val data = db { selectById(id) }
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus.status) {
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
-        msg.reply(cache[id].bang().toJson())
-    }.ignore()
+        return cache[id].bang()
+    }
 
     suspend fun process(data: JsonObject?) {
         data ?: throw IllegalArgumentException("data is null")
