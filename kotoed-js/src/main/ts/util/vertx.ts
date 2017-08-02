@@ -1,5 +1,6 @@
 
 import * as EventBus from "vertx3-eventbus-client";
+import {identity} from "./common";
 
 class EventBusHeaders {
     [name: string]: string
@@ -38,13 +39,13 @@ export class AsyncEventBus {
 
     // Heil POSIX!
     private htonJ: (h: any) => any = obj => obj;
-    private ntohJ: (h: any) => any = obj => obj;
+    private ntohJ: (n: any) => any = obj => obj;
 
     onerror: (error: Error) => boolean;  // Public field like in original EventBus
 
     constructor(url: string,
-                htonJ: (h: any) => any = obj => obj,
-                ntohJ: (h: any) => any = obj => obj,
+                htonJ: (host: any) => any = identity,
+                ntohJ: (network: any) => any = identity,
                 options?: any) {
         this._isOpen = false;
         this.url = url;
