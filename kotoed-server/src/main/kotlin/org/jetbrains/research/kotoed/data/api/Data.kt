@@ -4,12 +4,12 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
+import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
+import org.jetbrains.research.kotoed.util.tryToJson
 import org.jooq.Record
-import org.jooq.TableRecord
-import org.jooq.UpdatableRecord
-import java.time.Instant
+import java.util.*
 
 enum class VerificationStatus {
     Unknown,
@@ -78,4 +78,29 @@ object SubmissionCode {
 object SubmissionComments {
     data class LineComments(val line: Int, val comments: List<JsonObject>): Jsonable
     data class FileComments(val filename: String, val byLine: List<LineComments>): Jsonable
+
+    data class CommentAggregate(
+            private val map: MutableMap<SubmissionCommentState, Int> =
+            EnumMap<SubmissionCommentState, Int>(SubmissionCommentState::class.java)) :
+            MutableMap<SubmissionCommentState, Int> by map, Jsonable {
+
+        init {
+            for (state in SubmissionCommentState.values()) {
+                map[state] = 0
+            } // Forcing zeroes to appear in JSON
+        }
+
+        fun register(comment: SubmissionCommentRecord) {
+            this[comment.state] = this.getOrDefault(comment.state, 0) + 1
+        }
+
+        override fun toJson() = JsonObject(map.mapKeys { (k, _) -> k.toString() })
+    }
+
+    data class CommentAggregates(val byFile: Map<String, CommentAggregate>, val lost: CommentAggregate) : Jsonable {
+        override fun toJson() = JsonObject(
+                "by_file" to JsonObject(byFile.mapValues { (_, v) -> v.toJson()}),
+                "lost" to lost.toJson()
+        )
+    }
 }

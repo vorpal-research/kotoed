@@ -13,6 +13,10 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 
+private typealias CommentAggregate = SubmissionComments.CommentAggregate
+private typealias CommentAggregatesByFile = MutableMap<String, SubmissionComments.CommentAggregate>
+private typealias CommentAggregates = SubmissionComments.CommentAggregates
+
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
@@ -64,6 +68,36 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             verificationData.errors
                     .map { dbFetchAsync(SubmissionStatusRecord().apply { id = it }) }
 
+    private fun CommentAggregatesByFile.register(key: String, comment: SubmissionCommentRecord) {
+        this[key] = this.getOrDefault(key, CommentAggregate()).apply {
+            register(comment)
+        }
+    }
+
+
+    private fun List<SubmissionCommentRecord>.aggregateByFile(): CommentAggregates {
+        val byFile = mutableMapOf<String, CommentAggregate>()
+
+        val lost = CommentAggregate()
+
+        for (comment in this) {
+            if (comment.sourcefile == null)
+                lost.register(comment)
+            else {
+                val path = comment.sourcefile.split('/')
+                var current = ""
+                for (chunk in path) {
+                    current += chunk
+                    byFile.register(current, comment)
+                    current += "/"
+                }
+            }
+
+        }
+
+        return CommentAggregates(byFile = byFile, lost = lost)
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comments)
     suspend fun handleComments(message: SubmissionRecord): List<SubmissionComments.FileComments> =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).groupBy {
@@ -82,4 +116,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             }.map { (file, fileComments) ->
                 SubmissionComments.FileComments(file, fileComments)
             }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
+    suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =
+            dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).aggregateByFile()
 }

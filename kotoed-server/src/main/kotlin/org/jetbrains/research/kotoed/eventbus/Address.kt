@@ -22,6 +22,7 @@ object Address {
             const val Last = "kotoed.api.submission.last"
             const val Create = "kotoed.api.submission.create"
             const val Comments = "kotoed.api.submission.comments"
+            const val CommentAggregates = "kotoed.api.submission.commentaggregates"
             const val Error = "kotoed.api.submission.error"
 
             object Comment {
