@@ -1,10 +1,6 @@
 import * as _ from "lodash"
-import {List, Map} from "immutable";
 
-import {
-    EditorState, FileComments, FileTreeState, ReviewComments, Comment,
-    LineComments, CommentsState
-} from "./state";
+import {EditorState, FileComments, FileTreeState, ReviewComments, LineComments, CommentsState} from "./state";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
@@ -50,7 +46,7 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
 const defaultEditorState = {
     value: "",
     fileName: "",
-    displayedComments: Map<number, LineComments>(),
+    displayedComments: FileComments(),
     mode: {}
 };
 
@@ -71,7 +67,7 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
 };
 
 export const defaultCommentsState = {
-    comments: Map<string, FileComments>(),
+    comments: ReviewComments(),
     commentsFetched: false
 };
 
@@ -84,7 +80,7 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
     } else if (reviewState.commentsFetched && isType(action, commentPost.done)) {
         let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
         let newState = {...reviewState};
-        let comments = newState.comments.getIn([sourcefile, sourceline], List<Comment>()) as List<Comment>;
+        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
         comments = comments.push({
             authorId,
             state,

@@ -1,5 +1,4 @@
 import * as cm from "codemirror"
-import {List} from "immutable";
 import * as React from "react";
 import {render} from "react-dom";
 
@@ -75,7 +74,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             // TODO try to be more smart here
             let cmLine = i;
             let reviewLine = fromCmLine(i);
-            let comments: LineComments = this.props.comments.get(reviewLine, List<Comment>());
+            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
 
             this.cleanUpLine(cmLine);
 
