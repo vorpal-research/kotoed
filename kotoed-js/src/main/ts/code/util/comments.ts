@@ -11,7 +11,7 @@ export function commentsResponseToState(reviewComments: ServerReviewComments): R
             let fileComments: FileComments = Map<number, LineComments>();
 
             fileComments = fileComments.withMutations(function(fc) {
-                for (let serverLineComments of serverFileComments.by_line) {
+                for (let serverLineComments of serverFileComments.byLine) {
                     let lineComments: LineComments = List<Comment>();
 
                     lineComments = lineComments.withMutations(function(lc) {
@@ -20,8 +20,8 @@ export function commentsResponseToState(reviewComments: ServerReviewComments): R
                                 id: serverComment.id,
                                 text: serverComment.text,
                                 dateTime: serverComment.datetime,
-                                authorName: serverComment.denizen_id,
-                                authorId: serverComment.author_id,
+                                authorName: serverComment.denizenId,
+                                authorId: serverComment.authorId,
                                 state: serverComment.state
                             });
                         }

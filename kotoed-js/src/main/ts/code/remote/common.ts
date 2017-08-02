@@ -5,7 +5,7 @@ export interface ResponseWithStatus {
 }
 
 export interface SubmissionIdRequest {
-    submission_id: number
+    submissionId: number
 }
 
 export interface RequestWithId {

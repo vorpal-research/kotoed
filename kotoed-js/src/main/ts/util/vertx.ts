@@ -36,12 +36,21 @@ export class AsyncEventBus {
     private explicitlyClosed: boolean = false;
     private handlers: Array<EventBusHandler> = [];
 
+    // Heil POSIX!
+    private htonJ: (h: any) => any = obj => obj;
+    private ntohJ: (h: any) => any = obj => obj;
+
     onerror: (error: Error) => boolean;  // Public field like in original EventBus
 
-    constructor(url: string, options?: any) {
+    constructor(url: string,
+                htonJ: (h: any) => any = obj => obj,
+                ntohJ: (h: any) => any = obj => obj,
+                options?: any) {
         this._isOpen = false;
         this.url = url;
         this.options = options;
+        this.htonJ = htonJ;
+        this.ntohJ = ntohJ;
         this.setUp();
     }
 
@@ -73,7 +82,7 @@ export class AsyncEventBus {
             headers,
             callback
         });
-        this.eb.registerHandler(address, headers, callback);
+        this.eb.registerHandler(address, headers, (error, message) => callback(error, this.ntohJ(message)));
     };
 
     awaitOpen(): Promise<void> {
@@ -96,11 +105,11 @@ export class AsyncEventBus {
                          message: Request,
                          headers?: EventBusHeaders): Promise<Reply> {
         return this.awaitOpen().then(() => new Promise<Reply>((resolve, reject) => {
-            this.eb.send(address, message, headers, (error, message: EventBusReply<Reply>) => {
+            this.eb.send(address, this.htonJ(message), headers, (error, message: EventBusReply<Reply>) => {
                 if (error)
                     reject(error);
                 else
-                    resolve(message.body); // TODO maybe we need the whole reply?
+                    resolve(this.ntohJ(message.body)); // TODO maybe we need the whole reply?
             });
         }));
     }
@@ -108,7 +117,7 @@ export class AsyncEventBus {
 
     publish<Request>(address: string, message: Request, headers?: EventBusHeaders): Promise<void> {
         return this.awaitOpen().then(() => new Promise<void>((resolve, reject) => {
-            this.eb.publish(address, message, headers);
+            this.eb.publish(address, this.htonJ(message), headers);
             resolve();
         }));
     };
