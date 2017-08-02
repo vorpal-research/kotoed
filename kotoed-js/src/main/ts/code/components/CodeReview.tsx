@@ -18,6 +18,8 @@ export interface CodeReviewProps {
     onDirCollapse: (path: number[]) => void;
     onFileSelect: (path: number[]) => void;
     onCommentSubmit: (file: string, line: number, text: string) => void
+    onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
+    onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
 }
 
 export default class CodeReview extends React.Component<CodeReviewProps> {
@@ -39,6 +41,8 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                                 comments={this.props.editorComments}
                                 filePath={this.props.filePath}
                                 onSubmit={(line, text) => this.props.onCommentSubmit(this.props.filePath, line, text)}
+                                onCommentResolve={this.props.onCommentResolve}
+                                onCommentUnresolve={this.props.onCommentUnresolve}
                     />
                 </div>
             </div>

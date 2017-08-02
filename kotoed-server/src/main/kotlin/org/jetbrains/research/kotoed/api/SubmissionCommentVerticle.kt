@@ -56,6 +56,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         existing.id ?: throw NotFound("Comment ${comment.id} not found")
         if(comment.text == null && existing.text != null) comment.text = existing.text
         if(comment.state == null) comment.state = existing.state
+        comment.submissionId         = existing.submissionId
         comment.datetime             = existing.datetime
         comment.sourcefile           = existing.sourcefile
         comment.sourceline           = existing.sourceline

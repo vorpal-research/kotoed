@@ -3,6 +3,7 @@ import {RequestWithId, SubmissionIdRequest} from "./common";
 
 const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
+const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update"
 
 type CommentState = "open" | "closed";
 
@@ -46,6 +47,11 @@ export type ReviewComments = Array<FileComments>
 
 type CommentsRequest = RequestWithId
 
+interface CommentStateUpdate {
+    id: number
+    state: CommentState
+}
+
 export async function fetchComments(submissionId: number): Promise<ReviewComments> {
     return eventBus.send<CommentsRequest, ReviewComments>(FETCH_COMMENTS_ADDRESS, {
         id: submissionId,
@@ -61,6 +67,15 @@ export async function postComment(submissionId: number,
         text,
         sourcefile,
         sourceline
+    });
+    return res.record;
+}
+
+export async function setCommentState(commentId: number,
+                                      state: CommentState): Promise<BaseCommentToRead> {
+    let res = await eventBus.send<CommentStateUpdate, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
+        id: commentId,
+        state
     });
     return res.record;
 }

@@ -21,6 +21,8 @@ export interface FileReviewProps {
     comments: FileComments,
     filePath: string,
     onSubmit: (line: number, comment: string) => void
+    onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
+    onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
 }
 
 interface FileReviewState {
@@ -69,29 +71,45 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.handleMarkerSwitch(lineNo, false);
     };
 
+    private renderMarker = (cmLine: number, comments: LineComments) => {
+        let reviewLine = fromCmLine(cmLine);
+        this.cleanUpLine(cmLine);
+
+        let badge = document.createElement("div");
+        render(<LineMarker
+                comments={comments}
+                lineNumber={reviewLine}
+                editor={this.editor}
+                arrowOffset={this.arrowOffset}
+                expanded={this.state.expanded[cmLine]}
+                onExpand={this.handleMarkerExpand}
+                onCollapse={this.handleMarkerCollapse}
+                onSubmit={this.props.onSubmit}
+                onCommentResolve={(lineNumber, id) => this.props.onCommentResolve(this.props.filePath, lineNumber, id)}
+                onCommentUnresolve={(lineNumber, id) => this.props.onCommentUnresolve(this.props.filePath, lineNumber, id)}
+            />,
+            badge);
+        this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
+    };
+
     private renderMarkers = () => {
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
-            // TODO try to be more smart here
             let cmLine = i;
-            let reviewLine = fromCmLine(i);
+            let reviewLine = fromCmLine(cmLine);
             let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
 
-            this.cleanUpLine(cmLine);
+            this.renderMarker(cmLine, comments);
+        }
+    };
 
-            let badge = document.createElement("div");
-            render(<LineMarker
-                    comments={comments}
-                    lineNumber={reviewLine}
-                    editor={this.editor}
-                    arrowOffset={this.arrowOffset}
-                    expanded={this.state.expanded[cmLine]}
-                    onExpand={this.handleMarkerExpand}
-                    onCollapse={this.handleMarkerCollapse}
-                    onSubmit={this.props.onSubmit}
-                />,
-                badge);
-            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
-
+    private incrementallyRenderMarkers = (oldFileComments: FileComments) => {
+        for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
+            let cmLine = i;
+            let reviewLine = fromCmLine(cmLine);
+            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
+            let oldComments = oldFileComments.get(reviewLine, LineComments());
+            if (comments !== oldComments)
+                this.renderMarker(cmLine, comments);
         }
     };
 
@@ -156,9 +174,12 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             this.editor.setValue(this.props.value);
         }
 
-
-        if (this.props.filePath !== oldProps.filePath || this.props.comments !== oldProps.comments) {
+        if (this.props.filePath !== oldProps.filePath) {
             this.renderMarkers();
+        }
+
+        if (this.props.filePath === oldProps.filePath && this.props.comments !== oldProps.comments) {
+            this.incrementallyRenderMarkers(oldProps.comments);
         }
     }
 

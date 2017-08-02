@@ -15,6 +15,8 @@ interface LineMarkerProps {
     onExpand: (number: number) => void
     onCollapse: (number: number) => void
     onSubmit: (line: number, comment: string) => void
+    onCommentUnresolve: (lineNumber: number, id: number) => void
+    onCommentResolve: (lineNumber: number, id: number) => void
 }
 
 interface LineMarkerState {
@@ -39,11 +41,11 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     }
 
     private getLabelClasses = () => {
-        if (this.state.expanded)
-            return "label-default review-shown";
-        else
-            return "label-danger review-hidden";
-
+        let expandedClass =  (this.state.expanded) ? "review-shown" : "review-hidden";
+        let colorClass = (this.state.expanded || this.props.comments.every((c: Comment) => c.state === "closed")) ?
+            "label-default" :
+            "label-danger";
+        return `${expandedClass} ${colorClass}`
     };
 
     private doExpand = () => {
@@ -53,6 +55,8 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 comments={this.props.comments}
                 arrowOffset={this.props.arrowOffset}
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
+                onCommentResolve={id => this.props.onCommentResolve(this.props.lineNumber, id)}
+                onCommentUnresolve={id => this.props.onCommentUnresolve(this.props.lineNumber, id)}
             />,
             div);
         this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
