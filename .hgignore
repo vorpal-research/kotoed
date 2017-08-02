@@ -5,7 +5,7 @@ target
 
 .g8
 .vertx
-vcs
+/vcs
 
 .idea
 .idea_modules
