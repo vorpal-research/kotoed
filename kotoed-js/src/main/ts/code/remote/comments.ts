@@ -7,7 +7,7 @@ const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
 type CommentState = "open" | "closed";
 
 interface BaseComment {
-    submission_id: number
+    submissionId: number
     text: string
     sourcefile: string
     sourceline: number
@@ -15,13 +15,13 @@ interface BaseComment {
 
 export interface BaseCommentToRead extends BaseComment {
     id: number
-    author_id: number
+    authorId: number
     datetime: number
     state: CommentState
 }
 
 export interface CommentToRead extends BaseCommentToRead {
-    denizen_id: string
+    denizenId: string
 }
 
 export interface LineComments {
@@ -30,7 +30,7 @@ export interface LineComments {
 }
 
 export interface FileComments {
-    by_line: Array<LineComments>,
+    byLine: Array<LineComments>,
     filename: string
 }
 
@@ -57,7 +57,7 @@ export async function postComment(submissionId: number,
                                   sourceline: number,
                                   text: string): Promise<BaseCommentToRead> {
     let res = await eventBus.send<CommentToPost, PostCommentResponse>(CREATE_COMMENT_ADDRESS, {
-        submission_id: submissionId,
+        submissionId: submissionId,
         text,
         sourcefile,
         sourceline

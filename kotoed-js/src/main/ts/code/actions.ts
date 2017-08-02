@@ -210,7 +210,7 @@ export function postComment(payload: PostCommentPayload) {
                 params: payload,
                 result: {
                     id: result.id,
-                    authorId: result.author_id,
+                    authorId: result.authorId,
                     dateTime: result.datetime,
                     state: result.state,
                     sourcefile: result.sourcefile,
