@@ -50,7 +50,7 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
 
 export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
     let res = await repeatTillReady<RootDirResponse>(() => {
-        return eventBus.send<RootDirRequest, RootDirResponse>(LIST_ADDRESS, {
+        return eventBus.send(LIST_ADDRESS, {
             submissionId: submissionId
         })
     });
@@ -59,7 +59,7 @@ export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
 
 export async function fetchFile(submissionId: number, path: string): Promise<string> {
     let res = await repeatTillReady<FileResponse>(() => {
-        return eventBus.send<FileRequest, FileResponse>(FILE_ADDRESS, {
+        return eventBus.send(FILE_ADDRESS, {
             submissionId: submissionId,
             path
         })
@@ -69,8 +69,8 @@ export async function fetchFile(submissionId: number, path: string): Promise<str
 }
 
 export async function waitTillReady(submissionId: number): Promise<void> {
-    await repeatTillReady<ResponseWithStatus>(() => {
-        return eventBus.send<IsReadyRequest, IsReadyResponse>(READY_ADDRESS, {
+    await repeatTillReady<IsReadyResponse>(() => {
+        return eventBus.send(READY_ADDRESS, {
             submissionId: submissionId,
         })
     });
