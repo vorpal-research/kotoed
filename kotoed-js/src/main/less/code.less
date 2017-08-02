@@ -1,7 +1,7 @@
 @import "./kotoed-bootstrap/variables.less";
 
 @review-background: white;
-@review-border-color:  @brand-danger;
+@review-border-color:  @brand-primary;
 
 #editor {
   height: 800px;
@@ -53,3 +53,31 @@
   text-align: center;
 }
 
+.hidden-comments-heading {
+  overflow: hidden;
+  text-align: center;
+
+  &:before, &:after {
+    background-color: #ccc;
+    content: "";
+    display: inline-block;
+    height: 1px;
+    position: relative;
+    vertical-align: middle;
+    width: 50%;
+  }
+
+  &:before {
+    right: 0.5em;
+    margin-left: -50%;
+  }
+
+  &:after {
+    left: 0.5em;
+    margin-right: -50%;
+  }
+}
+
+.comment-state-change-button {
+  cursor: pointer;
+}

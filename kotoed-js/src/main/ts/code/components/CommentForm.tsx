@@ -1,4 +1,5 @@
 import * as React from "react";
+import {ChangeEvent} from "react";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
@@ -16,10 +17,6 @@ export class CommentForm extends React.Component<CommentFormProps, CommentFormSt
         }
     }
 
-    handleChange = (event: any) => {  // TODO fix any
-        this.setState({text: event.target.value});
-    };
-
     render() {
         return (<form>
                     <div className="form-group">
@@ -32,10 +29,11 @@ export class CommentForm extends React.Component<CommentFormProps, CommentFormSt
                             style={{
                                 resize: "none"
                             }}
-                            onChange={this.handleChange}/>
-                        <button type="button" className="btn btn-success" onClick={
-                            () => this.props.onSubmit(this.state.text)
-                        }>Send</button>
+                            onChange={(event) => this.setState({text: event.target.value})}/>
+                        <button type="button" className="btn btn-success"
+                                onClick={() => this.props.onSubmit(this.state.text)}>
+                            Send
+                        </button>
                     </div>
                 </form>);
     }

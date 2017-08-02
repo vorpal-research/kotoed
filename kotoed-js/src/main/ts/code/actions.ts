@@ -12,7 +12,12 @@ import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
 import {commentsResponseToState} from "./util/comments";
-import {CommentToPost, CommentToRead, fetchComments, postComment as doPostComment} from "./remote/comments";
+import {CommentToPost,
+    CommentToRead,
+    fetchComments,
+    postComment as doPostComment,
+    setCommentState as doSetCommentState
+} from "./remote/comments";
 import {CmMode, guessCmMode} from "./util/codemirror";
 const actionCreator = actionCreatorFactory();
 
@@ -55,6 +60,13 @@ interface PostCommentResponse {
     text: string
 }
 
+interface CommentStatePayload {
+    commentId: number,
+    state: CommentState
+}
+
+type CommentStateResponse = PostCommentResponse
+
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
@@ -65,7 +77,7 @@ export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, 
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
 export const commentFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
 export const commentPost = actionCreator.async<PostCommentPayload, PostCommentResponse, {}>('COMMENT_POST');
-
+export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentStateResponse>('COMMENT_STATE_UPDATE');
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
@@ -207,6 +219,28 @@ export function postComment(payload: PostCommentPayload) {
 
         doPostComment(payload.submissionId, payload.sourcefile, payload.sourceline, payload.text).then(result => {
             dispatch(commentPost.done({
+                params: payload,
+                result: {
+                    id: result.id,
+                    authorId: result.authorId,
+                    dateTime: result.datetime,
+                    state: result.state,
+                    sourcefile: result.sourcefile,
+                    sourceline: result.sourceline,
+                    text: result.text
+                }
+            }));
+        }).then(() => updateEditorComments()(dispatch, getState));
+
+    }
+}
+
+export function setCommentState(payload: CommentStatePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentStateUpdate.started(payload));  // Not used yet
+
+        doSetCommentState(payload.commentId, payload.state).then(result => {
+            dispatch(commentStateUpdate.done({
                 params: payload,
                 result: {
                     id: result.id,

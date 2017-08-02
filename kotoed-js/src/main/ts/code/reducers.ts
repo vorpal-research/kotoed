@@ -4,7 +4,8 @@ import {EditorState, FileComments, FileTreeState, ReviewComments, LineComments, 
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
-    commentFetch, commentPost, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad, fileSelect,
+    commentFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
+    fileSelect,
     rootFetch
 } from "./actions";
 import {
@@ -77,7 +78,7 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         newState.commentsFetched = true;
         newState.comments = action.payload.result;
         return newState;
-    } else if (reviewState.commentsFetched && isType(action, commentPost.done)) {
+    } else if (isType(action, commentPost.done)) {
         let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
         let newState = {...reviewState};
         let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
@@ -89,6 +90,21 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
             text,
             dateTime
         });
+        newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
+        return newState;
+    } else if (isType(action, commentStateUpdate.done)) {
+        let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
+        let newState = {...reviewState};
+        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
+
+        let oldCommentIx = comments.findIndex(c => !!c && (c.id == id));
+        let oldComment = comments.get(oldCommentIx);
+        if (!oldComment)
+            throw new Error("Comment to update not found");
+
+        let comment = {...oldComment, text, state};
+
+        comments = comments.set(oldCommentIx, comment);
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
         return newState;
     }
