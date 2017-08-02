@@ -41,9 +41,15 @@ export interface Comment {
     state: CommentState
 }
 
+// TODO is there a better way to create aliases for factory functions?
 export type LineComments = List<Comment>
+export const LineComments = () => List<Comment>();
+
 export type FileComments = Map<number, LineComments>
+export const FileComments = () => Map<number, LineComments>();
+
 export type ReviewComments = Map<string, FileComments>
+export const ReviewComments = () => Map<string, FileComments>();
 
 export type FileTreeNode = LoadingNode | FileNode;
 
