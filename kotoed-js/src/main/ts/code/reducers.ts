@@ -4,24 +4,27 @@ import {EditorState, FileComments, FileTreeState, ReviewComments, LineComments, 
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
-    commentFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
+    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
     fileSelect,
-    rootFetch
+    rootFetch, commentAggregatesFetch, aggregatesUpdate
 } from "./actions";
 import {
-    collapseEverything, expandEverything, makeBlueprintTreeState, selectFile,
+    addCommentAggregatesToFileTree,
+    collapseEverything, expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
+    registerOpenComment, selectFile,
     unselectFile
 } from "./util/filetree";
 
 const initialFileTreeState: FileTreeState = {
     nodes: [],
     loading: true,
-    selectedPath: []
+    selectedPath: [],
+    aggregatesFetched: false
 };
 
 export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, action: Action) => {
     if (isType(action, dirExpand)) {
-        let newState = _.cloneDeep(state);
+        let newState = _.cloneDeep(state);  // TODO try to do better
         expandEverything(newState.nodes, action.payload.treePath);
         return newState;
     } else if (isType(action, dirCollapse)) {
@@ -40,6 +43,26 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
         newState.nodes = makeBlueprintTreeState(action.payload.result.list);
         newState.loading = false;
         return newState;
+    } else if (isType(action, commentAggregatesFetch.done)) {
+        let newState = _.cloneDeep(state);
+        newState.aggregatesFetched = true;
+        addCommentAggregatesToFileTree(newState.nodes, action.payload.result);
+        return newState;
+    } else if (isType(action, aggregatesUpdate)) {
+        let newState = _.cloneDeep(state);
+        switch(action.payload.type) {
+            case "new":
+                registerAddComment(newState.nodes, action.payload.file);
+                break;
+            case "open":
+                registerOpenComment(newState.nodes, action.payload.file);
+                break;
+            case "close":
+                registerCloseComment(newState.nodes, action.payload.file);
+                break;
+
+        }
+        return newState;
     }
     return state;
 };
@@ -57,7 +80,7 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
         newState.displayedComments = action.payload.result.displayedComments;
-        newState.mode = action.payload.result.mode
+        newState.mode = action.payload.result.mode;
         return newState;
     } else if (isType(action, editorCommentsUpdate)) {
         let newState = {...state};
@@ -69,13 +92,13 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
 
 export const defaultCommentsState = {
     comments: ReviewComments(),
-    commentsFetched: false
+    fetched: false
 };
 
 export const commentsReducer = (reviewState: CommentsState = defaultCommentsState, action: Action) => {
-    if (isType(action, commentFetch.done)) {
+    if (isType(action, commentsFetch.done)) {
         let newState = {...reviewState};
-        newState.commentsFetched = true;
+        newState.fetched = true;
         newState.comments = action.payload.result;
         return newState;
     } else if (isType(action, commentPost.done)) {

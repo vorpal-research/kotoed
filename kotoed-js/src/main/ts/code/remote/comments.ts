@@ -2,8 +2,10 @@ import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 
 const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
+const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentaggregates";
+
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
-const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update"
+const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update";
 
 type CommentState = "open" | "closed";
 
@@ -35,6 +37,24 @@ export interface FileComments {
     filename: string
 }
 
+export type CommentAggregate = {
+    [state in CommentState]: number
+}
+
+export interface CommentAggregatesForFile {
+    file: string
+    aggregate: CommentAggregate
+}
+
+export interface CommentAggregates {
+    byFile: Array<CommentAggregatesForFile>
+    lost: CommentAggregate
+}
+
+export type ReviewComments = Array<FileComments>
+
+type CommentsRequest = RequestWithId
+type CommentAggregatesRequest = RequestWithId
 
 export type CommentToPost = BaseComment
 
@@ -43,10 +63,6 @@ export interface PostCommentResponse {
     // Do not care about everything else for now
 }
 
-export type ReviewComments = Array<FileComments>
-
-type CommentsRequest = RequestWithId
-
 interface CommentStateUpdate {
     id: number
     state: CommentState
@@ -54,6 +70,12 @@ interface CommentStateUpdate {
 
 export async function fetchComments(submissionId: number): Promise<ReviewComments> {
     return eventBus.send<CommentsRequest, ReviewComments>(FETCH_COMMENTS_ADDRESS, {
+        id: submissionId,
+    });
+}
+
+export async function fetchCommentAggregates(submissionId: number): Promise<CommentAggregates> {
+    return eventBus.send<CommentAggregatesRequest, CommentAggregates>(FETCH_COMMENT_AGGREGATES_ADDRESS, {
         id: submissionId,
     });
 }
