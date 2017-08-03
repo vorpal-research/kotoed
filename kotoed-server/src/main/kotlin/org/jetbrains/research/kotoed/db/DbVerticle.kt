@@ -242,6 +242,9 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
 }
 
 @AutoDeployable
+class BuildVerticle : CrudDatabaseVerticleWithReferences<BuildRecord>(Tables.BUILD)
+
+@AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
 
 @AutoDeployable
