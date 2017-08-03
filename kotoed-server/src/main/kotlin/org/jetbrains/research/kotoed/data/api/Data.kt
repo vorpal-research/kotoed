@@ -71,7 +71,18 @@ object SubmissionCode {
     data class ListRequest(val submissionId: Int): Jsonable
 
     enum class FileType { directory, file } // directory < file, used in comparisons
-    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
+    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable {
+        fun toFileSeq(): Sequence<String> =
+                when(type) {
+                    FileType.directory ->
+                        children
+                            .orEmpty()
+                            .asSequence()
+                            .flatMap { it.toFileSeq() }
+                            .map { "$name/$it" }
+                    FileType.file -> sequenceOf(name)
+                }.map { it.removePrefix("/") }
+    }
     data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
 }
 
