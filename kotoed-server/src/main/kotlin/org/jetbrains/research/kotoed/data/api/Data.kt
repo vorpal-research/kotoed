@@ -8,11 +8,8 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
-import org.jetbrains.research.kotoed.util.tryToJson
 import org.jooq.Record
-import org.jooq.TableRecord
-import org.jooq.UpdatableRecord
-import java.time.Instant
+import java.util.EnumMap
 
 enum class VerificationStatus {
     Unknown,
