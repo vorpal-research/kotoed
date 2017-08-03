@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.data.api
 
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
@@ -99,7 +100,9 @@ object SubmissionComments {
 
     data class CommentAggregates(val byFile: Map<String, CommentAggregate>, val lost: CommentAggregate) : Jsonable {
         override fun toJson() = JsonObject(
-                "by_file" to JsonObject(byFile.mapValues { (_, v) -> v.toJson()}),
+                "by_file" to JsonArray(byFile.entries.map { e ->
+                    JsonObject("file" to e.key, "aggregate" to e.value)
+                }),
                 "lost" to lost.toJson()
         )
     }
