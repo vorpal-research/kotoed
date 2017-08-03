@@ -61,7 +61,7 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
             reified CrawlT : Any,
             reified ResponseT,
             reified ValueT : Any,
-            reified NextT : Any
+            reified NextT : Jsonable
             > crawl(msg: Message<JsonObject>,
                     crossinline locatorGen: (CrawlT) -> Locator,
                     nextAddress: String,
@@ -92,9 +92,12 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
 
                     eb.publish(
                             nextAddress,
-                            nextCrawl(crawl, value)
+                            nextCrawl(crawl, value).toJson()
                     )
                 }
+
+            } else {
+                log.trace("Error when crawling: ${response.bodyAsString()}")
             }
         }
     }

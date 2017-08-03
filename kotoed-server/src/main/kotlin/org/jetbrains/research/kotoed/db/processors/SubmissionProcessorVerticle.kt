@@ -10,14 +10,16 @@ import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
+
+data class BuildTriggerResult(
+        val result: String,
+        val buildRequestId: Int
+) : Jsonable
 
 @AutoDeployable
 class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.SUBMISSION) {
@@ -104,7 +106,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         if (vcsReq.status != CloneStatus.done) return VerificationData.Unknown
 
-        if(sub.revision == null) {
+        if (sub.revision == null) {
             val vcsInfo: InfoFormat = sendJsonableAsync(Address.Code.Info, InfoFormat(uid = vcsReq.uid))
             sub.revision = vcsInfo.revision
             dbUpdateAsync(sub)
@@ -114,19 +116,22 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             recreateCommentsAsync(vcsReq.uid, parentSub, sub)
         }
 
-        try { // FIXME: remove try when triggering builds actually works.
-            Unit.also {
-                sendJsonableAsync(
-                        Address.Buildbot.Build.Trigger,
-                        TriggerBuild(
-                                Kotoed2Buildbot.projectName2schedulerName(project.name),
-                                sub.revision
-                        )
+        // TODO: process possible errors
+
+        val btr: BuildTriggerResult = sendJsonableAsync(
+                Address.Buildbot.Build.Trigger,
+                TriggerBuild(
+                        Kotoed2Buildbot.projectName2schedulerName(project.name),
+                        sub.revision
                 )
-            }
-        } catch (ex: Exception) {
-            log.trace("", ex)
-        }
+        )
+
+        dbCreateAsync(
+                BuildRecord().apply {
+                    submissionId = sub.id
+                    buildRequestId = btr.buildRequestId
+                }
+        )
 
         return verify(data)
     }
@@ -192,11 +197,13 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             }
         }
 
-        // TODO: do we also need to check the buildbot side of things here?
+        val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
 
-        return VerificationData.Processed
+        if (buildInfos.isNotEmpty()) {
+            return VerificationData.Processed
+        } else {
+            return VerificationData.Unknown
+        }
     }
 
 }
-
-

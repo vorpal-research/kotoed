@@ -201,6 +201,9 @@ class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 class SubmissionStatusVerticle : CrudDatabaseVerticleWithReferences<SubmissionStatusRecord>(Tables.SUBMISSION_STATUS)
 
 @AutoDeployable
+class BuildVerticle : CrudDatabaseVerticleWithReferences<BuildRecord>(Tables.BUILD)
+
+@AutoDeployable
 class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
 
 @AutoDeployable
