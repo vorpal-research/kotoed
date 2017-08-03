@@ -6,14 +6,20 @@ import {
     expandEverything, filePathToNodePath, getNodeAt, nodePathToFilePath,
     selectFile
 } from "./util/filetree";
-import {CodeReviewState, CommentState, FileComments, FileTreePath, LineComments, ReviewComments} from "./state";
+import {
+    CodeReviewState, CommentState, FileComments, FileTreePath, LineComments,
+    ReviewComments
+} from "./state";
 import {waitTillReady, fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
 import {commentsResponseToState} from "./util/comments";
-import {CommentToPost,
-    CommentToRead,
+import {
+    CommentAggregate,
+    CommentAggregates,
+    CommentToPost,
+    CommentToRead, fetchCommentAggregates,
     fetchComments,
     postComment as doPostComment,
     setCommentState as doSetCommentState
@@ -67,15 +73,27 @@ interface CommentStatePayload {
 
 type CommentStateResponse = PostCommentResponse
 
+interface AggregatesUpdatePayload {
+    file: string
+    type: "new" | "close" | "open"
+}
+
+// Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
 export const editorCommentsUpdate = actionCreator<FileComments>('EDITOR_COMMENTS_UPDATE');
+export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
 
+// File or dir fetch actions
 export const dirFetch = actionCreator.async<NodePathPayload, DirFetchResult, {}>('DIR_FETCH');
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
-export const commentFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
+
+// Comment fetch actions
+export const commentsFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
+export const commentAggregatesFetch =
+    actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
 export const commentPost = actionCreator.async<PostCommentPayload, PostCommentResponse, {}>('COMMENT_POST');
 export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentStateResponse>('COMMENT_STATE_UPDATE');
 
@@ -85,6 +103,7 @@ export function initialize(payload: SubmissionPayload & FilePathPayload) {
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
+        await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
     }
 }
 
@@ -194,15 +213,15 @@ export function updateEditorComments() {
 export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
 
-        if (getState().commentsState.commentsFetched)
+        if (getState().commentsState.fetched)
             return;
 
-        dispatch(commentFetch.started({
+        dispatch(commentsFetch.started({
             submissionId: payload.submissionId
         }));  // Not used yet
 
         return fetchComments(payload.submissionId).then(result => {
-            dispatch(commentFetch.done({
+            dispatch(commentsFetch.done({
                 params: {
                     submissionId: payload.submissionId,
                 },
@@ -213,46 +232,81 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
     }
 }
 
-export function postComment(payload: PostCommentPayload) {
+export function fetchCommentAggregatesIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        dispatch(commentPost.started(payload));  // Not used yet
 
-        doPostComment(payload.submissionId, payload.sourcefile, payload.sourceline, payload.text).then(result => {
-            dispatch(commentPost.done({
-                params: payload,
-                result: {
-                    id: result.id,
-                    authorId: result.authorId,
-                    dateTime: result.datetime,
-                    state: result.state,
-                    sourcefile: result.sourcefile,
-                    sourceline: result.sourceline,
-                    text: result.text
-                }
+        if (getState().fileTreeState.aggregatesFetched)
+            return;
+
+        dispatch(commentAggregatesFetch.started({
+            submissionId: payload.submissionId
+        }));  // Not used yet
+
+        return fetchCommentAggregates(payload.submissionId).then(result => {
+            dispatch(commentAggregatesFetch.done({
+                params: {
+                    submissionId: payload.submissionId,
+                },
+                result
             }));
-        }).then(() => updateEditorComments()(dispatch, getState));
+        });
 
     }
 }
 
+export function postComment(payload: PostCommentPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentPost.started(payload));  // Not used yet
+
+        let result = await doPostComment(payload.submissionId, payload.sourcefile, payload.sourceline, payload.text);
+
+        dispatch(commentPost.done({
+            params: payload,
+            result: {
+                id: result.id,
+                authorId: result.authorId,
+                dateTime: result.datetime,
+                state: result.state,
+                sourcefile: result.sourcefile,
+                sourceline: result.sourceline,
+                text: result.text
+            }
+        }));
+
+        updateEditorComments()(dispatch, getState);
+
+        dispatch(aggregatesUpdate({
+            type: "new",
+            file: result.sourcefile
+        }));
+    }
+}
+
 export function setCommentState(payload: CommentStatePayload) {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(commentStateUpdate.started(payload));  // Not used yet
 
-        doSetCommentState(payload.commentId, payload.state).then(result => {
-            dispatch(commentStateUpdate.done({
-                params: payload,
-                result: {
-                    id: result.id,
-                    authorId: result.authorId,
-                    dateTime: result.datetime,
-                    state: result.state,
-                    sourcefile: result.sourcefile,
-                    sourceline: result.sourceline,
-                    text: result.text
-                }
-            }));
-        }).then(() => updateEditorComments()(dispatch, getState));
+        let result = await doSetCommentState(payload.commentId, payload.state);
+
+        dispatch(commentStateUpdate.done({
+            params: payload,
+            result: {
+                id: result.id,
+                authorId: result.authorId,
+                dateTime: result.datetime,
+                state: result.state,
+                sourcefile: result.sourcefile,
+                sourceline: result.sourceline,
+                text: result.text
+            }
+        }));
+
+        updateEditorComments()(dispatch, getState);
+
+        dispatch(aggregatesUpdate({
+            type: result.state === "open" ? "open" : "close",
+            file: result.sourcefile
+        }));
 
     }
 }

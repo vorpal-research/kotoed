@@ -4,6 +4,7 @@ import moment = require("moment");
 import {CmMode} from "./util/codemirror";
 import {ITreeNode} from "@blueprintjs/core";
 import {FileType} from "./remote/code";
+import {CommentAggregate} from "./remote/comments";
 /**
  * Created by gagarski on 7/18/17.
  */
@@ -17,11 +18,12 @@ export interface EditorState {
 
 export interface FileTreeState extends FileTreeProps {
     selectedPath: Array<number>
+    aggregatesFetched: boolean
 }
 
 export interface CommentsState {
     comments: ReviewComments
-    commentsFetched: boolean
+    fetched: boolean
 }
 
 export interface CodeReviewState {
@@ -62,7 +64,11 @@ export interface FileNode extends ITreeNode {
     type: FileType
     childNodes?: FileNodes
     filename: string
+    openComments: number
+    closedComments: number
 }
 
 export type FileNodes = Array<FileNode>
+export const FileNodes = () => Array<FileNodes>();
+
 export type FileTreePath = Array<number>;
