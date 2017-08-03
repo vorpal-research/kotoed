@@ -119,6 +119,23 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         });
     };
 
+    private updateArrowOffset = () => {
+        this.arrowOffset = 0.0;
+        $(this.editor.getGutterElement()).children().each((ix, elem) => {
+            let jqel = $(elem);
+            let width = jqel.width();
+            if (width !== undefined) {
+                if (!jqel.hasClass("review-gutter")) {
+                    this.arrowOffset += width;
+                } else {
+                    this.arrowOffset += width / 2;
+                    return false;
+                }
+            }
+        });
+        this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
+    };
+
     componentWillMount() {
         this.resetExpanded(this.props.value)
     }
@@ -137,20 +154,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
         this.editor.setSize(null, this.props.height);
 
-        this.arrowOffset = 0.0;
-        $(this.editor.getGutterElement()).children().each((ix, elem) => {
-            let jqel = $(elem);
-            let width = jqel.width();
-            if (width !== undefined) {
-                if (!jqel.hasClass("review-gutter")) {
-                    this.arrowOffset += width;
-                } else {
-                    this.arrowOffset += width / 2;
-                    return false;
-                }
-            }
-        });
-        this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
+        this.updateArrowOffset();
 
         this.renderMarkers();
     }
@@ -172,6 +176,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
         if (oldProps.value !== this.props.value) {
             this.editor.setValue(this.props.value);
+            this.updateArrowOffset();
         }
 
         if (this.props.filePath !== oldProps.filePath) {
