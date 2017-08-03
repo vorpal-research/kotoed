@@ -9,7 +9,7 @@ import {
     rootFetch, commentAggregatesFetch, aggregatesUpdate
 } from "./actions";
 import {
-    addCommentAggregatesToFileTree,
+    addCommentAggregatesToFileTree, collapseDir,
     collapseEverything, expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
     registerOpenComment, selectFile,
     unselectFile
@@ -29,7 +29,7 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
         return newState;
     } else if (isType(action, dirCollapse)) {
         let newState = _.cloneDeep(state);
-        collapseEverything(newState.nodes, action.payload.treePath);
+        collapseDir(newState.nodes, action.payload.treePath);
         return newState;
     } else if (isType(action, fileSelect)) {
         let newState = _.cloneDeep(state);

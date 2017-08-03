@@ -93,6 +93,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
     };
 
     private renderMarkers = () => {
+        let scrollInfo = this.editor.getScrollInfo();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
@@ -100,9 +101,11 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
             this.renderMarker(cmLine, comments);
         }
+        this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
     private incrementallyRenderMarkers = (oldFileComments: FileComments) => {
+        let scrollInfo = this.editor.getScrollInfo();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
@@ -111,6 +114,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             if (comments !== oldComments)
                 this.renderMarker(cmLine, comments);
         }
+        this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
     private resetExpanded = (value: string) => {
