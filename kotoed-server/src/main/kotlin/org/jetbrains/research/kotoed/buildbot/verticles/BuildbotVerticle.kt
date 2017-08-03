@@ -76,14 +76,22 @@ class BuildbotVerticle : AbstractKotoedVerticle(), Loggable {
         }
 
         if (res.statusCode() == HttpResponseStatus.OK.code()) {
-            res.bodyAsJsonObject().getJsonArray("result")?.let {
-                val buildId = it[0]
-            }
+            val buildRequestId = res.bodyAsJsonObject().getJsonArray("result")?.let {
+                val buildRequestId = it[0] as? Int
 
-            // TODO: Start artifact crawling
+                buildRequestId?.also {
+                    log.info("Starting polling for build request id: $it")
+                    vertx.deployVerticle(BuildRequestPollerVerticle(it))
+                }
+
+            } ?: throw KotoedException(
+                    HttpResponseStatus.INTERNAL_SERVER_ERROR.code(),
+                    "Unexpected response from Buildbot: ${res.bodyAsString()}"
+            )
 
             return JsonObject(
-                    "result" to "success"
+                    "result" to "success",
+                    "build_request_id" to buildRequestId
             )
 
         } else {

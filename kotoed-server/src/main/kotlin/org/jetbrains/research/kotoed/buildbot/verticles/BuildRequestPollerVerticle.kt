@@ -76,16 +76,20 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
 
                     eb.publish(
                             Address.Buildbot.Build.BuildCrawl,
-                            BuildCrawl(build.buildid)
+                            BuildCrawl(build.buildid).toJson()
                     )
 
                     processedBuildIds += build.buildid
                 }
             }
 
-            if (processedBuildIds.size == buildRequestsResponse.builds.size) {
+            if (buildRequestsResponse.builds.isNotEmpty() &&
+                    processedBuildIds.size == buildRequestsResponse.builds.size) {
+                log.trace("I'm done here! $buildRequestId")
                 vertx.undeploy(deploymentID())
+
             } else {
+                log.trace("Poll me baby one more time! $buildRequestId")
                 retry(errorCount, processedBuildIds)
             }
         }
