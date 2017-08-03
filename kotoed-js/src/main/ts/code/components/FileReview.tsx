@@ -50,7 +50,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         }
 
         if (lineInfo.gutterMarkers && lineInfo.gutterMarkers[REVIEW_GUTTER]) {
-            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null as any);  // wrong typing for last argument
+            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null);
         }
 
     };
