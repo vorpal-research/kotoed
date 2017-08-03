@@ -6,6 +6,7 @@ import com.hazelcast.util.Base64
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
+import kotlinx.coroutines.experimental.runBlocking
 import java.io.BufferedReader
 import java.io.InputStream
 import kotlin.coroutines.experimental.buildSequence
@@ -122,6 +123,9 @@ inline fun <K, V> Map<K, V>.asMultiMap() =
 inline fun <D> Any?.cast(): D = this as D
 
 inline fun <T> forceType(v: T) = v
+
+// why stdlib doesn't have this?
+fun<T> Sequence<T>?.orEmpty() = this ?: emptySequence()
 
 // XXX: think
 data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async: suspend (K) -> V) {

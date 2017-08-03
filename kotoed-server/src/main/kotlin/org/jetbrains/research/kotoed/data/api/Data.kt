@@ -10,7 +10,9 @@ import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.tryToJson
 import org.jooq.Record
-import java.util.*
+import org.jooq.TableRecord
+import org.jooq.UpdatableRecord
+import java.time.Instant
 
 enum class VerificationStatus {
     Unknown,
@@ -72,7 +74,18 @@ object SubmissionCode {
     data class ListRequest(val submissionId: Int): Jsonable
 
     enum class FileType { directory, file } // directory < file, used in comparisons
-    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable
+    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable {
+        fun toFileSeq(): Sequence<String> =
+                when(type) {
+                    FileType.directory ->
+                        children
+                            .orEmpty()
+                            .asSequence()
+                            .flatMap { it.toFileSeq() }
+                            .map { "$name/$it" }
+                    FileType.file -> sequenceOf(name)
+                }.map { it.removePrefix("/") }
+    }
     data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
 }
 
