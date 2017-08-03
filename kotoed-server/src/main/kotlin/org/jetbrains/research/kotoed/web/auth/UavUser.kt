@@ -9,9 +9,10 @@ import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 
 import org.jetbrains.research.kotoed.util.JsonObject
+import org.jetbrains.research.kotoed.util.vxa
 
 class UavUser(val vertx: Vertx,
-              val denizedId: String,
+              val denizenId: String,
               val id: Int) : User {
 
     override fun isAuthorised(authority: String, handler: Handler<AsyncResult<Boolean>>): User = apply {
@@ -23,7 +24,7 @@ class UavUser(val vertx: Vertx,
     override fun setAuthProvider(ap: AuthProvider) {}  // Provider? Which provider?
 
     override fun principal(): JsonObject = JsonObject(
-            "denizenId" to denizedId,
+            "denizenId" to denizenId,
             "id" to id
     )
 }

@@ -3,8 +3,7 @@ import {List, Map} from "immutable";
 
 import actionCreatorFactory from 'typescript-fsa';
 import {
-    expandEverything, filePathToNodePath, getNodeAt, nodePathToFilePath,
-    selectFile
+    filePathToNodePath, getNodeAt, nodePathToFilePath
 } from "./util/filetree";
 import {
     CodeReviewState, CommentState, FileComments, FileTreePath, LineComments,
@@ -16,15 +15,14 @@ import {push} from "react-router-redux";
 import {Dispatch} from "redux";
 import {commentsResponseToState} from "./util/comments";
 import {
-    CommentAggregate,
     CommentAggregates,
-    CommentToPost,
     CommentToRead, fetchCommentAggregates,
     fetchComments,
     postComment as doPostComment,
     setCommentState as doSetCommentState
 } from "./remote/comments";
 import {CmMode, guessCmMode} from "./util/codemirror";
+import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -56,22 +54,10 @@ interface PostCommentPayload {
     sourceline: number
 }
 
-interface PostCommentResponse {
-    id: number
-    authorId: number
-    dateTime: number
-    state: CommentState
-    sourcefile: string
-    sourceline: number
-    text: string
-}
-
 interface CommentStatePayload {
     commentId: number,
     state: CommentState
 }
-
-type CommentStateResponse = PostCommentResponse
 
 interface AggregatesUpdatePayload {
     file: string
@@ -94,12 +80,15 @@ export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload,
 export const commentsFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
-export const commentPost = actionCreator.async<PostCommentPayload, PostCommentResponse, {}>('COMMENT_POST');
-export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentStateResponse>('COMMENT_STATE_UPDATE');
+export const commentPost = actionCreator.async<PostCommentPayload, CommentToRead, {}>('COMMENT_POST');
+export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentToRead>('COMMENT_STATE_UPDATE');
+
+// Capabilities
+export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
-
+        await fetchCapabilitiesIfNeeded()(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
@@ -264,8 +253,10 @@ export function postComment(payload: PostCommentPayload) {
             params: payload,
             result: {
                 id: result.id,
+                denizenId: getState().capabilitiesState.capabilities.principal.denizenId,
+                submissionId: result.submissionId,
                 authorId: result.authorId,
-                dateTime: result.datetime,
+                datetime: result.datetime,
                 state: result.state,
                 sourcefile: result.sourcefile,
                 sourceline: result.sourceline,
@@ -292,8 +283,10 @@ export function setCommentState(payload: CommentStatePayload) {
             params: payload,
             result: {
                 id: result.id,
+                denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
+                submissionId: result.submissionId,
                 authorId: result.authorId,
-                dateTime: result.datetime,
+                datetime: result.datetime,
                 state: result.state,
                 sourcefile: result.sourcefile,
                 sourceline: result.sourceline,
@@ -308,5 +301,21 @@ export function setCommentState(payload: CommentStatePayload) {
             file: result.sourcefile
         }));
 
+    }
+}
+
+export function fetchCapabilitiesIfNeeded() {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        if (getState().capabilitiesState.fetched)
+            return;
+
+        dispatch(capabilitiesFetch.started({}));  // Not used yet
+
+        let result = await fetchCapabilities();
+
+        dispatch(capabilitiesFetch.done({
+            params: {},
+            result
+        }));
     }
 }

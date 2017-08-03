@@ -87,7 +87,9 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
                 val routeProto = makeRouteProto(method)
 
                 method.getAnnotation(LoginRequired::class.java)?.apply {
-                    routeProto.requireLogin(routingConfig)
+                    routeProto.requireLogin(
+                            routingConfig,
+                            rejectAnon = method.getAnnotation(JsonResponse::class.java) != null)
                 }
 
                 method.getAnnotation(JsonResponse::class.java)?.apply {

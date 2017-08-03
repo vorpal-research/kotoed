@@ -1,12 +1,15 @@
 import * as _ from "lodash"
 
-import {EditorState, FileComments, FileTreeState, ReviewComments, LineComments, CommentsState} from "./state";
+import {
+    EditorState, FileComments, FileTreeState, ReviewComments, LineComments, CommentsState,
+    CapabilitiesState
+} from "./state";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
     commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
     fileSelect,
-    rootFetch, commentAggregatesFetch, aggregatesUpdate
+    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch
 } from "./actions";
 import {
     addCommentAggregatesToFileTree, collapseDir,
@@ -14,6 +17,7 @@ import {
     registerOpenComment, selectFile,
     unselectFile
 } from "./util/filetree";
+import {Capabilities} from "./remote/capabilities";
 
 const initialFileTreeState: FileTreeState = {
     nodes: [],
@@ -102,21 +106,21 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         newState.comments = action.payload.result;
         return newState;
     } else if (isType(action, commentPost.done)) {
-        let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
+        let {id, state, sourcefile, sourceline, text, authorId, denizenId, datetime} = action.payload.result;
         let newState = {...reviewState};
         let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
         comments = comments.push({
             authorId,
             state,
-            authorName: "Me",  // TODO replace with proper name
+            authorName: denizenId,  // TODO replace with proper name
             id,
             text,
-            dateTime
+            dateTime: datetime
         });
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
         return newState;
     } else if (isType(action, commentStateUpdate.done)) {
-        let {id, state, sourcefile, sourceline, text, authorId, dateTime} = action.payload.result;
+        let {id, state, sourcefile, sourceline, text} = action.payload.result;
         let newState = {...reviewState};
         let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
 
@@ -132,4 +136,31 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         return newState;
     }
     return reviewState;
+};
+
+export const defaultCapabilitiesState: CapabilitiesState = {
+    capabilities: {
+        principal: {
+            denizenId: "???",
+            id: -1
+        },
+        permissions: {
+            editOwnComments: false,
+            editAllComments: false,
+            changeStateOwnComments: false,
+            changeStateAllComments: false,
+            postComment: false
+        }
+    },
+    fetched: false
+};
+
+export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabilitiesState, action: Action) => {
+    if (isType(action, capabilitiesFetch.done)) {
+        return {
+            fetched: true,
+            capabilities: action.payload.result
+        }
+    }
+    return state;
 };
