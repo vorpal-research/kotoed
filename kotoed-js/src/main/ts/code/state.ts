@@ -5,6 +5,7 @@ import {CmMode} from "./util/codemirror";
 import {ITreeNode} from "@blueprintjs/core";
 import {FileType} from "./remote/code";
 import {CommentAggregate} from "./remote/comments";
+import {Capabilities} from "./remote/capabilities";
 /**
  * Created by gagarski on 7/18/17.
  */
@@ -30,6 +31,12 @@ export interface CodeReviewState {
     fileTreeState: FileTreeState
     editorState: EditorState
     commentsState: CommentsState
+    capabilitiesState: CapabilitiesState
+}
+
+export interface CapabilitiesState {
+    capabilities: Capabilities
+    fetched: boolean
 }
 
 export type CommentState = "open" | "closed";

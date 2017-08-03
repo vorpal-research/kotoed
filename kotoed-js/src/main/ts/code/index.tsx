@@ -8,7 +8,7 @@ import thunk from 'redux-thunk';
 import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-redux'
 
 import CodeReviewContainer from "./containers/CodeReviewContainer";
-import {commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
+import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
 import '@blueprintjs/core/dist/blueprint.css';
 import "less/kotoed-bootstrap/bootstrap.less";
@@ -26,6 +26,7 @@ export const store = createStore(
         fileTreeState: fileTreeReducer,
         editorState: editorReducer,
         commentsState: commentsReducer,
+        capabilitiesState: capabilitiesReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),
