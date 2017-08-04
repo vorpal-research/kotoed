@@ -17,6 +17,14 @@ import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
 
+import "prismjs/themes/prism.css"
+import "prismjs"
+import {SUPPROTED_LANGUAGES} from "./util/prismjs";
+
+for (let lang of SUPPROTED_LANGUAGES) {
+    require(`prismjs/components/prism-${lang}.js`)
+}
+
 export const history = createHistory({
     basename: "/codereview"
 });
