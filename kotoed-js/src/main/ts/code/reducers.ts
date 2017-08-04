@@ -106,17 +106,10 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         newState.comments = action.payload.result;
         return newState;
     } else if (isType(action, commentPost.done)) {
-        let {id, state, sourcefile, sourceline, text, authorId, denizenId, datetime} = action.payload.result;
+        let {sourcefile, sourceline} = action.payload.result;
         let newState = {...reviewState};
         let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
-        comments = comments.push({
-            authorId,
-            state,
-            authorName: denizenId,  // TODO replace with proper name
-            id,
-            text,
-            dateTime: datetime
-        });
+        comments = comments.push(action.payload.result);
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
         return newState;
     } else if (isType(action, commentStateUpdate.done)) {

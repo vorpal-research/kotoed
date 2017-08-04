@@ -48,7 +48,8 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
     };
 
     renderOpenCloseButton = () => {
-        // TODO check if we should render it
+        if (!this.props.canStateBeChanged)
+            return null;
 
         return <div ref={(me: HTMLDivElement) => $(me).tooltip()}
                     className="comment-state-change-button"
@@ -65,8 +66,8 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
             <div className={`panel ${this.getPanelClass()} comment`}>
                 <div className="panel-heading comment-heading clearfix">
                     <div className="pull-left">
-                        <b>{this.props.authorName}</b>
-                        {` @ ${moment(this.props.dateTime).format('LLLL')}`}
+                        <b>{this.props.denizenId}</b>
+                        {` @ ${moment(this.props.datetime).format('LLLL')}`}
                         {" "}
                         {this.renderPanelLabel()}
                     </div>

@@ -7,6 +7,7 @@ import {CmMode} from "../util/codemirror";
 
 export interface CodeReviewProps {
     // TODO decompose this shit
+    canPostComment: boolean
     editorValue: string;
     editorMode: CmMode;
     filePath: string;
@@ -35,7 +36,8 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                     />
                 </div>
                 <div className="col-md-9" style={{height: "100%"}}>
-                    <FileReview value={this.props.editorValue}
+                    <FileReview canPostComment={this.props.canPostComment}
+                                value={this.props.editorValue}
                                 mode={this.props.editorMode}
                                 height="100%"
                                 comments={this.props.editorComments}

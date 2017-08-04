@@ -7,6 +7,7 @@ import {List} from "immutable";
 import {Comment} from "../state";
 
 interface LineMarkerProps {
+    canPostComment: boolean
     comments: List<Comment>,
     lineNumber: number,
     editor: cm.Editor,
@@ -52,6 +53,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         let div = document.createElement("div");
         render(
             <LineComments
+                canPostComment={this.props.canPostComment}
                 comments={this.props.comments}
                 arrowOffset={this.props.arrowOffset}
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
