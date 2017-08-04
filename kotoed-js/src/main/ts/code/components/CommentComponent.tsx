@@ -1,3 +1,5 @@
+/// <reference types="codemirror/codemirror-runmode"/>
+// ^^ this CANNOT be import since it should not be emitted to resulting JS
 import * as cm from "codemirror"
 import "codemirror/addon/runmode/runmode"
 import * as $ from "jquery"
