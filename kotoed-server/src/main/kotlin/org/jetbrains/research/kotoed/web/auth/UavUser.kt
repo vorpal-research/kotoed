@@ -4,19 +4,26 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
+import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
-
-import org.jetbrains.research.kotoed.util.JsonObject
-import org.jetbrains.research.kotoed.util.vxa
+import org.jetbrains.research.kotoed.data.db.HasPermMsg
+import org.jetbrains.research.kotoed.data.db.HasPermReply
+import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.*
 
 class UavUser(val vertx: Vertx,
               val denizenId: String,
-              val id: Int) : User {
+              val id: Int) : User, Loggable {
 
     override fun isAuthorised(authority: String, handler: Handler<AsyncResult<Boolean>>): User = apply {
-        handler.handle(Future.succeededFuture(true)) // TODO how to check?
+        vertx.eventBus().send(
+                Address.User.Auth.HasPerm,
+                HasPermMsg(denizenId = denizenId,perm = authority).tryToJson(),
+                Handler { ar: AsyncResult<Message<JsonObject>> ->
+                    handler.handle(ar.map { fromJson<HasPermReply>(it.body()).result})
+                })
     }
 
     override fun clearCache(): User = this  // Cache? What cache?
