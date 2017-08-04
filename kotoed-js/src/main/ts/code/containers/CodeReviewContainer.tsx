@@ -1,5 +1,5 @@
 import * as React from "react";
-import {guessCmMode} from "../util/codemirror";
+import {guessCmModeForFile} from "../util/codemirror";
 import {Dispatch} from "redux";
 import {connect} from "react-redux";
 

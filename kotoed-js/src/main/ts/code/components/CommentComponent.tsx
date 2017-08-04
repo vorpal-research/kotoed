@@ -1,3 +1,5 @@
+import * as cm from "codemirror"
+import "codemirror/addon/runmode/runmode"
 import * as $ from "jquery"
 import "bootstrap-less"
 import * as React from "react";
@@ -5,24 +7,31 @@ import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
 import {Comment} from "../state";
-import {highlight, languages} from "prismjs";
+import {editorModeParam, guessCmModeForExt, requireCmMode} from "../util/codemirror";
 
 type CommentProps = Comment & {
     onUnresolve: (id: number) => void
     onResolve: (id: number) => void
 }
 
-function CodeBlock(props: {literal: string, language: string}) {
-    let html = highlight(props.literal, languages[props.language]);
-    let cls = 'language-' + props.language;
+interface CodeBlockProps {
+    literal: string
+    language: string
+}
 
-    return (<pre className={cls}>
-      <code
-          dangerouslySetInnerHTML={{__html: html}}
-          className={cls}
-      />
-    </pre>
-    )
+class CodeBlock extends React.Component<CodeBlockProps> {
+    output: HTMLPreElement;
+
+    componentDidMount() {
+        let mode = guessCmModeForExt(this.props.language);
+        requireCmMode(mode);
+        cm.runMode(this.props.literal, editorModeParam(mode), this.output);
+    }
+
+    render() {
+        return <pre ref={(ref: HTMLPreElement) => this.output = ref}/>
+    }
+
 }
 
 export default class CommentComponent extends React.Component<CommentProps, {}> {
