@@ -3,6 +3,7 @@ import * as React from "react";
 import CommentComponent from "./CommentComponent";
 import {Comment, LineComments as LineCommentsState} from "../state";
 import {CommentForm} from "./CommentForm";
+import {fileHighlight, highlightAll} from "prismjs";
 
 interface LineCommentsProps {
     canPostComment: boolean
