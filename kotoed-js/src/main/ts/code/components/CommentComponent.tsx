@@ -5,10 +5,24 @@ import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
 import {Comment} from "../state";
+import {highlight, languages} from "prismjs";
 
 type CommentProps = Comment & {
     onUnresolve: (id: number) => void
     onResolve: (id: number) => void
+}
+
+function CodeBlock(props: {literal: string, language: string}) {
+    let html = highlight(props.literal, languages[props.language]);
+    let cls = 'language-' + props.language;
+
+    return (<pre className={cls}>
+      <code
+          dangerouslySetInnerHTML={{__html: html}}
+          className={cls}
+      />
+    </pre>
+    )
 }
 
 export default class CommentComponent extends React.Component<CommentProps, {}> {
@@ -76,7 +90,10 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
                     </div>
                 </div>
                 <div className="panel-body">
-                    <ReactMarkdown source={this.props.text} className="comment-markdown"/>
+                    <ReactMarkdown
+                        source={this.props.text}
+                        className="comment-markdown"
+                        renderers={{CodeBlock: CodeBlock}}/>
                 </div>
             </div>
         );
