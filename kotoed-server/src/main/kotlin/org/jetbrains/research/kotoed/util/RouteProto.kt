@@ -53,7 +53,7 @@ class RouteProto(private val router: Router) {
 
             data class BlockingHandler(val requestHandler: io.vertx.core.Handler<RoutingContext>,
                                        val ordered: Boolean = true): RouteChunk() {
-                override operator fun invoke(route: Route) = route.blockingHandler(requestHandler)
+                override operator fun invoke(route: Route) = route.blockingHandler(requestHandler, ordered)
             }
 
             data class FailureHandler(val requestHandler: io.vertx.core.Handler<RoutingContext>): RouteChunk() {
@@ -115,7 +115,7 @@ class RouteProto(private val router: Router) {
         routeChunks.add(RouteChunk.BlockingHandler(requestHandler, ordered))
     }
 
-    fun failureHandler(requestHandler: io.vertx.core.Handler<RoutingContext>, ordered: Boolean = true) = apply {
+    fun failureHandler(requestHandler: io.vertx.core.Handler<RoutingContext>) = apply {
         routeChunks.add(RouteChunk.FailureHandler(requestHandler))
     }
 
