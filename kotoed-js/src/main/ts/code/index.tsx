@@ -10,12 +10,12 @@ import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-red
 import CodeReviewContainer from "./containers/CodeReviewContainer";
 import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
-import '@blueprintjs/core/dist/blueprint.css';
 import "less/kotoed-bootstrap/bootstrap.less";
+import '@blueprintjs/core/dist/blueprint.css';
+import "less/unblueprint.less"
 import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
-import "less/unblueprint.less"
 
 export const history = createHistory({
     basename: "/codereview"

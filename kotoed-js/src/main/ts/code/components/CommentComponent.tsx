@@ -76,7 +76,7 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
                     </div>
                 </div>
                 <div className="panel-body">
-                    <ReactMarkdown source={this.props.text}/>
+                    <ReactMarkdown source={this.props.text} className="comment-markdown"/>
                 </div>
             </div>
         );
