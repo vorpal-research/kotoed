@@ -21,7 +21,7 @@ import {
     postComment as doPostComment,
     setCommentState as doSetCommentState
 } from "./remote/comments";
-import {CmMode, guessCmMode} from "./util/codemirror";
+import {CmMode, guessCmModeForFile} from "./util/codemirror";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 const actionCreator = actionCreatorFactory();
 
@@ -184,7 +184,7 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
                 result: {
                     value: result,
                     displayedComments: getState().commentsState.comments.get(filename, Map<number, LineComments>()),
-                    mode: guessCmMode(filename)
+                    mode: guessCmModeForFile(filename)
                 }
             }));
         });
