@@ -18,9 +18,8 @@ import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
 import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
 import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
-import org.jetbrains.research.kotoed.web.eventbus.KotoedFilter
-import org.jetbrains.research.kotoed.web.eventbus.KotoedPatcher
-import org.jetbrains.research.kotoed.web.eventbus.KotoedPerAddressFilter
+import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedFilter
+import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedPatcher
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -100,8 +99,11 @@ class RootVerticle : AbstractVerticle(), Loggable {
     }
 
     fun Router.initEventBusBridge(routingConfig: RoutingConfig) {
+
+        val filter = KotoedFilter(vertx)
+
         val bo = BridgeOptions().apply {
-            for (po in KotoedPerAddressFilter.makePermittedOptions())
+            for (po in filter.makePermittedOptions())
                 addInboundPermitted(po)
         }
 
@@ -111,6 +113,6 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
         ebRouteProto.makeRoute().failureHandler(JsonFailureHandler)
 
-        ebRouteProto.makeRoute().handler(EventBusBridge(vertx, bo, BridgeGuardian(KotoedFilter, KotoedPatcher)))
+        ebRouteProto.makeRoute().handler(EventBusBridge(vertx, bo, BridgeGuardian(filter, KotoedPatcher)))
     }
 }

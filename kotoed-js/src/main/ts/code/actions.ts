@@ -6,14 +6,14 @@ import {
     filePathToNodePath, getNodeAt, nodePathToFilePath
 } from "./util/filetree";
 import {
-    CodeReviewState, CommentState, FileComments, FileTreePath, LineComments,
+    CodeReviewState, Comment, CommentState, FileComments, FileTreePath, LineComments,
     ReviewComments
 } from "./state";
 import {waitTillReady, fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
-import {commentsResponseToState} from "./util/comments";
+import {addRenderingProps, commentsResponseToState} from "./util/comments";
 import {
     CommentAggregates,
     CommentToRead, fetchCommentAggregates,
@@ -80,8 +80,8 @@ export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload,
 export const commentsFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
-export const commentPost = actionCreator.async<PostCommentPayload, CommentToRead, {}>('COMMENT_POST');
-export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentToRead>('COMMENT_STATE_UPDATE');
+export const commentPost = actionCreator.async<PostCommentPayload, Comment, {}>('COMMENT_POST');
+export const commentStateUpdate = actionCreator.async<CommentStatePayload, Comment>('COMMENT_STATE_UPDATE');
 
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
@@ -214,7 +214,7 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
                 params: {
                     submissionId: payload.submissionId,
                 },
-                result: commentsResponseToState(result)
+                result: commentsResponseToState(result, getState().capabilitiesState.capabilities)
             }));
         });
 
@@ -251,17 +251,10 @@ export function postComment(payload: PostCommentPayload) {
 
         dispatch(commentPost.done({
             params: payload,
-            result: {
-                id: result.id,
+            result: addRenderingProps({
+                ...result,
                 denizenId: getState().capabilitiesState.capabilities.principal.denizenId,
-                submissionId: result.submissionId,
-                authorId: result.authorId,
-                datetime: result.datetime,
-                state: result.state,
-                sourcefile: result.sourcefile,
-                sourceline: result.sourceline,
-                text: result.text
-            }
+            }, getState().capabilitiesState.capabilities)
         }));
 
         updateEditorComments()(dispatch, getState);
@@ -281,17 +274,10 @@ export function setCommentState(payload: CommentStatePayload) {
 
         dispatch(commentStateUpdate.done({
             params: payload,
-            result: {
-                id: result.id,
+            result: addRenderingProps({
+                ...result,
                 denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
-                submissionId: result.submissionId,
-                authorId: result.authorId,
-                datetime: result.datetime,
-                state: result.state,
-                sourcefile: result.sourcefile,
-                sourceline: result.sourceline,
-                text: result.text
-            }
+            }, getState().capabilitiesState.capabilities)
         }));
 
         updateEditorComments()(dispatch, getState);

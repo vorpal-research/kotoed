@@ -5,6 +5,7 @@ import {Comment, LineComments as LineCommentsState} from "../state";
 import {CommentForm} from "./CommentForm";
 
 interface LineCommentsProps {
+    canPostComment: boolean
     comments: LineCommentsState
     arrowOffset: number
     onSubmit: (text: string) => void
@@ -25,7 +26,7 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
             <div>
                 <div className="line-comments">
                     {commentComps}
-                    <CommentForm onSubmit={this.props.onSubmit}/>
+                    { this.props.canPostComment && <CommentForm onSubmit={this.props.onSubmit}/> }
                 </div>
                 <div className="line-comments-arrow" style={{left: this.props.arrowOffset}}/>
             </div>

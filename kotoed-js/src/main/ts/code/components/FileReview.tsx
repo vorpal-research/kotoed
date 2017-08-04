@@ -15,6 +15,7 @@ import {
 import {Comment, FileComments, LineComments} from "../state";
 
 export interface FileReviewProps {
+    canPostComment: boolean
     value: string,
     mode: CmMode,
     height: number | string,
@@ -77,6 +78,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
         let badge = document.createElement("div");
         render(<LineMarker
+                canPostComment={this.props.canPostComment}
                 comments={comments}
                 lineNumber={reviewLine}
                 editor={this.editor}

@@ -21,7 +21,6 @@ interface CodeReviewUrl {
 type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUrl> & OnRoute;
 
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
-    let {mode, contentType} = guessCmMode(store.editorState.fileName);
     return {
         editorComments: store.editorState.displayedComments,
         editorValue: store.editorState.value,
@@ -29,7 +28,8 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
         filePath: store.editorState.fileName,
         fileTreeNodes: store.fileTreeState.nodes,
         fileTreeLoading: store.fileTreeState.loading,
-        nodePath: store.fileTreeState.selectedPath
+        nodePath: store.fileTreeState.selectedPath,
+        canPostComment: store.capabilitiesState.capabilities.permissions.postComment
     }
 };
 

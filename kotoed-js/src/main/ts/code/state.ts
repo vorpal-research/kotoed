@@ -4,7 +4,7 @@ import moment = require("moment");
 import {CmMode} from "./util/codemirror";
 import {ITreeNode} from "@blueprintjs/core";
 import {FileType} from "./remote/code";
-import {CommentAggregate} from "./remote/comments";
+import {CommentAggregate, CommentToRead} from "./remote/comments";
 import {Capabilities} from "./remote/capabilities";
 /**
  * Created by gagarski on 7/18/17.
@@ -41,14 +41,13 @@ export interface CapabilitiesState {
 
 export type CommentState = "open" | "closed";
 
-export interface Comment {
-    id: number
-    text: string
-    dateTime: moment.MomentInput
-    authorName: string,
-    authorId: number,
-    state: CommentState
+
+interface CommentRenderingProps {
+    canStateBeChanged: boolean,
+    canBeEdited: boolean
 }
+
+export type Comment = CommentToRead & CommentRenderingProps
 
 // TODO is there a better way to create aliases for factory functions?
 export type LineComments = List<Comment>

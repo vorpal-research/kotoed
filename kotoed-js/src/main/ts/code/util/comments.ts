@@ -1,9 +1,20 @@
 import {List, Map} from "immutable";
 
-import {ReviewComments as ServerReviewComments} from "../remote/comments";
+import {CommentToRead, ReviewComments as ServerReviewComments} from "../remote/comments";
 import {ReviewComments, FileComments, LineComments, Comment} from "../state";
+import {Capabilities} from "../remote/capabilities";
 
-export function commentsResponseToState(reviewComments: ServerReviewComments): ReviewComments {
+export function addRenderingProps(comment: CommentToRead, capabilities: Capabilities): Comment {
+    return {
+        ...comment,
+        canStateBeChanged: capabilities.permissions.changeStateAllComments ||
+            (comment.authorId == capabilities.principal.id) && capabilities.permissions.changeStateOwnComments,
+        canBeEdited: capabilities.permissions.editAllComments ||
+            (comment.authorId == capabilities.principal.id) && capabilities.permissions.editOwnComments
+    }
+}
+
+export function commentsResponseToState(reviewComments: ServerReviewComments, capabilities: Capabilities): ReviewComments {
     let state: ReviewComments = Map<string, FileComments>();
 
     state = state.withMutations(function(s) {
@@ -16,14 +27,7 @@ export function commentsResponseToState(reviewComments: ServerReviewComments): R
 
                     lineComments = lineComments.withMutations(function(lc) {
                         for (let serverComment of serverLineComments.comments) {
-                            lc.push({
-                                id: serverComment.id,
-                                text: serverComment.text,
-                                dateTime: serverComment.datetime,
-                                authorName: serverComment.denizenId,
-                                authorId: serverComment.authorId,
-                                state: serverComment.state
-                            });
+                            lc.push(addRenderingProps(serverComment, capabilities));
                         }
                     });
 
