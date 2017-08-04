@@ -10,7 +10,7 @@ import org.jetbrains.research.kotoed.util.routing.*
 @Templatize("code.jade")
 @LoginRequired
 @JsBundle("code")
-fun handleCode(context: RoutingContext) {
+fun handleCode(@Suppress("UNUSED_PARAMETER") context: RoutingContext) {
     // Just rendering template. React will do the rest on the client side
 }
 

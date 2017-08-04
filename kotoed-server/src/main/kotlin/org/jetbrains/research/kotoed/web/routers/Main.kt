@@ -17,5 +17,5 @@ fun handleIndex(context: RoutingContext) {
 @Templatize("secret.jade")
 @LoginRequired
 @JsBundle("hello")
-fun handleSecret(context: RoutingContext) {}
+fun handleSecret(@Suppress("UNUSED_PARAMETER") context: RoutingContext) {}
 
