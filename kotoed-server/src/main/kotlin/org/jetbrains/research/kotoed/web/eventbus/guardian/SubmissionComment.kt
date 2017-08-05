@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
+import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
 import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
@@ -46,7 +47,7 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
                 Address.Api.Submission.Comment.Read,
                 SubmissionCommentRecord().apply { this.id = id }.toJson()).body())
 
-        val comment = fromJson<SubmissionCommentRecord>(commentWrapper.record)
+        val comment = commentWrapper.record.toRecord<SubmissionCommentRecord>()
 
         return@run if (comment.authorId == user.principal()["id"])
              true
