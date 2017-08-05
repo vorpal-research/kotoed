@@ -12,7 +12,7 @@ import {
     CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode,
     toCmLine
 } from "../util/codemirror";
-import {Comment, FileComments, LineComments} from "../state";
+import {FileComments, LineComments} from "../state/comments";
 
 export interface FileReviewProps {
     canPostComment: boolean

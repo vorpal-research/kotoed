@@ -1,7 +1,7 @@
 import {List, Map} from "immutable";
 
 import {CommentToRead, ReviewComments as ServerReviewComments} from "../remote/comments";
-import {ReviewComments, FileComments, LineComments, Comment} from "../state";
+import {ReviewComments, FileComments, LineComments, Comment} from "../state/comments";
 import {Capabilities} from "../remote/capabilities";
 
 export function addRenderingProps(comment: CommentToRead, capabilities: Capabilities): Comment {
