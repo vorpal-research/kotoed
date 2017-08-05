@@ -6,17 +6,20 @@ import {
     filePathToNodePath, getNodeAt, nodePathToFilePath
 } from "./util/filetree";
 import {
-    CodeReviewState, Comment, CommentState, FileComments, FileTreePath, LineComments,
-    ReviewComments
+    CodeReviewState
 } from "./state";
-import {waitTillReady, fetchRootDir, fetchFile, File} from "./remote/code";
+import {
+    Comment, CommentState, FileComments, LineComments, ReviewComments
+} from "./state/comments";
+import {FileTreePath} from "./state/filetree";
+import {fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
 import {addRenderingProps, commentsResponseToState} from "./util/comments";
 import {
     CommentAggregates,
-    CommentToRead, fetchCommentAggregates,
+    fetchCommentAggregates,
     fetchComments,
     postComment as doPostComment,
     setCommentState as doSetCommentState

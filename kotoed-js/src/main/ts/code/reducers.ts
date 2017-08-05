@@ -1,9 +1,9 @@
 import * as _ from "lodash"
 
-import {
-    EditorState, FileComments, FileTreeState, ReviewComments, LineComments, CommentsState,
-    CapabilitiesState
-} from "./state";
+import {CapabilitiesState} from "./state/capabilities";
+import {FileComments, ReviewComments, LineComments, CommentsState} from "./state/comments";
+import {EditorState} from "./state/editor";
+import {FileTreeState} from "./state/filetree";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
@@ -13,11 +13,10 @@ import {
 } from "./actions";
 import {
     addCommentAggregatesToFileTree, collapseDir,
-    collapseEverything, expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
+    expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
     registerOpenComment, selectFile,
     unselectFile
 } from "./util/filetree";
-import {Capabilities} from "./remote/capabilities";
 
 const initialFileTreeState: FileTreeState = {
     nodes: [],

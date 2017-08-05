@@ -8,7 +8,7 @@ import * as React from "react";
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
-import {Comment} from "../state";
+import {Comment} from "../state/comments";
 import {editorModeParam, guessCmModeForExt, requireCmMode} from "../util/codemirror";
 
 type CommentProps = Comment & {

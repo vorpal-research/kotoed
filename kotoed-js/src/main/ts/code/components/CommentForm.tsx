@@ -1,5 +1,4 @@
 import * as React from "react";
-import {ChangeEvent} from "react";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void

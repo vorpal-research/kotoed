@@ -4,7 +4,7 @@ import {render} from "react-dom";
 
 import LineComments from "./LineComments";
 import {List} from "immutable";
-import {Comment} from "../state";
+import {Comment} from "../state/comments";
 
 interface LineMarkerProps {
     canPostComment: boolean

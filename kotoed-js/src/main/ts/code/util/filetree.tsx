@@ -1,8 +1,8 @@
 import * as React from "react"
-import {File, FileType} from "../remote/code";
-import {Spinner, ITreeNode} from "@blueprintjs/core";
+import {File} from "../remote/code";
+import {Spinner} from "@blueprintjs/core";
 import {FileNotFoundError, FileTreeError} from "../errors";
-import {FileNode, FileNodes, FileTreePath, LoadingNode} from "../state";
+import {FileNode, FileNodes, FileTreePath, LoadingNode} from "../state/filetree";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
 
 

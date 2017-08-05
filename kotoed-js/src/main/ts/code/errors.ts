@@ -1,4 +1,4 @@
-import {FileTreePath} from "./state";
+import {FileTreePath} from "./state/filetree";
 
 export abstract class CodeReviewError extends Error {
     constructor(message: string) {

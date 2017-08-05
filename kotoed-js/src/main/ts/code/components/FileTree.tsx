@@ -1,12 +1,8 @@
 import * as React from "react";
 
 import {Classes, Tree} from "@blueprintjs/core";
-import {FileNodes, FileTreeNode} from "../state";
+import {FileTreeNode, FileTreeProps} from "../state/filetree";
 import {makeLoadingNode} from "../util/filetree";
-export interface FileTreeProps {
-    loading: boolean
-    nodes: FileNodes
-}
 
 export interface FileTreeCallbacks {
     onDirExpand(path: number[]): void

@@ -2,7 +2,8 @@ import * as React from "react";
 
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
-import {FileComments, FileNodes, FileTreePath} from "../state";
+import {FileComments} from "../state/comments";
+import {FileNodes, FileTreePath} from "../state/filetree";
 import {CmMode} from "../util/codemirror";
 
 export interface CodeReviewProps {
