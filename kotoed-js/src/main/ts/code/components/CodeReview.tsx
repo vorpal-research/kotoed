@@ -3,7 +3,8 @@ import * as React from "react";
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
 import {FileComments} from "../state/comments";
-import {FileNodes, FileTreePath} from "../state/filetree";
+import {NodePath} from "../state/blueprintTree";
+import {FileNode} from "../state/filetree";
 import {CmMode} from "../util/codemirror";
 
 export interface CodeReviewProps {
@@ -12,10 +13,10 @@ export interface CodeReviewProps {
     editorValue: string;
     editorMode: CmMode;
     filePath: string;
-    nodePath: FileTreePath;
+    nodePath: NodePath;
     editorComments: FileComments;
     fileTreeLoading: boolean;
-    fileTreeNodes: FileNodes;
+    root: FileNode;
     onDirExpand: (path: number[]) => void;
     onDirCollapse: (path: number[]) => void;
     onFileSelect: (path: number[]) => void;
@@ -29,7 +30,7 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
         return (
             <div className="row code-review">
                 <div className="col-md-3" style={{height: "100%", overflowY: "scroll"}}>
-                    <FileTree nodes={this.props.fileTreeNodes}
+                    <FileTree root={this.props.root}
                               onDirExpand={this.props.onDirExpand}
                               onDirCollapse={this.props.onDirCollapse}
                               onFileSelect={this.props.onFileSelect}

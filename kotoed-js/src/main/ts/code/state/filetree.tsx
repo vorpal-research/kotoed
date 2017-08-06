@@ -1,10 +1,11 @@
-import moment = require("moment");
+import * as React from "react"
 import {ITreeNode} from "@blueprintjs/core";
 import {FileType} from "../remote/code";
+import {Node, NodePatch, NodeProps} from "./blueprintTree";
 
 export interface FileTreeProps {
     loading: boolean
-    nodes: FileNodes
+    root: FileNode
 }
 
 export interface FileTreeState extends FileTreeProps {
@@ -14,20 +15,27 @@ export interface FileTreeState extends FileTreeProps {
 
 export type FileTreeNode = LoadingNode | FileNode;
 
+
 export interface LoadingNode extends ITreeNode {
-    kind: "loading"
+    data: {
+        kind: "loading"
+    }
 }
 
-export interface FileNode extends ITreeNode {
+export interface FileProps {
     kind: "file"
     type: FileType
-    childNodes?: FileNodes
     filename: string
     openComments: number
     closedComments: number
 }
 
-export type FileNodes = Array<FileNode>
-export const FileNodes = () => Array<FileNodes>();
 
-export type FileTreePath = Array<number>;
+export type FileNode = Node<FileProps>
+export type FileNodeProps = NodeProps<FileProps>
+export type FileNodePatch = NodePatch<FileProps>
+
+export function FileNode(props: FileNodeProps): FileNode {
+    return Node<FileProps>(props);
+}
+

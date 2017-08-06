@@ -3,23 +3,32 @@ import * as _ from "lodash"
 import {CapabilitiesState} from "./state/capabilities";
 import {FileComments, ReviewComments, LineComments, CommentsState} from "./state/comments";
 import {EditorState} from "./state/editor";
-import {FileTreeState} from "./state/filetree";
+import {FileNode, FileTreeState} from "./state/filetree";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
-    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
+    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, editorCommentsUpdate, fileLoad,
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch
 } from "./actions";
 import {
-    addCommentAggregatesToFileTree, collapseDir,
-    expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
-    registerOpenComment, selectFile,
-    unselectFile
+    addAggregates, makeFileNode, registerAddComment, registerCloseComment,
+    registerOpenComment
 } from "./util/filetree";
 
+
 const initialFileTreeState: FileTreeState = {
-    nodes: [],
+    root: FileNode({
+        id: 0,
+        label: "dummy",
+        data: {
+            kind: "file",
+            filename: "dummy",
+            type: "file",
+            closedComments: 0,
+            openComments: 0
+        }
+    }),
     loading: true,
     selectedPath: [],
     aggregatesFetched: false
@@ -27,41 +36,43 @@ const initialFileTreeState: FileTreeState = {
 
 export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, action: Action) => {
     if (isType(action, dirExpand)) {
-        let newState = _.cloneDeep(state);  // TODO try to do better
-        expandEverything(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root = newState.root.expandTowards(action.payload.treePath);
         return newState;
     } else if (isType(action, dirCollapse)) {
-        let newState = _.cloneDeep(state);
-        collapseDir(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root = newState.root.collapse(action.payload.treePath);
         return newState;
     } else if (isType(action, fileSelect)) {
-        let newState = _.cloneDeep(state);
-        unselectFile(newState.nodes, newState.selectedPath);
-        expandEverything(newState.nodes, action.payload.treePath);
-        selectFile(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root =
+            newState.root
+                .unselect(newState.selectedPath)
+                .expandTowards(action.payload.treePath)
+                .select(action.payload.treePath);
         newState.selectedPath = action.payload.treePath;
         return newState;
     } else if (isType(action, rootFetch.done)) {
         let newState = {...state};
-        newState.nodes = makeBlueprintTreeState(action.payload.result.list);
+        newState.root = makeFileNode(action.payload.result.root);
         newState.loading = false;
         return newState;
     } else if (isType(action, commentAggregatesFetch.done)) {
-        let newState = _.cloneDeep(state);
+        let newState = {...state};
         newState.aggregatesFetched = true;
-        addCommentAggregatesToFileTree(newState.nodes, action.payload.result);
+        newState.root = addAggregates(newState.root, action.payload.result);
         return newState;
     } else if (isType(action, aggregatesUpdate)) {
-        let newState = _.cloneDeep(state);
+        let newState = {...state};
         switch(action.payload.type) {
             case "new":
-                registerAddComment(newState.nodes, action.payload.file);
+                newState.root = registerAddComment(newState.root, action.payload.file);
                 break;
             case "open":
-                registerOpenComment(newState.nodes, action.payload.file);
+                newState.root = registerOpenComment(newState.root, action.payload.file);
                 break;
             case "close":
-                registerCloseComment(newState.nodes, action.payload.file);
+                newState.root = registerCloseComment(newState.root, action.payload.file);
                 break;
 
         }
