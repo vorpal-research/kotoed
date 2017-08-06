@@ -25,7 +25,7 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
         editorValue: store.editorState.value,
         editorMode: store.editorState.mode,
         filePath: store.editorState.fileName,
-        fileTreeNodes: store.fileTreeState.nodes,
+        root: store.fileTreeState.root,
         fileTreeLoading: store.fileTreeState.loading,
         nodePath: store.fileTreeState.selectedPath,
         canPostComment: store.capabilitiesState.capabilities.permissions.postComment

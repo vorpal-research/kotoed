@@ -3,15 +3,11 @@ import {List, Map} from "immutable";
 
 import actionCreatorFactory from 'typescript-fsa';
 import {
-    filePathToNodePath, getNodeAt, nodePathToFilePath
-} from "./util/filetree";
-import {
     CodeReviewState
 } from "./state";
 import {
     Comment, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
-import {FileTreePath} from "./state/filetree";
 import {fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
@@ -26,6 +22,8 @@ import {
 } from "./remote/comments";
 import {CmMode, guessCmModeForFile} from "./util/codemirror";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
+import {getFilePath, getNodePath} from "./util/filetree";
+import {NodePath} from "./state/blueprintTree";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -33,7 +31,7 @@ interface SubmissionPayload {
 }
 
 interface NodePathPayload {
-    treePath: FileTreePath
+    treePath: NodePath
 }
 
 interface FilePathPayload {
@@ -41,7 +39,7 @@ interface FilePathPayload {
 }
 
 interface DirFetchResult {
-    list: Array<File>
+    root: File
 }
 
 interface FileFetchResult {
@@ -75,7 +73,6 @@ export const editorCommentsUpdate = actionCreator<FileComments>('EDITOR_COMMENTS
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
 
 // File or dir fetch actions
-export const dirFetch = actionCreator.async<NodePathPayload, DirFetchResult, {}>('DIR_FETCH');
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
 
@@ -108,13 +105,13 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
             submissionId: payload.submissionId
         }));
 
-        return fetchRootDir(payload.submissionId).then((fileList) => {
+        return fetchRootDir(payload.submissionId).then((root) => {
             dispatch(rootFetch.done({
                 params: {
                     submissionId: payload.submissionId
                 },
                 result: {
-                    list: fileList
+                    root
                 }
             }))
         });
@@ -123,9 +120,9 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
 
 export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let numPath: FileTreePath;
+        let numPath: NodePath;
         try {
-            numPath = filePathToNodePath(getState().fileTreeState.nodes, payload.filename);
+            numPath = getNodePath(getState().fileTreeState.root, payload.filename);
         } catch(e) {
             if (e instanceof FileNotFoundError) {
                 numPath = [];
@@ -138,12 +135,12 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
         if (numPath === getState().fileTreeState.selectedPath)
             return;
 
-        let node = getNodeAt(getState().fileTreeState.nodes, numPath);
+        let node = getState().fileTreeState.root.getNodeAt(numPath);
 
         if (node === null)
             return;
 
-        switch (node.type) {
+        switch (node.data.type) {
             case "directory":
                 dispatch(dirExpand({
                     treePath: numPath
@@ -165,7 +162,7 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
 
 export function setPath(payload: NodePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
+        let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
         dispatch(push(`/${payload.submissionId}/${filename}`))
     }
 }
