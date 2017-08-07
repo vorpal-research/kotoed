@@ -65,12 +65,31 @@ interface AggregatesUpdatePayload {
     type: "new" | "close" | "open"
 }
 
+interface HiddenCommentsExpandPayload {
+    file: string
+    line: number
+    comments: List<Comment>
+}
+
+interface ExpandedResetForLinePayload {
+    file: string
+    line: number
+}
+
+interface ExpandedResetForFilePayload {
+    file: string
+}
+
+
 // Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
 export const editorCommentsUpdate = actionCreator<FileComments>('EDITOR_COMMENTS_UPDATE');
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
+export const hiddenCommentsExpand = actionCreator<HiddenCommentsExpandPayload>("HIDDEN_COMMENTS_EXPAND");
+export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("EXPANDED_RESET_FOR_LINE");
+export const expandedResetForFile = actionCreator<ExpandedResetForFilePayload>("EXPANDED_RESET_FOR_FILE");
 
 // File or dir fetch actions
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
@@ -175,6 +194,11 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
             filename
         }));  // Not used yet
         // TODO save file locally?
+
+        resetExpandedForFile({
+            file: filename
+        })(dispatch, getState);
+
         fetchFile(payload.submissionId, filename).then(result => {
             dispatch(fileLoad.done({
                 params: {
@@ -303,5 +327,26 @@ export function fetchCapabilitiesIfNeeded() {
             params: {},
             result
         }));
+    }
+}
+
+export function expandHiddenComments(payload: HiddenCommentsExpandPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(hiddenCommentsExpand(payload));
+        updateEditorComments()(dispatch, getState);
+    }
+}
+
+export function resetExpandedForLine(payload: ExpandedResetForLinePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForLine(payload));
+        updateEditorComments()(dispatch, getState);
+    }
+}
+
+export function resetExpandedForFile(payload: ExpandedResetForFilePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForFile(payload));
+        updateEditorComments()(dispatch, getState);
     }
 }

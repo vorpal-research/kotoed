@@ -1,7 +1,7 @@
 import * as _ from "lodash"
 
 import {CapabilitiesState} from "./state/capabilities";
-import {FileComments, ReviewComments, LineComments, CommentsState} from "./state/comments";
+import {FileComments, ReviewComments, LineComments, CommentsState, Comment} from "./state/comments";
 import {EditorState} from "./state/editor";
 import {FileNode, FileTreeState} from "./state/filetree";
 import {Action} from "redux";
@@ -9,12 +9,14 @@ import {isType} from "typescript-fsa";
 import {
     commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, editorCommentsUpdate, fileLoad,
     fileSelect,
-    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch
+    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand, resetExpandedForLine,
+    expandedResetForFile, expandedResetForLine
 } from "./actions";
 import {
     addAggregates, makeFileNode, registerAddComment, registerCloseComment,
     registerOpenComment
 } from "./util/filetree";
+import {List} from "immutable";
 
 
 const initialFileTreeState: FileTreeState = {
@@ -136,6 +138,39 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
 
         comments = comments.set(oldCommentIx, comment);
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
+        return newState;
+    } else if (isType(action, hiddenCommentsExpand)) {
+        let {comments, file, line} = action.payload;
+        let newState = {...reviewState};
+        let newComments = (newState.comments.getIn([file, line]) as LineComments).withMutations((mutable) => {
+            comments.forEach((update: Comment) => {
+                let {id} = update;
+                let ix = mutable.findIndex((c: Comment) => c.id == id);
+                if (ix === -1) {
+                    throw new Error("Comment to update not found");
+                }
+                let newComment = {...mutable.get(ix)};
+                newComment.collapsed = false;
+                mutable.set(ix, newComment);
+            });
+        });
+        newState.comments = newState.comments.setIn([file, line], newComments);
+        return newState;
+    } else if (isType(action, expandedResetForLine)) {
+        let {file, line} = action.payload;
+        let newState = {...reviewState};
+        let newComments = (newState.comments.getIn([file, line]) as LineComments).map((comment: Comment) => {
+            return {...comment, collapsed: comment.state === "closed"}
+        }) as LineComments;
+        newState.comments = newState.comments.setIn([file, line], newComments);
+        return newState;
+    } else if (isType(action, expandedResetForFile)) {
+        let {file} = action.payload;
+        let newState = {...reviewState};
+        let newComments = newState.comments.get(file).map((lc: LineComments) => lc.map((comment: Comment) => {
+            return {...comment, collapsed: comment.state === "closed"}
+        }) as LineComments) as FileComments;  // "as Smth" is ugly but typings specify say that .map() returns iterable, however docs say that it returns concrete collection
+        newState.comments = newState.comments.set(file, newComments);
         return newState;
     }
     return reviewState;

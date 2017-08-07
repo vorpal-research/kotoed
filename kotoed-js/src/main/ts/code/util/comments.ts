@@ -10,7 +10,8 @@ export function addRenderingProps(comment: CommentToRead, capabilities: Capabili
         canStateBeChanged: capabilities.permissions.changeStateAllComments ||
             (comment.authorId == capabilities.principal.id) && capabilities.permissions.changeStateOwnComments,
         canBeEdited: capabilities.permissions.editAllComments ||
-            (comment.authorId == capabilities.principal.id) && capabilities.permissions.editOwnComments
+            (comment.authorId == capabilities.principal.id) && capabilities.permissions.editOwnComments,
+        collapsed: comment.state === "closed"
     }
 }
 

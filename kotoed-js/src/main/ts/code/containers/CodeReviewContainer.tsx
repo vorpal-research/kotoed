@@ -4,7 +4,11 @@ import {connect} from "react-redux";
 
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
-import {dirCollapse, dirExpand, fileSelect, initialize, postComment, setCommentState, setPath} from "../actions";
+import {
+    dirCollapse, dirExpand, expandHiddenComments, fileSelect, initialize, postComment, resetExpandedForLine,
+    setCommentState,
+    setPath
+} from "../actions";
 import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 
@@ -80,8 +84,24 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 commentId,
                 state: "open"
             }))
-        }
+        },
 
+        onHiddenExpand: (file, line, comments) => {
+            dispatch(expandHiddenComments({
+                file,
+                line,
+                comments
+            }))
+        },
+
+        onMarkerExpand: (file, line) => {},
+
+        onMarkerCollapse: (file, line) => {
+            dispatch(resetExpandedForLine({
+                file,
+                line
+            }));
+        }
     }
 };
 

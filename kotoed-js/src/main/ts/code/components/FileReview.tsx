@@ -12,7 +12,8 @@ import {
     CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode,
     toCmLine
 } from "../util/codemirror";
-import {FileComments, LineComments} from "../state/comments";
+import {Comment, FileComments, LineComments} from "../state/comments";
+import {List} from "immutable";
 
 export interface FileReviewProps {
     canPostComment: boolean
@@ -24,6 +25,9 @@ export interface FileReviewProps {
     onSubmit: (line: number, comment: string) => void
     onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
     onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
+    onMarkerExpand: (file: string, lineNumber: number) => void
+    onMarkerCollapse: (file: string, lineNumber: number) => void
+    onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
 }
 
 interface FileReviewState {
@@ -66,10 +70,12 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
     private handleMarkerExpand = (lineNo: number) => {
         this.handleMarkerSwitch(lineNo, true);
+        this.props.onMarkerExpand(this.props.filePath, lineNo);
     };
 
     private handleMarkerCollapse = (lineNo: number) => {
         this.handleMarkerSwitch(lineNo, false);
+        this.props.onMarkerCollapse(this.props.filePath, lineNo);
     };
 
     private renderMarker = (cmLine: number, comments: LineComments) => {
@@ -89,6 +95,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
                 onSubmit={this.props.onSubmit}
                 onCommentResolve={(lineNumber, id) => this.props.onCommentResolve(this.props.filePath, lineNumber, id)}
                 onCommentUnresolve={(lineNumber, id) => this.props.onCommentUnresolve(this.props.filePath, lineNumber, id)}
+                onHiddenExpand={(line, comments) => this.props.onHiddenExpand(this.props.filePath, line, comments)}
             />,
             badge);
         this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);

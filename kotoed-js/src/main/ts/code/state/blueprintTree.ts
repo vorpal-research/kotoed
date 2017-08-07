@@ -1,6 +1,5 @@
 import * as _ from "lodash"
 import {ITreeNode} from "@blueprintjs/core";
-import {FileType} from "../remote/code";
 
 export class TreeError extends Error {
     constructor(numPath: NodePath) {
