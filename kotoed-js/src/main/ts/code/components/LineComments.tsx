@@ -3,7 +3,7 @@ import {fromJS, List} from "immutable";
 
 import CommentComponent from "./CommentComponent";
 import {Comment, LineComments as LineCommentsState} from "../state/comments";
-import {CommentForm} from "./CommentForm";
+import CommentForm from "./CommentForm";
 import CollapsedComments from "./CollapsedComments";
 
 interface LineCommentsProps {
@@ -16,6 +16,7 @@ interface LineCommentsProps {
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
+    whoAmI: string
 }
 
 export default class LineComments extends React.Component<LineCommentsProps, {}> {
@@ -63,7 +64,14 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
             <div>
                 <div className="line-comments">
                     {this.getNested()}
-                    { this.props.canPostComment && <CommentForm onSubmit={this.props.onSubmit}/> }
+                    {
+                        this.props.canPostComment &&
+                        <CommentForm
+                            onSubmit={this.props.onSubmit}
+                            notifyEditorAboutChange={this.props.notifyEditorAboutChange}
+                            whoAmI={this.props.whoAmI}
+                        />
+                    }
                 </div>
                 <div className="line-comments-arrow" style={{left: this.props.arrowOffset}}/>
             </div>
