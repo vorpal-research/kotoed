@@ -2,10 +2,11 @@ import * as React from "react";
 
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
-import {FileComments} from "../state/comments";
+import {Comment, FileComments} from "../state/comments";
 import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
 import {CmMode} from "../util/codemirror";
+import {List} from "immutable";
 
 export interface CodeReviewProps {
     // TODO decompose this shit
@@ -23,6 +24,9 @@ export interface CodeReviewProps {
     onCommentSubmit: (file: string, line: number, text: string) => void
     onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
     onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
+    onMarkerExpand: (file: string, lineNumber: number) => void
+    onMarkerCollapse: (file: string, lineNumber: number) => void
+    onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
 }
 
 export default class CodeReview extends React.Component<CodeReviewProps> {
@@ -47,6 +51,9 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                                 onSubmit={(line, text) => this.props.onCommentSubmit(this.props.filePath, line, text)}
                                 onCommentResolve={this.props.onCommentResolve}
                                 onCommentUnresolve={this.props.onCommentUnresolve}
+                                onMarkerExpand={this.props.onMarkerExpand}
+                                onMarkerCollapse={this.props.onMarkerCollapse}
+                                onHiddenExpand={this.props.onHiddenExpand}
                     />
                 </div>
             </div>

@@ -18,6 +18,7 @@ interface LineMarkerProps {
     onSubmit: (line: number, comment: string) => void
     onCommentUnresolve: (lineNumber: number, id: number) => void
     onCommentResolve: (lineNumber: number, id: number) => void
+    onHiddenExpand: (lineNumber: number, comments: List<Comment>) => void
 }
 
 interface LineMarkerState {
@@ -59,6 +60,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
                 onCommentResolve={id => this.props.onCommentResolve(this.props.lineNumber, id)}
                 onCommentUnresolve={id => this.props.onCommentUnresolve(this.props.lineNumber, id)}
+                onExpand={(comments) => this.props.onHiddenExpand(this.props.lineNumber, comments)}
             />,
             div);
         this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {

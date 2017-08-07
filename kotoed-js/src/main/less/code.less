@@ -56,9 +56,12 @@
 .hidden-comments-heading {
   overflow: hidden;
   text-align: center;
+  margin-bottom: @line-height-computed;  // Same as BS panel
+  color: @gray-light;
+  cursor: pointer;
 
   &:before, &:after {
-    background-color: #ccc;
+    background-color: @gray-lighter ;
     content: "";
     display: inline-block;
     height: 1px;

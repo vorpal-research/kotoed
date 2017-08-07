@@ -13,6 +13,7 @@ export type CommentState = "open" | "closed";
 interface CommentRenderingProps {
     canStateBeChanged: boolean,
     canBeEdited: boolean
+    collapsed: boolean
 }
 
 export type Comment = CommentToRead & CommentRenderingProps
