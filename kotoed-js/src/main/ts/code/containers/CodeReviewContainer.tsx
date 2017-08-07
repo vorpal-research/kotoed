@@ -33,7 +33,8 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
         root: store.fileTreeState.root,
         fileTreeLoading: store.fileTreeState.loading,
         nodePath: store.fileTreeState.selectedPath,
-        canPostComment: store.capabilitiesState.capabilities.permissions.postComment
+        canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
+        whoAmI: store.capabilitiesState.capabilities.principal.denizenId
     }
 };
 

@@ -1,35 +1,13 @@
-/// <reference types="codemirror/codemirror-runmode"/>
-// ^^ this CANNOT be import since it should not be emitted to resulting JS
-import * as cm from "codemirror"
-import "codemirror/addon/runmode/runmode"
-import "bootstrap-less"
 import * as React from "react";
+import "bootstrap-less"
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
-import {Comment, CommentState} from "../state/comments";
-import {editorModeParam, guessCmModeForExt, requireCmMode} from "../util/codemirror";
+import {Comment} from "../state/comments";
 import {CommentButton} from "./CommentButton";
+import CmrmCodeBlock from "./CmrmCodeBlock";
 
-interface CodeBlockProps {
-    literal: string
-    language: string
-}
 
-class CmrmCodeBlock extends React.Component<CodeBlockProps> {
-    output: HTMLPreElement;
-
-    componentDidMount() {
-        let mode = guessCmModeForExt(this.props.language);
-        requireCmMode(mode);
-        cm.runMode(this.props.literal, editorModeParam(mode), this.output);
-    }
-
-    render() {
-        return <pre ref={(ref: HTMLPreElement) => this.output = ref}/>
-    }
-
-}
 
 
 type CommentProps = Comment & {
@@ -209,7 +187,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
             <p>
                 <button type="button" className="btn btn-success"
                         onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
-                    Send
+                    Edit
                 </button>
                 {" "}
                 <button type="button" className="btn btn-danger"
@@ -273,7 +251,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                 }}
                 onChange={(event) => this.setState({editText: event.target.value})}/>
         </div>
-    }
+    };
 
     render() {
         return (

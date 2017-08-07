@@ -28,6 +28,7 @@ export interface CodeReviewProps {
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+    whoAmI: string
 }
 
 export default class CodeReview extends React.Component<CodeReviewProps> {
@@ -56,6 +57,7 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                                 onMarkerCollapse={this.props.onMarkerCollapse}
                                 onHiddenExpand={this.props.onHiddenExpand}
                                 onCommentEdit={this.props.onCommentEdit}
+                                whoAmI={this.props.whoAmI}
                     />
                 </div>
             </div>

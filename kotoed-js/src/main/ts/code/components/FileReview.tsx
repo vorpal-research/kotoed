@@ -29,6 +29,7 @@ export interface FileReviewProps {
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+    whoAmI: string
 }
 
 interface FileReviewState {
@@ -98,6 +99,7 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
                 onCommentUnresolve={(lineNumber, id) => this.props.onCommentUnresolve(this.props.filePath, lineNumber, id)}
                 onHiddenExpand={(line, comments) => this.props.onHiddenExpand(this.props.filePath, line, comments)}
                 onCommentEdit={(line, id, newText) => this.props.onCommentEdit(this.props.filePath, line, id, newText)}
+                whoAmI={this.props.whoAmI}
             />,
             badge);
         this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
