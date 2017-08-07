@@ -94,7 +94,7 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
             }))
         },
 
-        onMarkerExpand: (file, line) => {},
+        onMarkerExpand: () => {},
 
         onMarkerCollapse: (file, line) => {
             dispatch(resetExpandedForLine({
