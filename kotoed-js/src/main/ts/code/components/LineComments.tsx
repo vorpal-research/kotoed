@@ -14,6 +14,8 @@ interface LineCommentsProps {
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onExpand: (comments: List<Comment>) => void
+    notifyEditorAboutChange: () => void
+    onEdit: (id: number, newText: string) => void
 }
 
 export default class LineComments extends React.Component<LineCommentsProps, {}> {
@@ -39,9 +41,12 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
             if (comment.state === "open" || !comment.collapsed) {
                 flushCollapsed();
                 components.push(<CommentComponent
+                    notifyEditorAboutChange={this.props.notifyEditorAboutChange}
                     key={comment.id} {...comment}
                     onResolve={lcProps.onCommentResolve}
-                    onUnresolve={lcProps.onCommentUnresolve}/>);
+                    onUnresolve={lcProps.onCommentUnresolve}
+                    onEdit={this.props.onEdit}/>);
+
             } else {
                 collapsedAcc.push(comment);
             }
