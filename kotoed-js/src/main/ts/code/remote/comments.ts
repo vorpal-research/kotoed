@@ -68,6 +68,13 @@ interface CommentStateUpdate {
     state: CommentState
 }
 
+interface CommentEdit {
+    id: number
+    text: string
+}
+
+
+
 export async function fetchComments(submissionId: number): Promise<ReviewComments> {
     return eventBus.send<CommentsRequest, ReviewComments>(FETCH_COMMENTS_ADDRESS, {
         id: submissionId,
@@ -98,6 +105,15 @@ export async function setCommentState(commentId: number,
     let res = await eventBus.send<CommentStateUpdate, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
         id: commentId,
         state
+    });
+    return res.record;
+}
+
+export async function editComment(commentId: number,
+                                  text: string): Promise<BaseCommentToRead> {
+    let res = await eventBus.send<CommentEdit, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
+        id: commentId,
+        text
     });
     return res.record;
 }

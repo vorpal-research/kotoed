@@ -18,7 +18,9 @@ import {
     fetchCommentAggregates,
     fetchComments,
     postComment as doPostComment,
-    setCommentState as doSetCommentState
+    setCommentState as doSetCommentState,
+    editComment as doEditComment
+
 } from "./remote/comments";
 import {CmMode, guessCmModeForFile} from "./util/codemirror";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
@@ -58,6 +60,11 @@ interface PostCommentPayload {
 interface CommentStatePayload {
     commentId: number,
     state: CommentState
+}
+
+interface CommentEditPayload {
+    commentId: number,
+    newText: string
 }
 
 interface AggregatesUpdatePayload {
@@ -101,6 +108,8 @@ export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
 export const commentPost = actionCreator.async<PostCommentPayload, Comment, {}>('COMMENT_POST');
 export const commentStateUpdate = actionCreator.async<CommentStatePayload, Comment>('COMMENT_STATE_UPDATE');
+export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COMMENT_EDIT');
+
 
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
@@ -299,9 +308,10 @@ export function setCommentState(payload: CommentStatePayload) {
         dispatch(commentStateUpdate.done({
             params: payload,
             result: addRenderingProps({
-                ...result,
-                denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
-            }, getState().capabilitiesState.capabilities)
+                    ...result,
+                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
+                },
+                getState().capabilitiesState.capabilities)
         }));
 
         updateEditorComments()(dispatch, getState);
@@ -313,6 +323,26 @@ export function setCommentState(payload: CommentStatePayload) {
 
     }
 }
+
+export function editComment(payload: CommentEditPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentEdit.started(payload));  // Not used yet
+
+        let result = await doEditComment(payload.commentId, payload.newText);
+
+        dispatch(commentEdit.done({
+            params: payload,
+            result: addRenderingProps({
+                    ...result,
+                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
+                },
+                getState().capabilitiesState.capabilities)
+        }));
+
+        updateEditorComments()(dispatch, getState);
+    }
+}
+
 
 export function fetchCapabilitiesIfNeeded() {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {

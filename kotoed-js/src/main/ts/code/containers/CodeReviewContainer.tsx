@@ -5,7 +5,8 @@ import {connect} from "react-redux";
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
-    dirCollapse, dirExpand, expandHiddenComments, fileSelect, initialize, postComment, resetExpandedForLine,
+    dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, initialize, postComment,
+    resetExpandedForLine,
     setCommentState,
     setPath
 } from "../actions";
@@ -101,6 +102,13 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 file,
                 line
             }));
+        },
+
+        onCommentEdit: (file, line, commentId, newText) => {
+            dispatch(editComment({
+                commentId,
+                newText
+            }))
         }
     }
 };

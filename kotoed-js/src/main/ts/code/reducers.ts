@@ -10,13 +10,14 @@ import {
     commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, editorCommentsUpdate, fileLoad,
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand, resetExpandedForLine,
-    expandedResetForFile, expandedResetForLine
+    expandedResetForFile, expandedResetForLine, commentEdit
 } from "./actions";
 import {
     addAggregates, makeFileNode, registerAddComment, registerCloseComment,
     registerOpenComment
 } from "./util/filetree";
 import {List} from "immutable";
+import {CommentToRead} from "./remote/comments";
 
 
 const initialFileTreeState: FileTreeState = {
@@ -111,6 +112,23 @@ export const defaultCommentsState = {
     fetched: false
 };
 
+function updateComment(reviewState: CommentsState, comment: Comment) {
+    let {id, state, sourcefile, sourceline, text} = comment;
+    let newState = {...reviewState};
+    let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
+
+    let oldCommentIx = comments.findIndex(c => !!c && (c.id == id));
+    let oldComment = comments.get(oldCommentIx);
+    if (!oldComment)
+        throw new Error("Comment to update not found");
+
+    let newComment = {...oldComment, text, state};
+
+    comments = comments.set(oldCommentIx, newComment);
+    newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
+    return newState;
+}
+
 export const commentsReducer = (reviewState: CommentsState = defaultCommentsState, action: Action) => {
     if (isType(action, commentsFetch.done)) {
         let newState = {...reviewState};
@@ -125,20 +143,9 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
         return newState;
     } else if (isType(action, commentStateUpdate.done)) {
-        let {id, state, sourcefile, sourceline, text} = action.payload.result;
-        let newState = {...reviewState};
-        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
-
-        let oldCommentIx = comments.findIndex(c => !!c && (c.id == id));
-        let oldComment = comments.get(oldCommentIx);
-        if (!oldComment)
-            throw new Error("Comment to update not found");
-
-        let comment = {...oldComment, text, state};
-
-        comments = comments.set(oldCommentIx, comment);
-        newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
-        return newState;
+        return updateComment(reviewState, action.payload.result);
+    } else if (isType(action, commentEdit.done)) {
+        return updateComment(reviewState, action.payload.result);
     } else if (isType(action, hiddenCommentsExpand)) {
         let {comments, file, line} = action.payload;
         let newState = {...reviewState};
