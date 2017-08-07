@@ -166,7 +166,7 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
     } else if (isType(action, expandedResetForLine)) {
         let {file, line} = action.payload;
         let newState = {...reviewState};
-        let newComments = (newState.comments.getIn([file, line]) as LineComments).map((comment: Comment) => {
+        let newComments = (newState.comments.getIn([file, line], LineComments()) as LineComments).map((comment: Comment) => {
             return {...comment, collapsed: comment.state === "closed"}
         }) as LineComments;
         newState.comments = newState.comments.setIn([file, line], newComments);
@@ -174,7 +174,7 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
     } else if (isType(action, expandedResetForFile)) {
         let {file} = action.payload;
         let newState = {...reviewState};
-        let newComments = newState.comments.get(file).map((lc: LineComments) => lc.map((comment: Comment) => {
+        let newComments = newState.comments.get(file, FileComments()).map((lc: LineComments) => lc.map((comment: Comment) => {
             return {...comment, collapsed: comment.state === "closed"}
         }) as LineComments) as FileComments;  // "as Smth" is ugly but typings specify say that .map() returns iterable, however docs say that it returns concrete collection
         newState.comments = newState.comments.set(file, newComments);
