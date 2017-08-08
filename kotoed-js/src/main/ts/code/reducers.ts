@@ -7,18 +7,15 @@ import {FileNode, FileTreeState} from "./state/filetree";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
-    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, editorCommentsUpdate, fileLoad,
+    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, fileLoad,
     fileSelect,
-    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand, resetExpandedForLine,
+    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
     expandedResetForFile, expandedResetForLine, commentEdit
 } from "./actions";
 import {
     addAggregates, makeFileNode, registerAddComment, registerCloseComment,
     registerOpenComment
 } from "./util/filetree";
-import {List} from "immutable";
-import {CommentToRead} from "./remote/comments";
-
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -96,12 +93,7 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         let newState = {...state};
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
-        newState.displayedComments = action.payload.result.displayedComments;
         return newState;
-    } else if (isType(action, editorCommentsUpdate)) {
-        let newState = {...state};
-        newState.displayedComments = action.payload;
-        return newState
     }
     return state;
 };
