@@ -5,7 +5,7 @@ import * as cm from "codemirror"
 import * as React from "react";
 import "codemirror/addon/runmode/runmode"
 
-import {editorModeParam, guessCmModeForLang, requireCmMode} from "../util/codemirror";
+import {editorModeParam, guessCmModeForLang, guessCmModeForLangOrExt, requireCmMode} from "../util/codemirror";
 
 interface CodeBlockProps {
     literal: string
@@ -16,7 +16,7 @@ export default class CmrmCodeBlock extends React.Component<CodeBlockProps> {
     output: HTMLPreElement;
 
     componentDidMount() {
-        let mode = guessCmModeForLang(this.props.language);
+        let mode = guessCmModeForLangOrExt(this.props.language);
         requireCmMode(mode);
         cm.runMode(this.props.literal, editorModeParam(mode), this.output);
     }
