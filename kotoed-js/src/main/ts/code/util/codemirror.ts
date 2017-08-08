@@ -3,15 +3,6 @@ import "codemirror/mode/meta"
 import {CmMode} from "codemirror";
 import {Map} from "immutable";
 
-// Extra aliases for markdown, not known by CodeMirror
-export const ALIASES: Map<string, string> = Map([
-    ["kotlin", "kt"],
-    ["typescript", "ts"],
-    ["javascript", "js"],
-    ["typescript-jsx", "tsx"],
-    ["python", "py"],
-]);
-
 const DEFAULT_MODE = "text/plain";
 
 export function toCmLine(line: number) {
@@ -23,20 +14,20 @@ export function fromCmLine(line: number) {
 }
 
 export function guessCmModeForLang(lang: string) {
-    let ext = ALIASES.get(lang, lang);
-    return guessCmModeForExt(ext);
+    return cm.findModeByName(lang) || {};
 }
 
 export function guessCmModeForExt(ext: string) {
-    return cm.findModeByExtension(ext);
+    return cm.findModeByExtension(ext) || {};
 }
 
-export function guessCmModeForFile(filename: string): CmMode {
-    let match = filename.match(/(?:(?:.*)[\/\\])?(?:[^\/\\]+)\.(\w+)$/);
-    if (!match || match.length < 2)
-        return {};
+export function guessCmModeForLangOrExt(lang: string) {
+    return cm.findModeByName(lang) || cm.findModeByExtension(lang) || {};
+}
 
-    return guessCmModeForExt(match[1].toLowerCase())
+
+export function guessCmModeForFile(filename: string): CmMode {
+    return cm.findModeByFileName(filename) || {};
 }
 
 export function requireCmMode(mode: CmMode) {
