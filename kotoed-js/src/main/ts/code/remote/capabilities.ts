@@ -3,6 +3,10 @@ import {keysToCamelCase} from "../../util/stringCase";
 
 const CAPABILITES_URL = "/codereview-api/caps";
 
+function getCapabilitiesUrl(submissionId: number) {
+    return `/codereview-api/caps/${submissionId}`
+}
+
 export interface Principal {
     denizenId: string
     id: number
@@ -21,7 +25,7 @@ export interface Capabilities {
     permissions: Permissions
 }
 
-export async function fetchCapabilities() {
-    let resp = await axios.get(CAPABILITES_URL);
+export async function fetchCapabilities(submissionid: number) {
+    let resp = await axios.get(getCapabilitiesUrl(submissionid));
     return keysToCamelCase(resp.data) as Capabilities
 }

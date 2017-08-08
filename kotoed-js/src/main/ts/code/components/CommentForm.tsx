@@ -14,9 +14,6 @@ interface CommentFormState {
     editState: "edit"|"preview"
 }
 
-// TODO the code of this class may look weird because it is partially copy-pasted from CommentComponent
-// TODO try to extract common code for these components
-// TODO or rewrite this one in less weird manner.
 export default class CommentForm extends React.Component<CommentFormProps, CommentFormState> {
     constructor(props: CommentFormProps) {
         super(props);
@@ -31,16 +28,14 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     };
 
     renderPanelLabels = () => {
-        let labels: Array<JSX.Element> = [];
-        if (this.state.editState === "preview")
-            labels.push(<span key="preview" className="label label-warning">Preview</span>);
-
-        return labels
+        return this.state.editState === "preview" ?
+            <span key="preview" className="label label-warning">Preview</span> :
+            null
     };
 
 
     handleEditButtonClick = () => {
-        this.setState((prev, props) => {
+        this.setState((prev) => {
             switch (prev.editState) {
                 case "preview":
                     return {
@@ -117,7 +112,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
-    renderEditPreviewPanelFooter = () => {
+    renderPanelFooter = () => {
         return <div className="panel-footer">
             <p>
                 <button type="button" className="btn btn-success"
@@ -126,15 +121,6 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
                 </button>
             </p>
         </div>;
-    };
-
-    renderPanelFooter = () => {
-        switch (this.state.editState) {
-            case "edit":
-            case "preview":
-                return this.renderEditPreviewPanelFooter();
-
-        }
     };
 
 
