@@ -20,7 +20,7 @@ fun KotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Code.List to BridgeEventFilter.permissive(),
         Address.Api.Submission.Comments to BridgeEventFilter.permissive(),
         Address.Api.Submission.CommentAggregates to BridgeEventFilter.permissive(),
-        Address.Api.Submission.Comment.Create to CommentCreateFilter,
+        Address.Api.Submission.Comment.Create to CommentCreateFilter(vertx),
         Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx)
 )
 
