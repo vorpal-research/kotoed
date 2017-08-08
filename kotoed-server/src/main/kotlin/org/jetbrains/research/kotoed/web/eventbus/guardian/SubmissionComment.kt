@@ -1,17 +1,22 @@
 package org.jetbrains.research.kotoed.web.eventbus.guardian
 
 import io.vertx.core.Vertx
+import io.vertx.core.eventbus.EventBus
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.web.eventbus.commentById
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
 import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
+import org.jetbrains.research.kotoed.web.eventbus.submissionById
 
 object CommentCreatePatcher : BridgeEventPatcher {
     suspend override fun patch(be: BridgeEvent) {
@@ -30,11 +35,17 @@ object CommentCreatePatcher : BridgeEventPatcher {
     }
 }
 
-object CommentCreateFilter : BridgeEventFilter {
-    suspend override fun isAllowed(be: BridgeEvent): Boolean = true.also { logResult(be, it) }
+class CommentCreateFilter(val vertx: Vertx) : BridgeEventFilter {
+    suspend override fun isAllowed(be: BridgeEvent): Boolean = run {
+        val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("id") ?: return@run false
+        val comment = vertx.eventBus().commentById(id)
+        val submission = vertx.eventBus().submissionById(comment.submissionId)
+
+        return@run submission.state == SubmissionState.open
+    }.also { logResult(be, it) }
 
     override fun toString(): String {
-        return "CommentCreateFilter"
+        return "CommentCreateFilter(vertx=$vertx)"
     }
 }
 
@@ -43,13 +54,14 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         val user = be.socket().webUser()
         val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("id") ?: return@run false
 
-        val commentWrapper = fromJson<DbRecordWrapper>(vertx.eventBus().sendAsync(
-                Address.Api.Submission.Comment.Read,
-                SubmissionCommentRecord().apply { this.id = id }.toJson()).body())
+        val comment = vertx.eventBus().commentById(id)
 
-        val comment = commentWrapper.record.toRecord<SubmissionCommentRecord>()
+        val submission = vertx.eventBus().submissionById(comment.submissionId)
 
-        return@run if (comment.authorId == user.principal()["id"])
+        if (submission.state != SubmissionState.open)
+            return@run false
+
+        return@run if (comment.authorId != user.principal()["id"])
              true
         else
             user.isAuthorised("teacher")
