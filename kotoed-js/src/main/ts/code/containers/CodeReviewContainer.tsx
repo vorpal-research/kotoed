@@ -12,6 +12,7 @@ import {
 } from "../actions";
 import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
+import {FileComments} from "../state/comments";
 
 interface OnRoute {
     onRoute(submissionId: number, filename: string): void
@@ -26,7 +27,7 @@ type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUr
 
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     return {
-        editorComments: store.editorState.displayedComments,
+        editorComments: store.commentsState.comments.get(store.editorState.fileName, FileComments()),
         editorValue: store.editorState.value,
         filePath: store.editorState.fileName,
         root: store.fileTreeState.root,

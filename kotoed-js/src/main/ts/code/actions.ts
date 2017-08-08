@@ -90,7 +90,6 @@ interface ExpandedResetForFilePayload {
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
-export const editorCommentsUpdate = actionCreator<FileComments>('EDITOR_COMMENTS_UPDATE');
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
 export const hiddenCommentsExpand = actionCreator<HiddenCommentsExpandPayload>("HIDDEN_COMMENTS_EXPAND");
 export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("EXPANDED_RESET_FOR_LINE");
@@ -222,13 +221,6 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
     }
 }
 
-export function updateEditorComments() {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = getState().editorState.fileName;
-        dispatch(editorCommentsUpdate(getState().commentsState.comments.get(filename, Map<number, LineComments>())));
-    }
-}
-
 export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
 
@@ -287,8 +279,6 @@ export function postComment(payload: PostCommentPayload) {
             }, getState().capabilitiesState.capabilities)
         }));
 
-        updateEditorComments()(dispatch, getState);
-
         dispatch(aggregatesUpdate({
             type: "new",
             file: result.sourcefile
@@ -310,8 +300,6 @@ export function setCommentState(payload: CommentStatePayload) {
                 },
                 getState().capabilitiesState.capabilities)
         }));
-
-        updateEditorComments()(dispatch, getState);
 
         dispatch(aggregatesUpdate({
             type: result.state === "open" ? "open" : "close",
@@ -336,7 +324,6 @@ export function editComment(payload: CommentEditPayload) {
                 getState().capabilitiesState.capabilities)
         }));
 
-        updateEditorComments()(dispatch, getState);
     }
 }
 
@@ -360,20 +347,17 @@ export function fetchCapabilitiesIfNeeded() {
 export function expandHiddenComments(payload: HiddenCommentsExpandPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(hiddenCommentsExpand(payload));
-        updateEditorComments()(dispatch, getState);
     }
 }
 
 export function resetExpandedForLine(payload: ExpandedResetForLinePayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(expandedResetForLine(payload));
-        updateEditorComments()(dispatch, getState);
     }
 }
 
 export function resetExpandedForFile(payload: ExpandedResetForFilePayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(expandedResetForFile(payload));
-        updateEditorComments()(dispatch, getState);
     }
 }
