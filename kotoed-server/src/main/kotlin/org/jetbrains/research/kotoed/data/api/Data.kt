@@ -87,8 +87,13 @@ object SubmissionCode {
 }
 
 object SubmissionComments {
+    const val UnknownFile = "/dev/null"
+    const val UnknownLine = 0
+
     data class LineComments(val line: Int, val comments: List<JsonObject>): Jsonable
     data class FileComments(val filename: String, val byLine: List<LineComments>): Jsonable
+
+    data class CommentsResponse(val byFile: List<FileComments>, val lost: List<JsonObject>): Jsonable
 
     data class CommentAggregate(
             private val map: MutableMap<SubmissionCommentState, Int> =

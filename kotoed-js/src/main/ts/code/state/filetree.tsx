@@ -2,10 +2,12 @@ import * as React from "react"
 import {ITreeNode} from "@blueprintjs/core";
 import {FileType} from "../remote/code";
 import {Node, NodePatch, NodeProps} from "./blueprintTree";
+import {CommentAggregate} from "../remote/comments";
 
 export interface FileTreeProps {
     loading: boolean
     root: FileNode
+    lostFoundAggregate: CommentAggregate
 }
 
 export interface FileTreeState extends FileTreeProps {
@@ -26,8 +28,7 @@ export interface FileProps {
     kind: "file"
     type: FileType
     filename: string
-    openComments: number
-    closedComments: number
+    aggregate: CommentAggregate
 }
 
 

@@ -7,6 +7,9 @@ const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentaggregate
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
 const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update";
 
+export const UNKNOWN_FILE = "/dev/null";
+export const UNKNOWN_LINE = 0;
+
 type CommentState = "open" | "closed";
 
 interface BaseComment {
@@ -53,6 +56,11 @@ export interface CommentAggregates {
 
 export type ReviewComments = Array<FileComments>
 
+export interface CommentsResponse {
+    byFile: ReviewComments
+    lost: Array<CommentToRead>
+}
+
 type CommentsRequest = RequestWithId
 type CommentAggregatesRequest = RequestWithId
 
@@ -73,10 +81,8 @@ interface CommentEdit {
     text: string
 }
 
-
-
-export async function fetchComments(submissionId: number): Promise<ReviewComments> {
-    return eventBus.send<CommentsRequest, ReviewComments>(FETCH_COMMENTS_ADDRESS, {
+export async function fetchComments(submissionId: number): Promise<CommentsResponse> {
+    return eventBus.send<CommentsRequest, CommentsResponse>(FETCH_COMMENTS_ADDRESS, {
         id: submissionId,
     });
 }

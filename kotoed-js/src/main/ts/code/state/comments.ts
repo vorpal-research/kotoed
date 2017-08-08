@@ -4,6 +4,7 @@ import {CommentToRead} from "../remote/comments";
 
 export interface CommentsState {
     comments: ReviewComments
+    lostFound: LostFoundComments
     fetched: boolean
 }
 
@@ -27,3 +28,6 @@ export const FileComments = () => Map<number, LineComments>();
 
 export type ReviewComments = Map<string, FileComments>
 export const ReviewComments = () => Map<string, FileComments>();
+
+export type LostFoundComments = List<Comment>
+export const LostFoundComments = () => List<Comment>();

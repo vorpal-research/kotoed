@@ -32,8 +32,10 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
             kind: "file",
             filename: file.name,
             type: file.type,
-            openComments: 0,
-            closedComments: 0
+            aggregate: {
+                open: 0,
+                closed: 0
+            }
         }
     };
 
@@ -49,14 +51,14 @@ export function makeFileNode(file: File) {
     return FileNode(makeFileTreeProps(file));
 }
 
-export function makeSecondaryLabel(openComments: number, closedComments: number) {
-    if (openComments == 0 && closedComments == 0)
+export function makeSecondaryLabel(aggregate: CommentAggregate) {
+    if (aggregate.open == 0 && aggregate.closed == 0)
         return undefined;
 
-    let labelClass = openComments === 0 ? "label-default" : "label-danger";
+    let labelClass = aggregate.open === 0 ? "label-default" : "label-danger";
 
     return (<span className={`comments-counter label ${labelClass}`}>
-        {openComments + closedComments}
+        {aggregate.open + aggregate.closed}
     </span>)
 }
 
@@ -116,6 +118,13 @@ export function getNodePath(root: FileNode, filePath: string): NodePath {
     return numPath
 }
 
+export function updateAggregate(aggregate: CommentAggregate, delta: CommentAggregate): CommentAggregate {
+    return {
+        open: aggregate.open + delta.open,
+        closed: aggregate.closed + delta.closed
+    }
+}
+
 export function addAggregates(root: FileNode, aggregates: CommentAggregates): FileNode {
     return root.withMutations( (node: FileNode) => {
         for (let fileAgg of aggregates.byFile) {
@@ -134,9 +143,8 @@ export function addAggregates(root: FileNode, aggregates: CommentAggregates): Fi
 
             node.patchAt(nodePath, (patchedNode: FileNode) => {
                 let data = patchedNode.getDataCopy();
-                data.openComments = fileAgg.aggregate.open;
-                data.closedComments = fileAgg.aggregate.closed;
-                let secondaryLabel = makeSecondaryLabel(data.openComments, data.closedComments);
+                data.aggregate = updateAggregate(data.aggregate, fileAgg.aggregate);
+                let secondaryLabel = makeSecondaryLabel(data.aggregate);
                 return {
                     data,
                     secondaryLabel
@@ -146,14 +154,15 @@ export function addAggregates(root: FileNode, aggregates: CommentAggregates): Fi
     });
 }
 
+
+
 export function updateAggregates(root: FileNode, path: string, delta: CommentAggregate): FileNode {
     let nodePath = getNodePath(root, path);
 
     return root.patchTowards(nodePath, (node: FileNode) => {
         let data = node.getDataCopy();
-        data.openComments += delta.open;
-        data.closedComments += delta.closed;
-        let secondaryLabel = makeSecondaryLabel(data.openComments, data.closedComments);
+        data.aggregate = updateAggregate(data.aggregate, delta);
+        let secondaryLabel = makeSecondaryLabel(data.aggregate);
         return {
             data,
             secondaryLabel
@@ -161,14 +170,19 @@ export function updateAggregates(root: FileNode, path: string, delta: CommentAgg
     });
 }
 
+export const ADD_DELTA = {open: 1, closed: 0};
+export const OPEN_DELTA = {open: 1, closed: -1};
+export const CLOSE_DELTA = {open: -1, closed: 1};
+
+
 export function registerAddComment(root: FileNode, path: string) {
-    return updateAggregates(root, path, {open: 1, closed: 0})
+    return updateAggregates(root, path, ADD_DELTA)
 }
 
 export function registerOpenComment(root: FileNode, path: string) {
-    return updateAggregates(root, path, {open: 1, closed: -1})
+    return updateAggregates(root, path, OPEN_DELTA)
 }
 
 export function registerCloseComment(root: FileNode, path: string) {
-    return updateAggregates(root, path, {open: -1, closed: 1})
+    return updateAggregates(root, path, CLOSE_DELTA)
 }

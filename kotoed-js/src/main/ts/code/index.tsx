@@ -7,7 +7,7 @@ import {combineReducers, createStore, applyMiddleware} from "redux";
 import thunk from 'redux-thunk';
 import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-redux'
 
-import CodeReviewContainer from "./containers/CodeReviewContainer";
+import CodeReviewContainer, {CODE_ROUTE_PATH, LOST_FOUND_ROUTE_PATH} from "./containers/CodeReviewContainer";
 import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
 import "less/kotoed-bootstrap/bootstrap.less";
@@ -38,7 +38,8 @@ render(
     <Provider store={store}>
         <ConnectedRouter history={history} >
             <Switch>
-                <Route exact path="/:submissionId(\\d+)/:path*" component={CodeReviewContainer}/>
+                <Route exact path={CODE_ROUTE_PATH} component={CodeReviewContainer}/>
+                <Route exact path={LOST_FOUND_ROUTE_PATH} component={CodeReviewContainer}/>
             </Switch>
         </ConnectedRouter>
     </Provider>,

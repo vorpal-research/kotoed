@@ -16,10 +16,10 @@ val HarmlessTypes =
 val Send = ByType(BridgeEventType.SEND)
 
 fun KotoedPerAddressFilter(vertx: Vertx) = PerAddress(
-        Address.Api.Submission.Code.Read to BridgeEventFilter.permissive(),
-        Address.Api.Submission.Code.List to BridgeEventFilter.permissive(),
-        Address.Api.Submission.Comments to BridgeEventFilter.permissive(),
-        Address.Api.Submission.CommentAggregates to BridgeEventFilter.permissive(),
+        Address.Api.Submission.Code.Read to SubmissionReady(vertx, "submission_id"),
+        Address.Api.Submission.Code.List to SubmissionReady(vertx, "submission_id"),
+        Address.Api.Submission.Comments to SubmissionReady(vertx),
+        Address.Api.Submission.CommentAggregates to SubmissionReady(vertx),
         Address.Api.Submission.Comment.Create to CommentCreateFilter(vertx),
         Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx)
 )

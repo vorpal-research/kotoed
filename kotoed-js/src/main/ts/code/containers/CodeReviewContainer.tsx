@@ -5,17 +5,18 @@ import {connect} from "react-redux";
 
 import CodeReview, {CodeReviewProps} from "../components/CodeReview";
 import {
-    dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, initialize, postComment,
+    dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, loadCode, loadLostFound, postComment,
     resetExpandedForLine,
     setCommentState,
-    setPath
+    setCodePath, fileUnselect, setLostFoundPath, resetExpandedForLostFound, unselectFile
 } from "../actions";
 import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 import {FileComments} from "../state/comments";
 
 interface OnRoute {
-    onRoute(submissionId: number, filename: string): void
+    onCodeRoute(submissionId: number, filename: string): void
+    onLostFoundRoute(submissionId: number): void
 }
 
 interface CodeReviewUrl {
@@ -23,11 +24,13 @@ interface CodeReviewUrl {
     path: string
 }
 
-type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUrl> & OnRoute;
+export type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUrl> & OnRoute;
 
 const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
     return {
         editorComments: store.commentsState.comments.get(store.editorState.fileName, FileComments()),
+        lostFoundComments: store.commentsState.lostFound,
+        lostFoundAggregate: store.fileTreeState.lostFoundAggregate,
         editorValue: store.editorState.value,
         filePath: store.editorState.fileName,
         root: store.fileTreeState.root,
@@ -55,15 +58,27 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
             dispatch(fileSelect({
                 treePath: path
             }));
-            dispatch(setPath({
+            dispatch(setCodePath({
                 treePath: path,
                 submissionId: parseInt(ownProps.match.params.submissionId)
             }));
         },
-        onRoute: (submissionId, filename) => {
-            dispatch(initialize({
+        onLostFoundSelect: () => {
+            dispatch(unselectFile());
+            dispatch(resetExpandedForLostFound());
+            dispatch(setLostFoundPath({
+                submissionId: parseInt(ownProps.match.params.submissionId)
+            }));
+        },
+        onCodeRoute: (submissionId, filename) => {
+            dispatch(loadCode({
                 submissionId,
                 filename
+            }));
+        },
+        onLostFoundRoute: (submissionId) => {
+            dispatch(loadLostFound({
+                submissionId
             }));
         },
         onCommentSubmit: (sourcefile, sourceline, text) => {
@@ -114,23 +129,42 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
     }
 };
 
+export const CODE_ROUTE_PATH = "/:submissionId(\\d+)/code/:path*";
+export const LOST_FOUND_ROUTE_PATH = "/:submissionId(\\d+)/lost+found";
+
+
 class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
+    // TODO this is fucked up
+    private doRoute = () => {
+        if (CODE_ROUTE_PATH === this.props.match.path) {
+            let {submissionId, path} = this.props.match.params;
+            this.props.onCodeRoute(parseInt(submissionId), path || "");
+        } else if (LOST_FOUND_ROUTE_PATH === this.props.match.path) {
+            let {submissionId} = this.props.match.params;
+            this.props.onLostFoundRoute(parseInt(submissionId));
+        }
+    };
+
     componentDidMount() {
-        let {submissionId, path} = this.props.match.params;
-        this.props.onRoute(parseInt(submissionId), path || "");
+        this.doRoute()
     }
 
     componentDidUpdate(prevProps: RoutingCodeReviewProps) {
-        let {submissionId: prevSubmissionId, path: prevPath} = prevProps.match.params;
-        let {submissionId, path} = this.props.match.params;
-
-        if (prevSubmissionId !== submissionId || prevPath !== path) {
-            this.props.onRoute(parseInt(submissionId), path  || "");
+        if (prevProps.match.url !== this.props.match.url) {
+            this.doRoute()
         }
     }
 
+    getCodeReviewMode = () => {
+        if (CODE_ROUTE_PATH === this.props.match.path) {
+            return "code";
+        } else {
+            return "lost+found";
+        }
+    };
+
     render() {
-        return <CodeReview {...this.props}/>
+        return <CodeReview {...this.props} show={this.getCodeReviewMode()}/>
     }
 }
 
