@@ -9,7 +9,7 @@ import "codemirror/addon/fold/comment-fold"
 
 import LineMarker from "./LineMarker";
 import {
-    CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, guessCmModeForFile, LINE_NUMBER_GUTTER, requireCmMode,
+    editorModeParam, FOLD_GUTTER, fromCmLine, guessCmModeForFile, LINE_NUMBER_GUTTER, requireCmMode,
     toCmLine
 } from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state/comments";
