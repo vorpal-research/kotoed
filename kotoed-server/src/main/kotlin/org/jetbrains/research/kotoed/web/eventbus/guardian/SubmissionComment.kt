@@ -1,17 +1,12 @@
 package org.jetbrains.research.kotoed.web.eventbus.guardian
 
 import io.vertx.core.Vertx
-import io.vertx.core.eventbus.EventBus
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.database.toJson
-import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.util.get
+import org.jetbrains.research.kotoed.util.isAuthorised
+import org.jetbrains.research.kotoed.util.set
 import org.jetbrains.research.kotoed.web.eventbus.commentById
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
@@ -37,9 +32,8 @@ object CommentCreatePatcher : BridgeEventPatcher {
 
 class CommentCreateFilter(val vertx: Vertx) : BridgeEventFilter {
     suspend override fun isAllowed(be: BridgeEvent): Boolean = run {
-        val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("id") ?: return@run false
-        val comment = vertx.eventBus().commentById(id)
-        val submission = vertx.eventBus().submissionById(comment.submissionId)
+        val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("submission_id") ?: return@run false
+        val submission = vertx.eventBus().submissionById(id) ?: return false
 
         return@run submission.state == SubmissionState.open
     }.also { logResult(be, it) }
@@ -54,9 +48,9 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         val user = be.socket().webUser()
         val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("id") ?: return@run false
 
-        val comment = vertx.eventBus().commentById(id)
+        val comment = vertx.eventBus().commentById(id) ?: return@run false
 
-        val submission = vertx.eventBus().submissionById(comment.submissionId)
+        val submission = vertx.eventBus().submissionById(comment.submissionId) ?: return@run false
 
         if (submission.state != SubmissionState.open)
             return@run false

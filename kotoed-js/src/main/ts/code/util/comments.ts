@@ -1,7 +1,10 @@
 import {List, Map} from "immutable";
 
-import {CommentToRead, ReviewComments as ServerReviewComments} from "../remote/comments";
-import {ReviewComments, FileComments, LineComments, Comment} from "../state/comments";
+import {
+    CommentsResponse, CommentToRead, ReviewComments as ServerReviewComments, UNKNOWN_FILE,
+    UNKNOWN_LINE
+} from "../remote/comments";
+import {ReviewComments, FileComments, LineComments, Comment, CommentsState, LostFoundComments} from "../state/comments";
 import {Capabilities} from "../remote/capabilities";
 
 export function addRenderingProps(comment: CommentToRead, capabilities: Capabilities): Comment {
@@ -15,18 +18,18 @@ export function addRenderingProps(comment: CommentToRead, capabilities: Capabili
     }
 }
 
-export function commentsResponseToState(reviewComments: ServerReviewComments, capabilities: Capabilities): ReviewComments {
-    let state: ReviewComments = Map<string, FileComments>();
-
-    state = state.withMutations(function(s) {
+export function commentsResponseToState(fromServer: CommentsResponse, capabilities: Capabilities): CommentsState {
+    let reviewComments = fromServer.byFile;
+    let comments: ReviewComments = ReviewComments();
+    comments = comments.withMutations(function(s) {
         for (let serverFileComments of reviewComments) {
             let fileComments: FileComments = Map<number, LineComments>();
 
-            fileComments = fileComments.withMutations(function(fc) {
+            fileComments = fileComments.withMutations(function (fc) {
                 for (let serverLineComments of serverFileComments.byLine) {
                     let lineComments: LineComments = List<Comment>();
 
-                    lineComments = lineComments.withMutations(function(lc) {
+                    lineComments = lineComments.withMutations(function (lc) {
                         for (let serverComment of serverLineComments.comments) {
                             lc.push(addRenderingProps(serverComment, capabilities));
                         }
@@ -39,5 +42,11 @@ export function commentsResponseToState(reviewComments: ServerReviewComments, ca
             s.set(serverFileComments.filename, fileComments);
         }
     });
-    return state;
+    return {
+        comments,
+        lostFound:
+            List<Comment>(fromServer.lost).map((comment: Comment) =>
+                addRenderingProps(comment, capabilities)) as LostFoundComments,
+        fetched: true
+    };
 }

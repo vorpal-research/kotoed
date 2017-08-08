@@ -6,7 +6,7 @@ import {
     CodeReviewState
 } from "./state";
 import {
-    Comment, CommentState, FileComments, LineComments, ReviewComments
+    Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
 import {fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
@@ -19,7 +19,7 @@ import {
     fetchComments,
     postComment as doPostComment,
     setCommentState as doSetCommentState,
-    editComment as doEditComment
+    editComment as doEditComment, UNKNOWN_FILE, UNKNOWN_LINE
 
 } from "./remote/comments";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
@@ -90,17 +90,19 @@ interface ExpandedResetForFilePayload {
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
+export const fileUnselect = actionCreator<{}>('FILE_UNSELECT');
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
 export const hiddenCommentsExpand = actionCreator<HiddenCommentsExpandPayload>("HIDDEN_COMMENTS_EXPAND");
 export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("EXPANDED_RESET_FOR_LINE");
 export const expandedResetForFile = actionCreator<ExpandedResetForFilePayload>("EXPANDED_RESET_FOR_FILE");
+export const expandedResetForLostFound = actionCreator<{}>("EXPANDED_RESET_FOR_LOST_FOUND");
 
 // File or dir fetch actions
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
 
 // Comment fetch actions
-export const commentsFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
+export const commentsFetch = actionCreator.async<SubmissionPayload, CommentsState, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
 export const commentPost = actionCreator.async<PostCommentPayload, Comment, {}>('COMMENT_POST');
@@ -111,7 +113,7 @@ export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COM
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
 
-export function initialize(payload: SubmissionPayload & FilePathPayload) {
+export function loadCode(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
         await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
@@ -120,6 +122,17 @@ export function initialize(payload: SubmissionPayload & FilePathPayload) {
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
     }
 }
+
+export function loadLostFound(payload: SubmissionPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
+        await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
+        await fetchRootDirIfNeeded(payload)(dispatch, getState);
+        await fetchCommentsIfNeeded(payload)(dispatch, getState);
+        await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
+        dispatch(fileUnselect({}));
+    }
+}
+
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -185,12 +198,26 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
     }
 }
 
-export function setPath(payload: NodePathPayload & SubmissionPayload) {
+export function unselectFile() {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
-        dispatch(push(`/${payload.submissionId}/${filename}`))
+        dispatch(fileUnselect({}));
     }
 }
+
+
+export function setCodePath(payload: NodePathPayload & SubmissionPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
+        dispatch(push(`/${payload.submissionId}/code/${filename}`))
+    }
+}
+
+export function setLostFoundPath(payload: SubmissionPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(push(`/${payload.submissionId}/lost+found`))
+    }
+}
+
 
 export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -300,7 +327,6 @@ export function setCommentState(payload: CommentStatePayload) {
                 },
                 getState().capabilitiesState.capabilities)
         }));
-
         dispatch(aggregatesUpdate({
             type: result.state === "open" ? "open" : "close",
             file: result.sourcefile
@@ -361,3 +387,10 @@ export function resetExpandedForFile(payload: ExpandedResetForFilePayload) {
         dispatch(expandedResetForFile(payload));
     }
 }
+
+export function resetExpandedForLostFound() {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForLostFound({}));
+    }
+}
+

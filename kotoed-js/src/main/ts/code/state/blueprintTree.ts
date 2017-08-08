@@ -49,7 +49,9 @@ export function Node<T>(props: NodeProps<T>): Node<T> {
 export type NodePatch<T> = Partial<NodeProps<T>>
 
 export type NodePath = Array<number>;
-
+export function NodePath() {
+    return Array<number>();
+}
 export class NodeImpl<T> implements Node<T>, NodeMethods<T> {
     // Required
     readonly id: string | number;
