@@ -260,18 +260,18 @@ export class NodeImpl<T> implements Node<T>, NodeMethods<T> {
     };
 
     private setIsExpanded(numPath: NodePath, value: boolean): Node<T> {
-        return this.patchAt(numPath, () => {
-            return {
+        return this.patchAt(numPath, (node) => {
+            return node.isExpanded !== value ? {
                 isExpanded: value
-            }
+            } : {};
         })
     };
 
     private setIsExpandedTowards(numPath: NodePath, value: boolean): Node<T> {
-        return this.patchTowards(numPath, () => {
-            return {
+        return this.patchTowards(numPath, (node) => {
+            return node.isExpanded !== value ? {
                 isExpanded: value
-            }
+            } : {};
         })
     };
 
@@ -292,10 +292,10 @@ export class NodeImpl<T> implements Node<T>, NodeMethods<T> {
     };
 
     private setIsSelected(numPath: NodePath, value: boolean): Node<T> {
-        return this.patchAt(numPath, () => {
-            return {
+        return this.patchAt(numPath, (node) => {
+            return  node.isSelected !== value ? {
                 isSelected: value
-            }
+            } : {};
         })
     };
 
