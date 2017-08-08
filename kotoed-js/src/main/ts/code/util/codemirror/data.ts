@@ -59,6 +59,18 @@ const MODE_PUG: CmMode = {
     contentType: "text/x-pug"
 };
 
+const MODE_XML: CmMode = {
+    mode: "xml",
+    contentType: "text/xml"
+};
+
+const MODE_HTML: CmMode = {
+    mode: "xml",
+    contentType: "text/xml"
+};
+
+
+
 export const CM_MODES_BY_EXT: Map<string, CmMode> = Map([
     ["kt", MODE_KOTLIN],
     ["kotlin", MODE_KOTLIN],
@@ -81,5 +93,9 @@ export const CM_MODES_BY_EXT: Map<string, CmMode> = Map([
     ["json", MODE_JSON],
     ["pug", MODE_PUG],
     ["jade", MODE_PUG],
+    ["xml", MODE_XML],
+    ["html", MODE_HTML],
+    ["htm", MODE_HTML],
+
 
 ]);

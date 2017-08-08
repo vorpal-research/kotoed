@@ -12,7 +12,6 @@ export interface CodeReviewProps {
     // TODO decompose this shit
     canPostComment: boolean
     editorValue: string;
-    editorMode: CmMode;
     filePath: string;
     nodePath: NodePath;
     editorComments: FileComments;
@@ -46,7 +45,6 @@ export default class CodeReview extends React.Component<CodeReviewProps> {
                 <div className="col-md-9" style={{height: "100%"}}>
                     <FileReview canPostComment={this.props.canPostComment}
                                 value={this.props.editorValue}
-                                mode={this.props.editorMode}
                                 height="100%"
                                 comments={this.props.editorComments}
                                 filePath={this.props.filePath}

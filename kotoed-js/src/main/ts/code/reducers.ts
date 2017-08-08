@@ -97,7 +97,6 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
         newState.displayedComments = action.payload.result.displayedComments;
-        newState.mode = action.payload.result.mode;
         return newState;
     } else if (isType(action, editorCommentsUpdate)) {
         let newState = {...state};
@@ -166,9 +165,10 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
     } else if (isType(action, expandedResetForLine)) {
         let {file, line} = action.payload;
         let newState = {...reviewState};
-        let newComments = (newState.comments.getIn([file, line], LineComments()) as LineComments).map((comment: Comment) => {
-            return {...comment, collapsed: comment.state === "closed"}
-        }) as LineComments;
+        let newComments = (newState.comments.getIn([file, line], LineComments()) as LineComments)
+            .map((comment: Comment) => {
+                return {...comment, collapsed: comment.state === "closed"}
+            }) as LineComments;
         newState.comments = newState.comments.setIn([file, line], newComments);
         return newState;
     } else if (isType(action, expandedResetForFile)) {
