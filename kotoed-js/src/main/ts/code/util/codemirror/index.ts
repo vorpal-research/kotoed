@@ -20,11 +20,11 @@ export function guessCmModeForExt(ext: string) {
 }
 
 export function guessCmModeForFile(filename: string): CmMode {
-    let match = filename.match(/(.*)[\/\\]([^\/\\]+)\.(\w+)$/);
-    if (!match || match.length < 4)
+    let match = filename.match(/(?:(?:.*)[\/\\])?(?:[^\/\\]+)\.(\w+)$/);
+    if (!match || match.length < 2)
         return {};
 
-    return guessCmModeForExt(match[3])
+    return guessCmModeForExt(match[1].toLowerCase())
 }
 
 export function requireCmMode(mode: CmMode) {

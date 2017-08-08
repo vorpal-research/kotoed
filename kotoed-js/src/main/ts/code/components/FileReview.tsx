@@ -9,7 +9,7 @@ import "codemirror/addon/fold/comment-fold"
 
 import LineMarker from "./LineMarker";
 import {
-    CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, LINE_NUMBER_GUTTER, requireCmMode,
+    CmMode, editorModeParam, FOLD_GUTTER, fromCmLine, guessCmModeForFile, LINE_NUMBER_GUTTER, requireCmMode,
     toCmLine
 } from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state/comments";
@@ -18,7 +18,6 @@ import {List} from "immutable";
 export interface FileReviewProps {
     canPostComment: boolean
     value: string,
-    mode: CmMode,
     height: number | string,
     comments: FileComments,
     filePath: string,
@@ -158,11 +157,12 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
     }
 
     componentDidMount() {
-        requireCmMode(this.props.mode);
+        let newMode = guessCmModeForFile((this.props.filePath));
+        requireCmMode(newMode);
 
         this.editor = cm.fromTextArea(this.textAreaNode, {
             lineNumbers: true,
-            mode: editorModeParam(this.props.mode),
+            mode: editorModeParam(newMode),
             readOnly: true,
             foldGutter: true,
             gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
@@ -183,20 +183,15 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
     }
 
     componentDidUpdate(oldProps: FileReviewProps) {
-        if (oldProps.mode.mode !== this.props.mode.mode) {
-            requireCmMode(this.props.mode);
-        }
-
-        if (oldProps.mode.mode !== this.props.mode.mode || oldProps.mode.contentType !== this.props.mode.contentType) {
-            this.editor.setOption("mode", editorModeParam(this.props.mode));
-        }
-
         if (oldProps.value !== this.props.value) {
             this.editor.setValue(this.props.value);
             this.updateArrowOffset();
         }
 
         if (this.props.filePath !== oldProps.filePath) {
+            let newMode = guessCmModeForFile((this.props.filePath));
+            requireCmMode(newMode);
+            this.editor.setOption("mode", editorModeParam(newMode));
             this.renderMarkers();
         }
 

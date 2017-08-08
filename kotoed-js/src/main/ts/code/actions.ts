@@ -22,7 +22,6 @@ import {
     editComment as doEditComment
 
 } from "./remote/comments";
-import {CmMode, guessCmModeForFile} from "./util/codemirror";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
@@ -47,7 +46,6 @@ interface DirFetchResult {
 interface FileFetchResult {
     value: string,
     displayedComments: FileComments
-    mode: CmMode
 }
 
 interface PostCommentPayload {
@@ -217,7 +215,6 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
                 result: {
                     value: result,
                     displayedComments: getState().commentsState.comments.get(filename, Map<number, LineComments>()),
-                    mode: guessCmModeForFile(filename)
                 }
             }));
         });

@@ -28,7 +28,6 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
     return {
         editorComments: store.editorState.displayedComments,
         editorValue: store.editorState.value,
-        editorMode: store.editorState.mode,
         filePath: store.editorState.fileName,
         root: store.fileTreeState.root,
         fileTreeLoading: store.fileTreeState.loading,

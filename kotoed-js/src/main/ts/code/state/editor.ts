@@ -5,5 +5,4 @@ export interface EditorState {
     fileName: string
     value: string,
     displayedComments: FileComments
-    mode: CmMode
 }
