@@ -1,5 +1,3 @@
-import * as _ from "lodash"
-
 import {CapabilitiesState} from "./state/capabilities";
 import {FileComments, ReviewComments, LineComments, CommentsState, Comment} from "./state/comments";
 import {EditorState} from "./state/editor";
