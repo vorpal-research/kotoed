@@ -113,7 +113,7 @@ export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPA
 
 export function initialize(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
-        await fetchCapabilitiesIfNeeded()(dispatch, getState);
+        await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
@@ -328,14 +328,14 @@ export function editComment(payload: CommentEditPayload) {
 }
 
 
-export function fetchCapabilitiesIfNeeded() {
+export function fetchCapabilitiesIfNeeded(payload: SubmissionPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         if (getState().capabilitiesState.fetched)
             return;
 
         dispatch(capabilitiesFetch.started({}));  // Not used yet
 
-        let result = await fetchCapabilities();
+        let result = await fetchCapabilities(payload.submissionId);
 
         dispatch(capabilitiesFetch.done({
             params: {},
