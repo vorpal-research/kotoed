@@ -5,7 +5,6 @@ import FileTree from "./FileTree";
 import {Comment, FileComments} from "../state/comments";
 import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
-import {CmMode} from "../util/codemirror";
 import {List} from "immutable";
 
 export interface CodeReviewProps {
