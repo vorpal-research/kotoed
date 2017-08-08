@@ -14,19 +14,27 @@ export function fromCmLine(line: number) {
 }
 
 export function guessCmModeForLang(lang: string) {
+    if (!lang)
+        return {};
     return cm.findModeByName(lang) || {};
 }
 
 export function guessCmModeForExt(ext: string) {
+    if (!ext)
+        return {};
     return cm.findModeByExtension(ext) || {};
 }
 
 export function guessCmModeForLangOrExt(lang: string) {
+    if (!lang)
+        return {};
     return cm.findModeByName(lang) || cm.findModeByExtension(lang) || {};
 }
 
 
 export function guessCmModeForFile(filename: string): CmMode {
+    if (!filename)
+        return {};
     return cm.findModeByFileName(filename) || {};
 }
 
