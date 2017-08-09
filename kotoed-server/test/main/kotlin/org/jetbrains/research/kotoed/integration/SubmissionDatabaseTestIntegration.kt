@@ -152,18 +152,16 @@ class SubmissionDatabaseTestIntegration : Loggable {
             Thread.sleep(100)
         }
 
-        val comments = dbPostMany(
+        val comments = dbPost(
                 Address.Api.Submission.Comments,
                 object : Jsonable {
                     val id = resubmission2.id
                 }
         )
 
-        assertEquals(1, comments.size())
+        val text = with(AnyAsJson) { comments["byFile"][0]["byLine"][0]["comments"][0]["text"] }
 
-        val text = with(AnyAsJson) { comment["byLine"]["comments"]["text"] }
-
-        assertEquals(text, comments.getJsonObject(0).getString("text"))
+        assertEquals(comment["text"], text)
     }
 
 }
