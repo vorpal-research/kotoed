@@ -12,7 +12,7 @@ export interface FileTreeProps {
 
 export interface FileTreeState extends FileTreeProps {
     selectedPath: Array<number>
-    aggregatesFetched: boolean
+    aggregatesLoading: boolean
 }
 
 export type FileTreeNode = LoadingNode | FileNode;
