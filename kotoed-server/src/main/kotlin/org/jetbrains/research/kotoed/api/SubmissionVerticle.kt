@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.api
 
+import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -13,6 +14,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 
+private typealias CommentsResponse = SubmissionComments.CommentsResponse
 private typealias CommentAggregate = SubmissionComments.CommentAggregate
 private typealias CommentAggregatesByFile = MutableMap<String, SubmissionComments.CommentAggregate>
 private typealias CommentAggregates = SubmissionComments.CommentAggregates
@@ -74,6 +76,29 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         }
     }
 
+    private suspend fun SubmissionCommentRecord.getAuthor(): DenizenRecord =
+            dbFetchAsync(DenizenRecord().apply { id = this@getAuthor.authorId })
+
+    private suspend fun JsonObject.addDenizenId(denizen: DenizenRecord) = apply {
+        return this.apply {
+            this["denizenId"] = denizen.denizenId
+        }
+    }
+
+    private suspend fun SubmissionCommentRecord.getPersistent(): SubmissionCommentRecord =
+            dbFetchAsync(SubmissionCommentRecord().apply { id = this@getPersistent.persistentCommentId })
+
+    private suspend fun JsonObject.addPersistent(persistent: SubmissionCommentRecord) = apply {
+        return this.apply {
+            this["persistent"] = persistent.toJson()
+        }
+    }
+
+
+    private fun SubmissionCommentRecord.isLost(): Boolean = sourcefile == SubmissionComments.UnknownFile ||
+            sourceline == SubmissionComments.UnknownLine
+
+
 
     private fun List<SubmissionCommentRecord>.aggregateByFile(): CommentAggregates {
         val byFile = mutableMapOf<String, CommentAggregate>()
@@ -81,7 +106,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val lost = CommentAggregate()
 
         for (comment in this) {
-            if (comment.sourcefile == null)
+            if (comment.isLost())
                 lost.register(comment)
             else {
                 val path = comment.sourcefile.split('/')
@@ -99,24 +124,32 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comments)
-    suspend fun handleComments(message: SubmissionRecord): List<SubmissionComments.FileComments> =
-            dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).groupBy {
-                it.sourcefile
-            }.mapValues { (_, fileComments) ->
-                fileComments.groupBy {
-                    it.sourceline
-                }.map { (line, lineComments) ->
-                    SubmissionComments.LineComments(line, lineComments.sortedBy { it.datetime }.map {
-                        val denizen = dbFetchAsync(DenizenRecord().apply { id = it.authorId })
-                        it.toJson().apply {
-                            this["denizenId"] = denizen.denizenId
-                        }
-                    })
-                }
-            }.map { (file, fileComments) ->
-                SubmissionComments.FileComments(file, fileComments)
+    suspend fun handleComments(message: SubmissionRecord): CommentsResponse {
+        val comments = dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id })
+        val byFile = comments.filterNot {
+            it.isLost()
+        }.groupBy {
+            it.sourcefile
+        }.mapValues { (_, fileComments) ->
+            fileComments.groupBy {
+                it.sourceline
+            }.map { (line, lineComments) ->
+                SubmissionComments.LineComments(line, lineComments.sortedBy { it.datetime }.map {
+                    it.toJson().addDenizenId(it.getAuthor())
+                })
             }
+        }.map { (file, fileComments) ->
+            SubmissionComments.FileComments(file, fileComments)
+        }
 
+        val lost = comments.filter {
+            it.isLost()
+        }
+
+        return CommentsResponse(byFile = byFile, lost = lost.map {
+            it.toJson().addDenizenId(it.getAuthor()).addPersistent(it.getPersistent())
+        })
+    }
     @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
     suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).aggregateByFile()

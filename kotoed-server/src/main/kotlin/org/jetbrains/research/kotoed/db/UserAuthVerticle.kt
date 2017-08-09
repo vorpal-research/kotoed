@@ -126,4 +126,23 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
                     ?.cleanup()
         } ?: throw NotFound("User '${oauthLoginMsg.oauthUser}' not found")
     }
+
+    // TODO replace with something more appropriate (PermissionVerticle or smth)
+    @JsonableEventBusConsumerFor(Address.User.Auth.HasPerm)
+    suspend fun consumeHasPerm(msg: HasPermMsg): HasPermReply {
+        val hasPerm = db {
+            selectCount()
+                    .from(theTable)
+                    .join(Tables.DENIZEN_ROLE)
+                    .on(Tables.DENIZEN_ROLE.DENIZEN_ID.eq(theTable.ID))
+                    .join(Tables.ROLE_PERMISSION)
+                    .on(Tables.ROLE_PERMISSION.ROLE_ID.eq(Tables.DENIZEN_ROLE.ROLE_ID))
+                    .join(Tables.PERMISSION)
+                    .on(Tables.ROLE_PERMISSION.PERMISSION_ID.eq(Tables.PERMISSION.ID))
+                    .where(Tables.PERMISSION.NAME.eq(msg.perm))
+                    .and(theTable.DENIZEN_ID.eq(msg.denizenId))
+                    .firstOrNull()?.get(0) != 0
+        }
+        return HasPermReply(hasPerm)
+    }
 }

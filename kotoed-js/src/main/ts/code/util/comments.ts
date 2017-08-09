@@ -1,29 +1,37 @@
 import {List, Map} from "immutable";
 
-import {ReviewComments as ServerReviewComments} from "../remote/comments";
-import {ReviewComments, FileComments, LineComments, Comment} from "../state";
+import {
+    CommentsResponse, CommentToRead, ReviewComments as ServerReviewComments, UNKNOWN_FILE,
+    UNKNOWN_LINE
+} from "../remote/comments";
+import {ReviewComments, FileComments, LineComments, Comment, CommentsState, LostFoundComments} from "../state/comments";
+import {Capabilities} from "../remote/capabilities";
 
-export function commentsResponseToState(reviewComments: ServerReviewComments): ReviewComments {
-    let state: ReviewComments = Map<string, FileComments>();
+export function addRenderingProps(comment: CommentToRead, capabilities: Capabilities): Comment {
+    return {
+        ...comment,
+        canStateBeChanged: capabilities.permissions.changeStateAllComments ||
+            (comment.authorId == capabilities.principal.id) && capabilities.permissions.changeStateOwnComments,
+        canBeEdited: capabilities.permissions.editAllComments ||
+            (comment.authorId == capabilities.principal.id) && capabilities.permissions.editOwnComments,
+        collapsed: comment.state === "closed"
+    }
+}
 
-    state = state.withMutations(function(s) {
+export function commentsResponseToState(fromServer: CommentsResponse, capabilities: Capabilities): CommentsState {
+    let reviewComments = fromServer.byFile;
+    let comments: ReviewComments = ReviewComments();
+    comments = comments.withMutations(function(s) {
         for (let serverFileComments of reviewComments) {
             let fileComments: FileComments = Map<number, LineComments>();
 
-            fileComments = fileComments.withMutations(function(fc) {
+            fileComments = fileComments.withMutations(function (fc) {
                 for (let serverLineComments of serverFileComments.byLine) {
                     let lineComments: LineComments = List<Comment>();
 
-                    lineComments = lineComments.withMutations(function(lc) {
+                    lineComments = lineComments.withMutations(function (lc) {
                         for (let serverComment of serverLineComments.comments) {
-                            lc.push({
-                                id: serverComment.id,
-                                text: serverComment.text,
-                                dateTime: serverComment.datetime,
-                                authorName: serverComment.denizenId,
-                                authorId: serverComment.authorId,
-                                state: serverComment.state
-                            });
+                            lc.push(addRenderingProps(serverComment, capabilities));
                         }
                     });
 
@@ -34,5 +42,11 @@ export function commentsResponseToState(reviewComments: ServerReviewComments): R
             s.set(serverFileComments.filename, fileComments);
         }
     });
-    return state;
+    return {
+        comments,
+        lostFound:
+            List<Comment>(fromServer.lost).map((comment: Comment) =>
+                addRenderingProps(comment, capabilities)) as LostFoundComments,
+        fetched: true
+    };
 }

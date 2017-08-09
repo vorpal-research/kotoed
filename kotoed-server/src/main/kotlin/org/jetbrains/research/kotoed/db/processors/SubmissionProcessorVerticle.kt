@@ -118,20 +118,33 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         // TODO: process possible errors
 
-        val btr: BuildTriggerResult = sendJsonableAsync(
-                Address.Buildbot.Build.Trigger,
-                TriggerBuild(
-                        Kotoed2Buildbot.projectName2schedulerName(project.name),
-                        sub.revision
-                )
-        )
+        try {
+            val btr: BuildTriggerResult = sendJsonableAsync(
+                    Address.Buildbot.Build.Trigger,
+                    TriggerBuild(
+                            Kotoed2Buildbot.projectName2schedulerName(project.name),
+                            sub.revision
+                    )
+            )
 
-        dbCreateAsync(
-                BuildRecord().apply {
-                    submissionId = sub.id
-                    buildRequestId = btr.buildRequestId
-                }
-        )
+            dbCreateAsync(
+                    BuildRecord().apply {
+                        submissionId = sub.id
+                        buildRequestId = btr.buildRequestId
+                    }
+            )
+
+        } catch (ex: Exception) {
+            dbCreateAsync(
+                    SubmissionStatusRecord().apply {
+                        this.submissionId = sub.id
+                        this.data = JsonObject(
+                                "error" to "Triggering build for $sub:$project failed",
+                                "reason" to ex.message
+                        )
+                    }
+            )
+        }
 
         return verify(data)
     }

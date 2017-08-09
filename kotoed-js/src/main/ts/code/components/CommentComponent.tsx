@@ -1,17 +1,37 @@
-import * as $ from "jquery"
-import "bootstrap-less"
 import * as React from "react";
+import "bootstrap-less"
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
-import {Comment} from "../state";
+import {Comment} from "../state/comments";
+import {CommentButton} from "./CommentButton";
+import CmrmCodeBlock from "./CmrmCodeBlock";
+
+
+
 
 type CommentProps = Comment & {
     onUnresolve: (id: number) => void
     onResolve: (id: number) => void
+    notifyEditorAboutChange: () => void
+    onEdit: (id: number, newText: string) => void
+    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
-export default class CommentComponent extends React.Component<CommentProps, {}> {
+interface CommentComponentState {
+    editState: "display" | "edit" | "preview"
+    editText: string
+}
+
+export default class CommentComponent extends React.Component<CommentProps, CommentComponentState> {
+    constructor(props: CommentProps) {
+        super(props);
+        this.state = {
+            editState: "display",
+            editText: ""
+        }
+    }
+
     getPanelClass = () => {
         if (this.props.state == "open")
             return "panel-primary";
@@ -19,11 +39,16 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
             return "panel-default"
     };
 
-    renderPanelLabel = () => {
-        if (this.props.state == "open")
-            return null;
-        else
-            return <span className="label label-default">Resolved</span>;
+    renderPanelLabels = () => {
+        let labels: Array<JSX.Element> = [];
+
+        if (this.props.state === "closed")
+            labels.push(<span key="resolved" className="label label-default">Resolved</span>);
+
+        if (this.state.editState === "preview")
+            labels.push(<span key="preview" className="label label-warning">Preview</span>);
+
+        return labels
     };
 
     handleStateChange = () => {
@@ -33,11 +58,33 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
             this.props.onResolve(this.props.id);
     };
 
+    handleEditButtonClick = () => {
+        this.setState((prev, props) => {
+            switch (prev.editState) {
+                case "display":
+                    return {
+                        editState: "edit",
+                        editText: props.text
+                    };
+                case "preview":
+                    return {
+                        ...prev,
+                        editState: "edit"
+                    };
+                case "edit":
+                    return {
+                        ...prev,
+                        editState: "preview"
+                    };
+            }
+        });
+    };
+
     getStateButtonIcon = () => {
         if (this.props.state == "closed")
-            return "glyphicon-remove-circle";
+            return "remove-circle";
         else
-            return "glyphicon-ok-circle";
+            return "ok-circle";
     };
 
     getStateButtonText = () => {
@@ -47,36 +94,198 @@ export default class CommentComponent extends React.Component<CommentProps, {}> 
             return "Resolve";
     };
 
-    renderOpenCloseButton = () => {
-        // TODO check if we should render it
+    renderStateButton = () => {
+        if (!this.props.canStateBeChanged) {
+            return null;
+        }
 
-        return <div ref={(me: HTMLDivElement) => $(me).tooltip()}
-                    className="comment-state-change-button"
-                    onClick={this.handleStateChange}
-                    data-toggle="tooltip"
-                    data-placement="left"
-                    title={this.getStateButtonText()}>
-            <span className={`glyphicon ${this.getStateButtonIcon()}`} />
+        if (this.state.editState !== "display")
+            return null;
+
+        return <CommentButton
+            title={this.getStateButtonText()}
+            icon={this.getStateButtonIcon()}
+            onClick={this.handleStateChange}/>;
+    };
+
+    getEditButtonIcon = () => {
+        switch (this.state.editState) {
+            case "display":
+            case "preview":
+                return "pencil";
+            case "edit":
+                return "eye-open"
+        }
+    };
+
+    getEditButtonText = () => {
+        switch (this.state.editState) {
+            case "display":
+            case "preview":
+                return "Edit";
+            case "edit":
+                return "Preview"
+        }
+    };
+
+    renderEditButton = () => {
+        if (!this.props.canBeEdited)
+            return null;
+
+        return <CommentButton
+            title={this.getEditButtonText()}
+            icon={this.getEditButtonIcon()}
+            onClick={this.handleEditButtonClick}/>;
+    };
+
+    renderLastSeenButton = () => {
+        if (this.props.makeLastSeenLink === undefined || this.props.persistent === undefined)
+            return null;
+
+        let persistentLink = this.props.makeLastSeenLink(
+            this.props.persistent.submissionId,
+            this.props.persistent.sourcefile,
+            this.props.persistent.sourceline);
+
+        if (persistentLink === undefined)
+            return null;
+
+        return <CommentButton
+            title="Go to last seen location (new tab)"
+            icon="search"
+            onClick={() =>
+                window.open(persistentLink,
+                    "_blank")
+            }/>
+    };
+
+    renderPanelHeading = () => {
+        return <div className="panel-heading comment-heading clearfix">
+            <div className="pull-left">
+                <b>{this.props.denizenId}</b>
+                {` @ ${moment(this.props.datetime).format('LLLL')}`}
+                {" "}
+                {this.renderPanelLabels()}
+            </div>
+            <div className="pull-right">
+                {this.renderLastSeenButton()}
+                {this.renderEditButton()}
+                {this.renderStateButton()}
+            </div>
+        </div>
+    };
+
+    renderDisplayPanelBodyContent = () => {
+        return <ReactMarkdown
+            source={this.props.text}
+            className="comment-markdown"
+            renderers={{CodeBlock: CmrmCodeBlock}}/>
+    };
+
+    renderEditPanelBodyContent = () => {
+        return null;
+    };
+
+    renderPreviewPanelBodyContent = () => {
+        return <ReactMarkdown
+                source={this.state.editText}
+                className="comment-markdown"
+                renderers={{CodeBlock: CmrmCodeBlock}}/>;
+    };
+
+    renderPanelBodyContent = () => {
+        switch (this.state.editState) {
+            case "display":
+                return this.renderDisplayPanelBodyContent();
+            case "edit":
+                return this.renderEditPanelBodyContent();
+            case "preview":
+                return this.renderPreviewPanelBodyContent();
+
+        }
+    };
+
+    renderEditPreviewPanelFooter = () => {
+        return <div className="panel-footer">
+            <p>
+                <button type="button" className="btn btn-success"
+                        onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
+                    Edit
+                </button>
+                {" "}
+                <button type="button" className="btn btn-danger"
+                        onClick={() => {
+                            this.setState({
+                                editState: "display",
+                                editText: ""
+                            })
+                        }}>
+                    Cancel
+                </button>
+            </p>
         </div>;
+    };
+
+    renderPanelFooter = () => {
+        switch (this.state.editState) {
+            case "display":
+                return null;
+            case "edit":
+            case "preview":
+                return this.renderEditPreviewPanelFooter();
+
+        }
+    };
+
+    componentWillReceiveProps(nextProps: CommentProps) {
+        this.setState({
+            editState: "display",
+            editText: ""
+        })
+    };
+
+    componentDidUpdate(prevProps: CommentProps, prevState: CommentComponentState) {
+        if (this.state.editState != prevState.editState)
+            this.props.notifyEditorAboutChange();
+    }
+
+    getTextAreaStyle = () => {
+        switch(this.state.editState) {
+            case "display":
+            case "preview":
+                return {
+                    display: "none"
+                };
+            case "edit":
+                return {};
+        }
+    };
+
+    renderEditArea = () => {
+        return <div style={this.getTextAreaStyle()}>
+            {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
+            <textarea
+                className="form-control"
+                rows={5}
+                id="comment"
+                value={this.state.editText}
+                style={{
+                    resize: "none"
+                }}
+                onChange={(event) => this.setState({editText: event.target.value})}/>
+        </div>
     };
 
     render() {
         return (
             <div className={`panel ${this.getPanelClass()} comment`}>
-                <div className="panel-heading comment-heading clearfix">
-                    <div className="pull-left">
-                        <b>{this.props.authorName}</b>
-                        {` @ ${moment(this.props.dateTime).format('LLLL')}`}
-                        {" "}
-                        {this.renderPanelLabel()}
-                    </div>
-                    <div className="pull-right">
-                        {this.renderOpenCloseButton()}
-                    </div>
-                </div>
+                {this.renderPanelHeading()}
                 <div className="panel-body">
-                    <ReactMarkdown source={this.props.text}/>
+                    {this.renderPanelBodyContent()}
+                    {this.renderEditArea()}
                 </div>
+                {this.renderPanelFooter()}
+
             </div>
         );
     }

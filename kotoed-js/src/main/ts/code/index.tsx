@@ -7,18 +7,20 @@ import {combineReducers, createStore, applyMiddleware} from "redux";
 import thunk from 'redux-thunk';
 import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-redux'
 
-import CodeReviewContainer from "./containers/CodeReviewContainer";
+import CodeReviewContainer, {CODE_ROUTE_PATH, LOST_FOUND_ROUTE_PATH} from "./containers/CodeReviewContainer";
 import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
-import '@blueprintjs/core/dist/blueprint.css';
 import "less/kotoed-bootstrap/bootstrap.less";
+import '@blueprintjs/core/dist/blueprint.css';
+import "less/unblueprint.less"
 import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
-import "less/unblueprint.less"
+
+export const CODE_REVIEW_BASE_ADDR = "/codereview";
 
 export const history = createHistory({
-    basename: "/codereview"
+    basename: CODE_REVIEW_BASE_ADDR
 });
 
 export const store = createStore(
@@ -37,7 +39,8 @@ render(
     <Provider store={store}>
         <ConnectedRouter history={history} >
             <Switch>
-                <Route exact path="/:submissionId(\\d+)/:path*" component={CodeReviewContainer}/>
+                <Route exact path={CODE_ROUTE_PATH} component={CodeReviewContainer}/>
+                <Route exact path={LOST_FOUND_ROUTE_PATH} component={CodeReviewContainer}/>
             </Switch>
         </ConnectedRouter>
     </Provider>,

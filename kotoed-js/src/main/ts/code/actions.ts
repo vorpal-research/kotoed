@@ -3,26 +3,29 @@ import {List, Map} from "immutable";
 
 import actionCreatorFactory from 'typescript-fsa';
 import {
-    filePathToNodePath, getNodeAt, nodePathToFilePath
-} from "./util/filetree";
-import {
-    CodeReviewState, CommentState, FileComments, FileTreePath, LineComments,
-    ReviewComments
+    CodeReviewState
 } from "./state";
-import {waitTillReady, fetchRootDir, fetchFile, File} from "./remote/code";
+import {
+    Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
+} from "./state/comments";
+import {fetchRootDir, fetchFile, File} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
-import {commentsResponseToState} from "./util/comments";
+import {addRenderingProps, commentsResponseToState} from "./util/comments";
 import {
     CommentAggregates,
-    CommentToRead, fetchCommentAggregates,
+    fetchCommentAggregates,
     fetchComments,
     postComment as doPostComment,
-    setCommentState as doSetCommentState
+    setCommentState as doSetCommentState,
+    editComment as doEditComment, UNKNOWN_FILE, UNKNOWN_LINE
+
 } from "./remote/comments";
-import {CmMode, guessCmMode} from "./util/codemirror";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
+import {getFilePath, getNodePath} from "./util/filetree";
+import {NodePath} from "./state/blueprintTree";
+import {makeCodePath, makeLostFoundPath} from "./containers/CodeReviewContainer";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -30,7 +33,7 @@ interface SubmissionPayload {
 }
 
 interface NodePathPayload {
-    treePath: FileTreePath
+    treePath: NodePath
 }
 
 interface FilePathPayload {
@@ -38,13 +41,12 @@ interface FilePathPayload {
 }
 
 interface DirFetchResult {
-    list: Array<File>
+    root: File
 }
 
 interface FileFetchResult {
     value: string,
     displayedComments: FileComments
-    mode: CmMode
 }
 
 interface PostCommentPayload {
@@ -59,42 +61,83 @@ interface CommentStatePayload {
     state: CommentState
 }
 
+interface CommentEditPayload {
+    commentId: number,
+    newText: string
+}
+
 interface AggregatesUpdatePayload {
     file: string
     type: "new" | "close" | "open"
+}
+
+interface HiddenCommentsExpandPayload {
+    file: string
+    line: number
+    comments: List<Comment>
+}
+
+interface ExpandedResetForLinePayload {
+    file: string
+    line: number
+}
+
+interface ExpandedResetForFilePayload {
+    file: string
+}
+
+interface GoToLastSeenPayload {
+    id: number
 }
 
 // Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
 export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
-export const editorCommentsUpdate = actionCreator<FileComments>('EDITOR_COMMENTS_UPDATE');
+export const fileUnselect = actionCreator<{}>('FILE_UNSELECT');
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
+export const hiddenCommentsExpand = actionCreator<HiddenCommentsExpandPayload>("HIDDEN_COMMENTS_EXPAND");
+export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("EXPANDED_RESET_FOR_LINE");
+export const expandedResetForFile = actionCreator<ExpandedResetForFilePayload>("EXPANDED_RESET_FOR_FILE");
+export const expandedResetForLostFound = actionCreator<{}>("EXPANDED_RESET_FOR_LOST_FOUND");
 
 // File or dir fetch actions
-export const dirFetch = actionCreator.async<NodePathPayload, DirFetchResult, {}>('DIR_FETCH');
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
 
 // Comment fetch actions
-export const commentsFetch = actionCreator.async<SubmissionPayload, ReviewComments, {}>('COMMENT_FETCH');
+export const commentsFetch = actionCreator.async<SubmissionPayload, CommentsState, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
-export const commentPost = actionCreator.async<PostCommentPayload, CommentToRead, {}>('COMMENT_POST');
-export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentToRead>('COMMENT_STATE_UPDATE');
+export const commentPost = actionCreator.async<PostCommentPayload, Comment, {}>('COMMENT_POST');
+export const commentStateUpdate = actionCreator.async<CommentStatePayload, Comment>('COMMENT_STATE_UPDATE');
+export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COMMENT_EDIT');
+
 
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
 
-export function initialize(payload: SubmissionPayload & FilePathPayload) {
+
+export function loadCode(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
-        await fetchCapabilitiesIfNeeded()(dispatch, getState);
+        await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
     }
 }
+
+export function loadLostFound(payload: SubmissionPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
+        await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
+        await fetchRootDirIfNeeded(payload)(dispatch, getState);
+        await fetchCommentsIfNeeded(payload)(dispatch, getState);
+        await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
+        dispatch(fileUnselect({}));
+    }
+}
+
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -105,13 +148,13 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
             submissionId: payload.submissionId
         }));
 
-        return fetchRootDir(payload.submissionId).then((fileList) => {
+        return fetchRootDir(payload.submissionId).then((root) => {
             dispatch(rootFetch.done({
                 params: {
                     submissionId: payload.submissionId
                 },
                 result: {
-                    list: fileList
+                    root
                 }
             }))
         });
@@ -120,9 +163,9 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
 
 export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let numPath: FileTreePath;
+        let numPath: NodePath;
         try {
-            numPath = filePathToNodePath(getState().fileTreeState.nodes, payload.filename);
+            numPath = getNodePath(getState().fileTreeState.root, payload.filename);
         } catch(e) {
             if (e instanceof FileNotFoundError) {
                 numPath = [];
@@ -135,12 +178,12 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
         if (numPath === getState().fileTreeState.selectedPath)
             return;
 
-        let node = getNodeAt(getState().fileTreeState.nodes, numPath);
+        let node = getState().fileTreeState.root.getNodeAt(numPath);
 
         if (node === null)
             return;
 
-        switch (node.type) {
+        switch (node.data.type) {
             case "directory":
                 dispatch(dirExpand({
                     treePath: numPath
@@ -160,12 +203,26 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
     }
 }
 
-export function setPath(payload: NodePathPayload & SubmissionPayload) {
+export function unselectFile() {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = nodePathToFilePath(getState().fileTreeState.nodes, payload.treePath);
-        dispatch(push(`/${payload.submissionId}/${filename}`))
+        dispatch(fileUnselect({}));
     }
 }
+
+
+export function setCodePath(payload: NodePathPayload & SubmissionPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
+        dispatch(push(makeCodePath(payload.submissionId, filename)))
+    }
+}
+
+export function setLostFoundPath(payload: SubmissionPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(push(makeLostFoundPath(payload.submissionId)))
+    }
+}
+
 
 export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -175,6 +232,11 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
             filename
         }));  // Not used yet
         // TODO save file locally?
+
+        resetExpandedForFile({
+            file: filename
+        })(dispatch, getState);
+
         fetchFile(payload.submissionId, filename).then(result => {
             dispatch(fileLoad.done({
                 params: {
@@ -184,18 +246,10 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
                 result: {
                     value: result,
                     displayedComments: getState().commentsState.comments.get(filename, Map<number, LineComments>()),
-                    mode: guessCmMode(filename)
                 }
             }));
         });
 
-    }
-}
-
-export function updateEditorComments() {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        let filename = getState().editorState.fileName;
-        dispatch(editorCommentsUpdate(getState().commentsState.comments.get(filename, Map<number, LineComments>())));
     }
 }
 
@@ -214,7 +268,7 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
                 params: {
                     submissionId: payload.submissionId,
                 },
-                result: commentsResponseToState(result)
+                result: commentsResponseToState(result, getState().capabilitiesState.capabilities)
             }));
         });
 
@@ -251,20 +305,11 @@ export function postComment(payload: PostCommentPayload) {
 
         dispatch(commentPost.done({
             params: payload,
-            result: {
-                id: result.id,
+            result: addRenderingProps({
+                ...result,
                 denizenId: getState().capabilitiesState.capabilities.principal.denizenId,
-                submissionId: result.submissionId,
-                authorId: result.authorId,
-                datetime: result.datetime,
-                state: result.state,
-                sourcefile: result.sourcefile,
-                sourceline: result.sourceline,
-                text: result.text
-            }
+            }, getState().capabilitiesState.capabilities)
         }));
-
-        updateEditorComments()(dispatch, getState);
 
         dispatch(aggregatesUpdate({
             type: "new",
@@ -281,21 +326,12 @@ export function setCommentState(payload: CommentStatePayload) {
 
         dispatch(commentStateUpdate.done({
             params: payload,
-            result: {
-                id: result.id,
-                denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
-                submissionId: result.submissionId,
-                authorId: result.authorId,
-                datetime: result.datetime,
-                state: result.state,
-                sourcefile: result.sourcefile,
-                sourceline: result.sourceline,
-                text: result.text
-            }
+            result: addRenderingProps({
+                    ...result,
+                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
+                },
+                getState().capabilitiesState.capabilities)
         }));
-
-        updateEditorComments()(dispatch, getState);
-
         dispatch(aggregatesUpdate({
             type: result.state === "open" ? "open" : "close",
             file: result.sourcefile
@@ -304,18 +340,61 @@ export function setCommentState(payload: CommentStatePayload) {
     }
 }
 
-export function fetchCapabilitiesIfNeeded() {
+export function editComment(payload: CommentEditPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentEdit.started(payload));  // Not used yet
+
+        let result = await doEditComment(payload.commentId, payload.newText);
+
+        dispatch(commentEdit.done({
+            params: payload,
+            result: addRenderingProps({
+                    ...result,
+                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
+                },
+                getState().capabilitiesState.capabilities)
+        }));
+
+    }
+}
+
+
+export function fetchCapabilitiesIfNeeded(payload: SubmissionPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         if (getState().capabilitiesState.fetched)
             return;
 
         dispatch(capabilitiesFetch.started({}));  // Not used yet
 
-        let result = await fetchCapabilities();
+        let result = await fetchCapabilities(payload.submissionId);
 
         dispatch(capabilitiesFetch.done({
             params: {},
             result
         }));
+    }
+}
+
+export function expandHiddenComments(payload: HiddenCommentsExpandPayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(hiddenCommentsExpand(payload));
+    }
+}
+
+export function resetExpandedForLine(payload: ExpandedResetForLinePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForLine(payload));
+    }
+}
+
+export function resetExpandedForFile(payload: ExpandedResetForFilePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForFile(payload));
+    }
+}
+
+export function resetExpandedForLostFound() {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(expandedResetForLostFound({}));
     }
 }
