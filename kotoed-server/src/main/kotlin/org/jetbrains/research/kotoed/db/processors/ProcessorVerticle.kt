@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.data.api.bang
 import org.jetbrains.research.kotoed.db.DatabaseVerticle
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.ForeignKey
 import org.jooq.Table
 import org.jooq.UpdatableRecord
@@ -36,7 +37,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
     suspend fun handleProcess(msg: JsonObject): VerificationData {
         val id: Int by msg.delegate
-        val data = db { selectById(id) }
+        val data = db { selectById(id) }?.toJson()
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus.status) {
             val newStatus = verify(data)
@@ -49,7 +50,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "verifyAddress")
     suspend fun handleVerify(msg: JsonObject): VerificationData {
         val id: Int by msg.delegate
-        val data = db { selectById(id) }
+        val data = db { selectById(id) }?.toJson()
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus.status) {
             val newStatus = verify(data)

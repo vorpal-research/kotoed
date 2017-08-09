@@ -9,11 +9,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import org.jetbrains.research.kotoed.util.JavaExampleMessage
 
+enum class ExampleEnum{ right, wrong }
 data class ExampleMessage(val p1: Int, val p2: String, val p3: Int?) : Jsonable
 data class ExampleMessage2(val payload: List<ExampleMessage>) : Jsonable
 data class ExampleMessage3(val payload: Map<Int, ExampleMessage?>) : Jsonable
 data class ExampleMessage4(val p1: Boolean, val p2: Boolean?) : Jsonable
-data class Tangled(val data: List<Int>, val next: Map<Int, List<Tangled>>) : Jsonable
+data class Tangled(val data: List<Int>, val next: Map<ExampleEnum, List<Tangled>>) : Jsonable
 
 data class Custom(val contents: List<File>): Jsonable {
     override fun toJson(): JsonObject {
@@ -80,12 +81,14 @@ class JsonUtilTest {
                     {
                         "data" : [1, 2, 3, 4],
                         "next" : [
-                            [1, [ { "data": [], "next": [] } ] ],
-                            [2, [] ]
+                            ["right", [ { "data": [], "next": [] } ] ],
+                            ["wrong", [] ]
                         ]
                     }
                 """),
-                Tangled(listOf(1, 2, 3, 4), mapOf(1 to listOf(Tangled(listOf(), mapOf())), 2 to listOf())).toJson()
+                Tangled(listOf(1, 2, 3, 4), mapOf(
+                        ExampleEnum.right to listOf(Tangled(listOf(), mapOf())),
+                        ExampleEnum.wrong to listOf())).toJson()
         )
 
         // ad-hoc objects (not-fromJson-able)

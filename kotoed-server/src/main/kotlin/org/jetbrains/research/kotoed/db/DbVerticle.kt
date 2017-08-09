@@ -14,6 +14,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
+import kotlin.reflect.KClass
 
 abstract class DatabaseVerticle<R : TableRecord<R>>(
         val table: Table<R>,
@@ -31,6 +32,8 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
         get() = table.primaryKey?.fields?.first()?.uncheckedCast<Field<Any>>()
                 ?: table.field("id").uncheckedCast<Field<Any>>()
 
+    val recordClass: KClass<R> = table.recordType.kotlin.uncheckedCast()
+
     protected suspend fun <T> db(body: DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use(body) }
 
@@ -38,7 +41,7 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
             run(DBPool) { jooq(dataSource).use { it.body() } }
 
     protected fun DSLContext.selectById(id: Any) =
-            select().from(table).where(pk.eq(id)).fetch().into(JsonObject::class.java).firstOrNull()
+            select().from(table).where(pk.eq(id)).fetch().into(recordClass).firstOrNull()
 
 }
 
@@ -53,9 +56,11 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
 
+
     @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
-    suspend fun handleDeleteWrapper(message: JsonObject) = handleDelete(message)
-    protected open suspend fun handleDelete(message: JsonObject): JsonObject {
+    suspend fun handleDeleteWrapper(message: JsonObject) =
+            handleDelete(message.toRecord(recordClass)).toJson()
+    protected open suspend fun handleDelete(message: R): R {
         val id = message.getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
 
@@ -64,31 +69,33 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     .where(pk.eq(id))
                     .returning()
                     .fetch()
-                    .into<JsonObject>()
+                    .into(recordClass)
                     .firstOrNull()
                     ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         }
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "readAddress")
-    suspend fun handleReadWrapper(message: JsonObject) = handleRead(message)
-    protected open suspend fun handleRead(message: JsonObject): JsonObject {
+    suspend fun handleReadWrapper(message: JsonObject) =
+            handleRead(message.toRecord(recordClass)).toJson()
+    protected open suspend fun handleRead(message: R): R {
         val id = message.getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
         return db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "findAddress")
-    suspend fun handleFindWrapper(message: JsonObject) = handleFind(message)
-    protected open suspend fun handleFind(message: JsonObject): JsonArray {
-        val query = message.toRecord(table.recordType.kotlin)
+    suspend fun handleFindWrapper(message: JsonObject) =
+            handleFind(message.toRecord(recordClass))
+    protected open suspend fun handleFind(message: R): JsonArray {
+        val query = message
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
         val queryFields = table
                 .fields()
                 .asSequence()
-                .filter { message.containsKey(it.name) }
+                .filter { message[it] != null }
                 .map { it.uncheckedCast<Field<Any>>() }
         val wherePart = queryFields.map { it.eq(query.get(it)) }.reduce(Condition::and)
         val resp = db {
@@ -103,39 +110,41 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "updateAddress")
-    suspend fun handleUpdateWrapper(message: JsonObject) = handleUpdate(message)
-    protected open suspend fun handleUpdate(message: JsonObject): JsonObject {
-        val id = message.getValue(pk.name)
+    suspend fun handleUpdateWrapper(message: JsonObject) =
+            handleUpdate(message.toRecord(recordClass)).toJson()
+    protected open suspend fun handleUpdate(message: R): R {
+        val id = message[pk]
         log.trace("Update requested for id = $id in table ${table.name}:\n" +
-                message.encodePrettily())
+                message.toJson().encodePrettily())
         return db {
             update(table)
-                    .set(newRecord(table, message.map))
+                    .set(message)
                     .where(pk.eq(id))
                     .returning()
                     .fetch()
-                    .into<JsonObject>()
+                    .into(recordClass)
                     .firstOrNull()
                     ?: throw NotFound("Cannot find ${table.name} entry for id $id")
         }
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "createAddress")
-    suspend fun handleCreateWrapper(message: JsonObject) = handleCreate(message)
-    protected open suspend fun handleCreate(message: JsonObject): JsonObject {
+    suspend fun handleCreateWrapper(message: JsonObject) =
+            handleCreate(message.toRecord(recordClass)).toJson()
+    protected open suspend fun handleCreate(message: R): R {
         log.trace("Create requested in table ${table.name}:\n" +
-                message.encodePrettily())
+                message.toJson().encodePrettily())
 
         for (field in table.primaryKey.fieldsArray) {
-            message.remove(field.name)
+            message.reset(field)
         }
 
         return db {
             insertInto(table)
-                    .set(newRecord(table, message.map))
+                    .set(message)
                     .returning()
                     .fetch()
-                    .into<JsonObject>()
+                    .into(recordClass)
                     .first()
         }
     }
