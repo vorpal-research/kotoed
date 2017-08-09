@@ -1,4 +1,4 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
 
 package org.jetbrains.research.kotoed.util
 
@@ -42,8 +42,8 @@ inline operator fun JsonObject.contains(key: String) = this.containsKey(camelToK
 
 /******************************************************************************/
 
-@Suppress("UNCHECKED_CAST")
-inline operator fun <R : Record, T> JsonObject.get(field: TableField<R, T>): T? = this.getValue(field.name) as? T
+inline operator fun <R : Record, T> JsonObject.get(field: TableField<R, T>): T? =
+        this.getValue(field.name).uncheckedCastOrNull()
 
 /******************************************************************************/
 
@@ -120,7 +120,8 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 }
                 companion is JsonableCompanion<*> -> companion.fromJson(this)
                 klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
-                klass.jvmErasure.isSubclassOf(Record::class) -> toRecord<Record>(klass.jvmErasure as KClass<Record>)
+                klass.jvmErasure.isSubclassOf(Record::class) ->
+                    toRecord<Record>(klass.jvmErasure.uncheckedCast<KClass<Record>>())
                 else -> die()
             }
         }
@@ -220,16 +221,15 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
 
 /******************************************************************************/
 
-@Suppress("UNCHECKED_CAST")
 fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
-    if (klass.isSubclassOf(JsonObject::class)) return data as T
+    if (klass.isSubclassOf(JsonObject::class)) return data.uncheckedCast<T>()
     klass.staticFunctions.firstOrNull { it.name == "fromJson" }?.let {
-        return it.call(data) as T
+        return it.call(data).uncheckedCast<T>()
     }
 
     val companion = klass.companionObjectInstance
     return when (companion) {
-        is JsonableCompanion<*> -> companion.fromJson(data) as? T
+        is JsonableCompanion<*> -> klass.safeCast(companion.fromJson(data))
                 ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
         else -> objectFromJson(data, klass)
     }
@@ -255,8 +255,7 @@ object AnyAsJson {
 }
 
 data class JsonDelegate(val obj: JsonObject) {
-    @Suppress("UNCHECKED_CAST")
-    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(camelToKey(prop.name)!!) as T
+    operator fun <T> getValue(thisRef: Any?, prop: KProperty<*>) = obj.getValue(camelToKey(prop.name)!!).uncheckedCast<T>()
     operator fun <T> setValue(thisRef: Any?, prop: KProperty<*>, value: T) = obj.set(camelToKey(prop.name)!!, value)
 }
 

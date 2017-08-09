@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.statistics
 
 import io.vertx.core.json.JsonObject
+import kotlinx.Warnings.UNUSED_PARAMETER
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.Tables
@@ -71,7 +72,7 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
     }
 }
 
-@Suppress("UNUSED_PARAMETER")
+@Suppress(UNUSED_PARAMETER)
 internal object JUnit {
     private val buildIdRegex = "(?<=id:)\\d+".toRegex()
 

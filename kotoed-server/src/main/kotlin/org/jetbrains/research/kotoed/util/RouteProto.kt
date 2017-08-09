@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.util
 
-import io.vertx.core.Handler
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
@@ -116,6 +115,7 @@ class RouteProto(private val router: Router) {
     }
 
     fun failureHandler(requestHandler: io.vertx.core.Handler<RoutingContext>, ordered: Boolean = true) = apply {
+        use(ordered)
         routeChunks.add(RouteChunk.FailureHandler(requestHandler))
     }
 

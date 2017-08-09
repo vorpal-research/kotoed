@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package org.jetbrains.research.kotoed.util.database
 
 import io.vertx.core.json.Json
@@ -7,6 +5,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.JsonEx
 import org.jetbrains.research.kotoed.util.decode
 import org.jetbrains.research.kotoed.util.jsonValue
+import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultRecordMapper
@@ -19,11 +18,11 @@ import kotlin.reflect.full.createInstance
 
 object JsonConverter : Converter<Any?, Any?> {
     override fun toType(): Class<Any?> {
-        return Any::class.java as Class<Any?>
+        return Any::class.java.uncheckedCast()
     }
 
     override fun fromType(): Class<Any?> {
-        return Any::class.java as Class<Any?>
+        return Any::class.java.uncheckedCast()
     }
 
     override fun from(databaseObject: Any?): Any? {
@@ -99,7 +98,7 @@ val jsonRecordMappers: RecordMapperProvider =
             override fun <R : Record, E : Any> provide(recordType: RecordType<R>, clazz: Class<out E>): RecordMapper<R, E> =
                     run {
                         if (clazz == JsonObject::class.java)
-                            RecordMapper { record: R -> record.toJson() as E }
+                            RecordMapper { record: R -> record.toJson().uncheckedCast<E>() }
                         else DefaultRecordMapper(recordType, clazz)
                     }
         }

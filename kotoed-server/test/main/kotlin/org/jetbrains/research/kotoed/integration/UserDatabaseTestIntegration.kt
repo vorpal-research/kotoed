@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.use
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
@@ -59,6 +60,7 @@ class UserDatabaseTestIntegration : Loggable {
         val petya = makeStupidUser("Petya").let(::JsonObject)
         val vasya = makeStupidUser("Vasya").let(::JsonObject)
         val masha = makeStupidUser("Masha").let(::JsonObject)
+        use(petya, vasya, masha)
 
         val petyasProject1 = makeStupidProject(petya.id, course.id).let(::JsonObject)
         val petyasProject2 = makeStupidProject(petya.id, course.id).let(::JsonObject)

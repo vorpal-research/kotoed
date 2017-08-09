@@ -52,15 +52,20 @@ abstract class Configuration : Jsonable {
 
     // Nothing? does not work for some reason
     inline operator fun <reified T> Null.getValue(thisRef: Configuration, prop: KProperty<*>): T? =
-            internalData.getValueByType(prop.underscoredName, prop.returnType) as? T
+            internalData.getValueByType(prop.underscoredName, prop.returnType).uncheckedCastOrNull()
 
     inline operator fun <reified T> Uninitialized.getValue(thisRef: Configuration, prop: KProperty<*>): T =
-            internalData.getValueByType(prop.underscoredName, prop.returnType.withNullability(true)) as? T ?:
+            internalData.getValueByType(
+                    prop.underscoredName,
+                    prop.returnType.withNullability(true)
+            ).uncheckedCastOrNull<T>() ?:
                     throw IllegalStateException("Configuration field ${prop.name} is not initialized")
 
-    @Suppress("UNCHECKED_CAST")
     operator fun <T> (() -> T).getValue(thisRef: Configuration, prop: KProperty<*>): T =
-            internalData.getValueByType(prop.underscoredName, this.reflect()?.returnType?.withNullability(true)!!) as? T ?: this()
+            internalData.getValueByType(
+                    prop.underscoredName,
+                    expectNotNull(this.reflect()).returnType.withNullability(true)
+            ).uncheckedCastOrNull() ?: this()
 
     inline operator fun <reified T : Configuration> T.getValue(thisRef: Configuration, prop: KProperty<*>): T {
         val child = this@getValue

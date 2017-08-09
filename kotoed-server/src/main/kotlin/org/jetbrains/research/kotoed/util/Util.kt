@@ -1,4 +1,4 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
 
 package org.jetbrains.research.kotoed.util
 
@@ -6,9 +6,13 @@ import com.hazelcast.util.Base64
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.Warnings.NOTHING_TO_INLINE
+import kotlinx.Warnings.UNCHECKED_CAST
+import kotlinx.Warnings.UNUSED_PARAMETER
 import java.io.BufferedReader
 import java.io.InputStream
+import java.lang.invoke.MethodHandles
+import java.lang.invoke.MethodType
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
@@ -18,6 +22,11 @@ inline fun <reified T : Any> klassOf() = T::class
 inline fun<T> tryOrNull(body: () -> T) = try { body() } catch (_: Exception) { null }
 
 /******************************************************************************/
+
+object GlobalLogging {
+    val log: Logger
+        inline get() = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
+}
 
 interface Loggable {
     val log: Logger
@@ -42,8 +51,11 @@ inline fun base64Encode(v: CharSequence): String =
 
 /******************************************************************************/
 
-fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
-        klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
+fun Enum.Companion.valueOf(value: String, klass: KClass<*>): Enum<*> =
+        MethodHandles.lookup().findStatic(
+                klass.java, "valueOf",
+                MethodType.methodType(klass.java, String::class.java)
+        ).invoke(value).uncheckedCast<Enum<*>>()
 
 inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
         enumValueOf<E>(value)
@@ -119,8 +131,16 @@ inline fun <K, V> Map<K, V>.asMultiMap() =
 
 /******************************************************************************/
 
-@Suppress("UNCHECKED_CAST")
-inline fun <D> Any?.cast(): D = this as D
+@Suppress(UNCHECKED_CAST, NOTHING_TO_INLINE)
+inline fun <D> Any?.uncheckedCast(): D = this as D
+@Suppress(UNCHECKED_CAST, NOTHING_TO_INLINE)
+inline fun <D> Any?.uncheckedCastOrNull(): D? = when(this){ null -> null; else -> uncheckedCast() }
+
+@Suppress(UNUSED_PARAMETER, NOTHING_TO_INLINE)
+inline fun <T> use(value: T) {}
+@Suppress(UNUSED_PARAMETER, NOTHING_TO_INLINE)
+inline fun use(value0: Any?, value1: Any?, vararg values: Any?) {}
+
 
 inline fun <T> forceType(v: T) = v
 
