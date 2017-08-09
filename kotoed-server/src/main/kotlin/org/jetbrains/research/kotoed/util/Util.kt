@@ -51,11 +51,8 @@ inline fun base64Encode(v: CharSequence): String =
 
 /******************************************************************************/
 
-fun Enum.Companion.valueOf(value: String, klass: KClass<*>): Enum<*> =
-        MethodHandles.lookup().findStatic(
-                klass.java, "valueOf",
-                MethodType.methodType(klass.java, String::class.java)
-        ).invoke(value).uncheckedCast<Enum<*>>()
+fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
+        klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
 
 inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
         enumValueOf<E>(value)
