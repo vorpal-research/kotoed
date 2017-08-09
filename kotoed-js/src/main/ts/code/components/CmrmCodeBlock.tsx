@@ -22,7 +22,7 @@ export default class CmrmCodeBlock extends React.Component<CodeBlockProps> {
     }
 
     render() {
-        return <pre ref={(ref: HTMLPreElement) => this.output = ref}/>
+        return <pre className="cm-s-default" ref={(ref: HTMLPreElement) => this.output = ref}/>
     }
 
 }
