@@ -5,7 +5,7 @@ import {CommentToRead} from "../remote/comments";
 export interface CommentsState {
     comments: ReviewComments
     lostFound: LostFoundComments
-    fetched: boolean
+    loading: boolean
 }
 
 export type CommentState = "open" | "closed";

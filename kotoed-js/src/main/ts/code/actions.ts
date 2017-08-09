@@ -256,7 +256,7 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
 export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
 
-        if (getState().commentsState.fetched)
+        if (!getState().commentsState.loading)
             return;
 
         dispatch(commentsFetch.started({
@@ -278,7 +278,7 @@ export function fetchCommentsIfNeeded(payload: SubmissionPayload) {
 export function fetchCommentAggregatesIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
 
-        if (getState().fileTreeState.aggregatesFetched)
+        if (!getState().fileTreeState.aggregatesLoading)
             return;
 
         dispatch(commentAggregatesFetch.started({
@@ -361,7 +361,7 @@ export function editComment(payload: CommentEditPayload) {
 
 export function fetchCapabilitiesIfNeeded(payload: SubmissionPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        if (getState().capabilitiesState.fetched)
+        if (!getState().capabilitiesState.loading)
             return;
 
         dispatch(capabilitiesFetch.started({}));  // Not used yet
