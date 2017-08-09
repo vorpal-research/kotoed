@@ -26,7 +26,7 @@ const initialFileTreeState: FileTreeState = {
         data: {
             kind: "file",
             filename: "dummy",
-            type: "file",
+            type: "directory",
             aggregate: {
                 open: 0,
                 closed: 0
@@ -35,7 +35,7 @@ const initialFileTreeState: FileTreeState = {
     }),
     loading: true,
     selectedPath: [],
-    aggregatesFetched: false,
+    aggregatesLoading: true,
     lostFoundAggregate: {
         open: 0,
         closed: 0
@@ -67,6 +67,14 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
                 .unselect(newState.selectedPath);
         newState.selectedPath = NodePath();
         return newState;
+    } else if (isType(action, rootFetch.started)) {
+        let newState = {...state};
+        newState.loading = true;
+        return newState;
+    } else if (isType(action, commentAggregatesFetch.started)) {
+        let newState = {...state};
+        newState.aggregatesLoading = true;
+        return newState;
     } else if (isType(action, rootFetch.done)) {
         let newState = {...state};
         newState.root = makeFileNode(action.payload.result.root);
@@ -74,9 +82,9 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
         return newState;
     } else if (isType(action, commentAggregatesFetch.done)) {
         let newState = {...state};
-        newState.aggregatesFetched = true;
         newState.root = addAggregates(newState.root, action.payload.result);
         newState.lostFoundAggregate = action.payload.result.lost;
+        newState.aggregatesLoading = false;
         return newState;
     } else if (isType(action, aggregatesUpdate)) {
         let newState = {...state};
@@ -116,14 +124,20 @@ const defaultEditorState = {
     value: "",
     fileName: "",
     displayedComments: FileComments(),
-    mode: {}
+    mode: {},
+    loading: false
 };
 
 export const editorReducer = (state: EditorState = defaultEditorState, action: Action) => {
-    if (isType(action, fileLoad.done)) {
+    if (isType(action, fileLoad.started)) {
+        let newState = {...state};
+        newState.loading = true;
+        return newState;
+    } else if (isType(action, fileLoad.done)) {
         let newState = {...state};
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
+        newState.loading = false;
         return newState;
     }
     return state;
@@ -132,7 +146,7 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
 export const defaultCommentsState = {
     comments: ReviewComments(),
     lostFound: LostFoundComments(),
-    fetched: false
+    loading: true
 };
 
 function updateComment(reviewState: CommentsState, comment: Comment) {
@@ -171,7 +185,11 @@ function collapseIfClosed(comment: Comment) {
 }
 
 export const commentsReducer = (reviewState: CommentsState = defaultCommentsState, action: Action) => {
-    if (isType(action, commentsFetch.done)) {
+    if (isType(action, commentsFetch.started)) {
+        let newState = {...reviewState};
+        newState.loading = true;
+        return newState
+    } else if (isType(action, commentsFetch.done)) {
         return action.payload.result;
     } else if (isType(action, commentPost.done)) {
         let {sourcefile, sourceline} = action.payload.result;
@@ -249,13 +267,13 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             postComment: false
         }
     },
-    fetched: false
+    loading: true
 };
 
 export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabilitiesState, action: Action) => {
     if (isType(action, capabilitiesFetch.done)) {
         return {
-            fetched: true,
+            loading: false,
             capabilities: action.payload.result
         }
     }

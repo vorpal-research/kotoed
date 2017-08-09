@@ -14,13 +14,19 @@ import {
 } from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state/comments";
 import {List} from "immutable";
+import ComponentWithLoading, {LoadingProperty} from "./ComponentWithLoading";
 
-export interface FileReviewProps {
+interface FileReviewBaseProps {
     canPostComment: boolean
     value: string,
     height: number | string,
     comments: FileComments,
     filePath: string,
+    whoAmI: string
+    scrollTo?: number
+}
+
+interface FileReviewCallbacks {
     onSubmit: (line: number, comment: string) => void
     onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
     onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
@@ -28,9 +34,9 @@ export interface FileReviewProps {
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
-    whoAmI: string
-    scrollTo?: number
 }
+
+export type FileReviewProps = FileReviewBaseProps & FileReviewCallbacks & LoadingProperty
 
 interface FileReviewState {
     expanded: Array<boolean>
@@ -38,7 +44,7 @@ interface FileReviewState {
 
 const REVIEW_GUTTER = "review-gutter";
 
-export default class FileReview extends React.Component<FileReviewProps, FileReviewState> {
+export default class FileReview extends ComponentWithLoading<FileReviewProps, FileReviewState> {
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
@@ -246,7 +252,12 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
 
     render() {
         return (
-            <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
+            <div style={{
+                height: "100%"
+            }}>
+                {this.renderVeil()}
+                <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
+            </div>
         )
     }
 }
