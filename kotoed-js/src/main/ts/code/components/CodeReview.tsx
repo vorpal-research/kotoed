@@ -10,10 +10,14 @@ import {RoutingCodeReviewProps} from "../containers/CodeReviewContainer";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate, UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
 import {makeSecondaryLabel} from "../util/filetree";
+import SpinnerWithVeil from "./SpinnerWithVeil";
 
 export interface CodeReviewProps {
     // TODO decompose this shit
 
+    editorLoading: boolean
+    fileTreeLoading: boolean
+    lostFoundLoading: boolean
     editorValue: string;
     filePath: string;
     nodePath: NodePath;
@@ -23,7 +27,6 @@ export interface CodeReviewProps {
     onLostFoundSelect: () => void
     show: "lost+found" | "code"
 
-    fileTreeLoading: boolean;
     root: FileNode;
 
     onDirExpand: (path: number[]) => void;
@@ -53,6 +56,7 @@ export default class CodeReview extends React.Component<RoutingCodeReviewProps> 
                                           onExpand={(comments) => this.props.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
                                           onEdit={(id, newText) => this.props.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
                                           makeLastSeenLink={this.props.makeLastSeenLink}
+                                          loading={this.props.lostFoundLoading}
                 />;
             case "code":
                 return <FileReview canPostComment={this.props.canPostComment}
@@ -69,14 +73,23 @@ export default class CodeReview extends React.Component<RoutingCodeReviewProps> 
                                    onCommentEdit={this.props.onCommentEdit}
                                    whoAmI={this.props.whoAmI}
                                    scrollTo={this.props.scrollTo}
+                                   loading={this.props.editorLoading}
                 />
         }
+    };
+
+    renderFileTreeVeil = () => {
+        if (this.props.fileTreeLoading)
+            return <SpinnerWithVeil/>;
+        else
+            return null;
     };
 
     render() {
         return (
             <div className="row code-review">
                 <div className="col-md-3" style={{height: "100%", overflowY: "scroll"}}>
+                    {this.renderFileTreeVeil()}
                     <div className="code-review-tree-container">
                         <FileTree root={this.props.root}
                                   onDirExpand={this.props.onDirExpand}

@@ -3,6 +3,7 @@ import * as React from "react";
 import {Classes, Tree} from "@blueprintjs/core";
 import {FileTreeNode, FileTreeProps} from "../state/filetree";
 import {makeLoadingNode} from "../util/filetree";
+import {default as ComponentWithLoading, LoadingProperty} from "./ComponentWithLoading";
 
 export interface FileTreeCallbacks {
     onDirExpand(path: number[]): void
@@ -10,7 +11,7 @@ export interface FileTreeCallbacks {
     onFileSelect(path: number[]): void
 }
 
-export default class FileTree extends React.Component<FileTreeProps & FileTreeCallbacks, {}> {
+export default class FileTree extends React.Component<FileTreeProps & FileTreeCallbacks & LoadingProperty, {}> {
     private onNodeClick = (nodeData: FileTreeNode, path: number[]) => {
         if (nodeData.data.kind === "loading")
             return;
@@ -36,16 +37,12 @@ export default class FileTree extends React.Component<FileTreeProps & FileTreeCa
     };
 
     render() {
-        return (
-            <Tree
-                contents={this.props.loading ?
-                    [makeLoadingNode(() => 0)] : // We don't care about id since it's only one node here
-                    this.props.root.childNodes || []}
+        return <Tree
+                contents={this.props.root.childNodes || []}
                 onNodeClick={this.onNodeClick}
                 onNodeCollapse={this.onNodeCollapse}
                 onNodeExpand={this.onNodeExpand}
                 className={`${Classes.ELEVATION_0} code-review-tree`}
-            />
-        );
+            />;
     }
 }

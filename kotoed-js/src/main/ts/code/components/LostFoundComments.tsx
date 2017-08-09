@@ -3,6 +3,7 @@ import {Comment, LostFoundComments as LostFoundCommentsState} from "../state/com
 import CommentComponent from "./CommentComponent";
 import {CommentList} from "./CommentList";
 import {List} from "immutable";
+import ComponentWithLoading, {LoadingProperty} from "./ComponentWithLoading";
 
 interface LostFoundCommentsProps {
     comments: LostFoundCommentsState
@@ -13,13 +14,16 @@ interface LostFoundCommentsProps {
     makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
-export class LostFoundComments extends React.Component<LostFoundCommentsProps, {}> {
+export class LostFoundComments extends ComponentWithLoading<LostFoundCommentsProps & LoadingProperty, {}> {
 
     render() {
-        return <div className="lost-found-comments">
-            <CommentList {...this.props}
-                         notifyEditorAboutChange={() => {}}
-                         makeLastSeenLink={this.props.makeLastSeenLink}/>
+        return <div>
+            {this.renderVeil()}
+            <div className="lost-found-comments">
+                <CommentList {...this.props}
+                             notifyEditorAboutChange={() => {}}
+                             makeLastSeenLink={this.props.makeLastSeenLink}/>
+            </div>
         </div>
     }
 }
