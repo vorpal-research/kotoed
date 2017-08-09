@@ -36,10 +36,12 @@ const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeRev
         editorValue: store.editorState.value,
         filePath: store.editorState.fileName,
         root: store.fileTreeState.root,
-        fileTreeLoading: store.fileTreeState.loading,
         nodePath: store.fileTreeState.selectedPath,
         canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
-        whoAmI: store.capabilitiesState.capabilities.principal.denizenId
+        whoAmI: store.capabilitiesState.capabilities.principal.denizenId,
+        editorLoading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
+        fileTreeLoading: store.fileTreeState.loading || store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,
+        lostFoundLoading: store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading
     }
 };
 
