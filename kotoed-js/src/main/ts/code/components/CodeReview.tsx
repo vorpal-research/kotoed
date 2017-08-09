@@ -36,8 +36,10 @@ export interface CodeReviewProps {
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
     canPostComment: boolean
     whoAmI: string
+    scrollTo?: number
 }
 
 export default class CodeReview extends React.Component<RoutingCodeReviewProps> {
@@ -49,7 +51,9 @@ export default class CodeReview extends React.Component<RoutingCodeReviewProps> 
                                           onCommentUnresolve={(id) => this.props.onCommentUnresolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
                                           onCommentResolve={(id) => this.props.onCommentResolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
                                           onExpand={(comments) => this.props.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
-                                          onEdit={(id, newText) => this.props.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}/>;
+                                          onEdit={(id, newText) => this.props.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
+                                          makeLastSeenLink={this.props.makeLastSeenLink}
+                />;
             case "code":
                 return <FileReview canPostComment={this.props.canPostComment}
                                    value={this.props.editorValue}
@@ -64,6 +68,7 @@ export default class CodeReview extends React.Component<RoutingCodeReviewProps> 
                                    onHiddenExpand={this.props.onHiddenExpand}
                                    onCommentEdit={this.props.onCommentEdit}
                                    whoAmI={this.props.whoAmI}
+                                   scrollTo={this.props.scrollTo}
                 />
         }
     };

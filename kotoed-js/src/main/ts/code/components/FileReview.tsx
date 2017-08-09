@@ -29,6 +29,7 @@ export interface FileReviewProps {
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
     whoAmI: string
+    scrollTo?: number
 }
 
 interface FileReviewState {
@@ -129,9 +130,15 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
-    private resetExpanded = (value: string) => {
+    private resetExpanded = (props: FileReviewProps) => {
+        let newExpanded = Array<boolean>(props.value.split("\n").length).fill(false);
+
+        if (props.scrollTo !== undefined) {
+            newExpanded[toCmLine(props.scrollTo)] = true;
+        }
+
         this.setState({
-            expanded: Array<boolean>(value.split("\n").length).fill(false)
+            expanded: newExpanded
         });
     };
 
@@ -152,8 +159,23 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.arrowOffset -= 5;  // TODO find a way to remove hardcoded 5
     };
 
+    private scrollToLine = () => {
+        if (this.props.scrollTo !== undefined) {
+            this.editor.scrollIntoView({
+                from: {
+                    line: toCmLine(this.props.scrollTo),
+                    ch: 0
+                },
+                to: {
+                    line: toCmLine(this.props.scrollTo + 1),
+                    ch: 0
+                }
+            }, 0);
+        }
+    };
+
     componentWillMount() {
-        this.resetExpanded(this.props.value)
+        this.resetExpanded(this.props)
     }
 
     componentDidMount() {
@@ -174,11 +196,21 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
         this.updateArrowOffset();
 
         this.renderMarkers();
+        this.scrollToLine();
+    }
+
+    private shouldResetExpanded(props: FileReviewProps, nextProps: FileReviewProps) {
+        if (props.filePath !== nextProps.filePath)
+            return true;
+        if (nextProps.scrollTo !== undefined && nextProps.scrollTo !== props.scrollTo)
+            return true;
+
+        return false;
     }
 
     componentWillReceiveProps(props: FileReviewProps) {
-        if (this.props.filePath !== props.filePath) {
-            this.resetExpanded(props.value)
+        if (this.shouldResetExpanded(this.props, props)) {
+            this.resetExpanded(props)
         }
     }
 
@@ -192,12 +224,18 @@ export default class FileReview extends React.Component<FileReviewProps, FileRev
             let newMode = guessCmModeForFile((this.props.filePath));
             requireCmMode(newMode);
             this.editor.setOption("mode", editorModeParam(newMode));
+        }
+
+        if (this.shouldResetExpanded(oldProps, this.props)) {
             this.renderMarkers();
         }
+
 
         if (this.props.filePath === oldProps.filePath && this.props.comments !== oldProps.comments) {
             this.incrementallyRenderMarkers(oldProps.comments);
         }
+
+        this.scrollToLine();
     }
 
     componentWillUnmount () {

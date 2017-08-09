@@ -8,11 +8,13 @@ import {
     dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, loadCode, loadLostFound, postComment,
     resetExpandedForLine,
     setCommentState,
-    setCodePath, fileUnselect, setLostFoundPath, resetExpandedForLostFound, unselectFile
-} from "../actions";
+    setCodePath, setLostFoundPath, resetExpandedForLostFound, unselectFile} from "../actions";
 import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 import {FileComments} from "../state/comments";
+import {push} from "react-router-redux";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
+import {CODE_REVIEW_BASE_ADDR} from "../index";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
@@ -111,13 +113,16 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
             }))
         },
 
-        onMarkerExpand: () => {},
+        onMarkerExpand: () => {
+            dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
+        },
 
         onMarkerCollapse: (file, line) => {
             dispatch(resetExpandedForLine({
                 file,
                 line
             }));
+            dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
         },
 
         onCommentEdit: (file, line, commentId, newText) => {
@@ -125,6 +130,11 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 commentId,
                 newText
             }))
+        },
+
+        makeLastSeenLink: (submissionId, sourcefile, sourceline) => {
+            if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
+                return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
         }
     }
 };
@@ -132,6 +142,14 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
 export const CODE_ROUTE_PATH = "/:submissionId(\\d+)/code/:path*";
 export const LOST_FOUND_ROUTE_PATH = "/:submissionId(\\d+)/lost+found";
 
+export function makeCodePath(submissionId: number, path: string, scrollTo?: number) {
+    let hash = scrollTo !== undefined ? `#${scrollTo}` : "";
+    return `/${submissionId}/code/${path}${hash}`
+}
+
+export function makeLostFoundPath(submissionId: number) {
+    return `/${submissionId}/lost+found`
+}
 
 class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
     // TODO this is fucked up
@@ -163,8 +181,18 @@ class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
         }
     };
 
+    // TODO this is SUPER fucked up
+    getHash = (): number | undefined => {
+        let hash = window.location.hash.split("#")[1];
+        let hashInt = parseInt(hash);
+
+        if (!isNaN(hashInt))
+            return hashInt;
+
+    };
+
     render() {
-        return <CodeReview {...this.props} show={this.getCodeReviewMode()}/>
+        return <CodeReview {...this.props} show={this.getCodeReviewMode()} scrollTo={this.getHash()}/>
     }
 }
 

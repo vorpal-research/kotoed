@@ -2,7 +2,7 @@ import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 
 const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
-const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentaggregates";
+const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentAggregates";
 
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
 const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update";
@@ -24,6 +24,7 @@ export interface BaseCommentToRead extends BaseComment {
     authorId: number
     datetime: number
     state: CommentState
+    persistent?: BaseComment
 }
 
 export interface CommentToRead extends BaseCommentToRead {
@@ -63,6 +64,7 @@ export interface CommentsResponse {
 
 type CommentsRequest = RequestWithId
 type CommentAggregatesRequest = RequestWithId
+type LastSeen = RequestWithId
 
 export type CommentToPost = BaseComment
 
@@ -79,6 +81,10 @@ interface CommentStateUpdate {
 interface CommentEdit {
     id: number
     text: string
+}
+
+interface LastSeenResponse {
+    location: BaseCommentToRead | null
 }
 
 export async function fetchComments(submissionId: number): Promise<CommentsResponse> {

@@ -25,6 +25,7 @@ import {
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
+import {makeCodePath, makeLostFoundPath} from "./containers/CodeReviewContainer";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -85,6 +86,9 @@ interface ExpandedResetForFilePayload {
     file: string
 }
 
+interface GoToLastSeenPayload {
+    id: number
+}
 
 // Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
@@ -112,6 +116,7 @@ export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COM
 
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
+
 
 export function loadCode(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
@@ -208,13 +213,13 @@ export function unselectFile() {
 export function setCodePath(payload: NodePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
-        dispatch(push(`/${payload.submissionId}/code/${filename}`))
+        dispatch(push(makeCodePath(payload.submissionId, filename)))
     }
 }
 
 export function setLostFoundPath(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        dispatch(push(`/${payload.submissionId}/lost+found`))
+        dispatch(push(makeLostFoundPath(payload.submissionId)))
     }
 }
 
@@ -393,4 +398,3 @@ export function resetExpandedForLostFound() {
         dispatch(expandedResetForLostFound({}));
     }
 }
-
