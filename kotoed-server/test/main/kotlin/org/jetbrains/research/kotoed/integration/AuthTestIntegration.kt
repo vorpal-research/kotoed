@@ -5,6 +5,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AnyAsJson
+import org.jetbrains.research.kotoed.util.use
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
@@ -93,6 +94,7 @@ class OAuthTestIntegration {
                 path = "debug/eventbus/${Address.DB.create("oauth_provider")}",
                 payload = """ { "name" : "http://spbstu.ru" } """
         ).let(::JsonObject)
+        use(newProvider)
 
         val login = "TestSubject0012-B"
 
@@ -124,6 +126,8 @@ class OAuthTestIntegration {
                               }
                             """
                 ).let(::JsonObject)
+
+        use(oauthSingUpResp)
 
         val oauthLoginResp =
                 wpost(

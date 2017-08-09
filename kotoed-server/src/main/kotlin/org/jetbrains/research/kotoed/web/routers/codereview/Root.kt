@@ -5,12 +5,14 @@ import org.jetbrains.research.kotoed.data.web.CodeReview
 import org.jetbrains.research.kotoed.util.end
 import org.jetbrains.research.kotoed.util.isAuthorised
 import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.util.use
 
 @HandlerFor("/codereview/*")
 @Templatize("code.jade")
 @LoginRequired
 @JsBundle("code")
 fun handleCode(context: RoutingContext) {
+    use(context)
     // Just rendering template. React will do the rest on the client side
 }
 

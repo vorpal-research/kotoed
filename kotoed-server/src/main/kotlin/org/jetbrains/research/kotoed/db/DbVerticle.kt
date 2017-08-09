@@ -26,10 +26,10 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
     }
 
     val dataSource get() = vertx.getSharedDataSource()
-    @Suppress("UNCHECKED_CAST")
+
     val pk: Field<Any>
-        get() = table.primaryKey?.fields?.first() as? Field<Any>
-                ?: table.field("id") as Field<Any>
+        get() = table.primaryKey?.fields?.first()?.uncheckedCast<Field<Any>>()
+                ?: table.field("id").uncheckedCast<Field<Any>>()
 
     protected suspend fun <T> db(body: DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use(body) }
@@ -85,9 +85,12 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
-        val queryFields = table.fields().asSequence().filter { message.containsKey(it.name) }
-        @Suppress("UNCHECKED_CAST")
-        val wherePart = queryFields.map { (it as Field<Any?>).eq(query.get(it)) }.reduce(Condition::and)
+        val queryFields = table
+                .fields()
+                .asSequence()
+                .filter { message.containsKey(it.name) }
+                .map { it.uncheckedCast<Field<Any>>() }
+        val wherePart = queryFields.map { it.eq(query.get(it)) }.reduce(Condition::and)
         val resp = db {
             selectFrom(table)
                     .where(wherePart)
@@ -160,8 +163,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
         launch(UnconfinedWithExceptions(msg)) {
-            @Suppress("UNCHECKED_CAST")
-            val fkField = fk.fields.first() as Field<Any>
+            val fkField = fk.fields.first().uncheckedCast<Field<Any>>()
 
             val id = msg.body().getValue(fkField.name)
 

@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AbstractVerticle
@@ -8,6 +6,7 @@ import io.vertx.core.Handler
 import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlinx.Warnings.DEPRECATION
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -19,7 +18,10 @@ import org.jooq.TableRecord
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
-import kotlin.reflect.full.*
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.jvmErasure
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
@@ -31,8 +33,11 @@ suspend fun EventBus.sendAsync(address: String, message: Any): Message<JsonObjec
 
 @JvmName("trySendJsonAsync")
 suspend fun EventBus.trySendAsync(address: String, message: Any): Message<JsonObject>? =
-        try{ sendAsync<JsonObject>(address, message) }
-        catch (ex: ReplyException) { null }
+        try {
+            sendAsync<JsonObject>(address, message)
+        } catch (ex: ReplyException) {
+            null
+        }
 
 @Deprecated("Forgot to call .toJson()?",
         level = DeprecationLevel.ERROR,
@@ -108,13 +113,13 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
             { fromJson(it.expectingIs<JsonObject>(), klazz) }
         }
         klazz.isSubclassOf(Record::class) -> {
-            { it.expectingIs<JsonObject>().toRecord(klazz as KClass<out Record>) }
+            { it.expectingIs<JsonObject>().toRecord(klazz.uncheckedCast<KClass<out Record>>()) }
         }
         klazz == Unit::class -> {
             {}
         }
 
-        // collections
+    // collections
         klazz == JsonArray::class -> {
             { it.expectingIs<JsonArray>() }
         }
@@ -131,7 +136,7 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     }
 }
 
-object ConsumerAutoRegister: Loggable
+object ConsumerAutoRegister : Loggable
 
 fun AbstractKotoedVerticle.registerAllConsumers() {
     val klass = this::class
@@ -146,7 +151,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                 is EventBusConsumerForDynamic -> {
                     val address = klass
                             .memberProperties
-                            .find{ it.name == annotation.addressProperty }
+                            .find { it.name == annotation.addressProperty }
                             ?.call(this)
                             as? String
                             ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
@@ -155,7 +160,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                 is JsonableEventBusConsumerForDynamic -> {
                     val address = klass
                             .memberProperties
-                            .find{ it.name == annotation.addressProperty }
+                            .find { it.name == annotation.addressProperty }
                             ?.call(this)
                             as? String
                             ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
@@ -173,7 +178,7 @@ private fun AbstractVerticle.registerRawConsumer(
     val klass = this::class
     val eb = vertx.eventBus()
     ConsumerAutoRegister.log.info(
-            "Auto-registering raw consumer for address $address \n"+
+            "Auto-registering raw consumer for address $address \n" +
                     "using function $function"
     )
 
@@ -200,7 +205,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
     val eb = vertx.eventBus()
 
     ConsumerAutoRegister.log.info(
-            "Auto-registering json-based consumer for address $address \n"+
+            "Auto-registering json-based consumer for address $address \n" +
                     "using function $function"
     )
 
@@ -229,7 +234,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
     }
 }
 
-object DebugInterceptor: Handler<SendContext<*>>, Loggable {
+object DebugInterceptor : Handler<SendContext<*>>, Loggable {
     override fun handle(event: SendContext<*>) {
         val message = event.message()
         log.trace("Message to ${message.address()}[${message.replyAddress() ?: ""}]")
@@ -253,7 +258,7 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     ): Result {
         val toJson = getToJsonConverter(argClass.starProjectedType)
         val fromJson = getFromJsonConverter(resultClass.starProjectedType)
-        return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson) as Result
+        return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
     }
 
     @PublishedApi
@@ -273,37 +278,37 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
                 .asSequence()
                 .filterIsInstance<JsonObject>()
                 .map(fromJson)
-                .map { it as Result }
+                .map { it.uncheckedCast<Result>() }
                 .toList()
     }
 
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
     protected suspend fun <R : TableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
-            sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
-            sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
-            sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
-            sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION) sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-            sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
+            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
 
     protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
-                                                                  klass: KClass<out R> = instance.recordType.kotlin): R =
-            sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
+                                                              klass: KClass<out R> = instance.recordType.kotlin): R =
+            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
 }
 
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
         > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
-    @Suppress("DEPRECATION")
+    @Suppress(DEPRECATION)
     return sendJsonableAsync(address, value, Argument::class, Result::class)
 }
 
@@ -311,9 +316,10 @@ inline suspend fun <
         reified Result : Any,
         reified Argument : Any
         > AbstractKotoedVerticle.trySendJsonableAsync(address: String, value: Argument): Result? {
-    return try { sendJsonableAsync(address, value) }
-    catch (ex: ReplyException) {
-        if(ex.failureType() == ReplyFailure.NO_HANDLERS) null
+    return try {
+        sendJsonableAsync(address, value)
+    } catch (ex: ReplyException) {
+        if (ex.failureType() == ReplyFailure.NO_HANDLERS) null
         else throw ex
     }
 }

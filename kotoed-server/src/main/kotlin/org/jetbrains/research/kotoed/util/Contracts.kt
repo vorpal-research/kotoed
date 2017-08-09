@@ -1,4 +1,4 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
 
 package org.jetbrains.research.kotoed.util
 

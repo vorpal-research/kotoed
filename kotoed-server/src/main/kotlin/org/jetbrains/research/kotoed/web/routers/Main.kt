@@ -5,6 +5,7 @@ import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsBundle
 import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.util.routing.Templatize
+import org.jetbrains.research.kotoed.util.use
 
 @HandlerFor("/")
 @Templatize("main.jade")
@@ -17,5 +18,5 @@ fun handleIndex(context: RoutingContext) {
 @Templatize("secret.jade")
 @LoginRequired
 @JsBundle("hello")
-fun handleSecret(context: RoutingContext) {}
+fun handleSecret(context: RoutingContext) { use(context) }
 

@@ -1,11 +1,10 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
 
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
-import io.vertx.core.logging.Logger
 import io.vertx.ext.web.RoutingContext
 import kotlinx.coroutines.experimental.CoroutineExceptionHandler
 import kotlinx.coroutines.experimental.CoroutineScope
@@ -15,10 +14,9 @@ import java.lang.Error
 import java.lang.reflect.Method
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KFunction
-
-import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
 
 /******************************************************************************/
 
