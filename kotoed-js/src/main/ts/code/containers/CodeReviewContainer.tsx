@@ -1,9 +1,11 @@
 import * as React from "react";
+import * as _ from "lodash"
+
 import {Dispatch} from "redux";
 import {connect} from "react-redux";
 
 
-import CodeReview, {CodeReviewProps} from "../components/CodeReview";
+import CodeReview, {CodeReviewCallbacks, CodeReviewProps, CodeReviewPropsAndCallbacks} from "../components/CodeReview";
 import {
     dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, loadCode, loadLostFound, postComment,
     resetExpandedForLine,
@@ -26,53 +28,121 @@ interface CodeReviewUrl {
     path: string
 }
 
-export type RoutingCodeReviewProps = CodeReviewProps & RouteComponentProps<CodeReviewUrl> & OnRoute;
+export type RoutingCodeReviewProps = CodeReviewPropsAndCallbacks & RouteComponentProps<CodeReviewUrl> & OnRoute;
 
-const mapStateToProps = function(store: CodeReviewState): Partial<RoutingCodeReviewProps> {
+const mapStateToProps = function(store: CodeReviewState): CodeReviewProps {
     return {
-        editorComments: store.commentsState.comments.get(store.editorState.fileName, FileComments()),
-        lostFoundComments: store.commentsState.lostFound,
-        lostFoundAggregate: store.fileTreeState.lostFoundAggregate,
-        editorValue: store.editorState.value,
-        filePath: store.editorState.fileName,
-        root: store.fileTreeState.root,
-        nodePath: store.fileTreeState.selectedPath,
-        canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
-        whoAmI: store.capabilitiesState.capabilities.principal.denizenId,
-        editorLoading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
-        fileTreeLoading: store.fileTreeState.loading || store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,
-        lostFoundLoading: store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading
+        editor: {
+            loading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
+            value: store.editorState.value,
+            file: store.editorState.fileName,
+            comments: store.commentsState.comments.get(store.editorState.fileName, FileComments())
+        },
+        fileTree: {
+            loading: store.fileTreeState.loading || store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,
+            root: store.fileTreeState.root,
+            path: store.fileTreeState.selectedPath
+        },
+        lostFound: {
+            loading: store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,
+            comments: store.commentsState.lostFound,
+            aggregate: store.fileTreeState.lostFoundAggregate
+        },
+        capabilities: {
+            canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
+            whoAmI: store.capabilitiesState.capabilities.principal.denizenId,
+        }
     }
 };
 
 const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
-                                     ownProps: RouteComponentProps<CodeReviewUrl>): Partial<RoutingCodeReviewProps> {
+                                     ownProps: RouteComponentProps<CodeReviewUrl>): CodeReviewCallbacks & OnRoute {
     return {
-        onDirExpand: (path: number[]) => {
-            dispatch(dirExpand({
-                treePath: path
-            }));
+        editor : {
+            onMarkerExpand: () => {
+                dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
+            },
+            onMarkerCollapse: (file, line) =>  {
+                dispatch(resetExpandedForLine({
+                    file,
+                    line
+                }));
+                dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
+            }
         },
-        onDirCollapse: (path: number[]) => {
-            dispatch(dirCollapse({
-                treePath: path
-            }));
+
+        comments: {
+            onCommentSubmit: (sourcefile, sourceline, text) => {
+                dispatch(postComment({
+                    submissionId: parseInt(ownProps.match.params.submissionId),
+                    sourcefile,
+                    sourceline,
+                    text
+                }))
+            },
+
+            onCommentResolve: (sourcefile, sourceline, commentId) => {
+                dispatch(setCommentState({
+                    commentId,
+                    state: "closed"
+                }))
+            },
+            onCommentUnresolve: (sourcefile, sourceline, commentId) => {
+                dispatch(setCommentState({
+                    commentId,
+                    state: "open"
+                }))
+            },
+
+            onHiddenExpand: (file, line, comments) => {
+                dispatch(expandHiddenComments({
+                    file,
+                    line,
+                    comments
+                }))
+            },
+            onCommentEdit: (file, line, commentId, newText) => {
+                dispatch(editComment({
+                    commentId,
+                    newText
+                }))
+            }
         },
-        onFileSelect: (path: number[]) => {
-            dispatch(fileSelect({
-                treePath: path
-            }));
-            dispatch(setCodePath({
-                treePath: path,
-                submissionId: parseInt(ownProps.match.params.submissionId)
-            }));
+
+        fileTree: {
+            onDirExpand: (path: number[]) => {
+                dispatch(dirExpand({
+                    treePath: path
+                }));
+            },
+            onDirCollapse: (path: number[]) => {
+                dispatch(dirCollapse({
+                    treePath: path
+                }));
+            },
+            onFileSelect: (path: number[]) => {
+                dispatch(fileSelect({
+                    treePath: path
+                }));
+                dispatch(setCodePath({
+                    treePath: path,
+                    submissionId: parseInt(ownProps.match.params.submissionId)
+                }));
+            }
         },
-        onLostFoundSelect: () => {
-            dispatch(unselectFile());
-            dispatch(resetExpandedForLostFound());
-            dispatch(setLostFoundPath({
-                submissionId: parseInt(ownProps.match.params.submissionId)
-            }));
+
+        lostFound: {
+            onSelect: () => {
+                dispatch(unselectFile());
+                dispatch(resetExpandedForLostFound());
+                dispatch(setLostFoundPath({
+                    submissionId: parseInt(ownProps.match.params.submissionId)
+                }));
+            },
+            makeLastSeenLink: (submissionId, sourcefile, sourceline) => {
+                if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
+                    return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
+            }
         },
         onCodeRoute: (submissionId, filename) => {
             dispatch(loadCode({
@@ -85,59 +155,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 submissionId
             }));
         },
-        onCommentSubmit: (sourcefile, sourceline, text) => {
-            dispatch(postComment({
-                submissionId: parseInt(ownProps.match.params.submissionId),
-                sourcefile,
-                sourceline,
-                text
-            }))
-        },
-
-        onCommentResolve: (sourcefile, sourceline, commentId) => {
-            dispatch(setCommentState({
-                commentId,
-                state: "closed"
-            }))
-        },
-        onCommentUnresolve: (sourcefile, sourceline, commentId) => {
-            dispatch(setCommentState({
-                commentId,
-                state: "open"
-            }))
-        },
-
-        onHiddenExpand: (file, line, comments) => {
-            dispatch(expandHiddenComments({
-                file,
-                line,
-                comments
-            }))
-        },
-
-        onMarkerExpand: () => {
-            dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
-        },
-
-        onMarkerCollapse: (file, line) => {
-            dispatch(resetExpandedForLine({
-                file,
-                line
-            }));
-            dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
-        },
-
-        onCommentEdit: (file, line, commentId, newText) => {
-            dispatch(editComment({
-                commentId,
-                newText
-            }))
-        },
-
-        makeLastSeenLink: (submissionId, sourcefile, sourceline) => {
-            if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
-                return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
-        }
     }
 };
 
@@ -194,8 +211,16 @@ class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
     };
 
     render() {
-        return <CodeReview {...this.props} show={this.getCodeReviewMode()} scrollTo={this.getHash()}/>
+        let crProps = {...this.props};
+        let editorProps = {...crProps.editor};
+        editorProps.scrollTo = this.getHash();
+        crProps.editor = editorProps;
+        return <CodeReview {...crProps} show={this.getCodeReviewMode()}/>
     }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(RoutingContainer);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps,
+    (state, dispatch, own) => _.merge({}, state, dispatch, own)
+)(RoutingContainer);

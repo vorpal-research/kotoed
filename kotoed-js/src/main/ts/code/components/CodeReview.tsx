@@ -6,80 +6,105 @@ import {Comment, FileComments, LostFoundComments as LostFoundCommentsState} from
 import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
 import {List} from "immutable";
-import {RoutingCodeReviewProps} from "../containers/CodeReviewContainer";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate, UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
 import {makeSecondaryLabel} from "../util/filetree";
 import SpinnerWithVeil from "./SpinnerWithVeil";
 
 export interface CodeReviewProps {
-    // TODO decompose this shit
+    editor: {
+        loading: boolean
+        value: string
+        file: string
+        comments: FileComments
+        scrollTo?: number
+    }
 
-    editorLoading: boolean
-    fileTreeLoading: boolean
-    lostFoundLoading: boolean
-    editorValue: string;
-    filePath: string;
-    nodePath: NodePath;
-    editorComments: FileComments;
-    lostFoundComments: LostFoundCommentsState
-    lostFoundAggregate: CommentAggregate
-    onLostFoundSelect: () => void
-    show: "lost+found" | "code"
+    fileTree: {
+        loading: boolean
+        path: NodePath
+        root: FileNode
+    }
 
-    root: FileNode;
+    lostFound: {
+        loading: boolean
+        comments: LostFoundCommentsState
+        aggregate: CommentAggregate
+    }
 
-    onDirExpand: (path: number[]) => void;
-    onDirCollapse: (path: number[]) => void;
-    onFileSelect: (path: number[]) => void;
-    onCommentSubmit: (file: string, line: number, text: string) => void
-    onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
-    onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
-    onMarkerExpand: (file: string, lineNumber: number) => void
-    onMarkerCollapse: (file: string, lineNumber: number) => void
-    onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
-    onCommentEdit: (file: string, line: number, id: number, newText: string) => void
-    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
-    canPostComment: boolean
-    whoAmI: string
-    scrollTo?: number
+    capabilities: {
+        canPostComment: boolean
+        whoAmI: string
+    }
 }
 
-export default class CodeReview extends React.Component<RoutingCodeReviewProps> {
+interface CodeReviewPropsFromRouting {
+    show: "lost+found" | "code"
+}
+
+export interface CodeReviewCallbacks {
+    editor : {
+        onMarkerExpand: (file: string, lineNumber: number) => void
+        onMarkerCollapse: (file: string, lineNumber: number) => void
+    }
+
+    comments: {
+        onCommentSubmit: (file: string, line: number, text: string) => void
+        onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
+        onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
+        onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
+        onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+    }
+
+    fileTree: {
+        onDirExpand: (path: number[]) => void;
+        onDirCollapse: (path: number[]) => void;
+        onFileSelect: (path: number[]) => void;
+    }
+
+    lostFound: {
+        onSelect: () => void
+        makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    }
+}
+
+export type CodeReviewPropsAndCallbacks = CodeReviewProps & CodeReviewCallbacks
+
+export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting> {
 
     renderRightSide = () => {
         switch (this.props.show) {
             case "lost+found":
-                return <LostFoundComments comments={this.props.lostFoundComments}
-                                          onCommentUnresolve={(id) => this.props.onCommentUnresolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
-                                          onCommentResolve={(id) => this.props.onCommentResolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
-                                          onExpand={(comments) => this.props.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
-                                          onEdit={(id, newText) => this.props.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
-                                          makeLastSeenLink={this.props.makeLastSeenLink}
-                                          loading={this.props.lostFoundLoading}
+                return <LostFoundComments comments={this.props.lostFound.comments}
+                                          onCommentUnresolve={(id) => this.props.comments.onCommentUnresolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
+                                          onCommentResolve={(id) => this.props.comments.onCommentResolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
+                                          onExpand={(comments) => this.props.comments.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
+                                          onEdit={(id, newText) => this.props.comments.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
+                                          makeLastSeenLink={this.props.lostFound.makeLastSeenLink}
+                                          loading={this.props.lostFound.loading}
                 />;
             case "code":
-                return <FileReview canPostComment={this.props.canPostComment}
-                                   value={this.props.editorValue}
+                return <FileReview canPostComment={this.props.capabilities.canPostComment}
+                                   value={this.props.editor.value}
                                    height="100%"
-                                   comments={this.props.editorComments}
-                                   filePath={this.props.filePath}
-                                   onSubmit={(line, text) => this.props.onCommentSubmit(this.props.filePath, line, text)}
-                                   onCommentResolve={this.props.onCommentResolve}
-                                   onCommentUnresolve={this.props.onCommentUnresolve}
-                                   onMarkerExpand={this.props.onMarkerExpand}
-                                   onMarkerCollapse={this.props.onMarkerCollapse}
-                                   onHiddenExpand={this.props.onHiddenExpand}
-                                   onCommentEdit={this.props.onCommentEdit}
-                                   whoAmI={this.props.whoAmI}
-                                   scrollTo={this.props.scrollTo}
-                                   loading={this.props.editorLoading}
+                                   comments={this.props.editor.comments}
+                                   filePath={this.props.editor.file}
+                                   onSubmit={(line, text) => this.props.comments.onCommentSubmit(this.props.editor.file, line, text)}
+                                   onCommentResolve={this.props.comments.onCommentResolve}
+                                   onCommentUnresolve={this.props.comments.onCommentUnresolve}
+                                   onMarkerExpand={this.props.editor.onMarkerExpand}
+                                   onMarkerCollapse={this.props.editor.onMarkerCollapse}
+                                   onHiddenExpand={this.props.comments.onHiddenExpand}
+                                   onCommentEdit={this.props.comments.onCommentEdit}
+                                   whoAmI={this.props.capabilities.whoAmI}
+                                   scrollTo={this.props.editor.scrollTo}
+                                   loading={this.props.editor.loading}
                 />
         }
     };
 
     renderFileTreeVeil = () => {
-        if (this.props.fileTreeLoading)
+        if (this.props.fileTree.loading)
             return <SpinnerWithVeil/>;
         else
             return null;
@@ -91,18 +116,18 @@ export default class CodeReview extends React.Component<RoutingCodeReviewProps> 
                 <div className="col-md-3" style={{height: "100%", overflowY: "scroll"}}>
                     {this.renderFileTreeVeil()}
                     <div className="code-review-tree-container">
-                        <FileTree root={this.props.root}
-                                  onDirExpand={this.props.onDirExpand}
-                                  onDirCollapse={this.props.onDirCollapse}
-                                  onFileSelect={this.props.onFileSelect}
-                                  loading={this.props.fileTreeLoading}
-                                  lostFoundAggregate={this.props.lostFoundAggregate}
+                        <FileTree root={this.props.fileTree.root}
+                                  onDirExpand={this.props.fileTree.onDirExpand}
+                                  onDirCollapse={this.props.fileTree.onDirCollapse}
+                                  onFileSelect={this.props.fileTree.onFileSelect}
+                                  loading={this.props.fileTree.loading}
+                                  lostFoundAggregate={this.props.lostFound.aggregate}
                         />
                         <div className="lost-found-button-container">
-                            <button className="btn btn-warning lost-found-button" onClick={this.props.onLostFoundSelect}>
+                            <button className="btn btn-warning lost-found-button" onClick={this.props.lostFound.onSelect}>
                                 Lost + Found {" "}
                                 {makeSecondaryLabel(
-                                    this.props.lostFoundAggregate
+                                    this.props.lostFound.aggregate
                                 )}
                             </button>
                         </div>
