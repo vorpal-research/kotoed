@@ -48,13 +48,13 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
     }
 }
 
-export async function fetchRootDir(submissionId: number): Promise<Array<File>> {
+export async function fetchRootDir(submissionId: number): Promise<File> {
     let res = await repeatTillReady<RootDirResponse>(() => {
         return eventBus.send(LIST_ADDRESS, {
             submissionId: submissionId
         })
     });
-    return res.root.children || [];
+    return res.root;
 }
 
 export async function fetchFile(submissionId: number, path: string): Promise<string> {

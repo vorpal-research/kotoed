@@ -1,28 +1,22 @@
-import * as React from "react";
-import {fromJS, List} from "immutable";
+import * as React from "react"
 
-import CommentComponent from "./CommentComponent";
-import {Comment, LineComments as LineCommentsState} from "../state/comments";
-import CommentForm from "./CommentForm";
+import {Comment} from "../state/comments";
+import {List} from "immutable";
 import CollapsedComments from "./CollapsedComments";
-import {CommentList} from "./CommentList";
+import CommentComponent from "./CommentComponent";
 
-interface LineCommentsProps {
-    canPostComment: boolean
-    comments: LineCommentsState
-    arrowOffset: number
-    onSubmit: (text: string) => void
+interface CommentListProps {
+    comments: List<Comment>
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onEdit: (id: number, newText: string) => void
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
-    whoAmI: string
+    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
-export default class LineComments extends React.Component<LineCommentsProps, {}> {
-
-    getNested = (): Array<JSX.Element> => {
+export class CommentList extends React.Component<CommentListProps, {}> {
+    renderNested = (): Array<JSX.Element> => {
 
         let collapsedAcc: Array<Comment> = [];
         let lcProps = this.props;
@@ -47,7 +41,9 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
                     key={comment.id} {...comment}
                     onResolve={lcProps.onCommentResolve}
                     onUnresolve={lcProps.onCommentUnresolve}
-                    onEdit={this.props.onEdit}/>);
+                    onEdit={this.props.onEdit}
+                    makeLastSeenLink={this.props.makeLastSeenLink}
+                />);
 
             } else {
                 collapsedAcc.push(comment);
@@ -60,22 +56,8 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
     };
 
     render() {
-
-        return (
-            <div>
-                <div className="line-comments">
-                    <CommentList {...this.props}/>
-                    {
-                        this.props.canPostComment &&
-                        <CommentForm
-                            onSubmit={this.props.onSubmit}
-                            notifyEditorAboutChange={this.props.notifyEditorAboutChange}
-                            whoAmI={this.props.whoAmI}
-                        />
-                    }
-                </div>
-                <div className="line-comments-arrow" style={{left: this.props.arrowOffset}}/>
-            </div>
-        )
+        return <div>
+            {this.renderNested()}
+        </div>
     }
 }

@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.util
 
+import io.vertx.core.Handler
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
@@ -52,7 +53,7 @@ class RouteProto(private val router: Router) {
 
             data class BlockingHandler(val requestHandler: io.vertx.core.Handler<RoutingContext>,
                                        val ordered: Boolean = true): RouteChunk() {
-                override operator fun invoke(route: Route) = route.blockingHandler(requestHandler)
+                override operator fun invoke(route: Route) = route.blockingHandler(requestHandler, ordered)
             }
 
             data class FailureHandler(val requestHandler: io.vertx.core.Handler<RoutingContext>): RouteChunk() {

@@ -15,3 +15,10 @@ data class OAuthSignUpMsg(
 data class OAuthLoginMsg(
         val oauthProvider: String,
         val oauthUser: String) : Jsonable
+data class HasPermMsg(
+        val denizenId: String,
+        val perm: String
+) : Jsonable
+data class HasPermReply(
+        val result: Boolean
+) : Jsonable

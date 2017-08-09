@@ -1,47 +1,75 @@
 import * as React from "react"
-import {File, FileType} from "../remote/code";
-import {Spinner, ITreeNode} from "@blueprintjs/core";
-import {FileNotFoundError, FileTreeError} from "../errors";
-import {FileNode, FileNodes, FileTreePath, LoadingNode} from "../state";
+import {File} from "../remote/code";
+import {Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
+import {FileNode, FileNodeProps, FileTreeProps, LoadingNode} from "../state/filetree";
+import {NodePath} from "../state/blueprintTree";
+import {FileNotFoundError} from "../errors";
 
-
-
-export function visitNodePath(fileTree: FileNodes,
-                              numPath: FileTreePath,
-                              callback: (node: FileNode) => void): FileNode | null {
-    let children: FileNodes = fileTree;
-
-    let node: FileNode | null = null;
-    numPath.forEach((index) => {
-        node = children[index];
-        callback(node);
-        if (node.childNodes)
-            children = node.childNodes;
-    });
-    return node;
-}
-
-export function visitSubtree(fileTree: FileNode,
-                             callback: (node: FileNode) => boolean): void {
-    if (callback(fileTree) && fileTree.childNodes) {
-        fileTree.childNodes.forEach(child => visitSubtree(child, callback));
+export function makeLoadingNode(idGen: (() => number)): LoadingNode {
+    return {
+        data: {
+            kind: "loading"
+        },
+        id: idGen(),
+        label: <Spinner className="pt-small"/>
     }
 }
 
-export function getNodeAt(fileTree: FileNodes,
-                          numPath: FileTreePath): FileNode | null {
-    return visitNodePath(fileTree, numPath, () => {});
+export function makeFileTreeProps(file: File, idGen: (() => number)|null = null): FileNodeProps {
+    let id = 0;
+    let idGenF = idGen ? idGen : () => {return ++id;};
+
+    let bpNode: FileNodeProps = {
+        id: idGenF(),
+        isExpanded: false,
+        isSelected: false,
+        label: file.name,
+        hasCaret: file.type === "directory",
+        iconName: file.type == "file" ? "pt-icon-document" : "pt-icon-folder-close",
+        childNodes: [],
+        data: {
+            kind: "file",
+            filename: file.name,
+            type: file.type,
+            aggregate: {
+                open: 0,
+                closed: 0
+            }
+        }
+    };
+
+    if (file.children) {
+        file.children.forEach((child) => {
+            bpNode.childNodes!.push(makeFileTreeProps(child, idGenF));
+        });
+    }
+    return bpNode;
 }
 
-export function nodePathToFilePath(fileTree: Array<FileNode>, numPath: FileTreePath): string {
+export function makeFileNode(file: File) {
+    return FileNode(makeFileTreeProps(file));
+}
+
+export function makeSecondaryLabel(aggregate: CommentAggregate) {
+    if (aggregate.open == 0 && aggregate.closed == 0)
+        return undefined;
+
+    let labelClass = aggregate.open === 0 ? "label-default" : "label-danger";
+
+    return (<span className={`comments-counter label ${labelClass}`}>
+        {aggregate.open + aggregate.closed}
+    </span>)
+}
+
+
+export function getFilePath(root: FileNode, numPath: NodePath): string {
     let path: Array<string> = [];
-    visitNodePath(fileTree, numPath, node => path.push(node.filename));
+    root.visitNodePath(numPath, node => path.push(node.data.filename));
     return path.join("/");
 }
 
-export function filePathToNodePath(fileTree: FileNodes, filePath: string): FileTreePath {
-
+export function getNodePath(root: FileNode, filePath: string): NodePath {
     function normalizeSlashes(path: string): string {
         path = path.replace(/\/+/g, '/');
 
@@ -59,14 +87,15 @@ export function filePathToNodePath(fileTree: FileNodes, filePath: string): FileT
     }
 
     let leftToProcess = normalizeSlashes(filePath);
-    let children = fileTree;
-    let numPath: FileTreePath = [];
+    let children = root.childNodes;
+    let numPath: NodePath = [];
     while (leftToProcess !== "") {
-        if (children === null)
+        if (children === undefined)
             throw new FileNotFoundError(filePath);
 
-        let fileIx = children.findIndex((child) => leftToProcess === child.filename);
-        let dirIx = children.findIndex((child) => leftToProcess.startsWith(normalizeSlashes(child.filename) + "/"));
+        let fileIx = children.findIndex((child) => leftToProcess === child.data.filename);
+        let dirIx = children.findIndex((child) =>
+            leftToProcess.startsWith(normalizeSlashes(child.data.filename) + "/"));
         let childIx = fileIx !== -1 ? fileIx : dirIx;
 
         if (childIx === -1)
@@ -82,162 +111,78 @@ export function filePathToNodePath(fileTree: FileNodes, filePath: string): FileT
             children = [];
 
         if (fileIx !== -1)
-            leftToProcess = leftToProcess.slice(normalizeSlashes(child.filename).length);
+            leftToProcess = leftToProcess.slice(normalizeSlashes(child.data.filename).length);
         else
-            leftToProcess = leftToProcess.slice(normalizeSlashes(child.filename).length + 1);
+            leftToProcess = leftToProcess.slice(normalizeSlashes(child.data.filename).length + 1);
     }
     return numPath
 }
 
-function setDirIsExpanded(fileTree: FileNodes, numPath: FileTreePath, value: boolean): void {
-    let node = getNodeAt(fileTree, numPath);
-    if (node !== null) {
-        node.isExpanded = value;
-    }
-}
-
-export function collapseDir(fileTree: FileNodes, numPath: FileTreePath): void {
-    setDirIsExpanded(fileTree, numPath, false);
-}
-
-export function expandDir(fileTree: FileNodes, numPath: FileTreePath): void {
-    setDirIsExpanded(fileTree, numPath, true);
-}
-
-export function expandEverything(fileTree: FileNodes, numPath: FileTreePath): void {
-    visitNodePath(fileTree, numPath, node => {
-        switch (node.type) {
-            case "directory":
-                node.isExpanded = true;
-                break;
-            case "file":
-                node.isSelected = true;
-                break;
-        }
-    });
-}
-
-export function collapseEverything(fileTree: FileNodes, numPath: FileTreePath): void {
-    let toCollapse = getNodeAt(fileTree, numPath);
-
-    if (toCollapse === null)
-        throw new FileTreeError(numPath);
-
-    visitSubtree(toCollapse, node => {
-        if (node.type === "file")
-            return false;
-        // If we collapse using only this function then this should work fine
-        // Otherwise this won't collapse everything
-        if (node.type === "directory" && !node.isExpanded)
-            return false;
-
-        node.isExpanded = false;
-        return true;
-    })
-}
-
-function setFileIsSelected(fileTree: FileNodes, numPath: FileTreePath, value: boolean): void {
-    let node = getNodeAt(fileTree, numPath);
-    if (node !== null && node.type === "file") {
-        node.isSelected = value;
-    }
-}
-
-export function selectFile(fileTree: FileNodes, numPath: FileTreePath): void {
-    setFileIsSelected(fileTree, numPath, true)
-}
-
-export function unselectFile(fileTree: FileNodes, numPath: FileTreePath): void {
-    setFileIsSelected(fileTree, numPath, false)
-}
-
-export function makeLoadingNode(idGen: (() => number)): LoadingNode {
+export function updateAggregate(aggregate: CommentAggregate, delta: CommentAggregate): CommentAggregate {
     return {
-        kind: "loading",
-        id: idGen(),
-        label: <Spinner className="pt-small"/>
+        open: aggregate.open + delta.open,
+        closed: aggregate.closed + delta.closed
     }
 }
 
-export function makeBlueprintTreeState(fileNodes: Array<File>, idGen: (() => number)|null = null): Array<FileNode> {
-    let ret: Array<FileNode> = [];
+export function addAggregates(root: FileNode, aggregates: CommentAggregates): FileNode {
+    return root.withMutations( (node: FileNode) => {
+        for (let fileAgg of aggregates.byFile) {
+            let nodePath: NodePath;
+            try {
+                nodePath = getNodePath(node, fileAgg.file)
+            }
+            catch (e) {
+                continue; // It's okay! We may have a directory that has been collapsed
+                // TODO deal with exception hierarchy
+                // TODO Now I have no idea how to check instanceof for Errors
+                // https://github.com/Microsoft/TypeScript/issues/12581
+                // https://github.com/babel/babel/issues/4485
+                // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+            }
 
-    let id = 0;
-    let idGenF = idGen ? idGen : () => {return ++id;};
-    fileNodes.forEach((node) => {
-        let bpNode: FileNode = {
-            kind: "file",
-            id: idGenF(),
-            filename: node.name,
-            isExpanded: false,
-            isSelected: false,
-            label: node.name,
-            type: node.type,
-            hasCaret: node.type === "directory",
-            iconName: node.type == "file" ? "pt-icon-document" : "pt-icon-folder-close",
-            childNodes: makeBlueprintTreeState(node.children || [], idGen),
-            openComments: 0,
-            closedComments: 0
-        };
-        ret.push(bpNode);
-    });
-    return ret;
-}
-
-export function makeNodeSecondaryLabel({openComments, closedComments}: FileNode) {
-    if (openComments == 0 && closedComments == 0)
-        return undefined;
-
-    let labelClass = openComments === 0 ? "label-default" : "label-danger";
-
-    return (<span className={`comments-counter label ${labelClass}`}>
-        {openComments + closedComments}
-    </span>)
-}
-
-export function addCommentAggregatesToFileTree(fileTree: FileNodes, aggregates: CommentAggregates) {
-    for (let fileAgg of aggregates.byFile) {
-        let nodePath;
-        try {
-            nodePath = filePathToNodePath(fileTree, fileAgg.file);
+            node.patchAt(nodePath, (patchedNode: FileNode) => {
+                let data = patchedNode.getDataCopy();
+                data.aggregate = updateAggregate(data.aggregate, fileAgg.aggregate);
+                let secondaryLabel = makeSecondaryLabel(data.aggregate);
+                return {
+                    data,
+                    secondaryLabel
+                }
+            });
         }
-        catch(e) {
-            continue; // It's okay! We may have a directory that has been collapsed
-            // TODO deal with exception hierarchy
-            // TODO Now I have no idea how to check instanceof for Errors
-            // https://github.com/Microsoft/TypeScript/issues/12581
-            // https://github.com/babel/babel/issues/4485
-            // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-        }
-        let node = getNodeAt(fileTree, nodePath);
-
-        if (node === null)
-            throw new FileTreeError(nodePath);
-
-        node.openComments = fileAgg.aggregate["open"];
-        node.closedComments = fileAgg.aggregate["closed"];
-        node.secondaryLabel = makeNodeSecondaryLabel(node);
-    }
-}
-
-export function updateCommentAggregates(fileTree: FileNodes, path: string, delta: CommentAggregate) {
-    let nodePath = filePathToNodePath(fileTree, path);
-
-    visitNodePath(fileTree, nodePath, (node) => {
-        node.openComments += delta.open;
-        node.closedComments += delta.closed;
-        node.secondaryLabel = makeNodeSecondaryLabel(node)
     });
 }
 
-export function registerAddComment(fileTree: FileNodes, path: string) {
-    updateCommentAggregates(fileTree, path, {open: 1, closed: 0})
+
+
+export function updateAggregates(root: FileNode, path: string, delta: CommentAggregate): FileNode {
+    let nodePath = getNodePath(root, path);
+
+    return root.patchTowards(nodePath, (node: FileNode) => {
+        let data = node.getDataCopy();
+        data.aggregate = updateAggregate(data.aggregate, delta);
+        let secondaryLabel = makeSecondaryLabel(data.aggregate);
+        return {
+            data,
+            secondaryLabel
+        }
+    });
 }
 
-export function registerOpenComment(fileTree: FileNodes, path: string) {
-    updateCommentAggregates(fileTree, path, {open: 1, closed: -1})
+export const ADD_DELTA = {open: 1, closed: 0};
+export const OPEN_DELTA = {open: 1, closed: -1};
+export const CLOSE_DELTA = {open: -1, closed: 1};
+
+
+export function registerAddComment(root: FileNode, path: string) {
+    return updateAggregates(root, path, ADD_DELTA)
 }
 
-export function registerCloseComment(fileTree: FileNodes, path: string) {
-    updateCommentAggregates(fileTree, path, {open: -1, closed: 1})
+export function registerOpenComment(root: FileNode, path: string) {
+    return updateAggregates(root, path, OPEN_DELTA)
+}
+
+export function registerCloseComment(root: FileNode, path: string) {
+    return updateAggregates(root, path, CLOSE_DELTA)
 }

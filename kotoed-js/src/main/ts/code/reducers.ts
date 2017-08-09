@@ -1,70 +1,111 @@
-import * as _ from "lodash"
-
-import {
-    EditorState, FileComments, FileTreeState, ReviewComments, LineComments, CommentsState,
-    CapabilitiesState
-} from "./state";
+import {CapabilitiesState} from "./state/capabilities";
+import {FileComments, ReviewComments, LineComments, CommentsState, Comment, LostFoundComments} from "./state/comments";
+import {EditorState} from "./state/editor";
+import {FileNode, FileTreeState} from "./state/filetree";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
 import {
-    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, dirFetch, editorCommentsUpdate, fileLoad,
+    commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, fileLoad,
     fileSelect,
-    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch
+    rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
+    expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound
 } from "./actions";
 import {
-    addCommentAggregatesToFileTree, collapseDir,
-    collapseEverything, expandEverything, makeBlueprintTreeState, registerAddComment, registerCloseComment,
-    registerOpenComment, selectFile,
-    unselectFile
+    ADD_DELTA,
+    addAggregates, CLOSE_DELTA, makeFileNode, OPEN_DELTA, registerAddComment, registerCloseComment,
+    registerOpenComment, updateAggregate
 } from "./util/filetree";
-import {Capabilities} from "./remote/capabilities";
+import {NodePath} from "./state/blueprintTree";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "./remote/comments";
+import {List} from "immutable";
 
 const initialFileTreeState: FileTreeState = {
-    nodes: [],
+    root: FileNode({
+        id: 0,
+        label: "dummy",
+        data: {
+            kind: "file",
+            filename: "dummy",
+            type: "file",
+            aggregate: {
+                open: 0,
+                closed: 0
+            }
+        }
+    }),
     loading: true,
     selectedPath: [],
-    aggregatesFetched: false
+    aggregatesFetched: false,
+    lostFoundAggregate: {
+        open: 0,
+        closed: 0
+    }
 };
 
 export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, action: Action) => {
     if (isType(action, dirExpand)) {
-        let newState = _.cloneDeep(state);  // TODO try to do better
-        expandEverything(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root = newState.root.expandTowards(action.payload.treePath);
         return newState;
     } else if (isType(action, dirCollapse)) {
-        let newState = _.cloneDeep(state);
-        collapseDir(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root = newState.root.collapse(action.payload.treePath);
         return newState;
     } else if (isType(action, fileSelect)) {
-        let newState = _.cloneDeep(state);
-        unselectFile(newState.nodes, newState.selectedPath);
-        expandEverything(newState.nodes, action.payload.treePath);
-        selectFile(newState.nodes, action.payload.treePath);
+        let newState = {...state};
+        newState.root =
+            newState.root
+                .unselect(newState.selectedPath)
+                .expandTowards(action.payload.treePath)
+                .select(action.payload.treePath);
         newState.selectedPath = action.payload.treePath;
+        return newState;
+    } else if (isType(action, fileUnselect)) {
+        let newState = {...state};
+        newState.root =
+            newState.root
+                .unselect(newState.selectedPath);
+        newState.selectedPath = NodePath();
         return newState;
     } else if (isType(action, rootFetch.done)) {
         let newState = {...state};
-        newState.nodes = makeBlueprintTreeState(action.payload.result.list);
+        newState.root = makeFileNode(action.payload.result.root);
         newState.loading = false;
         return newState;
     } else if (isType(action, commentAggregatesFetch.done)) {
-        let newState = _.cloneDeep(state);
+        let newState = {...state};
         newState.aggregatesFetched = true;
-        addCommentAggregatesToFileTree(newState.nodes, action.payload.result);
+        newState.root = addAggregates(newState.root, action.payload.result);
+        newState.lostFoundAggregate = action.payload.result.lost;
         return newState;
     } else if (isType(action, aggregatesUpdate)) {
-        let newState = _.cloneDeep(state);
-        switch(action.payload.type) {
-            case "new":
-                registerAddComment(newState.nodes, action.payload.file);
-                break;
-            case "open":
-                registerOpenComment(newState.nodes, action.payload.file);
-                break;
-            case "close":
-                registerCloseComment(newState.nodes, action.payload.file);
-                break;
+        let newState = {...state};
+        if (action.payload.file !== UNKNOWN_FILE) {
+            switch (action.payload.type) {
+                case "new":
+                    newState.root = registerAddComment(newState.root, action.payload.file);
+                    break;
+                case "open":
+                    newState.root = registerOpenComment(newState.root, action.payload.file);
+                    break;
+                case "close":
+                    newState.root = registerCloseComment(newState.root, action.payload.file);
+                    break;
 
+            }
+        } else {
+            switch (action.payload.type) {
+                case "new":
+                    newState.lostFoundAggregate = updateAggregate(newState.lostFoundAggregate, ADD_DELTA);
+                    break;
+                case "open":
+                    newState.lostFoundAggregate = updateAggregate(newState.lostFoundAggregate, OPEN_DELTA);
+                    break;
+                case "close":
+                    newState.lostFoundAggregate = updateAggregate(newState.lostFoundAggregate, CLOSE_DELTA);
+                    break;
+
+            }
         }
         return newState;
     }
@@ -83,56 +124,112 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         let newState = {...state};
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
-        newState.displayedComments = action.payload.result.displayedComments;
-        newState.mode = action.payload.result.mode;
         return newState;
-    } else if (isType(action, editorCommentsUpdate)) {
-        let newState = {...state};
-        newState.displayedComments = action.payload;
-        return newState
     }
     return state;
 };
 
 export const defaultCommentsState = {
     comments: ReviewComments(),
+    lostFound: LostFoundComments(),
     fetched: false
 };
 
-export const commentsReducer = (reviewState: CommentsState = defaultCommentsState, action: Action) => {
-    if (isType(action, commentsFetch.done)) {
-        let newState = {...reviewState};
-        newState.fetched = true;
-        newState.comments = action.payload.result;
-        return newState;
-    } else if (isType(action, commentPost.done)) {
-        let {id, state, sourcefile, sourceline, text, authorId, denizenId, datetime} = action.payload.result;
-        let newState = {...reviewState};
-        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
-        comments = comments.push({
-            authorId,
-            state,
-            authorName: denizenId,  // TODO replace with proper name
-            id,
-            text,
-            dateTime: datetime
-        });
-        newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
-        return newState;
-    } else if (isType(action, commentStateUpdate.done)) {
-        let {id, state, sourcefile, sourceline, text} = action.payload.result;
-        let newState = {...reviewState};
-        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
+function updateComment(reviewState: CommentsState, comment: Comment) {
+    let {id, state, sourcefile, sourceline, text} = comment;
+    let newState = {...reviewState};
 
+    const doUpdate = (comments: List<Comment>) => {
         let oldCommentIx = comments.findIndex(c => !!c && (c.id == id));
         let oldComment = comments.get(oldCommentIx);
         if (!oldComment)
             throw new Error("Comment to update not found");
 
-        let comment = {...oldComment, text, state};
+        let newComment = {...oldComment, text, state};
 
-        comments = comments.set(oldCommentIx, comment);
+        return comments.set(oldCommentIx, newComment);
+    };
+
+    if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE) {
+        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
+
+        comments = doUpdate(comments);
+
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
+    } else {
+        let comments = newState.lostFound;
+        comments = doUpdate(comments);
+
+        newState.lostFound = comments;
+    }
+
+    return newState;
+}
+
+function collapseIfClosed(comment: Comment) {
+    return {...comment, collapsed: comment.state === "closed"}
+}
+
+export const commentsReducer = (reviewState: CommentsState = defaultCommentsState, action: Action) => {
+    if (isType(action, commentsFetch.done)) {
+        return action.payload.result;
+    } else if (isType(action, commentPost.done)) {
+        let {sourcefile, sourceline} = action.payload.result;
+        let newState = {...reviewState};
+        let comments = newState.comments.getIn([sourcefile, sourceline], LineComments()) as LineComments;
+        comments = comments.push(action.payload.result);
+        newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
+        return newState;
+    } else if (isType(action, commentStateUpdate.done)) {
+        return updateComment(reviewState, action.payload.result);
+    } else if (isType(action, commentEdit.done)) {
+        return updateComment(reviewState, action.payload.result);
+    } else if (isType(action, hiddenCommentsExpand)) {
+        let {comments, file, line} = action.payload;
+        let newState = {...reviewState};
+
+        const doUpdate = (mutable: List<Comment>) => {
+            comments.forEach((update: Comment) => {
+                let {id} = update;
+                let ix = mutable.findIndex((c: Comment) => c.id == id);
+                if (ix === -1) {
+                    throw new Error("Comment to update not found");
+                }
+                let newComment = {...mutable.get(ix)};
+                newComment.collapsed = false;
+                mutable.set(ix, newComment);
+            });
+        };
+        if (file !== UNKNOWN_FILE && line !== UNKNOWN_LINE) {
+            let newComments = (newState.comments.getIn([file, line]) as LineComments).withMutations((mutable) => {
+                doUpdate(mutable)
+            });
+            newState.comments = newState.comments.setIn([file, line], newComments);
+        } else {
+            newState.lostFound = newState.lostFound.withMutations((mutable) => {
+                doUpdate(mutable)
+            });
+        }
+        return newState;
+    } else if (isType(action, expandedResetForLine)) {
+        let {file, line} = action.payload;
+        let newState = {...reviewState};
+        let newComments = (newState.comments.getIn([file, line], LineComments()) as LineComments)
+            .map((comment: Comment) => {
+                return {...comment, collapsed: comment.state === "closed"}
+            }) as LineComments;
+        newState.comments = newState.comments.setIn([file, line], newComments);
+        return newState;
+    } else if (isType(action, expandedResetForFile)) {
+        let {file} = action.payload;
+        let newState = {...reviewState};
+        let newComments = newState.comments.get(file, FileComments()).map((lc: LineComments) => lc.map((comment: Comment) =>
+            collapseIfClosed(comment)) as LineComments) as FileComments;  // "as Smth" is ugly but typings specify say that .map() returns iterable, however docs say that it returns concrete collection
+        newState.comments = newState.comments.set(file, newComments);
+        return newState;
+    } else if (isType(action, expandedResetForLostFound)) {
+        let newState = {...reviewState};
+        newState.lostFound = newState.lostFound.map((comment: Comment) => collapseIfClosed(comment)) as LostFoundComments;
         return newState;
     }
     return reviewState;

@@ -22,13 +22,15 @@ object Address {
             const val Last = "kotoed.api.submission.last"
             const val Create = "kotoed.api.submission.create"
             const val Comments = "kotoed.api.submission.comments"
-            const val CommentAggregates = "kotoed.api.submission.commentaggregates"
+            const val CommentAggregates = "kotoed.api.submission.commentAggregates"
             const val Error = "kotoed.api.submission.error"
 
             object Comment {
                 const val Read = "kotoed.api.submission.comment.read"
                 const val Update = "kotoed.api.submission.comment.update"
                 const val Create = "kotoed.api.submission.comment.create"
+                const val LastSeen = "kotoed.api.submission.comment.lastSeen"
+
             }
 
             object Code {
@@ -84,6 +86,7 @@ object Address {
             const val SignUp = "kotoed.user.auth.signup"
             const val Login = "kotoed.user.auth.login"
             const val Info = "kotoed.user.auth.info"
+            const val HasPerm = "kotoed.user.auth.hasPerm"
         }
 
         object OAuth {

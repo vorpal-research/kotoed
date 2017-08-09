@@ -2,10 +2,13 @@ import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 
 const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
-const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentaggregates";
+const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentAggregates";
 
 const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
 const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update";
+
+export const UNKNOWN_FILE = "/dev/null";
+export const UNKNOWN_LINE = 0;
 
 type CommentState = "open" | "closed";
 
@@ -21,6 +24,7 @@ export interface BaseCommentToRead extends BaseComment {
     authorId: number
     datetime: number
     state: CommentState
+    persistent?: BaseComment
 }
 
 export interface CommentToRead extends BaseCommentToRead {
@@ -53,8 +57,14 @@ export interface CommentAggregates {
 
 export type ReviewComments = Array<FileComments>
 
+export interface CommentsResponse {
+    byFile: ReviewComments
+    lost: Array<CommentToRead>
+}
+
 type CommentsRequest = RequestWithId
 type CommentAggregatesRequest = RequestWithId
+type LastSeen = RequestWithId
 
 export type CommentToPost = BaseComment
 
@@ -68,8 +78,17 @@ interface CommentStateUpdate {
     state: CommentState
 }
 
-export async function fetchComments(submissionId: number): Promise<ReviewComments> {
-    return eventBus.send<CommentsRequest, ReviewComments>(FETCH_COMMENTS_ADDRESS, {
+interface CommentEdit {
+    id: number
+    text: string
+}
+
+interface LastSeenResponse {
+    location: BaseCommentToRead | null
+}
+
+export async function fetchComments(submissionId: number): Promise<CommentsResponse> {
+    return eventBus.send<CommentsRequest, CommentsResponse>(FETCH_COMMENTS_ADDRESS, {
         id: submissionId,
     });
 }
@@ -98,6 +117,15 @@ export async function setCommentState(commentId: number,
     let res = await eventBus.send<CommentStateUpdate, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
         id: commentId,
         state
+    });
+    return res.record;
+}
+
+export async function editComment(commentId: number,
+                                  text: string): Promise<BaseCommentToRead> {
+    let res = await eventBus.send<CommentEdit, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
+        id: commentId,
+        text
     });
     return res.record;
 }

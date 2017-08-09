@@ -4,9 +4,11 @@ import {render} from "react-dom";
 
 import LineComments from "./LineComments";
 import {List} from "immutable";
-import {Comment} from "../state";
+import {Comment} from "../state/comments";
+import {LineWidget} from "codemirror";
 
 interface LineMarkerProps {
+    canPostComment: boolean
     comments: List<Comment>,
     lineNumber: number,
     editor: cm.Editor,
@@ -17,6 +19,9 @@ interface LineMarkerProps {
     onSubmit: (line: number, comment: string) => void
     onCommentUnresolve: (lineNumber: number, id: number) => void
     onCommentResolve: (lineNumber: number, id: number) => void
+    onHiddenExpand: (lineNumber: number, comments: List<Comment>) => void
+    onCommentEdit: (line: number, id: number, newText: string) => void
+    whoAmI: string
 }
 
 interface LineMarkerState {
@@ -24,8 +29,11 @@ interface LineMarkerState {
 }
 
 export default class LineMarkerComponent extends React.Component<LineMarkerProps, LineMarkerState> {
+    private widget: LineWidget | undefined;
+
     constructor(props: LineMarkerProps) {
         super(props);
+        this.widget = undefined;
         this.state = {
             expanded: props.expanded
         };
@@ -48,18 +56,30 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         return `${expandedClass} ${colorClass}`
     };
 
+    handleLineWidgetChanged = () => {
+        if (this.widget)
+            this.widget.changed();
+        else
+            throw new Error("No widget to change (should not happen)")
+    };
+
     private doExpand = () => {
         let div = document.createElement("div");
         render(
             <LineComments
+                canPostComment={this.props.canPostComment}
                 comments={this.props.comments}
                 arrowOffset={this.props.arrowOffset}
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
                 onCommentResolve={id => this.props.onCommentResolve(this.props.lineNumber, id)}
                 onCommentUnresolve={id => this.props.onCommentUnresolve(this.props.lineNumber, id)}
+                onExpand={(comments) => this.props.onHiddenExpand(this.props.lineNumber, comments)}
+                notifyEditorAboutChange={this.handleLineWidgetChanged}
+                onEdit={(id, newText) => this.props.onCommentEdit(this.props.lineNumber, id, newText)}
+                whoAmI={this.props.whoAmI}
             />,
             div);
-        this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
+        this.widget = this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
             coverGutter: true,
             noHScroll: false,
             above: false,
@@ -70,6 +90,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     private doCollapse = () => {
         let li = this.props.editor.lineInfo(this.props.lineNumber  - 1);
         li.widgets[0].clear();
+        this.widget = undefined;
     };
 
     onClick = () => {
