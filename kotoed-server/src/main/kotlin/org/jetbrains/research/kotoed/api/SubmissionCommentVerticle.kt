@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.database.Tables
@@ -65,5 +66,18 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.LastSeen)
+    suspend fun handleLastSeen(comment: SubmissionCommentRecord): SubmissionComments.LastSeenResponse {
+        var current = fetchByIdAsync(Tables.SUBMISSION_COMMENT, comment.id)
+        current.id ?: throw NotFound("Comment ${comment.id} not found")
 
+        while (current.previousCommentId != null) {
+            if (current.sourcefile != SubmissionComments.UnknownFile &&
+                    current.sourceline != SubmissionComments.UnknownLine)
+                return SubmissionComments.LastSeenResponse(current)
+            current = fetchByIdAsync(Tables.SUBMISSION_COMMENT, current.id)
+        }
+
+        return SubmissionComments.LastSeenResponse()
+    }
 }

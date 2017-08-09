@@ -15,6 +15,7 @@ type CommentProps = Comment & {
     onResolve: (id: number) => void
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
+    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 interface CommentComponentState {
@@ -137,6 +138,27 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
             onClick={this.handleEditButtonClick}/>;
     };
 
+    renderLastSeenButton = () => {
+        if (this.props.makeLastSeenLink === undefined || this.props.persistent === undefined)
+            return null;
+
+        let persistentLink = this.props.makeLastSeenLink(
+            this.props.persistent.submissionId,
+            this.props.persistent.sourcefile,
+            this.props.persistent.sourceline);
+
+        if (persistentLink === undefined)
+            return null;
+
+        return <CommentButton
+            title="Go to last seen location (new tab)"
+            icon="search"
+            onClick={() =>
+                window.open(persistentLink,
+                    "_blank")
+            }/>
+    };
+
     renderPanelHeading = () => {
         return <div className="panel-heading comment-heading clearfix">
             <div className="pull-left">
@@ -146,6 +168,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                 {this.renderPanelLabels()}
             </div>
             <div className="pull-right">
+                {this.renderLastSeenButton()}
                 {this.renderEditButton()}
                 {this.renderStateButton()}
             </div>

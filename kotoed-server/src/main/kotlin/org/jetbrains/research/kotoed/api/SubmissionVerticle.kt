@@ -76,13 +76,24 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         }
     }
 
+    private suspend fun SubmissionCommentRecord.getAuthor(): DenizenRecord =
+            dbFetchAsync(DenizenRecord().apply { id = this@getAuthor.authorId })
 
-    private suspend fun SubmissionCommentRecord.toJsonWithDenizenId(): JsonObject {
-        val denizen = dbFetchAsync(DenizenRecord().apply { id = this@toJsonWithDenizenId.authorId })
-        return this@toJsonWithDenizenId.toJson().apply {
+    private suspend fun JsonObject.addDenizenId(denizen: DenizenRecord) = apply {
+        return this.apply {
             this["denizenId"] = denizen.denizenId
         }
     }
+
+    private suspend fun SubmissionCommentRecord.getPersistent(): SubmissionCommentRecord =
+            dbFetchAsync(SubmissionCommentRecord().apply { id = this@getPersistent.persistentCommentId })
+
+    private suspend fun JsonObject.addPersistent(persistent: SubmissionCommentRecord) = apply {
+        return this.apply {
+            this["persistent"] = persistent.toJson()
+        }
+    }
+
 
     private fun SubmissionCommentRecord.isLost(): Boolean = sourcefile == SubmissionComments.UnknownFile ||
             sourceline == SubmissionComments.UnknownLine
@@ -123,7 +134,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             fileComments.groupBy {
                 it.sourceline
             }.map { (line, lineComments) ->
-                SubmissionComments.LineComments(line, lineComments.sortedBy { it.datetime }.map { it.toJsonWithDenizenId() })
+                SubmissionComments.LineComments(line, lineComments.sortedBy { it.datetime }.map {
+                    it.toJson().addDenizenId(it.getAuthor())
+                })
             }
         }.map { (file, fileComments) ->
             SubmissionComments.FileComments(file, fileComments)
@@ -133,7 +146,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             it.isLost()
         }
 
-        return CommentsResponse(byFile = byFile, lost = lost.map { it.toJsonWithDenizenId() })
+        return CommentsResponse(byFile = byFile, lost = lost.map {
+            it.toJson().addDenizenId(it.getAuthor()).addPersistent(it.getPersistent())
+        })
     }
     @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
     suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =

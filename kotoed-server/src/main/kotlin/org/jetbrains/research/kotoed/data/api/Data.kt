@@ -121,4 +121,6 @@ object SubmissionComments {
                 "lost" to lost.toJson()
         )
     }
+
+    data class LastSeenResponse(val location: SubmissionCommentRecord? = null): Jsonable
 }

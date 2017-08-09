@@ -10,23 +10,16 @@ interface LostFoundCommentsProps {
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onEdit: (id: number, newText: string) => void
+    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 export class LostFoundComments extends React.Component<LostFoundCommentsProps, {}> {
-    renderComments() {
-        return this.props.comments.map((comment: Comment) => {
-            return <CommentComponent
-                key={comment.id}
-                {...comment}
-                onUnresolve={this.props.onCommentUnresolve}
-                onResolve={this.props.onCommentResolve}
-                notifyEditorAboutChange={() => {/* No editor to notify!*/} }
-                onEdit={this.props.onEdit}/>
-        }).toArray();
-    }
+
     render() {
         return <div className="lost-found-comments">
-            <CommentList {...this.props} notifyEditorAboutChange={() => {}}/>
+            <CommentList {...this.props}
+                         notifyEditorAboutChange={() => {}}
+                         makeLastSeenLink={this.props.makeLastSeenLink}/>
         </div>
     }
 }
