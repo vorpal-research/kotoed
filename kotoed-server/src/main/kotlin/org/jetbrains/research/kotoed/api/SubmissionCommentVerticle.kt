@@ -65,19 +65,4 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         comment.persistentCommentId  = existing.persistentCommentId
         return DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
     }
-
-    @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.LastSeen)
-    suspend fun handleLastSeen(comment: SubmissionCommentRecord): SubmissionComments.LastSeenResponse {
-        var current = fetchByIdAsync(Tables.SUBMISSION_COMMENT, comment.id)
-        current.id ?: throw NotFound("Comment ${comment.id} not found")
-
-        while (current.previousCommentId != null) {
-            if (current.sourcefile != SubmissionComments.UnknownFile &&
-                    current.sourceline != SubmissionComments.UnknownLine)
-                return SubmissionComments.LastSeenResponse(current)
-            current = fetchByIdAsync(Tables.SUBMISSION_COMMENT, current.id)
-        }
-
-        return SubmissionComments.LastSeenResponse()
-    }
 }
