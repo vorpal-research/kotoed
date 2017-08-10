@@ -33,6 +33,8 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 "forceschedulers",
                 Kotoed2Buildbot.projectName2schedulerName(record.name))
 
+        // TODO: gracefully fail when buildbot is  unavailable
+
         val response = vxa<HttpResponse<Buffer>> {
             wc.head(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Root + schedulerLocator)
                     .putDefaultBBHeaders()
