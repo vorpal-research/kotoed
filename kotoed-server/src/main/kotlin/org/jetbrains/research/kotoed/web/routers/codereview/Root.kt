@@ -10,13 +10,12 @@ import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.isAuthorised
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.eventbus.submissionById
-import org.jetbrains.research.kotoed.util.use
 
 @HandlerFor("/codereview/:id/*")
 @Templatize("code.jade")
 @LoginRequired
 @JsBundle("code")
-suspend fun handleCode(@Suppress("UNUSED_PARAMETER") context: RoutingContext) {
+suspend fun handleCode(context: RoutingContext) {
     val id by context.request()
     val intId = id?.toInt()
 
