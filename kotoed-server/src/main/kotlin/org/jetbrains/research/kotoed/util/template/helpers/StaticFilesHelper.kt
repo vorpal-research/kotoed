@@ -1,11 +1,14 @@
 package org.jetbrains.research.kotoed.util.template.helpers
 
+import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.impl.FileResolver
 import org.apache.commons.codec.digest.DigestUtils
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
+import java.io.Closeable
 import java.io.FileInputStream
+import java.io.OutputStreamWriter
 import java.nio.file.Paths
 
 class StaticFilesHelper(vertx: Vertx,
@@ -22,20 +25,25 @@ class StaticFilesHelper(vertx: Vertx,
     init {
         // XXX Using io.vertx.core.impl.FileResolver is a bit fucked up
         // but there is no other way to walk static files the way StaticHandler does
-        val dir = FileResolver(vertx).resolveFile(staticLocalBase)
-        log.trace("Calculating static files hashes")
-        log.trace("Static directory is $dir")
-        staticHashes =  dir.walk().
-                filter { it.isFile }.
-                map { "${dir.toPath().relativize(it.toPath())}" to FileInputStream(it) }.
-                map { (path, fis) ->
-                    fis.use {
-                        log.trace("Calculating hash for $path")
-                        val hash = DigestUtils.sha1Hex(it)
-                        log.trace("Hash is $hash")
-                        path to hash
-                    }
-                }.toMap()
+        val fr = FileResolver(vertx)
+        try {
+            val dir = fr.resolveFile(staticLocalBase)
+            log.trace("Calculating static files hashes")
+            log.trace("Static directory is $dir")
+            staticHashes = dir.walk().
+                    filter { it.isFile }.
+                    map { "${dir.toPath().relativize(it.toPath())}" to FileInputStream(it) }.
+                    map { (path, fis) ->
+                        fis.use {
+                            log.trace("Calculating hash for $path")
+                            val hash = DigestUtils.sha1Hex(it)
+                            log.trace("Hash is $hash")
+                            path to hash
+                        }
+                    }.toMap()
+        } finally {
+            fr.close { }
+        }
 
     }
 
