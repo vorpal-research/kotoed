@@ -55,11 +55,7 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         if (submission.state != SubmissionState.open)
             return@run false
 
-        return@run if (comment.authorId != user.principal()["id"])
-             true
-        else
-            user.isAuthorised("teacher")
-
+        return@run (comment.authorId == user.principal()["id"]) || user.isAuthorised("teacher")
     }.also {
         logResult(be, it)
     }
