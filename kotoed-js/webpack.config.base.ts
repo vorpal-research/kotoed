@@ -20,7 +20,8 @@ const config: webpack.Configuration = {
     context: srcMain,
     entry: {
         hello: ["babel-polyfill", "./ts/hello.ts"],
-        code: ["babel-polyfill", "./ts/code/index.tsx"]
+        code: ["babel-polyfill", "./ts/code/index.tsx"],
+        submissionResults: ["babel-polyfill", "./ts/views/submissionResults.tsx"]
     },
     output: {
         path: dstPath,
@@ -70,46 +71,46 @@ const config: webpack.Configuration = {
                 test: /\.css$/,
                 use:
                     ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: [
-                        {
-                            loader: "cache-loader",
-                            options: {
-                                cacheDirectory: "target/.cache/css"
+                        fallback: 'style-loader',
+                        use: [
+                            {
+                                loader: "cache-loader",
+                                options: {
+                                    cacheDirectory: "target/.cache/css"
+                                }
+                            },
+                            {
+                                loader: 'css-loader',
+                                options: {
+                                    sourceMap: true
+                                }
                             }
-                        },
-                        {
-                            loader: 'css-loader',
-                            options: {
-                                sourceMap: true
-                            }
-                        }
-                    ]
-                })
+                        ]
+                    })
             },
             {
                 test: /\.less$/,
                 use:
                     ExtractTextPlugin.extract({
-                    //resolve-url-loader may be chained before sass-loader if necessary
-                    fallback: 'style-loader',
-                    use: [
-                        {
-                            loader: "cache-loader",
-                            options: {
-                                cacheDirectory: "target/.cache/less"
-                            }
-                        },
-                        {
-                            loader: 'css-loader',
-                            options: {
-                                // importLoaders: 2,
-                                sourceMap: true
-                            }
-                        },
-                        'less-loader?sourceMap'
-                    ]
-                })
+                        //resolve-url-loader may be chained before sass-loader if necessary
+                        fallback: 'style-loader',
+                        use: [
+                            {
+                                loader: "cache-loader",
+                                options: {
+                                    cacheDirectory: "target/.cache/less"
+                                }
+                            },
+                            {
+                                loader: 'css-loader',
+                                options: {
+                                    // importLoaders: 2,
+                                    sourceMap: true
+                                }
+                            },
+                            'less-loader?sourceMap'
+                        ]
+                    })
             },
 
             {
@@ -148,7 +149,7 @@ const config: webpack.Configuration = {
             }
         }),
         new ExtractTextPlugin({
-            filename:'css/[name].css',
+            filename: 'css/[name].css',
             allChunks: true
         }),
     ]
