@@ -116,15 +116,15 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                         .find(SubmissionCommentRecord().apply { submissionId = message.id })
                         .join(DENIZEN.name, SUBMISSION_COMMENT.AUTHOR_ID.name)
                         .join(SUBMISSION_COMMENT.name, SUBMISSION_COMMENT.PERSISTENT_COMMENT_ID.name,
-                                "persistent", SUBMISSION_COMMENT.PERSISTENT_COMMENT_ID.name)
+                                "original", SUBMISSION_COMMENT.PERSISTENT_COMMENT_ID.name)
         ).filter {
-            it["persistent", SUBMISSION_COMMENT.ORIGINAL_SUBMISSION_ID.name] ==
-                    it["persistent", SUBMISSION_COMMENT.SUBMISSION_ID.name]
+            it["original", SUBMISSION_COMMENT.ORIGINAL_SUBMISSION_ID.name] ==
+                    it["original", SUBMISSION_COMMENT.SUBMISSION_ID.name]
         }.map {
             Tuple() +
                     it.toRecord<SubmissionCommentRecord>() +
                     it.getJsonObject("author").toRecord<DenizenRecord>() +
-                    it.getJsonObject("persistent").toRecord<SubmissionCommentRecord>()
+                    it.getJsonObject("original").toRecord<SubmissionCommentRecord>()
         }
 
         val byFile = bloatComments.filterNot { (it, _, _) ->
@@ -139,7 +139,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     (comment, author, original) ->
                     comment.toJson().apply {
                         put("denizen_id", author.denizenId)
-                        put("persistent", original.toJson())
+                        put("original", original.toJson())
                     }
                 })
             }
@@ -154,7 +154,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         return CommentsResponse(byFile = byFile, lost = lost.map { (comment, author, original) ->
             comment.toJson().apply {
                 put("denizen_id", author.denizenId)
-                put("persistent", original.toJson())
+                put("original", original.toJson())
             }
         })
     }

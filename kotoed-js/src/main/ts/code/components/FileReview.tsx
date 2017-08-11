@@ -34,6 +34,7 @@ interface FileReviewCallbacks {
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+    makeOriginalCommentLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 export type FileReviewProps = FileReviewBaseProps & FileReviewCallbacks & LoadingProperty
@@ -106,6 +107,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
                 onHiddenExpand={(line, comments) => this.props.onHiddenExpand(this.props.filePath, line, comments)}
                 onCommentEdit={(line, id, newText) => this.props.onCommentEdit(this.props.filePath, line, id, newText)}
                 whoAmI={this.props.whoAmI}
+                makeOriginalCommentLink={this.props.makeOriginalCommentLink}
             />,
             badge);
         this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);

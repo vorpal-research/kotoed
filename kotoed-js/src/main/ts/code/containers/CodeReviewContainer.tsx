@@ -31,8 +31,10 @@ interface CodeReviewUrl {
 
 export type RoutingCodeReviewProps = CodeReviewPropsAndCallbacks & RouteComponentProps<CodeReviewUrl> & OnRoute;
 
-const mapStateToProps = function(store: CodeReviewState): CodeReviewProps {
+const mapStateToProps = function(store: CodeReviewState,
+                                 ownProps: RouteComponentProps<CodeReviewUrl>): CodeReviewProps {
     return {
+        submissionId: parseInt(ownProps.match.params.submissionId),
         editor: {
             loading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
             value: store.editorState.value,
@@ -122,6 +124,10 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                     commentId,
                     newText
                 }))
+            },
+            makeOriginalLink: (submissionId, sourcefile, sourceline) => {
+                if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
+                    return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
             }
         },
 
@@ -154,10 +160,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 dispatch(setLostFoundPath({
                     submissionId: parseInt(ownProps.match.params.submissionId)
                 }));
-            },
-            makeLastSeenLink: (submissionId, sourcefile, sourceline) => {
-                if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
-                    return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
             }
         },
         onCodeRoute: (submissionId, filename) => {

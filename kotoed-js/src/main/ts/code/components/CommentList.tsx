@@ -12,7 +12,7 @@ interface CommentListProps {
     onEdit: (id: number, newText: string) => void
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
-    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 export class CommentList extends React.Component<CommentListProps, {}> {
@@ -42,7 +42,7 @@ export class CommentList extends React.Component<CommentListProps, {}> {
                     onResolve={lcProps.onCommentResolve}
                     onUnresolve={lcProps.onCommentUnresolve}
                     onEdit={this.props.onEdit}
-                    makeLastSeenLink={this.props.makeLastSeenLink}
+                    makeOriginalLink={this.props.makeOriginalLink}
                 />);
 
             } else {
