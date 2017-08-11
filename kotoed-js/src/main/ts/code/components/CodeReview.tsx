@@ -12,6 +12,7 @@ import {makeSecondaryLabel} from "../util/filetree";
 import SpinnerWithVeil from "./SpinnerWithVeil";
 
 export interface CodeReviewProps {
+    submissionId: number
     editor: {
         loading: boolean
         value: string
@@ -54,6 +55,7 @@ export interface CodeReviewCallbacks {
         onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
         onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
         onCommentEdit: (file: string, line: number, id: number, newText: string) => void
+        makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
     }
 
     fileTree: {
@@ -64,13 +66,18 @@ export interface CodeReviewCallbacks {
 
     lostFound: {
         onSelect: () => void
-        makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+
     }
 }
 
 export type CodeReviewPropsAndCallbacks = CodeReviewProps & CodeReviewCallbacks
 
 export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting> {
+
+    makeOriginalLinkOrUndefined = (submissionId: number, sourcefile: string, sourceline: number) => {
+        if (this.props.comments.makeOriginalLink && submissionId !== this.props.submissionId)
+            return this.props.comments.makeOriginalLink(submissionId, sourcefile, sourceline)
+    };
 
     renderRightSide = () => {
         switch (this.props.show) {
@@ -80,7 +87,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                           onCommentResolve={(id) => this.props.comments.onCommentResolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
                                           onExpand={(comments) => this.props.comments.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
                                           onEdit={(id, newText) => this.props.comments.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
-                                          makeLastSeenLink={this.props.lostFound.makeLastSeenLink}
+                                          makeOriginalLink={this.props.comments.makeOriginalLink}
                                           loading={this.props.lostFound.loading}
                 />;
             case "code":
@@ -100,6 +107,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        whoAmI={this.props.capabilities.whoAmI}
                                        scrollTo={this.props.editor.scrollTo}
                                        loading={this.props.editor.loading}
+                                       makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
                     />
                 else
                     return <div className="no-file-chosen"><div>Please choose file</div></div>

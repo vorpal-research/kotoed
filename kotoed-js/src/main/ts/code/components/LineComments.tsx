@@ -17,54 +17,17 @@ interface LineCommentsProps {
     onEdit: (id: number, newText: string) => void
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
+    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
     whoAmI: string
 }
 
 export default class LineComments extends React.Component<LineCommentsProps, {}> {
-
-    getNested = (): Array<JSX.Element> => {
-
-        let collapsedAcc: Array<Comment> = [];
-        let lcProps = this.props;
-        let components: Array<JSX.Element> = []; // TODO generators maybe?
-
-        const flushCollapsed = () => {
-            if (collapsedAcc.length !== 0) {
-                components.push(
-                    <CollapsedComments
-                        key={collapsedAcc[0].id /* Strange but good enough */}
-                        comments={List<Comment>(collapsedAcc)}
-                        onClick={this.props.onExpand}/>);
-                collapsedAcc = []
-            }
-        };
-
-        this.props.comments.forEach((comment: Comment) => {
-            if (comment.state === "open" || !comment.collapsed) {
-                flushCollapsed();
-                components.push(<CommentComponent
-                    notifyEditorAboutChange={this.props.notifyEditorAboutChange}
-                    key={comment.id} {...comment}
-                    onResolve={lcProps.onCommentResolve}
-                    onUnresolve={lcProps.onCommentUnresolve}
-                    onEdit={this.props.onEdit}/>);
-
-            } else {
-                collapsedAcc.push(comment);
-            }
-        });
-
-        flushCollapsed();
-
-        return components;
-    };
-
     render() {
 
         return (
             <div>
                 <div className="line-comments">
-                    <CommentList {...this.props}/>
+                    <CommentList {...this.props} />
                     {
                         this.props.canPostComment &&
                         <CommentForm

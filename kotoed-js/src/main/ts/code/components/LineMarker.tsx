@@ -21,6 +21,7 @@ interface LineMarkerProps {
     onCommentResolve: (lineNumber: number, id: number) => void
     onHiddenExpand: (lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (line: number, id: number, newText: string) => void
+    makeOriginalCommentLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
     whoAmI: string
 }
 
@@ -76,6 +77,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 onExpand={(comments) => this.props.onHiddenExpand(this.props.lineNumber, comments)}
                 notifyEditorAboutChange={this.handleLineWidgetChanged}
                 onEdit={(id, newText) => this.props.onCommentEdit(this.props.lineNumber, id, newText)}
+                makeOriginalLink={this.props.makeOriginalCommentLink}
                 whoAmI={this.props.whoAmI}
             />,
             div);

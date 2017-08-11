@@ -11,7 +11,7 @@ interface LostFoundCommentsProps {
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onEdit: (id: number, newText: string) => void
-    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 export class LostFoundComments extends ComponentWithLoading<LostFoundCommentsProps & LoadingProperty, {}> {
@@ -22,7 +22,7 @@ export class LostFoundComments extends ComponentWithLoading<LostFoundCommentsPro
             <div className="lost-found-comments">
                 <CommentList {...this.props}
                              notifyEditorAboutChange={() => {}}
-                             makeLastSeenLink={this.props.makeLastSeenLink}/>
+                             makeOriginalLink={this.props.makeOriginalLink}/>
             </div>
         </div>
     }

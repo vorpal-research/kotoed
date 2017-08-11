@@ -15,7 +15,7 @@ type CommentProps = Comment & {
     onResolve: (id: number) => void
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
-    makeLastSeenLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
 }
 
 interface CommentComponentState {
@@ -138,23 +138,23 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
             onClick={this.handleEditButtonClick}/>;
     };
 
-    renderLastSeenButton = () => {
-        if (this.props.makeLastSeenLink === undefined || this.props.persistent === undefined)
+    renderGoToOriginalButton = () => {
+        if (this.props.makeOriginalLink === undefined || this.props.original === undefined)
             return null;
 
-        let persistentLink = this.props.makeLastSeenLink(
-            this.props.persistent.submissionId,
-            this.props.persistent.sourcefile,
-            this.props.persistent.sourceline);
+        let originalLink = this.props.makeOriginalLink(
+            this.props.original.submissionId,
+            this.props.original.sourcefile,
+            this.props.original.sourceline);
 
-        if (persistentLink === undefined)
+        if (originalLink === undefined)
             return null;
 
         return <CommentButton
-            title="Go to last seen location (new tab)"
+            title="Go to original location (new tab)"
             icon="search"
             onClick={() =>
-                window.open(persistentLink,
+                window.open(originalLink,
                     "_blank")
             }/>
     };
@@ -168,7 +168,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                 {this.renderPanelLabels()}
             </div>
             <div className="pull-right">
-                {this.renderLastSeenButton()}
+                {this.renderGoToOriginalButton()}
                 {this.renderEditButton()}
                 {this.renderStateButton()}
             </div>
