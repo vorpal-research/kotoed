@@ -2,7 +2,7 @@ package org.jetbrains.research.kotoed.web.routers.codereview
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
-import org.jetbrains.research.kotoed.data.web.CodeReview
+import org.jetbrains.research.kotoed.web.data.CodeReview
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.end
 import org.jetbrains.research.kotoed.util.fail
