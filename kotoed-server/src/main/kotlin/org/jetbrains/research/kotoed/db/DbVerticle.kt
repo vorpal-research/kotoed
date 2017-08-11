@@ -168,13 +168,13 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             buildSequence {
                 for((query, field, resultField, key) in joins!!) {
                     val qtable = when {
-                        (query.table == null) -> tbl.tableReferencedBy(tbl.field(field))
+                        (query?.table == null) -> tbl.tableReferencedBy(tbl.field(field))
                         else -> tableByName(query.table)
                     } ?: throw IllegalArgumentException("No table found for $resultField")
 
                     val joinedTable = qtable.`as`("${tbl.name}.$resultField")
-                    yield(Tuple() + tbl + field!! + joinedTable + query.find!! + key)
-                    yieldAll(query.joinSequence(joinedTable))
+                    yield(Tuple() + tbl + field!! + joinedTable + query?.find!! + key)
+                    yieldAll(query.joinSequence(joinedTable).orEmpty())
                 }
             }
 
@@ -225,9 +225,12 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             where
                     .let {
                         when {
-                            message.limit != null && message.offset != null -> it.limit(message.limit).offset(message.offset)
-                            message.limit != null -> it.limit(message.limit)
-                            message.offset != null -> it.offset(message.offset)
+                            message.limit != null && message.offset != null ->
+                                it.orderBy(table.primaryKeyField).limit(message.limit).offset(message.offset)
+                            message.limit != null ->
+                                it.orderBy(table.primaryKeyField).limit(message.limit)
+                            message.offset != null ->
+                                it.orderBy(table.primaryKeyField).offset(message.offset)
                             else -> it
                         }
                     }
