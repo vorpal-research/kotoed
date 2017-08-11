@@ -2,7 +2,7 @@ extends ./base
 
 block content
     form(class="form-signin", method="post")
-        h2 Войти
+        h2 Log in
         if context.loginError
             div(class="alert alert-danger")=context.loginError
         label(for="inputUsername", class="sr-only") Login
