@@ -14,7 +14,6 @@ import org.jetbrains.research.kotoed.data.db.InfoMsg
 import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.database.toRecord
 
 class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
 
