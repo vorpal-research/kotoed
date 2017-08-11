@@ -86,12 +86,22 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
             .toList()
 }
 
+
+
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
         > EventBus.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
     return sendJsonableAsync(address, value, Argument::class, Result::class)
+}
+
+inline suspend fun <
+        reified Result : Any,
+        reified Argument : Any
+        > EventBus.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
+    @Suppress(DEPRECATION)
+    return sendJsonableCollectAsync(address, value, Argument::class, Result::class)
 }
 
 @Target(AnnotationTarget.FUNCTION)
@@ -332,7 +342,7 @@ inline suspend fun <
         reified Argument : Any
         > AbstractKotoedVerticle.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
     @Suppress(DEPRECATION)
-    return sendJsonableCollectAsync(address, value, Argument::class, Result::class)
+    return vertx.eventBus().sendJsonableCollectAsync(address, value, Argument::class, Result::class)
 }
 
 inline suspend fun <
