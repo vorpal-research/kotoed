@@ -38,6 +38,10 @@ object Address {
                 const val List = "kotoed.api.submission.code.list"
             }
 
+            object Result {
+                const val Read = "kotoed.api.submission.result.read"
+            }
+
         }
 
         object Denizen {
@@ -104,6 +108,7 @@ object Address {
 
         // special addresses only for some props
         fun full(entity: String) = "kotoed.db.$entity.read.full"
+
         fun last(entity: String) = "kotoed.db.$entity.read.last"
 
         fun process(entity: String) = "kotoed.db.$entity.process"

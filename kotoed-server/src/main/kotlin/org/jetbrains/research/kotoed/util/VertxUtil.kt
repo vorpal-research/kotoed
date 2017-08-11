@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.Shareable
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
+import io.vertx.ext.web.client.HttpResponse
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.reflections.Reflections
@@ -41,6 +42,8 @@ operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): 
 
 suspend fun HttpServerRequest.bodyAsync(): Buffer =
         vxt { bodyHandler(it) }
+
+suspend fun <T> HttpRequest<T>.sendAsync() = vxa<HttpResponse<T>> { send(it) }
 
 /******************************************************************************/
 

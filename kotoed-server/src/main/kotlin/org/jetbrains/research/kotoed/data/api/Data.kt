@@ -8,8 +8,9 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
+import org.jetbrains.research.kotoed.util.tryToJson
 import org.jooq.Record
-import java.util.EnumMap
+import java.util.*
 
 enum class VerificationStatus {
     Unknown,
@@ -23,7 +24,7 @@ fun VerificationData?.bang() = this ?: VerificationData.Unknown
 data class VerificationData(
         val status: VerificationStatus,
         val errors: List<Int>) : Jsonable {
-    
+
     constructor(errors: List<Int>) : this(if (errors.isEmpty()) VerificationStatus.Processed else VerificationStatus.Invalid, errors)
 
     companion object {
@@ -35,17 +36,17 @@ data class VerificationData(
     }
 
     infix fun and(other: VerificationData) =
-            when{
+            when {
                 status == VerificationStatus.Invalid && other.status == VerificationStatus.Invalid -> {
                     Invalid(errors + other.errors)
                 }
                 status == VerificationStatus.Invalid -> this
                 other.status == VerificationStatus.Invalid -> other
-                else -> when(Pair(status, other.status)) {
+                else -> when (Pair(status, other.status)) {
                     Pair(VerificationStatus.NotReady, other.status),
-                        Pair(status, VerificationStatus.NotReady) -> NotReady
+                    Pair(status, VerificationStatus.NotReady) -> NotReady
                     Pair(VerificationStatus.Unknown, other.status),
-                        Pair(status, VerificationStatus.Unknown) -> NotReady
+                    Pair(status, VerificationStatus.Unknown) -> NotReady
                     Pair(VerificationStatus.Processed, VerificationStatus.Processed) ->
                         Processed
                     else -> Unknown
@@ -64,36 +65,47 @@ inline fun <reified R : Record> DbRecordWrapper(
         verificationData: VerificationData = VerificationData.Unknown
 ) = DbRecordWrapper(record.toJson(), verificationData)
 
+data class DbRecordListWrapper(
+        val records: JsonArray,
+        val verificationData: VerificationData
+) : Jsonable
+
+inline fun <reified R : Record> DbRecordListWrapper(
+        records: List<R>,
+        verificationData: VerificationData = VerificationData.Unknown
+) = DbRecordListWrapper(records.tryToJson() as JsonArray, verificationData)
+
 object SubmissionCode {
-    data class RemoteRequest(val submissionId: Int): Jsonable
-    data class ReadRequest(val submissionId: Int, val path: String): Jsonable
-    data class ReadResponse(val contents: String, val status: CloneStatus): Jsonable
-    data class ListRequest(val submissionId: Int): Jsonable
+    data class RemoteRequest(val submissionId: Int) : Jsonable
+    data class ReadRequest(val submissionId: Int, val path: String) : Jsonable
+    data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
+    data class ListRequest(val submissionId: Int) : Jsonable
 
     enum class FileType { directory, file } // directory < file, used in comparisons
-    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null): Jsonable {
+    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null) : Jsonable {
         fun toFileSeq(): Sequence<String> =
-                when(type) {
+                when (type) {
                     FileType.directory ->
                         children
-                            .orEmpty()
-                            .asSequence()
-                            .flatMap { it.toFileSeq() }
-                            .map { "$name/$it" }
+                                .orEmpty()
+                                .asSequence()
+                                .flatMap { it.toFileSeq() }
+                                .map { "$name/$it" }
                     FileType.file -> sequenceOf(name)
                 }.map { it.removePrefix("/") }
     }
-    data class ListResponse(val root: FileRecord?, val status: CloneStatus): Jsonable
+
+    data class ListResponse(val root: FileRecord?, val status: CloneStatus) : Jsonable
 }
 
 object SubmissionComments {
     const val UnknownFile = "/dev/null"
     const val UnknownLine = 0
 
-    data class LineComments(val line: Int, val comments: List<JsonObject>): Jsonable
-    data class FileComments(val filename: String, val byLine: List<LineComments>): Jsonable
+    data class LineComments(val line: Int, val comments: List<JsonObject>) : Jsonable
+    data class FileComments(val filename: String, val byLine: List<LineComments>) : Jsonable
 
-    data class CommentsResponse(val byFile: List<FileComments>, val lost: List<JsonObject>): Jsonable
+    data class CommentsResponse(val byFile: List<FileComments>, val lost: List<JsonObject>) : Jsonable
 
     data class CommentAggregate(
             private val map: MutableMap<SubmissionCommentState, Int> =
@@ -122,5 +134,5 @@ object SubmissionComments {
         )
     }
 
-    data class LastSeenResponse(val location: SubmissionCommentRecord? = null): Jsonable
+    data class LastSeenResponse(val location: SubmissionCommentRecord? = null) : Jsonable
 }

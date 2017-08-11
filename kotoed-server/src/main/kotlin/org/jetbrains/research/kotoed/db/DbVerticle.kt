@@ -60,6 +60,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
     suspend fun handleDeleteWrapper(message: JsonObject) =
             handleDelete(message.toRecord(recordClass)).toJson()
+
     protected open suspend fun handleDelete(message: R): R {
         val id = message.getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
@@ -78,6 +79,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "readAddress")
     suspend fun handleReadWrapper(message: JsonObject) =
             handleRead(message.toRecord(recordClass)).toJson()
+
     protected open suspend fun handleRead(message: R): R {
         val id = message.getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
@@ -87,6 +89,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "findAddress")
     suspend fun handleFindWrapper(message: JsonObject) =
             handleFind(message.toRecord(recordClass))
+
     protected open suspend fun handleFind(message: R): JsonArray {
         val query = message
         log.trace("Find requested in table ${table.name}:\n" +
@@ -112,6 +115,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "updateAddress")
     suspend fun handleUpdateWrapper(message: JsonObject) =
             handleUpdate(message.toRecord(recordClass)).toJson()
+
     protected open suspend fun handleUpdate(message: R): R {
         val id = message[pk]
         log.trace("Update requested for id = $id in table ${table.name}:\n" +
@@ -131,6 +135,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     @JsonableEventBusConsumerForDynamic(addressProperty = "createAddress")
     suspend fun handleCreateWrapper(message: JsonObject) =
             handleCreate(message.toRecord(recordClass)).toJson()
+
     protected open suspend fun handleCreate(message: R): R {
         log.trace("Create requested in table ${table.name}:\n" +
                 message.toJson().encodePrettily())
@@ -210,6 +215,9 @@ class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
 
 @AutoDeployable
 class SubmissionStatusVerticle : CrudDatabaseVerticleWithReferences<SubmissionStatusRecord>(Tables.SUBMISSION_STATUS)
+
+@AutoDeployable
+class SubmissionResultVerticle : CrudDatabaseVerticleWithReferences<SubmissionResultRecord>(Tables.SUBMISSION_RESULT)
 
 @AutoDeployable
 class BuildVerticle : CrudDatabaseVerticleWithReferences<BuildRecord>(Tables.BUILD)

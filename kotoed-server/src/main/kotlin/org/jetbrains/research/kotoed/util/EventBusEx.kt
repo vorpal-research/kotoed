@@ -83,7 +83,7 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
             { JsonObject() }
         }
 
-        // collections
+    // collections
         klazz == JsonArray::class -> {
             { it }
         }
@@ -310,6 +310,14 @@ inline suspend fun <
         > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
     return sendJsonableAsync(address, value, Argument::class, Result::class)
+}
+
+inline suspend fun <
+        reified Result : Any,
+        reified Argument : Any
+        > AbstractKotoedVerticle.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
+    @Suppress(DEPRECATION)
+    return sendJsonableCollectAsync(address, value, Argument::class, Result::class)
 }
 
 inline suspend fun <
