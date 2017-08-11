@@ -2,46 +2,41 @@ package org.jetbrains.research.kotoed.web.eventbus
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.eventbus.EventBus
-import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
-import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.database.tables.SubmissionComment
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
-import org.jetbrains.research.kotoed.util.fromJson
-import org.jetbrains.research.kotoed.util.sendAsync
 
-suspend fun EventBus.commentById(id: Int): SubmissionCommentRecord? {
-    val json: Message<JsonObject>
+import org.jetbrains.research.kotoed.util.sendJsonableAsync
+
+suspend fun EventBus.commentByIdOrNull(id: Int): SubmissionCommentRecord? {
+    val comment: SubmissionCommentRecord
     try {
-        json = this.sendAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.Api.Submission.Comment.Read,
-                org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord().apply { this.id = id }.toJson())
+        comment = this.sendJsonableAsync(
+                org.jetbrains.research.kotoed.eventbus.Address.DB.read(SubmissionCommentRecord().table.name),
+                org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
         else throw ex
     }
-    val commentWrapper = fromJson<DbRecordWrapper>(json.body())
 
-    return commentWrapper.record.toRecord<SubmissionCommentRecord>()
+    return comment
 }
 
-suspend fun EventBus.submissionById(id: Int): SubmissionRecord? {
-    val json: Message<JsonObject>
+suspend fun EventBus.submissionByIdOrNull(id: Int): SubmissionRecord? {
+    val submission: SubmissionRecord
     try {
-        json = this.sendAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.Api.Submission.Read,
-                org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord().apply { this.id = id }.toJson())
-
+        submission = this.sendJsonableAsync(
+                org.jetbrains.research.kotoed.eventbus.Address.DB.read(SubmissionRecord().table.name),
+                org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
         else throw ex
     }
-    val commentWrapper = fromJson<DbRecordWrapper>(json.body())
-
-    return commentWrapper.record.toRecord<SubmissionRecord>()
+    println(submission)
+    return submission
 }

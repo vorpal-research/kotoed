@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.web.auth
 
+import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
@@ -23,33 +24,28 @@ class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
         val userLoginReply: JsonObject
 
         try {
-            userLoginReply = vertx.eventBus().sendAsync(Address.User.Auth.Login, patchedAI).body()
+            userLoginReply = vertx.eventBus().sendJsonableAsync(Address.User.Auth.Login, patchedAI)
         } catch(e: ReplyException) {
-            handler.handle(Future.failedFuture(e.message))
-            return
+            if (e.failureCode() == HttpResponseStatus.FORBIDDEN.code()) {
+                handler.handle(Future.failedFuture(e.message))
+                return
+            } else
+                throw e
         }
+        try {
+            val denizenId: String = userLoginReply["denizenId"] as String
 
-        val denizenId: String? = userLoginReply?.get("denizenId") as? String
+            val info: DenizenUnsafeRecord = vertx
+                    .eventBus()
+                    .sendJsonableAsync(Address.User.Auth.Info, InfoMsg(denizenId = denizenId))
 
-        if (denizenId == null) {
+            val id = info.id
+
+            handler.handle(Future.succeededFuture(UavUser(vertx, denizenId, id)))
+        } catch (ex: Exception) {
             handler.handle(Future.failedFuture("Something went wrong"))
-            throw IllegalStateException("No denizenId in Address.User.Auth.Login reply")
+            throw ex
         }
-
-        val info = vertx
-                .eventBus()
-                .sendAsync(Address.User.Auth.Info, InfoMsg(denizenId = denizenId).toJson())
-                .body()
-                .toRecord<DenizenUnsafeRecord>()
-
-        val id = info.id
-
-        if (id == null) {
-            handler.handle(Future.failedFuture("Something went wrong"))
-            throw IllegalStateException("No id in Address.User.Auth.Info reply")
-        }
-
-        handler.handle(Future.succeededFuture(UavUser(vertx, denizenId, id)))
     }
 
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
