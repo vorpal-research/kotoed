@@ -5,10 +5,10 @@ block content
         h2 Войти
         if context.loginError
             div(class="alert alert-danger")=context.loginError
-        label(for="inputUsername", class="sr-only") Логин
-        input(type="text", id="inputUsername" class="form-control", name="username", placeholder="Логин", required, autofocus)
-        label(for="inputPassword", class="sr-only") Пароль
-        input(type="password", id="inputPassword" class="form-control", name="password", placeholder="Пароль", required)
+        label(for="inputUsername", class="sr-only") Login
+        input(type="text", id="inputUsername" class="form-control", name="username", placeholder="Login", required, autofocus)
+        label(for="inputPassword", class="sr-only") Password
+        input(type="password", id="inputPassword" class="form-control", name="password", placeholder="Password", required)
         button(class="btn, btn-lg btn-default btn-block", type="submit") Войти
 
 block title

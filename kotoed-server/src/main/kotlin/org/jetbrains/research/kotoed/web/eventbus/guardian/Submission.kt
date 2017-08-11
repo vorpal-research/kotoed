@@ -20,6 +20,4 @@ class SubmissionReady(val vertx: Vertx, val submissionIdParamName: String = "id"
     override fun toString(): String {
         return "SubmissionReady(vertx=$vertx)"
     }
-
-
 }
