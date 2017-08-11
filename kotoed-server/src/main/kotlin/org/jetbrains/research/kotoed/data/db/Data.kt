@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.data.db
 
+import org.jetbrains.research.kotoed.database.Public.PUBLIC
 import org.jetbrains.research.kotoed.util.Jsonable
 
 /* UserAuthVerticle */
@@ -22,3 +23,5 @@ data class HasPermMsg(
 data class HasPermReply(
         val result: Boolean
 ) : Jsonable
+
+fun newKotoedRecord(table: String) = PUBLIC.tables.find { it.name == table }?.newRecord()
