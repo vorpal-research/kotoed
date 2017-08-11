@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.data.db
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.NOTHING_TO_INLINE
 import org.jetbrains.research.kotoed.util.Jsonable
+import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
 import kotlin.coroutines.experimental.buildSequence
 
@@ -45,6 +46,8 @@ data class ComplexDatabaseQuery(
              resultField: String = defaultResultField(field),
              key: String? = null) =
             copy(joins = (joins ?: listOf()) + DatabaseJoin(table, field, resultField, key))
+
+    fun find(record: Record) = copy(find = record.toJson())
 
     fun fillDefaults(): ComplexDatabaseQuery {
         val find_ = find ?: JsonObject()

@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.DEPRECATION
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -315,6 +316,11 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     protected suspend fun <R : TableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+
+    protected suspend fun dbQueryAsync(q: ComplexDatabaseQuery): List<JsonObject> =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
+
 
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
             @Suppress(DEPRECATION)
