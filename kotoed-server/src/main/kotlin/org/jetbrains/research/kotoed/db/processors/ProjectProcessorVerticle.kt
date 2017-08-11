@@ -1,10 +1,7 @@
 package org.jetbrains.research.kotoed.db.processors
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.buffer.Buffer
-import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
 import org.jetbrains.research.kotoed.buildbot.util.*
 import org.jetbrains.research.kotoed.config.Config
@@ -15,30 +12,42 @@ import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.AutoDeployable
+import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.util.sendAsync
+import org.jetbrains.research.kotoed.util.sendJsonableAsync
 
 @AutoDeployable
 class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT) {
 
     suspend override fun verify(data: JsonObject?): VerificationData {
-        val eb = vertx.eventBus()
-
         val wc = WebClient.create(vertx)
 
-        val record: ProjectRecord = data?.toRecord() ?: throw IllegalArgumentException("Cannot verify $data")
+        val projectRecord: ProjectRecord = data?.toRecord()
+                ?: throw IllegalArgumentException("Cannot verify $data")
 
         val schedulerLocator = DimensionLocator(
                 "forceschedulers",
-                Kotoed2Buildbot.projectName2schedulerName(record.name))
+                Kotoed2Buildbot.projectName2schedulerName(projectRecord.name))
 
-        // TODO: gracefully fail when buildbot is  unavailable
-
-        val response = vxa<HttpResponse<Buffer>> {
+        val response = try {
             wc.head(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Root + schedulerLocator)
                     .putDefaultBBHeaders()
-                    .send(it)
+                    .sendAsync()
+
+        } catch (ex: Exception) {
+            val error = ProjectStatusRecord()
+                    .apply {
+                        this.projectId = projectRecord.id
+                        this.data = JsonObject("error" to
+                                "Exception when verifying ${projectRecord.toJson()}: $ex")
+                    }
+
+            val errorId = dbCreateAsync(error).id
+
+            return VerificationData.Invalid(errorId)
         }
 
         if (HttpResponseStatus.OK.code() == response.statusCode()) {
@@ -47,13 +56,12 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         } else {
             val error = ProjectStatusRecord()
                     .apply {
-                        this.projectId = record.id
-                        this.data = JsonObject("error" to "Buildbot scheduler for ${record.name} not available")
+                        this.projectId = projectRecord.id
+                        this.data = JsonObject("error" to
+                                "Buildbot scheduler for ${projectRecord.name} not available: ${response.statusMessage()}/${response.bodyAsString()}")
                     }
 
-            val errorId = vxa<Message<JsonObject>> {
-                eb.send(Address.DB.create(Tables.PROJECT_STATUS.name), error.toJson(), it)
-            }.body().toRecord<ProjectStatusRecord>().id
+            val errorId = dbCreateAsync(error).id
 
             return VerificationData.Invalid(errorId)
         }
@@ -61,19 +69,10 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
 
     suspend override fun doProcess(data: JsonObject): VerificationData {
 
-        val eb = vertx.eventBus()
-
         val projectRecord: ProjectRecord = data.toRecord()
 
-        val courseRecord = db {
-            with(Tables.COURSE) {
-                select(NAME)
-                        .from(this)
-                        .where(ID.eq(projectRecord.courseId))
-                        .fetchOne()
-                        .into(CourseRecord::class.java)
-            }
-        }
+        val courseRecord = dbFetchAsync(
+                CourseRecord().setId(projectRecord.courseId))
 
         val createProject = CreateProject(
                 projectRecord.id,
@@ -84,28 +83,24 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         )
 
         try {
-            vxa<Message<JsonObject>> {
-                eb.send(
-                        Address.Buildbot.Project.Create,
-                        createProject.toJson(),
-                        it
-                )
-            }
+            val res: JsonObject = sendJsonableAsync(
+                    Address.Buildbot.Project.Create,
+                    createProject
+            )
 
             return VerificationData.Processed
 
         } catch (ex: Exception) {
-            val er = ProjectStatusRecord()
+            val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("error" to "Error in Buildbot: ${ex.message}")
+                        this.data = JsonObject("error" to
+                                "Exception when processing ${projectRecord.toJson()}: $ex")
                     }
 
-            val erId = vxa<Message<JsonObject>> {
-                eb.send(Address.DB.create(Tables.PROJECT_STATUS.name), er.toJson(), it)
-            }.body().toRecord<ProjectStatusRecord>().id
+            val errorId = dbCreateAsync(error).id
 
-            return VerificationData.Invalid(erId)
+            return VerificationData.Invalid(errorId)
         }
     }
 
