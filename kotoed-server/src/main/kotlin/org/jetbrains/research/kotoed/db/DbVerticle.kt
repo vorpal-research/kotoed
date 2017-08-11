@@ -7,14 +7,22 @@ import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.yield
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
+import org.jooq.impl.DSL
+import ru.spbstu.ktuples.*
+import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
+import kotlin.sequences.Sequence
 
 abstract class DatabaseVerticle<R : TableRecord<R>>(
         val table: Table<R>,
@@ -55,6 +63,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     val readAddress = Address.DB.read(entityName)
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
+    val queryAddress = Address.DB.query(entityName)
 
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
@@ -153,6 +162,85 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     .first()
         }
     }
+
+    private fun ComplexDatabaseQuery.joinSequence(tbl: Table<out Record> = tableByName(table!!)!!)
+                : Sequence<Tuple5<Table<out Record>, String, Table<out Record>, JsonObject, String?>> =
+            buildSequence {
+                for((query, field, resultField, key) in joins!!) {
+                    val qtable = when {
+                        (query.table == null) -> tbl.tableReferencedBy(tbl.field(field))
+                        else -> tableByName(query.table)
+                    } ?: throw IllegalArgumentException("No table found for $resultField")
+
+                    val joinedTable = qtable.`as`("${tbl.name}.$resultField")
+                    yield(Tuple() + tbl + field!! + joinedTable + query.find!! + key)
+                    yieldAll(query.joinSequence(joinedTable))
+                }
+            }
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "queryAddress")
+    suspend fun handleQueryWrapper(message: JsonObject) =
+            handleQuery(message.toJsonable())
+
+    private fun makeFindCondition(table: Table<*>, record: JsonObject): Condition {
+        val queryFields = table
+                .fields()
+                .asSequence()
+                .filter { record[it] != null }
+                .map { it.uncheckedCast<Field<Any>>() }
+                .toList()
+
+        return DSL.and(queryFields.map { table.field(it).eq(record[it]) })
+    }
+
+    protected open suspend fun handleQuery(message_: ComplexDatabaseQuery): JsonArray {
+        fun die(): Nothing = throw IllegalArgumentException("Illegal query")
+        val message = when {
+            message_.table == null -> message_.copy(table = this@CrudDatabaseVerticle.table.name)
+            else -> message_
+        }.fillDefaults()
+
+        log.trace("Query in table ${table.name}:\n" +
+                message.toJson().encodePrettily())
+
+        val table = Public.PUBLIC.tables.find { it.name == message.table } ?: die()
+
+        val joins = message.joinSequence().toList()
+        val joinedTables: List<Table<*>> = joins.map { it.v2 }
+
+        return db {
+            val select = select(
+                    table.fields().asList() + joinedTables.flatMap { it.fields().asList() }
+            ).from(table)
+            val join = joins.fold(select) {
+                a, (from, field, to, _, key) ->
+                    a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
+            }
+            val condition: Condition = joins.fold(DSL.condition(true)) {
+                    a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
+            }
+            val baseCondition = makeFindCondition(table, message.find!!)
+            val where = join.where(condition).and(baseCondition)
+
+            where
+                    .let {
+                        when {
+                            message.limit != null && message.offset != null -> it.limit(message.limit).offset(message.offset)
+                            message.limit != null -> it.limit(message.limit)
+                            message.offset != null -> it.offset(message.offset)
+                            else -> it
+                        }
+                    }
+                    .fetch()
+        }.map { record ->
+            val ret = record.into(table).toJson()
+            joinedTables.forEach { table ->
+                ret[table.name.split('.').drop(1)] = record.into(table).toJson()
+            }
+            ret
+        }.let(::JsonArray)
+    }
+
 
 }
 
