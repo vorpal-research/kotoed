@@ -1,6 +1,6 @@
 export namespace Kotoed {
 
-    export let Address = {
+    export const Address = {
         Api: {
 
             create: (entity: String) => {
