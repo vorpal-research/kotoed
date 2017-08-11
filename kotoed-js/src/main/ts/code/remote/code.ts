@@ -2,11 +2,7 @@ import {sleep} from "../../util";
 import {EventBusError} from "../../util/vertx";
 import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
-
-const READY_ADDRESS = "kotoed.api.submission.code.download";
-const LIST_ADDRESS = "kotoed.api.submission.code.list";
-const FILE_ADDRESS = "kotoed.api.submission.code.read";
-
+import {Kotoed} from "../../util/kotoed-api";
 
 export type FileType = "file" | "directory"
 
@@ -50,7 +46,7 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
 
 export async function fetchRootDir(submissionId: number): Promise<File> {
     let res = await repeatTillReady<RootDirResponse>(() => {
-        return eventBus.send(LIST_ADDRESS, {
+        return eventBus.send(Kotoed.Address.Api.Submission.Code.List, {
             submissionId: submissionId
         })
     });
@@ -59,7 +55,7 @@ export async function fetchRootDir(submissionId: number): Promise<File> {
 
 export async function fetchFile(submissionId: number, path: string): Promise<string> {
     let res = await repeatTillReady<FileResponse>(() => {
-        return eventBus.send(FILE_ADDRESS, {
+        return eventBus.send(Kotoed.Address.Api.Submission.Code.Read, {
             submissionId: submissionId,
             path
         })
@@ -70,7 +66,7 @@ export async function fetchFile(submissionId: number, path: string): Promise<str
 
 export async function waitTillReady(submissionId: number): Promise<void> {
     await repeatTillReady<IsReadyResponse>(() => {
-        return eventBus.send(READY_ADDRESS, {
+        return eventBus.send(Kotoed.Address.Api.Submission.Code.Download, {
             submissionId: submissionId,
         })
     });

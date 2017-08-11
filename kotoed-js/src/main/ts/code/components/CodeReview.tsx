@@ -84,22 +84,25 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                           loading={this.props.lostFound.loading}
                 />;
             case "code":
-                return <FileReview canPostComment={this.props.capabilities.canPostComment}
-                                   value={this.props.editor.value}
-                                   height="100%"
-                                   comments={this.props.editor.comments}
-                                   filePath={this.props.editor.file}
-                                   onSubmit={(line, text) => this.props.comments.onCommentSubmit(this.props.editor.file, line, text)}
-                                   onCommentResolve={this.props.comments.onCommentResolve}
-                                   onCommentUnresolve={this.props.comments.onCommentUnresolve}
-                                   onMarkerExpand={this.props.editor.onMarkerExpand}
-                                   onMarkerCollapse={this.props.editor.onMarkerCollapse}
-                                   onHiddenExpand={this.props.comments.onHiddenExpand}
-                                   onCommentEdit={this.props.comments.onCommentEdit}
-                                   whoAmI={this.props.capabilities.whoAmI}
-                                   scrollTo={this.props.editor.scrollTo}
-                                   loading={this.props.editor.loading}
-                />
+                if (this.props.editor.file !== "")
+                    return <FileReview canPostComment={this.props.capabilities.canPostComment}
+                                       value={this.props.editor.value}
+                                       height="100%"
+                                       comments={this.props.editor.comments}
+                                       filePath={this.props.editor.file}
+                                       onSubmit={(line, text) => this.props.comments.onCommentSubmit(this.props.editor.file, line, text)}
+                                       onCommentResolve={this.props.comments.onCommentResolve}
+                                       onCommentUnresolve={this.props.comments.onCommentUnresolve}
+                                       onMarkerExpand={this.props.editor.onMarkerExpand}
+                                       onMarkerCollapse={this.props.editor.onMarkerCollapse}
+                                       onHiddenExpand={this.props.comments.onHiddenExpand}
+                                       onCommentEdit={this.props.comments.onCommentEdit}
+                                       whoAmI={this.props.capabilities.whoAmI}
+                                       scrollTo={this.props.editor.scrollTo}
+                                       loading={this.props.editor.loading}
+                    />
+                else
+                    return <div className="no-file-chosen"><div>Please choose file</div></div>
         }
     };
 
