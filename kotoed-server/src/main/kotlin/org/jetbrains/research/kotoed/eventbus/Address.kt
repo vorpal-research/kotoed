@@ -99,6 +99,7 @@ object Address {
         fun create(entity: String) = "kotoed.db.$entity.create"
         fun delete(entity: String) = "kotoed.db.$entity.delete"
         fun read(entity: String) = "kotoed.db.$entity.read"
+        fun query(entity: String) = "kotoed.db.$entity.query"
         fun find(entity: String) = "kotoed.db.$entity.find"
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
