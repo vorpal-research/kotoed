@@ -1,13 +1,16 @@
 import createHistory from 'history/createBrowserHistory'
 import * as React from "react";
 import {render} from "react-dom";
-import {Route, Switch} from "react-router";
+import {Redirect, Route, Switch} from "react-router";
 import {Provider} from "react-redux";
 import {combineReducers, createStore, applyMiddleware} from "redux";
 import thunk from 'redux-thunk';
 import {routerMiddleware, ConnectedRouter, routerReducer} from 'react-router-redux'
 
-import CodeReviewContainer, {CODE_ROUTE_PATH, LOST_FOUND_ROUTE_PATH} from "./containers/CodeReviewContainer";
+import CodeReviewContainer, {
+    CODE_ROUTE_PATH, LOST_FOUND_ROUTE_PATH,
+    RedirectToRoot
+} from "./containers/CodeReviewContainer";
 import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
 
 import "less/kotoed-bootstrap/bootstrap.less";
@@ -39,6 +42,7 @@ render(
     <Provider store={store}>
         <ConnectedRouter history={history} >
             <Switch>
+                <Route exact path="/:submissionId(\\d+)/" component={RedirectToRoot}/>
                 <Route exact path={CODE_ROUTE_PATH} component={CodeReviewContainer}/>
                 <Route exact path={LOST_FOUND_ROUTE_PATH} component={CodeReviewContainer}/>
             </Switch>

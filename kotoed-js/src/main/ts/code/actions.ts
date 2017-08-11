@@ -167,12 +167,8 @@ export function expandAndLoadIfNeeded(payload: SubmissionPayload & FilePathPaylo
         try {
             numPath = getNodePath(getState().fileTreeState.root, payload.filename);
         } catch(e) {
-            if (e instanceof FileNotFoundError) {
-                numPath = [];
-                console.warn(e);
-            } else {
-                throw e;
-            }
+            numPath = [];
+            console.warn(e);
         }
 
         if (numPath === getState().fileTreeState.selectedPath)

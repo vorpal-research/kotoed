@@ -1,11 +1,6 @@
 import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
-
-const FETCH_COMMENTS_ADDRESS = "kotoed.api.submission.comments";
-const FETCH_COMMENT_AGGREGATES_ADDRESS = "kotoed.api.submission.commentAggregates";
-
-const CREATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.create";
-const UPDATE_COMMENT_ADDRESS = "kotoed.api.submission.comment.update";
+import {Kotoed} from "../../util/kotoed-api";
 
 export const UNKNOWN_FILE = "/dev/null";
 export const UNKNOWN_LINE = 0;
@@ -64,7 +59,6 @@ export interface CommentsResponse {
 
 type CommentsRequest = RequestWithId
 type CommentAggregatesRequest = RequestWithId
-type LastSeen = RequestWithId
 
 export type CommentToPost = BaseComment
 
@@ -88,13 +82,13 @@ interface LastSeenResponse {
 }
 
 export async function fetchComments(submissionId: number): Promise<CommentsResponse> {
-    return eventBus.send<CommentsRequest, CommentsResponse>(FETCH_COMMENTS_ADDRESS, {
+    return eventBus.send<CommentsRequest, CommentsResponse>(Kotoed.Address.Api.Submission.Comments, {
         id: submissionId,
     });
 }
 
 export async function fetchCommentAggregates(submissionId: number): Promise<CommentAggregates> {
-    return eventBus.send<CommentAggregatesRequest, CommentAggregates>(FETCH_COMMENT_AGGREGATES_ADDRESS, {
+    return eventBus.send<CommentAggregatesRequest, CommentAggregates>(Kotoed.Address.Api.Submission.CommentAggregates, {
         id: submissionId,
     });
 }
@@ -103,7 +97,7 @@ export async function postComment(submissionId: number,
                                   sourcefile: string,
                                   sourceline: number,
                                   text: string): Promise<BaseCommentToRead> {
-    let res = await eventBus.send<CommentToPost, PostCommentResponse>(CREATE_COMMENT_ADDRESS, {
+    let res = await eventBus.send<CommentToPost, PostCommentResponse>(Kotoed.Address.Api.Submission.Comment.Create, {
         submissionId: submissionId,
         text,
         sourcefile,
@@ -114,7 +108,7 @@ export async function postComment(submissionId: number,
 
 export async function setCommentState(commentId: number,
                                       state: CommentState): Promise<BaseCommentToRead> {
-    let res = await eventBus.send<CommentStateUpdate, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
+    let res = await eventBus.send<CommentStateUpdate, PostCommentResponse>(Kotoed.Address.Api.Submission.Comment.Update, {
         id: commentId,
         state
     });
@@ -123,7 +117,7 @@ export async function setCommentState(commentId: number,
 
 export async function editComment(commentId: number,
                                   text: string): Promise<BaseCommentToRead> {
-    let res = await eventBus.send<CommentEdit, PostCommentResponse>(UPDATE_COMMENT_ADDRESS, {
+    let res = await eventBus.send<CommentEdit, PostCommentResponse>(Kotoed.Address.Api.Submission.Comment.Update, {
         id: commentId,
         text
     });

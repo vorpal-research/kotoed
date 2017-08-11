@@ -17,6 +17,7 @@ import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
 import {CODE_REVIEW_BASE_ADDR} from "../index";
+import {Redirect} from "react-router";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
@@ -177,6 +178,12 @@ export function makeCodePath(submissionId: number, path: string, scrollTo?: numb
 
 export function makeLostFoundPath(submissionId: number) {
     return `/${submissionId}/lost+found`
+}
+
+export class RedirectToRoot extends React.Component<RouteComponentProps<CodeReviewUrl>> {
+    render() {
+        return <Redirect to={makeCodePath(parseInt(this.props.match.params.submissionId), "")}/>
+    }
 }
 
 class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
