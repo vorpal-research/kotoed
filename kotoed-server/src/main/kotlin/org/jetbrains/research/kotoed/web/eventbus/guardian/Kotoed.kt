@@ -15,7 +15,7 @@ val HarmlessTypes =
 
 val Send = ByType(BridgeEventType.SEND)
 
-fun KotoedPerAddressFilter(vertx: Vertx) = PerAddress(
+fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Code.Read to SubmissionReady(vertx, "submission_id"),
         Address.Api.Submission.Code.List to SubmissionReady(vertx, "submission_id"),
         Address.Api.Submission.Comments to SubmissionReady(vertx),
@@ -26,7 +26,7 @@ fun KotoedPerAddressFilter(vertx: Vertx) = PerAddress(
 )
 
 class KotoedFilter(vertx: Vertx): BridgeEventFilter {
-    private val perAddress = KotoedPerAddressFilter(vertx)
+    private val perAddress = kotoedPerAddressFilter(vertx)
     private val underlying = LoginRequired and (HarmlessTypes or (Send and perAddress))
 
     suspend override fun isAllowed(be: BridgeEvent): Boolean = underlying.isAllowed(be)
