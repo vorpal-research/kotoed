@@ -9,7 +9,7 @@ import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.isAuthorised
 import org.jetbrains.research.kotoed.util.routing.*
-import org.jetbrains.research.kotoed.web.eventbus.submissionById
+import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
 @HandlerFor("/codereview/:id/*")
 @Templatize("code.jade")
@@ -24,7 +24,7 @@ suspend fun handleCode(context: RoutingContext) {
         return
     }
 
-    val submission = context.vertx().eventBus().submissionById(intId) ?: run {
+    val submission = context.vertx().eventBus().submissionByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
@@ -56,7 +56,7 @@ suspend fun handleCapabilities(context: RoutingContext) {
         return
     }
 
-    val submission = context.vertx().eventBus().submissionById(intId) ?: run {
+    val submission = context.vertx().eventBus().submissionByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
