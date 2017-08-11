@@ -7,12 +7,12 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
-import org.jetbrains.research.kotoed.web.eventbus.submissionById
+import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
 class SubmissionReady(val vertx: Vertx, val submissionIdParamName: String = "id") : BridgeEventFilter {
     suspend override fun isAllowed(be: BridgeEvent): Boolean = run {
         val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger(submissionIdParamName) ?: return@run false
-        val submission = vertx.eventBus().submissionById(id) ?: return@run false
+        val submission = vertx.eventBus().submissionByIdOrNull(id) ?: return@run false
 
         return submission.state != SubmissionState.pending && submission.state != SubmissionState.invalid
     }.also { logResult(be, it) }

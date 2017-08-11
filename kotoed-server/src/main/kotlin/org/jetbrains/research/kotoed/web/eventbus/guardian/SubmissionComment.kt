@@ -7,11 +7,11 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.isAuthorised
 import org.jetbrains.research.kotoed.util.set
-import org.jetbrains.research.kotoed.web.eventbus.commentById
+import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
 import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
-import org.jetbrains.research.kotoed.web.eventbus.submissionById
+import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
 object CommentCreatePatcher : BridgeEventPatcher {
     suspend override fun patch(be: BridgeEvent) {
@@ -33,7 +33,7 @@ object CommentCreatePatcher : BridgeEventPatcher {
 class CommentCreateFilter(val vertx: Vertx) : BridgeEventFilter {
     suspend override fun isAllowed(be: BridgeEvent): Boolean = run {
         val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("submission_id") ?: return@run false
-        val submission = vertx.eventBus().submissionById(id) ?: return false
+        val submission = vertx.eventBus().submissionByIdOrNull(id) ?: return false
 
         return@run submission.state == SubmissionState.open
     }.also { logResult(be, it) }
@@ -48,9 +48,9 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         val user = be.socket().webUser()
         val id = (be.rawMessage?.get("body") as? JsonObject)?.getInteger("id") ?: return@run false
 
-        val comment = vertx.eventBus().commentById(id) ?: return@run false
+        val comment = vertx.eventBus().commentByIdOrNull(id) ?: return@run false
 
-        val submission = vertx.eventBus().submissionById(comment.submissionId) ?: return@run false
+        val submission = vertx.eventBus().submissionByIdOrNull(comment.submissionId) ?: return@run false
 
         if (submission.state != SubmissionState.open)
             return@run false

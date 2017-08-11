@@ -54,6 +54,46 @@ suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 fun EventBus.sendJsonable(address: String, message: Jsonable) =
         send(address, message.toJson())
 
+@PublishedApi
+@Deprecated("Do not call directly")
+internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
+        address: String,
+        value: Argument,
+        argClass: KClass<out Argument>,
+        resultClass: KClass<out Result>
+): Result {
+    val toJson = getToJsonConverter(argClass.starProjectedType)
+    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+    return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
+}
+
+@PublishedApi
+@Deprecated("Do not call directly")
+internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollectAsync(
+        address: String,
+        value: Argument,
+        argClass: KClass<out Argument>,
+        resultClass: KClass<out Result>
+): List<Result> {
+    val toJson = getToJsonConverter(argClass.starProjectedType)
+    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+    return sendAsync<JsonArray>(address, toJson(value))
+            .body()
+            .asSequence()
+            .filterIsInstance<JsonObject>()
+            .map(fromJson)
+            .map { it.uncheckedCast<Result>() }
+            .toList()
+}
+
+inline suspend fun <
+        reified Result : Any,
+        reified Argument : Any
+        > EventBus.sendJsonableAsync(address: String, value: Argument): Result {
+    @Suppress(DEPRECATION)
+    return sendJsonableAsync(address, value, Argument::class, Result::class)
+}
+
 @Target(AnnotationTarget.FUNCTION)
 annotation class EventBusConsumerFor(val address: String)
 
@@ -248,60 +288,35 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
         super.start(startFuture)
     }
 
-    @PublishedApi
-    @Deprecated("Do not call directly")
-    internal suspend fun <Argument : Any, Result : Any> sendJsonableAsync(
-            address: String,
-            value: Argument,
-            argClass: KClass<out Argument>,
-            resultClass: KClass<out Result>
-    ): Result {
-        val toJson = getToJsonConverter(argClass.starProjectedType)
-        val fromJson = getFromJsonConverter(resultClass.starProjectedType)
-        return vertx.eventBus().sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
-    }
-
-    @PublishedApi
-    @Deprecated("Do not call directly")
-    internal suspend fun <Argument : Any, Result : Any> sendJsonableCollectAsync(
-            address: String,
-            value: Argument,
-            argClass: KClass<out Argument>,
-            resultClass: KClass<out Result>
-    ): List<Result> {
-        val toJson = getToJsonConverter(argClass.starProjectedType)
-        val fromJson = getFromJsonConverter(resultClass.starProjectedType)
-        return vertx
-                .eventBus()
-                .sendAsync<JsonArray>(address, toJson(value))
-                .body()
-                .asSequence()
-                .filterIsInstance<JsonObject>()
-                .map(fromJson)
-                .map { it.uncheckedCast<Result>() }
-                .toList()
-    }
-
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
     protected suspend fun <R : TableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
-            @Suppress(DEPRECATION) sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
 
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
 
     protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
                                                               klass: KClass<out R> = instance.recordType.kotlin): R =
-            @Suppress(DEPRECATION) sendJsonableAsync(Address.DB.read(instance.name), JsonObject("id" to id), JsonObject::class, klass)
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(
+                    Address.DB.read(instance.name),
+                    JsonObject("id" to id),
+                    JsonObject::class, klass)
 }
 
 inline suspend fun <
@@ -309,7 +324,7 @@ inline suspend fun <
         reified Argument : Any
         > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
-    return sendJsonableAsync(address, value, Argument::class, Result::class)
+    return vertx.eventBus().sendJsonableAsync(address, value, Argument::class, Result::class)
 }
 
 inline suspend fun <
