@@ -143,6 +143,18 @@ inline fun <T> forceType(v: T) = v
 
 // why stdlib doesn't have this?
 fun<T> Sequence<T>?.orEmpty() = this ?: emptySequence()
+fun<T> Sequence<T>.reduceOrNull(body: (T, T) -> T) = try { reduce(body) } catch (ex: UnsupportedOperationException) { null }
+
+enum class FixAction{ proceed, stop }
+fun<T> immutableFix(initial: T, body: (T) -> Pair<FixAction, T>): T {
+    var (action, arg) = FixAction.proceed to initial
+    while(action != FixAction.stop) {
+        val tr = body(arg)
+        action = tr.first
+        arg = tr.second
+    }
+    return arg
+}
 
 // XXX: think
 data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async: suspend (K) -> V) {

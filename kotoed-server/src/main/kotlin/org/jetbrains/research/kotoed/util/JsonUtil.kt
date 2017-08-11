@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jooq.Field
 import org.jooq.Record
 import org.jooq.TableField
 import ru.spbstu.ktuples.*
@@ -42,8 +43,9 @@ inline operator fun JsonObject.contains(key: String) = this.containsKey(camelToK
 
 /******************************************************************************/
 
-inline operator fun <R : Record, T> JsonObject.get(field: TableField<R, T>): T? =
-        this.getValue(field.name).uncheckedCastOrNull()
+inline operator fun <T> JsonObject.get(field: Field<T>): T? =
+        this.get(field.name).uncheckedCastOrNull()
+
 
 /******************************************************************************/
 
@@ -51,6 +53,26 @@ inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
         if (containsKey(camelToKey(oldName))) {
             put(camelToKey(newName), remove(camelToKey(oldName)))
         } else this
+
+inline operator fun JsonObject.get(fields: List<String>) =
+        fields.dropLast(1).fold(this) { obj, key_ ->
+            obj.getJsonObject(camelToKey(key_)!!)
+        }.get(fields.last())
+
+inline operator fun JsonObject.get(vararg fields: String) =
+        get(fields.asList())
+
+inline operator fun JsonObject.set(fields: List<String>, value: Any?)  =
+        fields.dropLast(1).fold(this) { obj, key_ ->
+            val key = camelToKey(key_)!!
+            when {
+                key in obj -> obj.getJsonObject(key) ?: throw IllegalArgumentException("JSON field $key: object expected")
+                else -> JsonObject().apply { obj.put(key, this@apply) }
+            }
+        }.set(fields.last(), value).let { this }
+
+inline operator fun JsonObject.set(vararg fields: String, value: Any?) =
+        set(fields.asList(), value)
 
 /******************************************************************************/
 
