@@ -20,13 +20,11 @@ class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
     private suspend fun authenticateAsync(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
         val patchedAI = authInfo.rename("username", "denizenId")
 
-        val userLoginReply: JsonObject
-
-        try {
-            userLoginReply = vertx.eventBus().sendJsonableAsync(Address.User.Auth.Login, patchedAI)
+        val userLoginReply: JsonObject = try {
+            vertx.eventBus().sendJsonableAsync(Address.User.Auth.Login, patchedAI)
         } catch(e: ReplyException) {
             if (e.failureCode() == HttpResponseStatus.FORBIDDEN.code()) {
-                handler.handle(Future.failedFuture(e.message))
+                handler.handle(Future.failedFuture(Unauthorized(e.message ?: "Unauthorized")))
                 return
             } else
                 throw e
@@ -42,7 +40,7 @@ class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
 
             handler.handle(Future.succeededFuture(UavUser(vertx, denizenId, id)))
         } catch (ex: Exception) {
-            handler.handle(Future.failedFuture("Something went wrong"))
+            handler.handle(Future.failedFuture(ex))
             throw ex
         }
     }

@@ -35,3 +35,4 @@ annotation class JsBundle(val bundleName: String,
                           val vendorName: String = "vendor")
 
 annotation class LoginRequired
+annotation class EnableSessions

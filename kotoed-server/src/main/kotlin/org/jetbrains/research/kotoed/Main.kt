@@ -78,10 +78,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 templateHelpers = mapOf("static" to staticFilesHelper),
                 staticFilesHelper = staticFilesHelper,
                 loggingHandler = LoggerHandler.create(LoggerFormat.SHORT),
-                loginTemplate = "login.jade",
-                loginBundleConfig = JsBundleConfig(
-                        jsBundleName = "hello"
-                )
+                loginPath = "/doLogin"
         )
 
         route("/static/*").handler(StaticHandler.create("webroot/static"))

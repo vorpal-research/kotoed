@@ -45,11 +45,15 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
 
         return db {
             with(theTable) {
+                if (fetchExists(selectOne().from(this).where(DENIZEN_ID.eq(signUpMsg.denizenId))))
+                    throw Conflict("User ${signUpMsg.denizenId} already exists")
+
                 insertInto(this)
                         .set(dbData)
                         .returning()
                         .fetchOne()
                         ?.cleanup()
+
             }
         } ?: throw IllegalStateException("Database error")
     }
