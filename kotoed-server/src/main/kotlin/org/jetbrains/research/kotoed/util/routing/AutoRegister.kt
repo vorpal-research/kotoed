@@ -86,15 +86,24 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
 
                 val routeProto = makeRouteProto(method)
 
-                method.getAnnotation(LoginRequired::class.java)?.apply {
+                val logReq = method.getAnnotation(LoginRequired::class.java)
+
+                logReq?.apply {
                     routeProto.requireLogin(
                             routingConfig,
                             rejectAnon = method.getAnnotation(JsonResponse::class.java) != null)
                 }
 
+
+                method.getAnnotation(EnableSessions::class.java)?.apply {
+                    if (logReq == null)  // LoginRequired implies EnableSessions
+                        routeProto.enableSessions(routingConfig)
+                    else
+                        log.warn("EnableSessions annotation is useless together with LoginRequired")
+                }
+
                 method.getAnnotation(JsonResponse::class.java)?.apply {
-                    routeProto.makeRoute().handler(PutJsonHeaderHandler)
-                    routeProto.makeRoute().failureHandler(JsonFailureHandler)
+                    routeProto.jsonify()
                 }
 
                 routeProto.makeRoute()

@@ -14,21 +14,20 @@ import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.handlers.FormLoginHandlerWithRepeat
+import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.RejectAnonymousHandler
 import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
 class RoutingConfig(
-        private val templateEngine: TemplateEngine,
-        private val authProvider: AuthProvider,
+        val templateEngine: TemplateEngine,
+        val authProvider: AuthProvider,
         sessionStore: SessionStore,
         templateHelpers: Map<String, TemplateHelper> = mapOf(),
-        private val staticFilesHelper: StaticFilesHelper,
-        private val loggingHandler: Handler<RoutingContext> = Handler {  },
-        private val loginPath: String = "/login",
-        private val mainPath: String = "/",
-        private val logoutPath: String = "/logout",
-        private val loginTemplate: String,
-        private val loginBundleConfig: JsBundleConfig
+        val staticFilesHelper: StaticFilesHelper,
+        val loggingHandler: Handler<RoutingContext> = Handler {  },
+        val loginPath: String = "/login",
+        val mainPath: String = "/",
+        val logoutPath: String = "/logout"
         ) {
 
 
@@ -61,19 +60,16 @@ class RoutingConfig(
     }
 
     fun createLoginRoute(router: Router) {
-        val routeProto = router.routeProto().path(loginPath)
+        val routeProto = router.routeProto().path(loginPath + "/doIt")
         val routeProtoWithPost = routeProto.branch().method(HttpMethod.POST)
 
         routeProto.makeRoute().handler(cookieHandler)
         routeProto.makeRoute().handler(sessionHandler)
         routeProto.makeRoute().handler(userSessionHandler)
-        routeProtoWithPost.makeRoute().handler(BodyHandler.create())
         routeProto.makeRoute().handler(sessionProlongator)
+        jsonify(routeProto)
         routeProtoWithPost.makeRoute().handler(
-                FormLoginHandlerWithRepeat.create(authProvider, directLoggedInOKURL = mainPath))
-        enableHelpers(routeProto)
-        enableJsBundle(routeProto, loginBundleConfig, true)
-        templatize(routeProto, loginTemplate)
+                JsonLoginHandler.create(authProvider))
     }
 
     fun createLogoutRoute(router: Router) {
@@ -109,6 +105,10 @@ class RoutingConfig(
         routeProto.makeRoute().handler(NamedTemplateHandler.create(templateEngine, templateName))
     }
 
+    fun jsonify(routeProto: RouteProto) {
+        routeProto.makeRoute().handler(PutJsonHeaderHandler)
+        routeProto.makeRoute().failureHandler(JsonFailureHandler)
+    }
 }
 
 fun RouteProto.enableSessions(config: RoutingConfig) = apply {
@@ -141,5 +141,10 @@ fun RouteProto.enableJsBundle(config: RoutingConfig, jsBundleConfig: JsBundleCon
 
 fun RouteProto.templatize(config: RoutingConfig, templateName: String) = apply {
     config.templatize(this, templateName)
+}
+
+fun RouteProto.jsonify() = apply {
+    makeRoute().handler(PutJsonHeaderHandler)
+    makeRoute().failureHandler(JsonFailureHandler)
 }
 
