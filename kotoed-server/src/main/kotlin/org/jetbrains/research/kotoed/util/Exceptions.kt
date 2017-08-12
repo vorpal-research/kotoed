@@ -3,8 +3,10 @@ package org.jetbrains.research.kotoed.util
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.util.StatusCodes.CONFLICT
 import org.jetbrains.research.kotoed.util.StatusCodes.FORBIDDEN
 import org.jetbrains.research.kotoed.util.StatusCodes.NOT_FOUND
+import org.jetbrains.research.kotoed.util.StatusCodes.UNAUTHORIZED
 
 object StatusCodes {
     const val FORBIDDEN = 403
@@ -12,6 +14,8 @@ object StatusCodes {
     const val NOT_FOUND = 404
     const val TIMED_OUT = 503
     const val BAD_REQUEST = 400
+    const val UNAUTHORIZED = 401
+    const val CONFLICT = 409
 }
 
 data class KotoedException(val code: Int, override val message: String) : Exception(message)
@@ -20,6 +24,8 @@ data class WrappedException(val inner: Throwable?) : Exception(inner)
 
 fun NotFound(message: String) = KotoedException(code = NOT_FOUND, message = message)
 fun Forbidden(message: String) = KotoedException(code = FORBIDDEN, message = message)
+fun Unauthorized(message: String) = KotoedException(code = UNAUTHORIZED, message = message)
+fun Conflict(message: String) = KotoedException(code = CONFLICT, message = message)
 
 val Throwable.unwrapped
     get() =

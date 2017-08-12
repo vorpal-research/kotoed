@@ -107,14 +107,17 @@ class RouteProto(private val router: Router) {
         routeChunks.add(RouteChunk.Last)
     }
 
+    @Deprecated("forgot makeRoute()?", replaceWith = ReplaceWith(".makeRoute().handler()"))
     fun handler(requestHandler: io.vertx.core.Handler<RoutingContext>) = apply {
         routeChunks.add(RouteChunk.Handler(requestHandler))
     }
 
+    @Deprecated("forgot makeRoute()?", replaceWith = ReplaceWith(".makeRoute().blockingHandler()"))
     fun blockingHandler(requestHandler: io.vertx.core.Handler<RoutingContext>, ordered: Boolean = true) = apply {
         routeChunks.add(RouteChunk.BlockingHandler(requestHandler, ordered))
     }
 
+    @Deprecated("forgot makeRoute()?", replaceWith = ReplaceWith(".makeRoute().failureHandler()"))
     fun failureHandler(requestHandler: io.vertx.core.Handler<RoutingContext>, ordered: Boolean = true) = apply {
         use(ordered)
         routeChunks.add(RouteChunk.FailureHandler(requestHandler))

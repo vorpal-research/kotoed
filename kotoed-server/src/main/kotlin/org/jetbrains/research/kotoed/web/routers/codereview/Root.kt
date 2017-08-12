@@ -9,9 +9,10 @@ import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.isAuthorised
 import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
-@HandlerFor("/codereview/:id/*")
+@HandlerFor(UrlPattern.CodeReview.Index)
 @Templatize("code.jade")
 @LoginRequired
 @JsBundle("code")
@@ -42,7 +43,7 @@ private typealias Permissions = CodeReview.Permissions
 /**
  * Endpoint that return user capabilities inside code review.
  */
-@HandlerFor("/codereview-api/caps/:id") // To avoid clash with code review app itself
+@HandlerFor(UrlPattern.CodeReview.Capabilities) // To avoid clash with code review app itself
 @JsonResponse
 @LoginRequired
 suspend fun handleCapabilities(context: RoutingContext) {
