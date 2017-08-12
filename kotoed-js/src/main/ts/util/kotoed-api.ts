@@ -58,5 +58,36 @@ export namespace Kotoed {
                 MarkRead: "kotoed.api.notification.markRead"
             }
         }
+    };
+
+    export const UrlPattern = {
+        Index: "/",
+
+        CodeReview: {
+            Index: "/codereview/:id/*",
+            Capabilities: "/codereview-api/caps/:id"
+        },
+
+        Auth: {
+            Index: "/login",
+            DoLogin: "/login/doLogin",
+            DoSignUp: "/login/doSignUp",
+            Logout: "/logout"
+        },
+
+        Submission: {
+            Results: "/views/submission/:id/results"
+        },
+
+        reverse(pattern: string, params: {[name: string]: string|number}, star: string|number = ""): string {
+            let url = pattern;
+            for (let k in params) {
+                url = url.replace(`:${k}`, `${params[k]}`)
+            }
+
+            url = url.replace("*", `${star}`);
+
+            return url
+        }
     }
 }
