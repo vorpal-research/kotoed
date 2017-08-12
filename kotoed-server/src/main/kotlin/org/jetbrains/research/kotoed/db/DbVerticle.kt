@@ -13,6 +13,7 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
+import org.jetbrains.research.kotoed.db.condition.lang.parseCondition
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.get
@@ -207,6 +208,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
         val joins = message.joinSequence().toList()
         val joinedTables: List<Table<*>> = joins.map { it.v2 }
+        val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
 
         return db {
             val select = select(
@@ -220,7 +222,10 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
             }
             val baseCondition = makeFindCondition(table, message.find!!)
-            val where = join.where(condition).and(baseCondition)
+            val parsedCondition = message.filter?.let{ parseCondition(it) {
+                tname -> tableMap[Tuple(table.name, tname).joinToString(".")] ?: die()
+            } } ?: DSL.condition(true)
+            val where = join.where(condition).and(baseCondition).and(parsedCondition)
 
             where
                     .let {

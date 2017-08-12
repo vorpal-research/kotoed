@@ -41,6 +41,7 @@
         <simple-java-mail.version>4.2.3</simple-java-mail.version>
         <kootstrap.version>0.0.0.1</kootstrap.version>
         <suffixtree.version>1.0.2</suffixtree.version>
+        <jparsec.version>3.0</jparsec.version>
 
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
     </properties>
@@ -244,6 +245,13 @@
             <artifactId>suffixtree</artifactId>
             <version>${suffixtree.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jparsec</groupId>
+            <artifactId>jparsec</artifactId>
+            <version>${jparsec.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

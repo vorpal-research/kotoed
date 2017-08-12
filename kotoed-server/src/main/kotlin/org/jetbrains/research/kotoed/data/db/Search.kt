@@ -38,6 +38,7 @@ data class ComplexDatabaseQuery(
         val table: String? = null,
         val find: JsonObject? = JsonObject(),
         val joins: List<DatabaseJoin>? = listOf(),
+        val filter: String? = null,
         val limit: Int? = null,
         val offset: Int? = null
 ): Jsonable {
