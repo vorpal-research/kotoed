@@ -1,4 +1,4 @@
-package org.jetbrains.research.kotoed.aux.data
+package org.jetbrains.research.kotoed.auxiliary.data
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable

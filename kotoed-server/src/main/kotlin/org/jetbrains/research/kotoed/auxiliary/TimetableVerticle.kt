@@ -1,8 +1,8 @@
-package org.jetbrains.research.kotoed.aux
+package org.jetbrains.research.kotoed.auxiliary
 
 import io.vertx.core.Future
 import kotlinx.coroutines.experimental.launch
-import org.jetbrains.research.kotoed.aux.data.TimetableMessage
+import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import java.time.Clock
