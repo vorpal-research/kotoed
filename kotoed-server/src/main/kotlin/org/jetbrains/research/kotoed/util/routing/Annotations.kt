@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.util.routing
 
 // Base route annotation. Router.route() or Router.routeWithRegex()
 annotation class HandlerFor(val path: String, val isRegex: Boolean = false)
+annotation class HandlerFactoryFor(val path: String, val isRegex: Boolean = false)
 
 // Route annotations
 
@@ -20,6 +21,9 @@ annotation class Last
 
 // Add context.next() to the end of handler
 annotation class Chain
+
+annotation class ChainedByHandler
+
 // Add content-type: application/json to response
 annotation class JsonResponse
 
@@ -36,3 +40,4 @@ annotation class JsBundle(val bundleName: String,
 
 annotation class LoginRequired
 annotation class EnableSessions
+annotation class AddBodyHandler

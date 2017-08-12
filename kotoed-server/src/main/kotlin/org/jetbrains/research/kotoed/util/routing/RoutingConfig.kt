@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.util.routing
 
 import io.vertx.core.Handler
+import io.vertx.core.Vertx
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.Router
@@ -13,21 +14,22 @@ import org.jetbrains.research.kotoed.util.routeProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
+import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.handlers.FormLoginHandlerWithRepeat
 import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.RejectAnonymousHandler
 import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
 class RoutingConfig(
+        val vertx: Vertx,
         val templateEngine: TemplateEngine,
         val authProvider: AuthProvider,
         sessionStore: SessionStore,
         templateHelpers: Map<String, TemplateHelper> = mapOf(),
         val staticFilesHelper: StaticFilesHelper,
         val loggingHandler: Handler<RoutingContext> = Handler {  },
-        val loginPath: String = "/login",
-        val mainPath: String = "/",
-        val logoutPath: String = "/logout"
+        val loginPath: String = UrlPattern.Auth.Index,
+        val staticLocalPath: String = "webroot/static"
         ) {
 
 
@@ -55,28 +57,10 @@ class RoutingConfig(
             routeProto.makeRoute().handler(redirectAuthHandler)
     }
 
-    fun enableLogging(routeProto: RouteProto) {
-        routeProto.makeRoute().handler(loggingHandler)
+    fun addBodyHandler(routeProto: RouteProto) {
+        routeProto.makeRoute().handler(BodyHandler.create())
     }
 
-    fun createLoginRoute(router: Router) {
-        val routeProto = router.routeProto().path(loginPath + "/doIt")
-        val routeProtoWithPost = routeProto.branch().method(HttpMethod.POST)
-
-        routeProto.makeRoute().handler(cookieHandler)
-        routeProto.makeRoute().handler(sessionHandler)
-        routeProto.makeRoute().handler(userSessionHandler)
-        routeProto.makeRoute().handler(sessionProlongator)
-        jsonify(routeProto)
-        routeProtoWithPost.makeRoute().handler(
-                JsonLoginHandler.create(authProvider))
-    }
-
-    fun createLogoutRoute(router: Router) {
-        val routeProto = router.routeProto().path(logoutPath)
-        enableSessions(routeProto)
-        routeProto.makeRoute().handler(LogoutHandler(mainPath))
-    }
 
     fun enableHelpers(routeProto: RouteProto) {
         routeProto.makeRoute().handler(putHelpersHandler)
@@ -119,16 +103,8 @@ fun RouteProto.requireLogin(config: RoutingConfig, rejectAnon: Boolean = false) 
     config.requireLogin(this, rejectAnon)
 }
 
-fun RouteProto.enableLogging(config: RoutingConfig) = apply {
-    config.enableLogging(this)
-}
-
-fun Router.createLoginRoute(config: RoutingConfig) = apply {
-    config.createLoginRoute(this)
-}
-
-fun Router.createLogoutRoute(config: RoutingConfig) = apply {
-    config.createLogoutRoute(this)
+fun RouteProto.addBodyHandler(config: RoutingConfig) = apply {
+    config.addBodyHandler(this)
 }
 
 fun RouteProto.enableHelpers(config: RoutingConfig) = apply {

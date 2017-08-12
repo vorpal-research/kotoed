@@ -63,6 +63,8 @@ export namespace Kotoed {
     export const UrlPattern = {
         Index: "/",
 
+        Star: "/*",
+
         CodeReview: {
             Index: "/codereview/:id/*",
             Capabilities: "/codereview-api/caps/:id"
@@ -78,6 +80,9 @@ export namespace Kotoed {
         Submission: {
             Results: "/views/submission/:id/results"
         },
+
+        EventBus: "/eventbus/*",
+        Static: "/static/*",
 
         reverse(pattern: string, params: {[name: string]: string|number}, star: string|number = ""): string {
             let url = pattern;
