@@ -15,15 +15,15 @@ internal inline fun defaultField(table: String) = "${table}_id"
 internal inline fun defaultResultField(field: String) = field.replace("_id", "")
 
 data class DatabaseJoin(
-        val query: ComplexDatabaseQuery,
-        val field: String? = query.table?.let(::defaultField),
+        val query: ComplexDatabaseQuery? = null,
+        val field: String? = query?.table?.let(::defaultField),
         val resultField: String? = field?.let(::defaultResultField),
         val key: String? = null // null means pk
 ): Jsonable {
     fun fillDefaults(): DatabaseJoin {
-        val field_ = field ?: query.table?.let(::defaultField)
+        val query_ = (query ?: ComplexDatabaseQuery()).fillDefaults()
+        val field_ = field ?: query_.table?.let(::defaultField)
         val resultField_ = resultField ?: field?.let(::defaultResultField)
-        val query_ = query.fillDefaults()
         return copy(field = field_, resultField = resultField_, query = query_)
     }
 }
@@ -35,7 +35,7 @@ fun DatabaseJoin(table: String,
         DatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
 
 data class ComplexDatabaseQuery(
-        val table: String?,
+        val table: String? = null,
         val find: JsonObject? = JsonObject(),
         val joins: List<DatabaseJoin>? = listOf(),
         val limit: Int? = null,
