@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.web.routers.views
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.fail
+import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsBundle
 import org.jetbrains.research.kotoed.util.routing.LoginRequired

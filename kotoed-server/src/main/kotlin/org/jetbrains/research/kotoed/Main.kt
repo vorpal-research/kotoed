@@ -70,46 +70,18 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val authProvider = UavAuthProvider(vertx)
         val staticFilesHelper = StaticFilesHelper(vertx)
         val routingConfig = RoutingConfig(
+                vertx = vertx,
                 templateEngine = JadeTemplateEngine.create().apply {
-                    this.jadeConfiguration.isPrettyPrint = true
+                    jadeConfiguration.isPrettyPrint = true
                 },
                 authProvider = authProvider,
                 sessionStore = LocalSessionStore.create(vertx),
                 templateHelpers = mapOf("static" to staticFilesHelper),
                 staticFilesHelper = staticFilesHelper,
-                loggingHandler = LoggerHandler.create(LoggerFormat.SHORT),
-                loginPath = "/doLogin"
+                loggingHandler = LoggerHandler.create(LoggerFormat.SHORT)
         )
-
-        route("/static/*").handler(StaticHandler.create("webroot/static"))
-
-        routeProto().enableLogging(routingConfig)
-
-        routeProto().path("/").enableSessions(routingConfig)
-
-        createLoginRoute(routingConfig)
-        createLogoutRoute(routingConfig)
-
-        initEventBusBridge(routingConfig)
 
         autoRegisterHandlers(routingConfig)
     }
 
-    fun Router.initEventBusBridge(routingConfig: RoutingConfig) {
-
-        val filter = KotoedFilter(vertx)
-
-        val bo = BridgeOptions().apply {
-            for (po in filter.makePermittedOptions())
-                addInboundPermitted(po)
-        }
-
-        val ebRouteProto = routeProto().path("/eventbus/*")
-
-        ebRouteProto.requireLogin(routingConfig, rejectAnon = true)
-
-        ebRouteProto.makeRoute().failureHandler(JsonFailureHandler)
-
-        ebRouteProto.makeRoute().handler(EventBusBridge(vertx, bo, BridgeGuardian(filter, KotoedPatcher)))
-    }
 }
