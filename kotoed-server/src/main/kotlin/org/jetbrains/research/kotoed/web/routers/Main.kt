@@ -8,7 +8,7 @@ import org.jetbrains.research.kotoed.web.UrlPattern
 @HandlerFor(UrlPattern.Index)
 @Templatize("main.jade")
 @EnableSessions
-@JsBundle("hello")
+@JsBundle("hello", withCss = false)
 fun handleIndex(context: RoutingContext) {
     context.put("who", "Kotoed")
 }

@@ -1,10 +1,13 @@
 import axios from "axios"
 import {keysToCamelCase} from "../../util/stringCase";
+import {Kotoed} from "../../util/kotoed-api";
 
 const CAPABILITES_URL = "/codereview-api/caps";
 
 function getCapabilitiesUrl(submissionId: number) {
-    return `/codereview-api/caps/${submissionId}`
+    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.CodeReview.Capabilities, {
+        id: submissionId
+    });
 }
 
 export interface Principal {

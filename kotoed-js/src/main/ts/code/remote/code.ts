@@ -1,4 +1,4 @@
-import {sleep} from "../../util";
+import {sleep} from "../../util/common";
 import {EventBusError} from "../../util/vertx";
 import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";

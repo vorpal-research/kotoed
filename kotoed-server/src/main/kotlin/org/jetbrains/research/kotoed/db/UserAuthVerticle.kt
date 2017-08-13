@@ -41,12 +41,16 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
             denizenId = signUpMsg.denizenId
             salt = authProvider.generateSalt()
             password = authProvider.computeHash(signUpMsg.password, salt)
+            email = signUpMsg.email
         }
 
         return db {
             with(theTable) {
                 if (fetchExists(selectOne().from(this).where(DENIZEN_ID.eq(signUpMsg.denizenId))))
                     throw Conflict("User ${signUpMsg.denizenId} already exists")
+
+                if (fetchExists(selectOne().from(this).where(EMAIL.eq(signUpMsg.email))))
+                    throw Conflict("E-mail ${signUpMsg.email} already used")
 
                 insertInto(this)
                         .set(dbData)

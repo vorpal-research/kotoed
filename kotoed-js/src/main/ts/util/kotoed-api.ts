@@ -74,6 +74,7 @@ export namespace Kotoed {
             Index: "/login",
             DoLogin: "/login/doLogin",
             DoSignUp: "/login/doSignUp",
+            LoginDone: "/login/done",
             Logout: "/logout"
         },
 

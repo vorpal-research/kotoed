@@ -14,6 +14,7 @@ object UrlPattern {
         const val Index = "/login"
         const val DoLogin = "/login/doLogin"
         const val DoSignUp = "/login/doSignUp"
+        const val LoginDone = "/login/done"
         const val Logout = "/logout"
     }
 
