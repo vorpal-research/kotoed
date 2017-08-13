@@ -5,6 +5,7 @@ import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import io.vertx.ext.web.RoutingContext
+import kotlinx.Warnings.UNUSED_VARIABLE
 import org.jetbrains.research.kotoed.data.db.SignUpMsg
 import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -28,6 +29,8 @@ class SignUpHandler(private val authProvider: AuthProvider) : AsyncHandler<Routi
             context.response().end(Auth.SignUpResponse(false, ex.message ?: "Unknown error"))
             return
         }
+
+        use(newDenizen)
 
         // Sign up is done, now logging user in
         val session = context.session()

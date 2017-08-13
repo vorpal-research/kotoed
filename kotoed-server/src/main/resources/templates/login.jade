@@ -1,15 +1,7 @@
 extends ./base
 
 block content
-    form(class="form-signin", method="post")
-        h2 Log in
-        if context.loginError
-            div(class="alert alert-danger")=context.loginError
-        label(for="inputUsername", class="sr-only") Login
-        input(type="text", id="inputUsername" class="form-control", name="username", placeholder="Login", required, autofocus)
-        label(for="inputPassword", class="sr-only") Password
-        input(type="password", id="inputPassword" class="form-control", name="password", placeholder="Password", required)
-        button(class="btn, btn-lg btn-default btn-block", type="submit") Войти
+    div(id="login-app")
 
 block title
-    title Вход
+    title Sign in/up

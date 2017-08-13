@@ -20,6 +20,7 @@ const config: webpack.Configuration = {
     context: srcMain,
     entry: {
         hello: ["babel-polyfill", "./ts/hello.ts"],
+        login: ["babel-polyfill", "./ts/login/index.tsx"],
         code: ["babel-polyfill", "./ts/code/index.tsx"],
         submissionResults: ["babel-polyfill", "./ts/views/submissionResults.tsx"]
     },
