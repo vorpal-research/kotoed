@@ -10,8 +10,7 @@ import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 import org.jetbrains.research.kotoed.web.UrlPattern
-import java.net.URI
-import java.net.URLEncoder
+
 
 class OAuthException(message: String) : Exception(message)
 
