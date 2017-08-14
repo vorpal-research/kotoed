@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.web.eventbus.filters
 
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
+import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.util.Loggable
 
 interface BridgeEventFilter : Loggable {
@@ -17,8 +18,6 @@ interface BridgeEventFilter : Loggable {
     }
 }
 
-
-
 infix fun BridgeEventFilter.and(other: BridgeEventFilter) = BridgeEventFilter.all(this, other)
 
 infix fun BridgeEventFilter.or(other: BridgeEventFilter) = BridgeEventFilter.any(this, other)
@@ -26,8 +25,9 @@ infix fun BridgeEventFilter.or(other: BridgeEventFilter) = BridgeEventFilter.any
 operator fun BridgeEventFilter.not() = Inverted(this)
 
 fun BridgeEventFilter.logResult(be: BridgeEvent, result: Boolean) {
+    if (BridgeEventType.SOCKET_PING == be.type()) return
     log.trace("Bridge event ${be.type()} (${be.rawMessage}) " +
-            "${ if (result) "accepted" else "rejected"} " +
+            "${if (result) "accepted" else "rejected"} " +
             "by $this filter"
     )
 }
