@@ -9,7 +9,7 @@ import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedFilter
 import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedPatcher
 
 @HandlerFactoryFor(UrlPattern.EventBus)
-@LoginRequired
+@EnableSessions
 @JsonResponse
 fun eventBusHandlerFactory(cfg: RoutingConfig) = with(cfg) {
     val filter = KotoedFilter(vertx)

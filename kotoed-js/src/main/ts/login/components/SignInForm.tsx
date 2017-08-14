@@ -2,6 +2,7 @@ import * as React from "react"
 import {ChangeEvent, MouseEvent} from "react";
 import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "./ComponentWithLocalErrors";
+import SocialButton from "./SocialButton";
 
 type LocalErrors = {
     emptyUsername: boolean
@@ -15,9 +16,11 @@ interface SignInFormState {
 }
 
 export interface SignInFormProps {
-    error?: string
+    errors: Array<string>
     disabled: boolean
     onSignIn: (login: string, password: string) => void
+    oAuthProviders: Array<string>
+    onStartOAuth: (provider: string) => void
 }
 
 export default class SignInForm extends
@@ -42,8 +45,8 @@ export default class SignInForm extends
 
     getErrorMessages(): Array<string> {
         let messages = super.getErrorMessages();
-        if (this.props.error)
-            messages.push(this.props.error);
+        for (let error of this.props.errors)
+            messages.push(error);
 
         return messages;
     };
@@ -81,46 +84,57 @@ export default class SignInForm extends
             this.props.onSignIn(this.state.username, this.state.password);
     };
 
+    renderOAuthButtons = (): Array<JSX.Element> => {
+        return this.props.oAuthProviders.map((provider: string) => {
+            return <SocialButton key={provider} provider={provider} onClick={this.props.onStartOAuth}/>
+        })
+    };
+
     render() {
-        return <form className="form-signin">
-            {this.renderErrors()}
-            <div className={`form-group ${this.state.localErrors.emptyUsername && "has-error"}`}>
-                <label htmlFor="signin-input-login" className="sr-only">
-                    Username
-                </label>
-                <input
-                    required
-                    type="text"
-                    id="signin-input-username"
-                    className="form-control"
-                    name="username"
-                    placeholder="Username"
-                    onChange={this.handleUsernameChange}
-                    value={this.state.username}
-                    disabled={this.props.disabled}
-                />
-            </div>
-            <div className={`form-group  ${this.state.localErrors.emptyPassword && "has-error"}`}>
-                <label htmlFor="signin-input-password" className="sr-only">
-                    Password
-                </label>
-                <input
-                    required
-                    type="password"
-                    id="signin-input-password"
-                    className="form-control"
-                    name="password"
-                    placeholder="Password"
-                    onChange={this.handlePasswordChange}
-                    value={this.state.password}
-                    disabled={this.props.disabled}
-                />
-            </div>
-            <button className="btn btn-lg btn-primary btn-block"
+        return <div>
+            <form className="form-signin">
+                {this.renderErrors()}
+                <div className={`form-group ${this.state.localErrors.emptyUsername && "has-error"}`}>
+                    <label htmlFor="signin-input-login" className="sr-only">
+                        Username
+                    </label>
+                    <input
+                        required
+                        type="text"
+                        id="signin-input-username"
+                        className="form-control"
+                        name="username"
+                        placeholder="Username"
+                        onChange={this.handleUsernameChange}
+                        value={this.state.username}
+                        disabled={this.props.disabled}
+                    />
+                </div>
+                <div className={`form-group  ${this.state.localErrors.emptyPassword && "has-error"}`}>
+                    <label htmlFor="signin-input-password" className="sr-only">
+                        Password
+                    </label>
+                    <input
+                        required
+                        type="password"
+                        id="signin-input-password"
+                        className="form-control"
+                        name="password"
+                        placeholder="Password"
+                        onChange={this.handlePasswordChange}
+                        value={this.state.password}
+                        disabled={this.props.disabled}
+                    />
+                </div>
+            </form>
+            <button key="sign-in" className="btn btn-lg btn-primary btn-block"
                     onClick={this.handleSignInClick}
                     disabled={this.props.disabled}>
                 Sign in
             </button>
-        </form>
+            {this.renderOAuthButtons()}
+        </div>
+
+
     }
 }

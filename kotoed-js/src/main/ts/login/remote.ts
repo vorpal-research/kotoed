@@ -1,6 +1,7 @@
 import axios from "axios"
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase, keysToSnakeCase} from "../util/stringCase";
+import {eventBus} from "../eventBus";
 
 export interface SignInRequest {
     denizenId: string
@@ -21,6 +22,9 @@ export interface SignUpResponse {
     succeeded: boolean
     error: string | null
 }
+
+export type OAuthProvidersRequest = {}
+export type OAuthProvidersResponse = Array<string>
 
 export async function signIn(username: string, password: string) {
     let resp = await axios.post(Kotoed.UrlPattern.Auth.DoLogin, keysToSnakeCase({
@@ -43,4 +47,10 @@ export async function signUp(username: string, password: string, email: string|n
 
     if (!logResp.succeeded)
         throw new Error(logResp.error || "Unknown error")
+}
+
+export async function fetchOAuthProviders(): Promise<OAuthProvidersResponse> {
+    return await
+        eventBus.send<OAuthProvidersRequest, OAuthProvidersResponse>(Kotoed.Address.Api.OAuthProvider.List, {});
+
 }

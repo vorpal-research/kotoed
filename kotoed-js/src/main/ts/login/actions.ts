@@ -1,24 +1,32 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {SignInOrUpState} from "./state";
-import {signIn as signInRemote, signUp as signUpRemote} from "./remote";
+import {OAuthProvidersRequest,
+    OAuthProvidersResponse,
+    signIn as signInRemote,
+    signUp as signUpRemote,
+    fetchOAuthProviders as fetchOAuthProvidersRemote} from "./remote";
 import {Kotoed} from "../util/kotoed-api";
 const actionCreator = actionCreatorFactory();
 
 interface SignInPayload {
     username: string
     password: string
+    oAuthProvider?: string
 }
 
 interface SignUpPayload {
     username: string
     password: string
     email: string|null
+    oAuthProvider?: string
 }
 
 
 export const signIn = actionCreator.async<{}, {}, string>('SIGN_IN');
 export const signUp = actionCreator.async<{}, {}, string>('SIGN_UP');
+export const oAuthProvidersFetch = actionCreator.async<OAuthProvidersRequest, OAuthProvidersResponse, {}>('OAUTH_FETCH');
+
 export const resetErrors = actionCreator<{}>('RESET_ERRORS');
 
 export function performSignIn(payload: SignInPayload) {
@@ -33,7 +41,13 @@ export function performSignIn(payload: SignInPayload) {
             }));
             return
         }
-        window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+        if (payload.oAuthProvider) {
+            window.location.href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Auth.OAuthStart, {
+                providerName: payload.oAuthProvider
+            });
+        } else {
+            window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+        }
     }
 }
 
@@ -49,6 +63,23 @@ export function performSignUp(payload: SignUpPayload) {
             }));
             return
         }
-        window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+        if (payload.oAuthProvider) {
+            window.location.href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Auth.OAuthStart, {
+                providerName: payload.oAuthProvider
+            });
+        } else {
+            window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+        }
+    }
+}
+
+export function fetchOAuthProviders() {
+    return async (dispatch: Dispatch<SignInOrUpState>) => {
+        dispatch(oAuthProvidersFetch.started({}));
+        let providers = await fetchOAuthProvidersRemote();
+        dispatch(oAuthProvidersFetch.done({
+            params: {},
+            result: providers
+        }));
     }
 }
