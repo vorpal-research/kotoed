@@ -75,7 +75,9 @@ export namespace Kotoed {
             DoLogin: "/login/doLogin",
             DoSignUp: "/login/doSignUp",
             LoginDone: "/login/done",
-            Logout: "/logout"
+            Logout: "/logout",
+            OAuthStart: "/login/oauth/start/:providerName",
+            OAuthCallback: "/login/oauth/callback/:providerName"
         },
 
         Submission: {
