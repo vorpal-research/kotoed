@@ -16,6 +16,8 @@ object UrlPattern {
         const val DoSignUp = "/login/doSignUp"
         const val LoginDone = "/login/done"
         const val Logout = "/logout"
+        const val OAuthStart = "/login/oauth/start/:providerName"
+        const val OAuthCallback = "/login/oauth/callback/:providerName"
     }
 
     object Submission {

@@ -44,7 +44,7 @@ object JsonFailureHandler: Handler<RoutingContext>, Loggable {
 class LogoutHandler(val redirectTo: String): Handler<RoutingContext> {
     override fun handle(context: RoutingContext) {
         context.session().destroy()
-        context.response().setStatus(HttpResponseStatus.FOUND).putHeader(HttpHeaders.LOCATION, redirectTo).end()
+        context.response().redirect(redirectTo)
     }
 
     companion object {

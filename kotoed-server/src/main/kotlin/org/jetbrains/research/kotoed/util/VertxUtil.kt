@@ -45,6 +45,8 @@ suspend fun HttpServerRequest.bodyAsync(): Buffer =
 
 suspend fun <T> HttpRequest<T>.sendAsync() = vxa<HttpResponse<T>> { send(it) }
 
+suspend fun <T> HttpRequest<T>.sendJsonObjectAsync(obj: JsonObject) = vxa<HttpResponse<T>> { sendJsonObject(obj, it) }
+
 /******************************************************************************/
 
 fun HttpResponseStatus.toJson(): JsonObject =
@@ -65,6 +67,9 @@ fun HttpServerResponse.end(json: JsonObject) =
 
 fun HttpServerResponse.end(json: Jsonable) =
         this.end(json.toJson())
+
+fun HttpServerResponse.redirect(to: String, status: HttpResponseStatus = HttpResponseStatus.FOUND) =
+    putHeader(HttpHeaderNames.LOCATION, to).end(status)
 
 fun RoutingContext.fail(status: HttpResponseStatus) =
         this.fail(status.code())

@@ -5,7 +5,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.get
-import org.jetbrains.research.kotoed.util.isAuthorised
+import org.jetbrains.research.kotoed.util.isAuthorisedAsync
 import org.jetbrains.research.kotoed.util.set
 import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
@@ -55,7 +55,7 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         if (submission.state != SubmissionState.open)
             return@run false
 
-        return@run (comment.authorId == user.principal()["id"]) || user.isAuthorised("teacher")
+        return@run (comment.authorId == user.principal()["id"]) || user.isAuthorisedAsync("teacher")
     }.also {
         logResult(be, it)
     }

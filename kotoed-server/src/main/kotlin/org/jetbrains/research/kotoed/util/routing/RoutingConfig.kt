@@ -2,21 +2,16 @@ package org.jetbrains.research.kotoed.util.routing
 
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
-import io.vertx.core.http.HttpMethod
 import io.vertx.ext.auth.AuthProvider
-import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.*
 import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.templ.TemplateEngine
 import org.jetbrains.research.kotoed.util.RouteProto
-import org.jetbrains.research.kotoed.util.routeProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.UrlPattern
-import org.jetbrains.research.kotoed.web.handlers.FormLoginHandlerWithRepeat
-import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.RejectAnonymousHandler
 import org.jetbrains.research.kotoed.web.handlers.SessionProlongator
 
@@ -24,6 +19,7 @@ class RoutingConfig(
         val vertx: Vertx,
         val templateEngine: TemplateEngine,
         val authProvider: AuthProvider,
+        val oAuthProvider: AuthProvider,
         sessionStore: SessionStore,
         templateHelpers: Map<String, TemplateHelper> = mapOf(),
         val staticFilesHelper: StaticFilesHelper,

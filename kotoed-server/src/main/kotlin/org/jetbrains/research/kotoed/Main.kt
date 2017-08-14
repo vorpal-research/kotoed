@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
+import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
 import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
 import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
@@ -67,14 +68,14 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
 
     fun Router.initRoutes() {
-        val authProvider = UavAuthProvider(vertx)
         val staticFilesHelper = StaticFilesHelper(vertx)
         val routingConfig = RoutingConfig(
                 vertx = vertx,
                 templateEngine = JadeTemplateEngine.create().apply {
                     jadeConfiguration.isPrettyPrint = true
                 },
-                authProvider = authProvider,
+                authProvider = UavAuthProvider(vertx),
+                oAuthProvider = OAuthProvider(vertx),
                 sessionStore = LocalSessionStore.create(vertx),
                 templateHelpers = mapOf("static" to staticFilesHelper),
                 staticFilesHelper = staticFilesHelper,

@@ -7,7 +7,7 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.end
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
-import org.jetbrains.research.kotoed.util.isAuthorised
+import org.jetbrains.research.kotoed.util.isAuthorisedAsync
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
@@ -48,7 +48,7 @@ private typealias Permissions = CodeReview.Permissions
 @LoginRequired
 suspend fun handleCapabilities(context: RoutingContext) {
     val user = context.user()
-    val isTeacher = user.isAuthorised("teacher")
+    val isTeacher = user.isAuthorisedAsync("teacher")
     val id by context.request()
     val intId = id?.toInt()
 
