@@ -7,7 +7,6 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerForDynamic
 import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.expecting
@@ -88,8 +87,8 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
 
         return db {
             selectFrom(searchTable)
-                    .where(searchTable.DOCUMENT documentMatch queryText)
-                    .orderBy((searchTable.DOCUMENT documentMatchRank queryText).desc())
+                    .where(searchTable.DOCUMENT documentMatchPlain queryText)
+                    .orderBy((searchTable.DOCUMENT documentMatchRankPlain queryText).desc())
                     .fetchInto(Tables.SUBMISSION_COMMENT)
         }
     }

@@ -8,7 +8,8 @@ enum class CompareOp(val rep: String) {
     GT(">"),
     GE(">="),
     LT("<"),
-    LE("<=")
+    LE("<="),
+    MATCH("matches")
 }
 
 data class CompareExpression(val op: CompareOp, val lhv: Expression, val rhv: Expression) : Expression()

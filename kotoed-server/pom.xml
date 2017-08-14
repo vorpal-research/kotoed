@@ -583,7 +583,7 @@
                                     <types>.*json[^b]*</types>
                                 </forcedType>
                             </forcedTypes>
-                            <syntheticPrimaryKeys>public\.denizen\.id</syntheticPrimaryKeys>
+                            <syntheticPrimaryKeys>public\.[a-z]*\.id</syntheticPrimaryKeys>
                         </database>
                         <target>
                             <packageName>

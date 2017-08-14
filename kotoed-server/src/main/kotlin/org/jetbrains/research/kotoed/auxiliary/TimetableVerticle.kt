@@ -20,10 +20,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
     }
 
     private fun handleTick() = launch(UnconfinedWithExceptions(this as Loggable)) {
-        log.trace("tick")
         val now = LocalDateTime.now(Clock.systemUTC())
-        log.trace("Now = $now")
-        log.trace("Epoch = ${now.tryToJson()}")
         while(que.isNotEmpty()) {
             val current = que.peek()
             if(current.time <= now) {
