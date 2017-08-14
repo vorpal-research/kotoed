@@ -21,11 +21,11 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Comments to SubmissionReady(vertx),
         Address.Api.Submission.CommentAggregates to SubmissionReady(vertx),
         Address.Api.Submission.Comment.Create to CommentCreateFilter(vertx),
-        Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx)
-
+        Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx),
+        Address.Api.Submission.Result.Read to Permissive
 )
 
-class KotoedFilter(vertx: Vertx): BridgeEventFilter {
+class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
     private val perAddress = kotoedPerAddressFilter(vertx)
     private val underlying = LoginRequired and (HarmlessTypes or (Send and perAddress))
 
