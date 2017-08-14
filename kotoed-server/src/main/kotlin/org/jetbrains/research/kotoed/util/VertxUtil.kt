@@ -45,6 +45,10 @@ suspend fun HttpServerRequest.bodyAsync(): Buffer =
 
 suspend fun <T> HttpRequest<T>.sendAsync() = vxa<HttpResponse<T>> { send(it) }
 
+
+suspend fun <T> HttpRequest<T>.sendFormAsync(body: MultiMap) = vxa<HttpResponse<T>> { sendForm(body, it) }
+
+
 suspend fun <T> HttpRequest<T>.sendJsonObjectAsync(obj: JsonObject) = vxa<HttpResponse<T>> { sendJsonObject(obj, it) }
 
 /******************************************************************************/

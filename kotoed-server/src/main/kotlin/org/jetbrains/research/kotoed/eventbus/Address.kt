@@ -41,7 +41,6 @@ object Address {
             object Result {
                 const val Read = "kotoed.api.submission.result.read"
             }
-
         }
 
         object Denizen {
@@ -53,6 +52,10 @@ object Address {
             const val Create = "kotoed.api.notification.create"
             const val Current = "kotoed.api.notification.current"
             const val MarkRead = "kotoed.api.notification.markRead"
+        }
+
+        object OAuthProvider {
+            const val List = "kotoed.api.oAuthProvider.list"
         }
     }
 

@@ -17,11 +17,13 @@ class Facebook(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
 
 
     suspend override fun doGetUserId(): String {
-        val resp = webClient.get("https://graph.facebook.com/v2.10/me".normalizeUri())
+        val query = mapOf(
+                "fields" to "id",
+                AccessToken to getAccessToken()
+        )
+        val resp = webClient.getAbs("https://graph.facebook.com/v2.10/me$query".normalizeUri())
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
                 .putHeader("${HttpHeaderNames.CONTENT_TYPE}", "${HttpHeaderValues.APPLICATION_JSON}")
-                .addQueryParam("fields", "id")
-                .addQueryParam(AccessToken, getAccessToken())
                 .sendAsync()
         return resp.bodyAsJsonObject()?.getInteger("id")?.toString() ?: throw OAuthException("Cannot get Facebook id")
     }
