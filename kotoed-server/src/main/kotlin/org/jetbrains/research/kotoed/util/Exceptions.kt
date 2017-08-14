@@ -89,7 +89,7 @@ fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     ctx.fail(exception)
 }
 
-fun <T>Loggable.handleException(har: Handler<AsyncResult<T>>, t: Throwable) {
+fun <T> Loggable.handleException(har: Handler<AsyncResult<T>>, t: Throwable) {
     val exception = t.unwrapped
     log.error("Exception caught while handling async result", exception)
     log.error("Code: ${codeFor(exception)}")
