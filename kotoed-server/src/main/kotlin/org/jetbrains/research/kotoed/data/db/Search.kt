@@ -58,12 +58,5 @@ data class ComplexDatabaseQuery(
 
 }
 
-data class SearchObject(val value: String? = null, val regex: Boolean? = null): Jsonable
-
-data class SearchRequest(
-        val table: String,
-        val start: Int,
-        val length: Int,
-        val search: SearchObject
-        ) : Jsonable
+data class TextSearchRequest(val text: String): Jsonable
 

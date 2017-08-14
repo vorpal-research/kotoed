@@ -107,6 +107,8 @@ object Address {
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
 
+        fun searchText(entity: String) = "kotoed.db.$entity.search.text"
+
         // special addresses only for some props
         fun full(entity: String) = "kotoed.db.$entity.read.full"
 
