@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.oauth
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.core.Vertx
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.WebClient
@@ -23,6 +22,7 @@ abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx)
 
     open val authorizePath: String = "/authorize"
     open val accessTokenPath: String = "/access_token"
+    open val scope: String = ""
 
     protected val webClient = WebClient.create(vertx)
 
@@ -72,7 +72,8 @@ abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx)
         val query = mapOf(
                 ClientId to getClientId(),
                 RedirectUri to redirectUri,
-                ResponseType to Code
+                ResponseType to Code,
+                Scope to scope
                 ).makeUriQuery()
         return authorizeUri + query
     }
@@ -123,5 +124,6 @@ abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx)
         const val GrantType = "grant_type"
         const val AuthorizationCode = "authorization_code"
         const val ResponseType = "response_type"
+        const val Scope = "scope"
     }
 }
