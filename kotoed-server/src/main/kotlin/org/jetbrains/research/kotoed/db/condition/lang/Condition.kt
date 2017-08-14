@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
+import org.jetbrains.research.kotoed.util.database.FunctionCall
+import org.jetbrains.research.kotoed.util.database.documentMatch
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.Condition
 import org.jooq.Field
@@ -21,6 +23,13 @@ private fun<T> convertCompareExpression(cmp: CompareExpression, tables: (String)
     CompareOp.GE -> convertPrimitive<T>(cmp.lhv, tables).ge(convertPrimitive<T>(cmp.rhv, tables))
     CompareOp.LT -> convertPrimitive<T>(cmp.lhv, tables).lt(convertPrimitive<T>(cmp.rhv, tables))
     CompareOp.LE -> convertPrimitive<T>(cmp.lhv, tables).le(convertPrimitive<T>(cmp.rhv, tables))
+    CompareOp.MATCH -> {
+        var lhv = convertPrimitive<T>(cmp.lhv, tables).uncheckedCast<Field<Any>>()
+        var rhv = convertPrimitive<T>(cmp.rhv, tables).uncheckedCast<Field<Any>>()
+        if(lhv.dataType.typeName != "tsvector") lhv = FunctionCall("to_tsvector", lhv)
+        if(rhv.dataType.typeName != "tsquery") rhv = FunctionCall("plainto_tsquery", rhv)
+        DSL.condition(lhv documentMatch rhv)
+    }
 }
 
 private fun convertBinaryExpression(bin: BinaryExpression, tables: (String) -> Table<*>) = when(bin.op) {

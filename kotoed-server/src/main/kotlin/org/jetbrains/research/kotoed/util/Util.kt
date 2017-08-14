@@ -147,6 +147,8 @@ inline fun <T> forceType(v: T) = v
 fun<T> Sequence<T>?.orEmpty() = this ?: emptySequence()
 fun<T> Sequence<T>.reduceOrNull(body: (T, T) -> T) = try { reduce(body) } catch (ex: UnsupportedOperationException) { null }
 
+fun<T> Sequence<T>.snoc(): Pair<T, Sequence<T>> = iterator().let { Pair(it.next(), it.asSequence()) }
+
 enum class FixAction{ proceed, stop }
 fun<T> immutableFix(initial: T, body: (T) -> Pair<FixAction, T>): T {
     var (action, arg) = FixAction.proceed to initial
