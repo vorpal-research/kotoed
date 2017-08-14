@@ -87,11 +87,6 @@ fun handleOAuthStart(context: RoutingContext) {
 class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
     val authProvider = cfg.oAuthProvider
 
-    private fun RoutingContext.doRedirect() {
-        val returnUrl = session()?.remove<String>("return_url") ?: UrlPattern.Index
-        response().redirect(returnUrl)
-    }
-
     suspend override fun doHandleAsync(context: RoutingContext) {
         val providerName by context.request()
 
@@ -127,7 +122,7 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
 
             context.session()?.regenerateId()
 
-            context.doRedirect()
+            context.response().redirect(UrlPattern.Auth.LoginDone)
         } else {
             val user = try {
                 authProvider.authenticateJsonableAsync(OAuthLoginMsg(provider.name, oAuthUserId))
@@ -141,13 +136,15 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
 
             user?.run {
                 if (principal() == context.user().principal()) {
-                    context.doRedirect()
+                    context.response().redirect(UrlPattern.Auth.LoginDone)
                     return
                 } else {
                     context.fail(HttpResponseStatus.CONFLICT)
                     return
                 }
             }
+
+            // TODO check one_OAuth_per_provider_per_user (or drop this constraint)
 
             val res: OauthProfileRecord = context.vertx().eventBus().sendJsonableAsync(Address.User.OAuth.SignUp,
                     OAuthSignUpMsg(
@@ -157,7 +154,7 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
                     )
             )
             use(res)
-            context.doRedirect()
+            context.response().redirect(UrlPattern.Auth.LoginDone)
         }
     }
 
