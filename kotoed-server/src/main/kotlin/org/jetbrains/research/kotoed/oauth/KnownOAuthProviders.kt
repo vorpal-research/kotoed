@@ -4,10 +4,11 @@ import io.vertx.core.Vertx
 
 val KnownOAuthProviders =
         mapOf<String, (vx: Vertx) -> AbstractOAuthProvider>(
-                Bitbucket.Name to { vx -> Bitbucket(vx) },
-                Facebook.Name to { vx -> Facebook(vx) },
-                GitHub.Name to { vx -> GitHub(vx) },
-                Vk.Name to { vx -> Vk(vx) }
+                Bitbucket.Name to ::Bitbucket,
+                Facebook.Name to ::Facebook,
+                GitHub.Name to ::GitHub,
+                Vk.Name to ::Vk,
+                Google.Name to ::Google
         )
 
 fun getOAuthProvider(name: String, vertx: Vertx) =
