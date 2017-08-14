@@ -12,7 +12,7 @@ class Bitbucket(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
     private val userEndpoint = "/user"
 
     suspend override fun doGetUserId(): String {
-        val resp = webClient.get("$apiUri/$userEndpoint".normalizeUri())
+        val resp = webClient.getAbs("$apiUri/$userEndpoint".normalizeUri())
                 .putHeader("${HttpHeaderNames.AUTHORIZATION}", "Bearer ${getAccessToken()}")
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
                 .putHeader("${HttpHeaderNames.CONTENT_TYPE}", "${HttpHeaderValues.APPLICATION_JSON}")

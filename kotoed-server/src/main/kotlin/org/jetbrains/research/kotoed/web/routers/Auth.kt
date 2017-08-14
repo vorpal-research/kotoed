@@ -71,7 +71,7 @@ private fun providerOrNull(name: String?, context: RoutingContext): AbstractOAut
 
 @HandlerFor(UrlPattern.Auth.OAuthStart)
 @EnableSessions
-fun handleOAuthStart(context: RoutingContext) {
+suspend fun handleOAuthStart(context: RoutingContext) {
     val providerName by context.request()
 
     val provider = providerOrNull(providerName, context) ?: run {
@@ -79,7 +79,7 @@ fun handleOAuthStart(context: RoutingContext) {
         return
     }
 
-    context.response().redirect(provider.authorizeUri)
+    context.response().redirect(provider.getAuthorizeUriWithQuery())
 }
 
 @HandlerFor(UrlPattern.Auth.OAuthCallback)
@@ -94,6 +94,15 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
             context.fail(HttpResponseStatus.BAD_REQUEST)
             return
         }
+
+        val code by context.request()
+
+        code ?: run {
+            context.fail(HttpResponseStatus.BAD_REQUEST)
+            return
+        }
+
+        provider.code = code
 
         val oAuthUserId = try {
             provider.getUserId()

@@ -126,7 +126,7 @@ inline fun Map<String, String>.asMultiMap() =
 @JvmName("asMultiMap4KV")
 inline fun <K, V> Map<K, V>.asMultiMap() =
         MultiMap.caseInsensitiveMultiMap().addAll(
-                this.mapKeys { toString() }.mapValues { toString() })
+                this.mapKeys { (k, _) -> k.toString() }.mapValues { (_, v) ->  v.toString() })
 
 /******************************************************************************/
 
