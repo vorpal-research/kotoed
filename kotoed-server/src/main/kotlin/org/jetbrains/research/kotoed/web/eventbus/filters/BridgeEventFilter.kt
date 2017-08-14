@@ -27,7 +27,7 @@ infix fun BridgeEventFilter.or(other: BridgeEventFilter) = BridgeEventFilter.any
 operator fun BridgeEventFilter.not() = Inverted(this)
 
 fun BridgeEventFilter.logResult(be: BridgeEvent, result: Boolean) {
-    if (be.type() !== BridgeEventType.SOCKET_PING)
+    if (be.type() != BridgeEventType.SOCKET_PING)
         log.trace("Bridge event ${be.type()} (${be.rawMessage}) " +
                 "${ if (result) "accepted" else "rejected"} " +
                 "by $this filter"
