@@ -20,7 +20,7 @@ interface SignUpFormState {
 }
 
 export interface SignUpFormProps {
-    error?: string
+    errors: Array<string>
     disabled: boolean
     onSignUp: (login: string, password: string, email: string | null) => void
 }
@@ -57,9 +57,8 @@ export default class SignUpForm extends
 
     getErrorMessages(): Array<string> {
         let messages = super.getErrorMessages();
-        if (this.props.error)
-            messages.push(this.props.error);
-
+        for (let error of this.props.errors)
+            messages.push(error);
         return messages;
     };
 
