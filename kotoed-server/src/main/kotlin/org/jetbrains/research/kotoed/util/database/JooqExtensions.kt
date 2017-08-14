@@ -124,21 +124,21 @@ class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)
     }
 }
 
-fun toTSQuery(field: Field<String>): Field<Any> = FunctionCall("to_tsquery", field)
-fun toPlainTSQuery(field: Field<String>): Field<Any> = FunctionCall("plainto_tsquery", field)
+fun toTSQuery(field: Field<String>): Field<Any> = FunctionCall("to_tsquery", DSL.inline("russian"), field)
+fun toPlainTSQuery(field: Field<String>): Field<Any> = FunctionCall("plainto_tsquery", DSL.inline("russian"), field)
 
 infix fun Field<Any>.documentMatch(query: String): Field<Boolean> =
-        TextDocumentMatch(this, DSL.field("to_tsquery('$query')"))
+        TextDocumentMatch(this, DSL.field("to_tsquery('russian', '$query')"))
 infix fun Field<Any>.documentMatchPlain(query: String): Field<Boolean> =
-        TextDocumentMatch(this, DSL.field("plainto_tsquery('$query')"))
+        TextDocumentMatch(this, DSL.field("plainto_tsquery('russian', '$query')"))
 
 infix fun Field<Any>.documentMatch(query: Field<Any>): Field<Boolean> =
         TextDocumentMatch(this, query)
 
 infix fun Field<Any>.documentMatchRank(query: String): Field<Double> =
-        FunctionCall("ts_rank", this, DSL.field("to_tsquery('$query')"))
+        FunctionCall("ts_rank", this, DSL.field("to_tsquery('russian', '$query')"))
 infix fun Field<Any>.documentMatchRankPlain(query: String): Field<Double> =
-        FunctionCall("ts_rank", this, DSL.field("plainto_tsquery('$query')"))
+        FunctionCall("ts_rank", this, DSL.field("plainto_tsquery('russian', '$query')"))
 infix fun Field<Any>.documentMatchRank(query: Field<String>): Field<Double> =
         FunctionCall("ts_rank", this, query)
 

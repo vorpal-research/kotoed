@@ -110,7 +110,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 .asSequence()
                 .filter { message[it] != null }
                 .map { it.uncheckedCast<Field<Any>>() }
-        val wherePart = queryFields.map { it.eq(query.get(it)) }.reduce(Condition::and)
+        val wherePart = queryFields.map { it.eq(query.get(it)) }.toList()
         val resp = db {
             selectFrom(table)
                     .where(wherePart)
@@ -341,3 +341,6 @@ class OAuthProfileVerticle : CrudDatabaseVerticleWithReferences<OauthProfileReco
 
 @AutoDeployable
 class NotificationVerticle : CrudDatabaseVerticleWithReferences<NotificationRecord>(Tables.NOTIFICATION)
+
+@AutoDeployable
+class SubmissionCommentTextSearchVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentTextSearchRecord>(Tables.SUBMISSION_COMMENT_TEXT_SEARCH)
