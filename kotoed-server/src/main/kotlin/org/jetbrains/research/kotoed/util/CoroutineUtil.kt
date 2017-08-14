@@ -81,6 +81,17 @@ inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
                     handleException(ctx, exception)
         } + Unconfined
 
+inline fun <T> UnconfinedWithExceptions(har: Handler<AsyncResult<T>>) =
+        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
+                CoroutineExceptionHandler,
+                DelegateLoggable {
+            override val loggingClass = UnconfinedWithExceptions::class.java
+
+            override fun handleException(context: CoroutineContext, exception: Throwable) =
+                    handleException(har, exception)
+        } + Unconfined
+
+
 inline fun UnconfinedWithExceptions(loggable: Loggable) =
         object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
                 CoroutineExceptionHandler,

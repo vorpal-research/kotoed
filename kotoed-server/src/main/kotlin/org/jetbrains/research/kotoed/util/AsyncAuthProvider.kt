@@ -8,18 +8,12 @@ import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import kotlinx.coroutines.experimental.launch
 
-abstract class AsyncAuthProvider : AuthProvider, Loggable {
+abstract class AsyncAuthProvider : AuthProvider {
     protected abstract suspend fun doAuthenticateAsync(authInfo: JsonObject): User
 
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
-        launch(UnconfinedWithExceptions(this)) coro@ {
-            val user = try {
-                doAuthenticateAsync(authInfo)
-            } catch (ex: Exception) {
-                handler.handle(Future.failedFuture(ex))
-                return@coro
-            }
-            handler.handle(Future.succeededFuture(user))
+        launch(UnconfinedWithExceptions(handler)) coro@ {
+            handler.handle(Future.succeededFuture(doAuthenticateAsync(authInfo)))
         }
     }
 }

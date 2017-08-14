@@ -1,5 +1,8 @@
 package org.jetbrains.research.kotoed.util
 
+import io.vertx.core.AsyncResult
+import io.vertx.core.Future
+import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
@@ -85,6 +88,14 @@ fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     log.error("Code: ${codeFor(exception)}")
     ctx.fail(exception)
 }
+
+fun <T>Loggable.handleException(har: Handler<AsyncResult<T>>, t: Throwable) {
+    val exception = t.unwrapped
+    log.error("Exception caught while handling async result", exception)
+    log.error("Code: ${codeFor(exception)}")
+    har.handle(Future.failedFuture(t))
+}
+
 
 fun <T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
         try {
