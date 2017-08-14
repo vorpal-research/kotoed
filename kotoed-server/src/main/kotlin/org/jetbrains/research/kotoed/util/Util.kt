@@ -13,6 +13,8 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
+import java.net.URI
+import java.net.URLEncoder
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
@@ -162,3 +164,9 @@ data class AsyncCache<K, V>(val cache: MutableMap<K, V> = hashMapOf(), val async
     suspend operator fun invoke(key: K) = getAsync(key)
 }
 
+/******************************************************************************/
+
+fun String.normalizeUri() = "${URI(this).normalize()}"
+
+fun Map<String, String>.makeUriQuery() =
+        "?" + this.map { (k, v) -> "${URLEncoder.encode(k, "UTF-8")}=${URLEncoder.encode(v, "UTF-8")}" }.joinToString("&")

@@ -15,39 +15,27 @@ import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
-class UavAuthProvider(private val vertx: Vertx) : AuthProvider, Loggable {
-
-    private suspend fun authenticateAsync(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
+class UavAuthProvider(private val vertx: Vertx) : AsyncAuthProvider() {
+    override suspend fun doAuthenticateAsync(authInfo: JsonObject): User {
         val patchedAI = authInfo.rename("username", "denizenId")
 
         val userLoginReply: JsonObject = try {
             vertx.eventBus().sendJsonableAsync(Address.User.Auth.Login, patchedAI)
         } catch(e: ReplyException) {
             if (e.failureCode() == HttpResponseStatus.FORBIDDEN.code()) {
-                handler.handle(Future.failedFuture(Unauthorized(e.message ?: "Unauthorized")))
-                return
-            } else
+                throw Unauthorized(e.message ?: "Unauthorized")
+            } else {
                 throw e
+            }
         }
-        try {
-            val denizenId: String = userLoginReply["denizenId"] as String
+        val denizenId: String = userLoginReply["denizenId"] as String
 
-            val info: DenizenUnsafeRecord = vertx
-                    .eventBus()
-                    .sendJsonableAsync(Address.User.Auth.Info, InfoMsg(denizenId = denizenId))
+        val info: DenizenUnsafeRecord = vertx
+                .eventBus()
+                .sendJsonableAsync(Address.User.Auth.Info, InfoMsg(denizenId = denizenId))
 
-            val id = info.id
+        val id = info.id
 
-            handler.handle(Future.succeededFuture(UavUser(vertx, denizenId, id)))
-        } catch (ex: Exception) {
-            handler.handle(Future.failedFuture(ex))
-            throw ex
-        }
-    }
-
-    override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
-        launch(UnconfinedWithExceptions(this)) {
-            authenticateAsync(authInfo, handler)
-        }
+        return UavUser(vertx, denizenId, id)
     }
 }

@@ -16,7 +16,7 @@ class JsonLoginHandler(
         private val authProvider: AuthProvider) : AsyncHandler<RoutingContext>() {
 
 
-    override suspend fun handleAsync(event: RoutingContext) {
+    override suspend fun doHandleAsync(event: RoutingContext) {
         val context = event
         val req = context.request()
         if (req.method() != HttpMethod.POST) {
