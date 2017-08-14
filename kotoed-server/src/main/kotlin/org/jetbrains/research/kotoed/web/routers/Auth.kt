@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.http.HttpHeaders
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.data.db.OAuthLoginMsg
@@ -14,7 +13,6 @@ import org.jetbrains.research.kotoed.oauth.getOAuthProvider
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
-import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.SignUpHandler
 
@@ -86,7 +84,7 @@ fun handleOAuthStart(context: RoutingContext) {
 
 @HandlerFor(UrlPattern.Auth.OAuthCallback)
 @EnableSessions
-class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncHandler<RoutingContext>() {
+class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
     val authProvider = cfg.oAuthProvider
 
     private fun RoutingContext.doRedirect() {
@@ -94,9 +92,7 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncHandler<RoutingContext>() 
         response().redirect(returnUrl)
     }
 
-    suspend override fun doHandleAsync(event: RoutingContext) {
-        val context = event
-
+    suspend override fun doHandleAsync(context: RoutingContext) {
         val providerName by context.request()
 
         val provider = providerOrNull(providerName, context) ?: run {

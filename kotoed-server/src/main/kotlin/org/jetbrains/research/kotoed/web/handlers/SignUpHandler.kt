@@ -5,16 +5,14 @@ import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import io.vertx.ext.web.RoutingContext
-import kotlinx.Warnings.UNUSED_VARIABLE
 import org.jetbrains.research.kotoed.data.db.SignUpMsg
 import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.data.Auth
 
-class SignUpHandler(private val authProvider: AuthProvider) : AsyncHandler<RoutingContext>() {
-    override suspend fun doHandleAsync(event: RoutingContext) {
-        val context = event
+class SignUpHandler(private val authProvider: AuthProvider) : AsyncRoutingContextHandler() {
+    override suspend fun doHandleAsync(context: RoutingContext) {
         val req = context.request()
         val msg: SignUpMsg = try {
             fromJson(req.bodyAsync().toJsonObject())
