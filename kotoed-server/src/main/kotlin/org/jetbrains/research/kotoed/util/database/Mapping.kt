@@ -38,10 +38,30 @@ object JsonConverter : Converter<Any?, Any?> {
     }
 }
 
-interface PostgresJSONBindingBase : Binding<Any?, Any?> {
-    val typename: String
+object NoConverter : Converter<Any?, Any?> {
+    override fun toType(): Class<Any?> {
+        return Any::class.java.uncheckedCast()
+    }
 
-    override fun converter() = JsonConverter
+    override fun fromType(): Class<Any?> {
+        return Any::class.java.uncheckedCast()
+    }
+
+    override fun from(databaseObject: Any?): Any? {
+        // this is not very good, but vertx json api sucks
+        databaseObject ?: return null
+
+        return "$databaseObject"
+    }
+
+    override fun to(userObject: Any?): Any? {
+        userObject ?: return null
+        return "$userObject"
+    }
+}
+
+interface PostgresBindingBase : Binding<Any?, Any?> {
+    val typename: String
 
     override fun get(ctx: BindingGetStatementContext<Any?>) {
         ctx.convert(converter()).value(ctx.statement().getString(ctx.index()))
@@ -72,12 +92,19 @@ interface PostgresJSONBindingBase : Binding<Any?, Any?> {
     }
 }
 
-class PostgresJSONBBinding : PostgresJSONBindingBase {
+class PostgresJSONBBinding : PostgresBindingBase {
+    override fun converter() = JsonConverter
     override val typename = "jsonb"
 }
 
-class PostgresJSONBinding : PostgresJSONBindingBase {
+class PostgresJSONBinding : PostgresBindingBase {
+    override fun converter() = JsonConverter
     override val typename = "json"
+}
+
+class PostgresTSVectorBinding : PostgresBindingBase {
+    override fun converter() = NoConverter
+    override val typename = "tsvector"
 }
 
 fun<R: Record> R.toJson(): JsonObject =
@@ -93,7 +120,7 @@ fun<R: Record> JsonObject.toRecord(klazz: KClass<R>): R =
 
 inline fun<reified R: Record> JsonObject.toRecord() = toRecord(R::class)
 
-val jsonRecordMappers: RecordMapperProvider =
+val postgresRecordMappers: RecordMapperProvider =
         object : RecordMapperProvider {
             override fun <R : Record, E : Any> provide(recordType: RecordType<R>, clazz: Class<out E>): RecordMapper<R, E> =
                     run {
@@ -108,4 +135,4 @@ object PostgresDataTypeEx {
 }
 
 fun jooq(ds: KotoedDataSource) =
-        DSL.using(ds, JDBCUtils.dialect(ds.url)).apply { configuration().set(jsonRecordMappers) }
+        DSL.using(ds, JDBCUtils.dialect(ds.url)).apply { configuration().set(postgresRecordMappers) }

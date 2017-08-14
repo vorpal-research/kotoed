@@ -582,6 +582,14 @@
                                     <expression>.*</expression>
                                     <types>.*json[^b]*</types>
                                 </forcedType>
+                                <forcedType>
+                                    <userType>Object</userType>
+                                    <binding>
+                                        org.jetbrains.research.kotoed.util.database.PostgresTSVectorBinding
+                                    </binding>
+                                    <expression>.*</expression>
+                                    <types>.*tsvector.*</types>
+                                </forcedType>
                             </forcedTypes>
                             <syntheticPrimaryKeys>public\.[a-z]*\.id</syntheticPrimaryKeys>
                         </database>
