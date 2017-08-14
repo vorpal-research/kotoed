@@ -1,6 +1,8 @@
 
 export interface SignInOrUpState {
     disabled: boolean
-    signInError?: string
-    signUpError?: string
+    signInErrors: Array<string>
+    signUpErrors: Array<string>
+    oAuthProviders: Array<string>
+    oAuthMsg?: string
 }

@@ -25,13 +25,20 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Result.Read to Permissive
 )
 
-class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
+val KotoedPerAddressAnonymousFilter = PerAddress(
+        Address.Api.OAuthProvider.List to Permissive
+)
+
+class KotoedFilter(vertx: Vertx): BridgeEventFilter {
     private val perAddress = kotoedPerAddressFilter(vertx)
-    private val underlying = LoginRequired and (HarmlessTypes or (Send and perAddress))
+    private val perAddressAnonymous = KotoedPerAddressAnonymousFilter
+    private val underlying = AnyOf(HarmlessTypes,
+            (Send and perAddressAnonymous),
+            (LoginRequired and (Send and perAddress)))
 
     suspend override fun isAllowed(be: BridgeEvent): Boolean = underlying.isAllowed(be)
 
-    fun makePermittedOptions() = perAddress.makePermittedOptions()
+    fun makePermittedOptions() = perAddress.makePermittedOptions() + perAddressAnonymous.makePermittedOptions()
 }
 
 val KotoedPerAddressPatcher = PerAddressPatcher(
