@@ -1,23 +1,20 @@
 package org.jetbrains.research.kotoed.web.handlers
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.Handler
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.impl.NoStackTraceThrowable
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.db.LoginMsg
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.data.Auth
 
 class JsonLoginHandler(
-        private val authProvider: AuthProvider) : AsyncHandler<RoutingContext>() {
+        private val authProvider: AuthProvider) : AsyncRoutingContextHandler() {
 
 
-    override suspend fun doHandleAsync(event: RoutingContext) {
-        val context = event
+    override suspend fun doHandleAsync(context: RoutingContext) {
         val req = context.request()
         if (req.method() != HttpMethod.POST) {
             context.fail(HttpResponseStatus.METHOD_NOT_ALLOWED) // Must be a POST
