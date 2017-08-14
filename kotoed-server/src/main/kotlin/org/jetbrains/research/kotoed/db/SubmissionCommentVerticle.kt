@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.db.TextSearchRequest
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
@@ -8,11 +9,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerForDynamic
-import org.jetbrains.research.kotoed.util.database.toJson
-import org.jetbrains.research.kotoed.util.database.and
-import org.jetbrains.research.kotoed.util.database.equal
-import org.jetbrains.research.kotoed.util.database.ne
-import org.jetbrains.research.kotoed.util.database.fetchInto
+import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.expecting
 
 @AutoDeployable
@@ -20,6 +17,7 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
 
     val fullAddress get() = Address.DB.full(entityName)
     val lastAddress get() = Address.DB.last(entityName)
+    val textSearchAddress get() = Address.DB.searchText(entityName)
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "fullAddress")
     suspend fun handleFull(query: SubmissionCommentRecord): JsonObject {
@@ -80,5 +78,19 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
                     .fetchInto(otherComment)
         }
         return overRecords.expecting { it.size == 1 }.first()
+    }
+
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "textSearchAddress")
+    suspend fun handleTextSearch(query: TextSearchRequest): List<SubmissionCommentRecord> {
+        val searchTable = Tables.SUBMISSION_COMMENT_TEXT_SEARCH
+        val queryText = query.text
+
+        return db {
+            selectFrom(searchTable)
+                    .where(searchTable.DOCUMENT documentMatch queryText)
+                    .orderBy((searchTable.DOCUMENT documentMatchRank queryText).desc())
+                    .fetchInto(Tables.SUBMISSION_COMMENT)
+        }
     }
 }

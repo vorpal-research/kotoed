@@ -94,3 +94,44 @@ fun Field<Any>.jsonGet(key: String): Field<Any> = JsonGetField(this, key)
 fun Field<Any>.jsonGet(index: Int): Field<Any> = JsonGetElem(this, index)
 operator fun Field<Any>.get(key: String) = jsonGet(key)
 operator fun Field<Any>.get(index: Int) = jsonGet(index)
+
+class TextDocumentMatch(val document: Field<Any>, val query: Field<String>)
+    : CustomField<Boolean>("@@", DSL.getDataType(Boolean::class.java)) {
+
+    override fun accept(ctx: Context<*>) = with(ctx) {
+        expect(ctx.dialect().family() == SQLDialect.POSTGRES)
+        sql('(')
+        visit(document)
+        sql(' ')
+        sql("@@")
+        sql(' ')
+        sql("to_tsquery(")
+        visit(query)
+        sql(')')
+        sql(')')
+        Unit
+    }
+}
+
+class TextDocumentRank(val document: Field<Any>, val query: Field<String>)
+    : CustomField<Double>("ts_rank", DSL.getDataType(Double::class.java)) {
+
+    override fun accept(ctx: Context<*>) = with(ctx) {
+        expect(ctx.dialect().family() == SQLDialect.POSTGRES)
+        sql("ts_rank(")
+        visit(document)
+        sql(',')
+        sql("to_tsquery(")
+        visit(query)
+        sql(')')
+        sql(')')
+        Unit
+    }
+}
+
+infix fun Field<Any>.documentMatch(query: String): Field<Boolean> = TextDocumentMatch(this, DSL.inline(query))
+infix fun Field<Any>.documentMatch(query: Field<String>): Field<Boolean> = TextDocumentMatch(this, query)
+
+infix fun Field<Any>.documentMatchRank(query: String): Field<Double> = TextDocumentRank(this, DSL.inline(query))
+infix fun Field<Any>.documentMatchRank(query: Field<String>): Field<Double> = TextDocumentRank(this, query)
+

@@ -222,14 +222,17 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
             }
             val baseCondition = makeFindCondition(table, message.find!!)
-            val parsedCondition = message.filter?.let{ parseCondition(it) {
-                tname -> tableMap[Tuple(table.name, tname).joinToString(".")] ?: die()
+            val parsedCondition = message.filter?.let{ parseCondition(it) { tname ->
+                when {
+                    tname.isEmpty() -> tableMap[table.name]
+                    else -> tableMap[table.name + "." + tname]
+                } ?: die()
             } } ?: DSL.condition(true)
             val where = join.where(condition).and(baseCondition).and(parsedCondition)
 
             where
                     .let {
-                        when {
+                        when { // there is no way to do it in one run, 'cos these are two DIFFERENT .offset()'s
                             message.limit != null && message.offset != null ->
                                 it.orderBy(table.primaryKeyField).limit(message.limit).offset(message.offset)
                             message.limit != null ->
