@@ -17,7 +17,7 @@ import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
 import {Redirect} from "react-router";
-import {CODE_REVIEW_BASE_ADDR, makeCodePath} from "../../util/url";
+import {makeCodeReviewCodePath} from "../../util/url";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
@@ -67,7 +67,7 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
     }
 
     function removeHashFromUrl() {
-        dispatch(push(makeCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
+        dispatch(push(makeCodeReviewCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
     }
 
     return {
@@ -125,10 +125,7 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                     newText
                 }))
             },
-            makeOriginalLink: (submissionId, sourcefile, sourceline) => {
-                if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
-                    return `${CODE_REVIEW_BASE_ADDR}${makeCodePath(submissionId, sourcefile, sourceline)}`;
-            }
+            makeOriginalLink: makeCodeReviewCodePath
         },
 
         fileTree: {
@@ -176,16 +173,12 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
     }
 };
 
-export const CODE_ROUTE_PATH = "/:submissionId(\\d+)/code/:path*";
-export const LOST_FOUND_ROUTE_PATH = "/:submissionId(\\d+)/lost+found";
-
-export function makeLostFoundPath(submissionId: number) {
-    return `/${submissionId}/lost+found`
-}
+export const CODE_ROUTE_PATH = "/codereview/:submissionId(\\d+)/code/:path*";
+export const LOST_FOUND_ROUTE_PATH = "/codereview/:submissionId(\\d+)/lost+found";
 
 export class RedirectToRoot extends React.Component<RouteComponentProps<CodeReviewUrl>> {
     render() {
-        return <Redirect to={makeCodePath(parseInt(this.props.match.params.submissionId), "")}/>
+        return <Redirect to={makeCodeReviewCodePath(parseInt(this.props.match.params.submissionId), "")}/>
     }
 }
 

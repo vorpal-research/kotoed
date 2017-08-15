@@ -25,8 +25,7 @@ import {
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
-import {makeLostFoundPath} from "./containers/CodeReviewContainer";
-import {makeCodePath} from "../util/url";
+import {makeCodeReviewCodePath, makeCodeReviewLostFoundPath} from "../util/url";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -210,13 +209,13 @@ export function unselectFile() {
 export function setCodePath(payload: NodePathPayload & SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let filename = getFilePath(getState().fileTreeState.root, payload.treePath);
-        dispatch(push(makeCodePath(payload.submissionId, filename)))
+        dispatch(push(makeCodeReviewCodePath(payload.submissionId, filename)))
     }
 }
 
 export function setLostFoundPath(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        dispatch(push(makeLostFoundPath(payload.submissionId)))
+        dispatch(push(makeCodeReviewLostFoundPath(payload.submissionId)))
     }
 }
 
