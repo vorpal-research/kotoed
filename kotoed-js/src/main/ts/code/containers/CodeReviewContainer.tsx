@@ -16,8 +16,8 @@ import {RouteComponentProps} from "react-router-dom";
 import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
-import {CODE_REVIEW_BASE_ADDR} from "../index";
 import {Redirect} from "react-router";
+import {CODE_REVIEW_BASE_ADDR, makeCodePath} from "../../util/url";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
@@ -178,11 +178,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
 
 export const CODE_ROUTE_PATH = "/:submissionId(\\d+)/code/:path*";
 export const LOST_FOUND_ROUTE_PATH = "/:submissionId(\\d+)/lost+found";
-
-export function makeCodePath(submissionId: number, path: string, scrollTo?: number) {
-    let hash = scrollTo !== undefined ? `#${scrollTo}` : "";
-    return `/${submissionId}/code/${path}${hash}`
-}
 
 export function makeLostFoundPath(submissionId: number) {
     return `/${submissionId}/lost+found`

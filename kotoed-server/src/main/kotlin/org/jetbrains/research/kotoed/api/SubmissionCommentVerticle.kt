@@ -1,9 +1,9 @@
 package org.jetbrains.research.kotoed.api
 
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.SubmissionComments
-import org.jetbrains.research.kotoed.data.api.VerificationData
-import org.jetbrains.research.kotoed.data.api.VerificationStatus
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.*
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRe
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 
 @AutoDeployable
@@ -65,4 +66,23 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         comment.persistentCommentId  = existing.persistentCommentId
         return DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
     }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Search)
+    suspend fun handleSearch(query: SearchQuery): JsonArray {
+        val q = ComplexDatabaseQuery("submission_comment_text_search")
+                .join(table = "denizen", field = "author_id")
+                .filter("""document matches "${query.text}"""")
+                .limit(query.pageSize)
+                .offset(query.currentPage * query.pageSize)
+
+        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission_comment_text_search"), q)
+
+        return req.map {
+            it.toRecord<SubmissionCommentRecord>().toJson().apply {
+                put("denizen_id", it["author", "denizen_id"])
+            }
+        }.let(::JsonArray)
+
+    }
+
 }

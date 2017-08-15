@@ -34,6 +34,7 @@ export namespace Kotoed {
                     Read: "kotoed.api.submission.comment.read",
                     Update: "kotoed.api.submission.comment.update",
                     Create: "kotoed.api.submission.comment.create",
+                    Search: "kotoed.api.submission.comment.search",
                 },
 
                 Code: {

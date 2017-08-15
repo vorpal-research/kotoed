@@ -29,6 +29,7 @@ object Address {
                 const val Read = "kotoed.api.submission.comment.read"
                 const val Update = "kotoed.api.submission.comment.update"
                 const val Create = "kotoed.api.submission.comment.create"
+                const val Search = "kotoed.api.submission.comment.search"
 
             }
 

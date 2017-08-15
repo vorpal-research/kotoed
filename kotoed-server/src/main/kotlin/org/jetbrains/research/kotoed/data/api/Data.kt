@@ -136,3 +136,5 @@ object SubmissionComments {
 
     data class LastSeenResponse(val location: SubmissionCommentRecord? = null) : Jsonable
 }
+
+data class SearchQuery(val text: String, val currentPage: Int, val pageSize: Int): Jsonable
