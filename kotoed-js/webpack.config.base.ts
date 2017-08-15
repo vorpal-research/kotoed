@@ -22,7 +22,8 @@ const config: webpack.Configuration = {
         hello: ["babel-polyfill", "./ts/hello.ts"],
         login: ["babel-polyfill", "./ts/login/index.tsx"],
         code: ["babel-polyfill", "./ts/code/index.tsx"],
-        submissionResults: ["babel-polyfill", "./ts/views/submissionResults.tsx"]
+        submissionResults: ["babel-polyfill", "./ts/views/submissionResults.tsx"],
+        commentSearch: ["babel-polyfill", "./ts/views/commentSearch.tsx"]
     },
     output: {
         path: dstPath,

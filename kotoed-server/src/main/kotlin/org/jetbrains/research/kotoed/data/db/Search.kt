@@ -56,6 +56,11 @@ data class ComplexDatabaseQuery(
         return copy(find = find_, joins = joins_)
     }
 
+    fun filter(filter: String) = copy(filter = filter)
+
+    fun limit(limit: Int) = copy(limit = limit)
+    fun offset(offset: Int) = copy(offset = offset)
+
 }
 
 data class TextSearchRequest(val text: String): Jsonable

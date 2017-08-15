@@ -19,8 +19,7 @@ import "less/unblueprint.less"
 import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
-
-export const CODE_REVIEW_BASE_ADDR = "/codereview";
+import {CODE_REVIEW_BASE_ADDR} from "../util/url";
 
 export const history = createHistory({
     basename: CODE_REVIEW_BASE_ADDR
