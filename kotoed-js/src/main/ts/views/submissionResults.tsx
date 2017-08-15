@@ -4,6 +4,7 @@ import {render} from "react-dom";
 import {connect} from "react-redux";
 import Griddle, {
     ColumnDefinition,
+    components,
     GriddleStyleConfig,
     RowDefinition
 } from "griddle-react";
@@ -12,6 +13,9 @@ import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 
 import "less/kotoed-bootstrap/bootstrap.less";
+
+type CellProps = components.CellProps
+type RowProps = components.RowProps
 
 enum VerificationStatus {
     Processed,
@@ -100,20 +104,20 @@ export class SubmissionResultTable<ResultT> extends Component<SubmissionResultTa
         }
     };
 
-    rowDataSelector = (state: any, {griddleKey}: any) => {
+    rowDataSelector = (state: any, {griddleKey}: CellProps & RowProps) => {
         return state
-            .get('data')
-            .find((rowMap: any) => rowMap.get('griddleKey') === griddleKey)
+            .get("data")
+            .find((rowMap: any) => rowMap.get("griddleKey") === griddleKey)
             .toJSON();
     };
 
-    enhancedWithRowData = connect((state, props) => {
+    enhancedWithRowData = connect((state: any, ownProps: CellProps & RowProps) => {
         return {
-            rowData: this.rowDataSelector(state, props)
+            rowData: this.rowDataSelector(state, ownProps)
         };
     });
 
-    succeededTests = ({value, griddleKey, rowData}: { value: any; griddleKey: any; rowData: any }) => {
+    succeededTests = ({rowData}: { rowData: any }) => {
         let total = rowData.body.testsuite.tests;
         let errors = rowData.body.testsuite.errors;
         let skipped = rowData.body.testsuite.skipped;
