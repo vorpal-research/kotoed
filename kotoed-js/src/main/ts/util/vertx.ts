@@ -77,9 +77,10 @@ export class AsyncEventBus {
         this.eb.onclose = () => {
             this._isOpen = false;
 
-            if (this.nClosed === RECONNECT_RETRIES)
+            if (this.nClosed === RECONNECT_RETRIES) {
                 this.onError && this.onError(new Error("Max retries exceeded"));
-
+                return;
+            }
             this.nClosed++;
             if (!this.explicitlyClosed)
                 setTimeout(this.setUp, RETRY_INTERVAL)  // TODO think about better reopen strategy
