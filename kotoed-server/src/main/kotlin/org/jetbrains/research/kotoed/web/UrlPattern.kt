@@ -24,6 +24,10 @@ object UrlPattern {
         const val Results = "/views/submission/:id/results"
     }
 
+    object Comment {
+        const val Search = "/views/comment/search"
+    }
+
     const val EventBus = "/eventbus/*"
     const val Static = "/static/*"
 

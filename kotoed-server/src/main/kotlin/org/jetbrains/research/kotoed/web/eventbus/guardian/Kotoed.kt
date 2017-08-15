@@ -22,6 +22,7 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.CommentAggregates to SubmissionReady(vertx),
         Address.Api.Submission.Comment.Create to CommentCreateFilter(vertx),
         Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx),
+        Address.Api.Submission.Comment.Search to Permissive,
         Address.Api.Submission.Result.Read to Permissive
 )
 
