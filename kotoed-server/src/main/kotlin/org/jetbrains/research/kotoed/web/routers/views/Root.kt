@@ -20,4 +20,5 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
         context.fail(HttpResponseStatus.BAD_REQUEST)
         return
     }
+    context.put("submission-id", id_)
 }
