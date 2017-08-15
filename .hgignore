@@ -7,6 +7,8 @@ target
 .vertx
 ./vcs
 
+./secret
+
 .idea
 .idea_modules
 *.iml
