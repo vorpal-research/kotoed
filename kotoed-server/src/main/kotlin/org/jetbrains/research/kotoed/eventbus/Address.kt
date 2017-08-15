@@ -30,7 +30,7 @@ object Address {
                 const val Update = "kotoed.api.submission.comment.update"
                 const val Create = "kotoed.api.submission.comment.create"
                 const val Search = "kotoed.api.submission.comment.search"
-
+                const val SearchCount = "kotoed.api.submission.comment.search.count"
             }
 
             object Code {
@@ -107,6 +107,8 @@ object Address {
         fun delete(entity: String) = "kotoed.db.$entity.delete"
         fun read(entity: String) = "kotoed.db.$entity.read"
         fun query(entity: String) = "kotoed.db.$entity.query"
+        fun count(entity: String) = "kotoed.db.$entity.count"
+
         fun find(entity: String) = "kotoed.db.$entity.find"
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"

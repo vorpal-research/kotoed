@@ -69,11 +69,13 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val currentPage = query.currentPage ?: 0
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
                 .filter("""document matches "${query.text}"""")
-                .limit(query.pageSize)
-                .offset(query.currentPage * query.pageSize)
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
 
         val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission_comment_text_search"), q)
 
@@ -82,7 +84,14 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
                 put("denizen_id", it["author", "denizen_id"])
             }
         }.let(::JsonArray)
-
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.SearchCount)
+    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
+        val q = ComplexDatabaseQuery("submission_comment_text_search")
+                .join(table = "denizen", field = "author_id")
+                .filter("""document matches "${query.text}"""")
+
+        return sendJsonableAsync(Address.DB.count("submission_comment_text_search"), q)
+    }
 }
