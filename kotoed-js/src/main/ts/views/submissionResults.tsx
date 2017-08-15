@@ -176,8 +176,10 @@ export class SubmissionResultTable<ResultT> extends Component<SubmissionResultTa
     }
 }
 
+let rootElement = document.getElementById("view-submission-results")!;
+let submissionId = Number(rootElement.getAttribute("data-submission-id"));
 
 render(
-    <SubmissionResultTable submissionId={39}/>,
+    <SubmissionResultTable submissionId={submissionId}/>,
     document.getElementById("view-submission-results")
 );
