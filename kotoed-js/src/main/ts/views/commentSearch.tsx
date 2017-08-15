@@ -15,9 +15,9 @@ import "less/kotoed-bootstrap/bootstrap.less";
 import {BaseCommentToRead, CommentToRead} from "../code/remote/comments";
 
 function truncateString(str: string, len: number): string {
-    if(str.length <= len) return str;
+    if (str.length <= len) return str;
     else {
-        let truc = (len - 3)/2;
+        let truc = (len - 3) / 2;
         return str.substr(0, truc) + "..." + str.substr(str.length - truc, truc)
     }
 }
@@ -78,6 +78,50 @@ export interface SearchableCommentTableState extends SearchBarState {
 
 const PAGESIZE = 20;
 
+class CommentSearchResult extends React.Component<{ comment: CommentToRead }, {}> {
+    constructor(props: { comment: CommentToRead }) {
+        super(props);
+
+        this.state = {}
+    }
+
+    render() {
+        let comment = this.props.comment;
+        return (
+            <div className="panel search-preview"
+                 key={"comment" + comment.id}
+            >
+                <div className="search-preview-overlay">
+                    <div style={{right: 0, bottom: 0, position: "absolute"}}>
+                        <a target="_blank" href={
+                            `${CODE_REVIEW_BASE_ADDR}${makeCodePath(comment.submissionId, comment.sourcefile, comment.sourceline)}`
+                        }><strong>At: {truncateString(comment.sourcefile, 25)} &raquo;</strong></a>
+                    </div>
+                </div>
+                <CommentComponent
+                    denizenId={comment.denizenId}
+                    id={comment.id}
+                    authorId={comment.authorId}
+                    datetime={comment.datetime}
+                    state={comment.state}
+                    submissionId={comment.submissionId}
+                    text={comment.text}
+                    sourcefile={comment.sourcefile}
+                    sourceline={comment.sourceline}
+                    canStateBeChanged={false}
+                    canBeEdited={false}
+                    collapsed={false}
+                    onUnresolve={doNothing}
+                    onResolve={doNothing}
+                    notifyEditorAboutChange={doNothing}
+                    onEdit={doNothing}
+                />
+            </div>
+        )
+    }
+
+}
+
 class SearchableCommentTable extends React.Component<SearchableCommentTableProps, SearchableCommentTableState> {
     constructor(props: SearchableCommentTableProps) {
         super(props);
@@ -96,7 +140,7 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
             text: this.state.text
         };
         eventBus.send(Kotoed.Address.Api.Submission.Comment.SearchCount, message)
-            .then((resp: any) => this.setState({ pageCount: Math.ceil(resp.count / PAGESIZE) }))
+            .then((resp: any) => this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)}))
     };
 
     private queryComments = () => {
@@ -114,7 +158,10 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
     };
 
     onSearchStateChanged = (state: SearchBarState) => {
-        this.setState({ currentPage: 0, ...state}, () => { this.queryCount(); this.queryComments() });
+        this.setState({currentPage: 0, ...state}, () => {
+            this.queryCount();
+            this.queryComments()
+        });
     };
 
     render() {
@@ -135,38 +182,7 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
                     activePage={this.state.currentPage + 1}
                     onSelect={(e: any) => this.onPageChanged(e as number - 1)}
                 />
-                {this.state.currentComments.map((comment, index) =>
-                    <div className="panel search-preview"
-                         key={"comment" + index}
-                    >
-                        <div className="search-preview-overlay">
-                            <div style={{ right:0, bottom:0, position:"absolute"}} >
-                                <a target="_blank" href={
-                                    `${CODE_REVIEW_BASE_ADDR}${makeCodePath(comment.submissionId, comment.sourcefile, comment.sourceline)}`
-                                }><strong>At: {truncateString(comment.sourcefile, 25)} &raquo;</strong></a>
-                            </div>
-                        </div>
-                        <CommentComponent
-                            denizenId={comment.denizenId}
-                            id={comment.id}
-                            authorId={comment.authorId}
-                            datetime={comment.datetime}
-                            state={comment.state}
-                            submissionId={comment.submissionId}
-                            text={comment.text}
-                            sourcefile={comment.sourcefile}
-                            sourceline={comment.sourceline}
-                            canStateBeChanged={false}
-                            canBeEdited={false}
-                            collapsed={false}
-                            onUnresolve={doNothing}
-                            onResolve={doNothing}
-                            notifyEditorAboutChange={doNothing}
-                            onEdit={doNothing}
-                        />
-                    </div>
-                )
-                }
+                {this.state.currentComments.map(comment => <CommentSearchResult comment={comment}/>)}
             </div>
         );
     }
