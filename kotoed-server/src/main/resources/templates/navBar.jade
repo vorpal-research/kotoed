@@ -1,0 +1,35 @@
+mixin makeMenu(menu)
+    li(class="dropdown")
+        a(href="#" class="droipdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false")
+            =menu.getText()
+            span(class="caret")
+        ul(class="dropdown-menu")
+            for item in menu.getChildren()
+                li
+                    a(href=item.getHref())=item.getText()
+
+mixin makeNav(items)
+    for item in items
+        if item.getType() == "menu"
+            +makeMenu(item)
+        else
+            li
+                a(href=item.getHref())=item.getText()
+
+
+if context.get("navbar")
+    nav(class="navbar navbar-default")
+        div(class="container-fluid")
+            div(class="navbar-header")
+                button(type="button", class="collapsed navbar-toggle", data-toggle="collapse" data-target="#navbar" aria-expanded="false")
+                    span(class="sr-only") Toggle navigation
+                    span(class="icon-bar")
+                    span(class="icon-bar")
+                a(href=context.get("navbar").getRootHref(), class="navbar-brand") Kotoed
+            div(class="collapse navbar-collapse" id="navbar")
+                if context.get("navbar").getLeftElems()
+                    ul(class="nav navbar-nav")
+                        +makeNav(context.get("navbar").getLeftElems())
+                if context.get("navbar").getRightElems()
+                    ul(class="nav navbar-nav navbar-right")
+                        +makeNav(context.get("navbar").getRightElems())
