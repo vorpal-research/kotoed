@@ -22,3 +22,11 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
     }
     context.put("submission-id", id_)
 }
+
+
+@HandlerFor(UrlPattern.Comment.Search)
+@Templatize("commentSearch.jade")
+@LoginRequired
+@JsBundle("commentSearch")
+suspend fun handleCommentSearch(context: RoutingContext) {
+}

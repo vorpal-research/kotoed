@@ -25,7 +25,8 @@ import {
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
-import {makeCodePath, makeLostFoundPath} from "./containers/CodeReviewContainer";
+import {makeLostFoundPath} from "./containers/CodeReviewContainer";
+import {makeCodePath} from "../util/url";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
