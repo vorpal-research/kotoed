@@ -5,12 +5,22 @@ import {connect} from "react-redux";
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus} from "../eventBus";
 import CommentComponent from "../code/components/CommentComponent";
+import {Pagination} from "react-bootstrap";
 import {CODE_REVIEW_BASE_ADDR, makeCodePath} from "../util/url";
+import {doNothing} from "../util/common";
+import * as _ from "lodash";
 
 import "less/commentSearch.less"
 import "less/kotoed-bootstrap/bootstrap.less";
-import * as _ from "lodash";
+import {BaseCommentToRead, CommentToRead} from "../code/remote/comments";
 
+function truncateString(str: string, len: number): string {
+    if(str.length <= len) return str;
+    else {
+        let truc = (len - 3)/2;
+        return str.substr(0, truc) + "..." + str.substr(str.length - truc, truc)
+    }
+}
 
 export interface SearchBarProps {
     onChange: (state: SearchBarState) => void
@@ -56,54 +66,17 @@ class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
     }
 }
 
-
-export interface PaginationProps {
-    onPageChange: (page: number) => void
-    lastPage: number
-}
-
-export interface PaginationState {
-    page: number
-}
-
-class Pagination extends React.Component<PaginationProps, PaginationState> {
-    constructor(props: PaginationProps) {
-        super(props);
-
-        this.state = {page: 0};
-    }
-
-    prevClassName = () => this.state.page === 0 ? 'disabled' : '';
-    nextClassName = () => this.state.page === this.props.lastPage ? 'disabled' : '';
-
-    private notify = () => this.props.onPageChange(this.state.page);
-
-    next = () => {
-        this.setState({page: this.state.page + 1}, this.notify);
-    };
-    prev = () => {
-        this.setState({page: this.state.page === 0 ? 0 : this.state.page - 1}, this.notify);
-    };
-
-    render() {
-        return (
-            <nav aria-label="...">
-                <ul className="pager">
-                    <li className={this.prevClassName()}><a href="#" onClick={this.prev}>Previous</a></li>
-                    <li className={this.nextClassName()}><a href="#" onClick={this.next}>Next</a></li>
-                </ul>
-            </nav>
-        )
-    }
-}
-
 export interface SearchableCommentTableProps {
+
 }
 
 export interface SearchableCommentTableState extends SearchBarState {
     currentPage: number,
-    currentComments: any[]
+    pageCount: number,
+    currentComments: Array<CommentToRead>
 }
+
+const PAGESIZE = 20;
 
 class SearchableCommentTable extends React.Component<SearchableCommentTableProps, SearchableCommentTableState> {
     constructor(props: SearchableCommentTableProps) {
@@ -113,26 +86,35 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
             text: "",
             openOnly: false,
             currentPage: 0,
+            pageCount: 0,
             currentComments: []
         };
     }
 
-    private queryEB = () => {
+    private queryCount = () => {
+        let message = {
+            text: this.state.text
+        };
+        eventBus.send(Kotoed.Address.Api.Submission.Comment.SearchCount, message)
+            .then((resp: any) => this.setState({ pageCount: Math.ceil(resp.count / PAGESIZE) }))
+    };
+
+    private queryComments = () => {
         let message = {
             text: this.state.text,
             currentPage: this.state.currentPage,
-            pageSize: 20
+            pageSize: PAGESIZE
         };
         eventBus.send(Kotoed.Address.Api.Submission.Comment.Search, message)
             .then<any>(resp => this.setState({currentComments: resp as any[]}))
     };
 
     onPageChanged = (page: number) => {
-        this.setState({currentPage: page}, this.queryEB)
+        this.setState({currentPage: page}, this.queryComments)
     };
 
     onSearchStateChanged = (state: SearchBarState) => {
-        this.setState(state, this.queryEB);
+        this.setState({ currentPage: 0, ...state}, () => { this.queryCount(); this.queryComments() });
     };
 
     render() {
@@ -142,22 +124,26 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
                     onChange={this.onSearchStateChanged}
                 />
                 <Pagination
-                    lastPage={-1}
-                    onPageChange={this.onPageChanged}
+                    prev
+                    next
+                    first
+                    last
+                    ellipsis
+                    boundaryLinks
+                    items={this.state.pageCount}
+                    maxButtons={5}
+                    activePage={this.state.currentPage + 1}
+                    onSelect={(e: any) => this.onPageChanged(e as number - 1)}
                 />
                 {this.state.currentComments.map((comment, index) =>
                     <div className="panel search-preview"
                          key={"comment" + index}
-                         onClick={_ => {
-                             //let link = `${CODE_REVIEW_BASE_ADDR}${makeCodePath(comment.submissionId, comment.sourcefile, comment.sourceline)}`
-                             //window.open(link, "_blank")
-                         }}
                     >
                         <div className="search-preview-overlay">
                             <div style={{ right:0, bottom:0, position:"absolute"}} >
                                 <a target="_blank" href={
                                     `${CODE_REVIEW_BASE_ADDR}${makeCodePath(comment.submissionId, comment.sourcefile, comment.sourceline)}`
-                                }><strong>At: {comment.sourcefile} &raquo;</strong></a>
+                                }><strong>At: {truncateString(comment.sourcefile, 25)} &raquo;</strong></a>
                             </div>
                         </div>
                         <CommentComponent
@@ -173,14 +159,11 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
                             canStateBeChanged={false}
                             canBeEdited={false}
                             collapsed={false}
-                            onUnresolve={(_ => {
-                            })}
-                            onResolve={(_ => {
-                            })}
-                            notifyEditorAboutChange={(() => {
-                            })}
-                            onEdit={(_ => {
-                            })}/>
+                            onUnresolve={doNothing}
+                            onResolve={doNothing}
+                            notifyEditorAboutChange={doNothing}
+                            onEdit={doNothing}
+                        />
                     </div>
                 )
                 }

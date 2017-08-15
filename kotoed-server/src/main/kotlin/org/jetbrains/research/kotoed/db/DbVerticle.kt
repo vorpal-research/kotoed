@@ -65,7 +65,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
     val queryAddress = Address.DB.query(entityName)
-
+    val queryCountAddress = Address.DB.count(entityName)
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
     suspend fun handleDeleteWrapper(message: JsonObject) =
@@ -252,7 +252,50 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         }.let(::JsonArray)
     }
 
+    data class CountResponse(val count: Int): Jsonable
 
+    @JsonableEventBusConsumerForDynamic(addressProperty = "queryCountAddress")
+    suspend fun handleQueryCountWrapper(message: JsonObject) =
+            CountResponse(handleQueryCount(message.toJsonable()))
+
+    // FIXME: abstract out the clones somehow
+    protected open suspend fun handleQueryCount(message_: ComplexDatabaseQuery): Int {
+        fun die(): Nothing = throw IllegalArgumentException("Illegal query")
+        val message = when {
+            message_.table == null -> message_.copy(table = this@CrudDatabaseVerticle.table.name)
+            else -> message_
+        }.fillDefaults()
+
+        log.trace("Query in table ${table.name}:\n" +
+                message.toJson().encodePrettily())
+
+        val table = Public.PUBLIC.tables.find { it.name == message.table } ?: die()
+
+        val joins = message.joinSequence().toList()
+        val joinedTables: List<Table<*>> = joins.map { it.v2 }
+        val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
+
+        return db {
+            val select = select(DSL.count()).from(table)
+            val join = joins.fold(select) {
+                a, (from, field, to, _, key) ->
+                a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
+            }
+            val condition: Condition = joins.fold(DSL.condition(true)) {
+                a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
+            }
+            val baseCondition = makeFindCondition(table, message.find!!)
+            val parsedCondition = message.filter?.let{ parseCondition(it) { tname ->
+                when {
+                    tname.isEmpty() -> tableMap[table.name]
+                    else -> tableMap[table.name + "." + tname]
+                } ?: die()
+            } } ?: DSL.condition(true)
+            val where = join.where(condition).and(baseCondition).and(parsedCondition)
+
+            where.fetchOne().value1()
+        }
+    }
 }
 
 abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
