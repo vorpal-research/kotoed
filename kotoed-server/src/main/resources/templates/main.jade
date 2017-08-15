@@ -1,6 +1,6 @@
-extends ./base
+extends ./baseWithNav
 
-block content
+append content
     h2= context.get('who')  + " here"
         | &copy;
     p
@@ -9,4 +9,4 @@ block content
         a(href="http://petstore.swagger.io/?url=https://bitbucket.org/vorpal-research/kotoed/raw/tip/docs/swagger.yaml") REST API documentation
     p Здравствуйте
 block title
-    title= "The awesome " + context.get('who')
+    title= "The awesome Kotoed"

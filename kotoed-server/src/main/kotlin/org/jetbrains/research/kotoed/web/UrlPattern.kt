@@ -23,9 +23,13 @@ object UrlPattern {
     object Submission {
         const val Results = "/views/submission/:id/results"
     }
-
+    
     object Comment {
         const val Search = "/views/comment/search"
+    }
+
+    object Debug {
+        const val Navigation = "/web/debug/navigation"
     }
 
     const val EventBus = "/eventbus/*"
