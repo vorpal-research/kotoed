@@ -4,4 +4,7 @@ block title
     title Submission results
 
 block content
-    div(id="view-submission-results")
+    div(
+    id="view-submission-results"
+    data-submission-id=context.get("submission-id")
+    )
