@@ -19,11 +19,8 @@ import "less/unblueprint.less"
 import "less/code.less";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
-import {CODE_REVIEW_BASE_ADDR} from "../util/url";
 
-export const history = createHistory({
-    basename: CODE_REVIEW_BASE_ADDR
-});
+export const history = createHistory();
 
 export const store = createStore(
     combineReducers({
@@ -41,7 +38,7 @@ render(
     <Provider store={store}>
         <ConnectedRouter history={history} >
             <Switch>
-                <Route exact path="/:submissionId(\\d+)/" component={RedirectToRoot}/>
+                <Route exact path="/codereview/:submissionId(\\d+)/" component={RedirectToRoot}/>
                 <Route exact path={CODE_ROUTE_PATH} component={CodeReviewContainer}/>
                 <Route exact path={LOST_FOUND_ROUTE_PATH} component={CodeReviewContainer}/>
             </Switch>

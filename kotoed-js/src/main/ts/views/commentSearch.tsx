@@ -6,7 +6,7 @@ import {Kotoed} from "../util/kotoed-api";
 import {eventBus} from "../eventBus";
 import CommentComponent from "../code/components/CommentComponent";
 import {Pagination} from "react-bootstrap";
-import {CODE_REVIEW_BASE_ADDR, makeCodePath} from "../util/url";
+import {makeCommentPath} from "../util/url";
 import {doNothing} from "../util/common";
 import * as _ from "lodash";
 
@@ -94,7 +94,7 @@ class CommentSearchResult extends React.Component<{ comment: CommentToRead }, {}
                 <div className="search-preview-overlay">
                     <div style={{right: 0, bottom: 0, position: "absolute"}}>
                         <a target="_blank" href={
-                            `${CODE_REVIEW_BASE_ADDR}${makeCodePath(comment.submissionId, comment.sourcefile, comment.sourceline)}`
+                            makeCommentPath(comment.submissionId, comment.sourcefile, comment.sourceline)
                         }><strong>At: {truncateString(comment.sourcefile, 25)} &raquo;</strong></a>
                     </div>
                 </div>
