@@ -1,4 +1,5 @@
 @import "./kotoed-bootstrap/variables.less";
+@import "./fix-modal-backdrop.less";
 
 @review-background: white;
 @review-border-color:  @brand-primary;
@@ -38,8 +39,21 @@
   text-align: center;
 }
 
-.code-review {
+body {
   height: 100vh // FIXME
+}
+
+.container {
+  height: 100%
+}
+
+#code-review-app {
+  height: 100%
+}
+
+
+.code-review {
+  height: 100%
 }
 
 .code-review-tree-container {

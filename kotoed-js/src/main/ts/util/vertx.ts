@@ -26,6 +26,8 @@ export interface EventBusReply<T> {
     type: string
 }
 
+const RECONNECT_RETRIES = 10;
+
 /**
  * This event bus allows awaitOpen, sendAsync and reopens connection after loosing it
  */
@@ -36,20 +38,22 @@ export class AsyncEventBus {
     private _isOpen: boolean = false;
     private explicitlyClosed: boolean = false;
     private handlers: Array<EventBusHandler> = [];
+    private onError?: (error: Error) => void;
+    private nClosed: number = 0;
 
     // Heil POSIX!
     private htonJ: (h: any) => any = obj => obj;
     private ntohJ: (n: any) => any = obj => obj;
 
-    onerror: (error: Error) => boolean;  // Public field like in original EventBus
-
     constructor(url: string,
                 htonJ: (host: any) => any = identity,
                 ntohJ: (network: any) => any = identity,
-                options?: any) {
+                options?: any,
+                onError?: (error: Error) => void) {
         this._isOpen = false;
         this.url = url;
         this.options = options;
+        this.onError = onError;
         this.htonJ = htonJ;
         this.ntohJ = ntohJ;
         this.setUp();
@@ -57,15 +61,32 @@ export class AsyncEventBus {
 
     private setUp = () => {
         this.eb = new EventBus(this.url, this.options);
-        this.eb.onclose = () => {
-            this._isOpen = false;
-            if (!this.explicitlyClosed)
-                setTimeout(this.setUp, RETRY_INTERVAL)  // TODO think about better reopen strategy
+        let oldOnError = this.eb.onerror; // We'll need it
+        this.eb.onerror = (error) => {
+            if (this.onError) {
+                this.onError(error);
+            }
+            oldOnError(error);
         };
 
         this.eb.onopen = () => {
             this._isOpen = true;
+            this.nClosed = 0;
         };
+
+        this.eb.onclose = () => {
+            this._isOpen = false;
+
+            if (this.nClosed === RECONNECT_RETRIES) {
+                this.onError && this.onError(new Error("Max retries exceeded"));
+                return;
+            }
+            this.nClosed++;
+            if (!this.explicitlyClosed)
+                setTimeout(this.setUp, RETRY_INTERVAL)  // TODO think about better reopen strategy
+        };
+
+
 
         for (let handler of this.handlers) {
             this.eb.registerHandler(handler.address, handler.headers, handler.callback);

@@ -10,7 +10,32 @@ html
     body
         div(class="container")
             block content
-            if context.vendorJs
-                script(type="text/javascript", src=context.vendorJs)
-            if context.js
-                script(type="text/javascript", src=context.js)
+        div(id="snafu-dialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="snafu-dialog-label")
+            div(class="modal-dialog" role="document")
+                div(class="modal-content")
+                    div(class="modal-header")
+                        h4(class="modal-title") Mayday, Mayday, Mayday
+                    div(class="modal-body")
+                        | Something went wrong. Try reloading this page.
+                    div(class="modal-footer")
+                        button(type="button" class="btn btn-primary" id="snafu-dialog-reload")
+                            | Reload
+                        button(type="button" class="btn btn-danger" id="snafu-dialog-stay")
+                            | Stay
+
+        div(id="snafu-good-luck-dialog" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="snafu-dialog-label")
+            div(class="modal-dialog" role="document")
+                div(class="modal-content")
+                    div(class="modal-header")
+                        h4(class="modal-title") Good luck!
+                    div(class="modal-body")
+                        | We won't bother you with these messages until you reload the page.
+                    div(class="modal-footer")
+                        button(type="button" class="btn btn-success" id="snafu-good-luck-dialog-okay")
+                            | Thank you!
+
+
+        if context.vendorJs
+            script(type="text/javascript", src=context.vendorJs)
+        if context.js
+            script(type="text/javascript", src=context.js)
