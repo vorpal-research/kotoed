@@ -1,5 +1,5 @@
 import * as React from "react"
-import {ChangeEvent, MouseEvent} from "react";
+import {ChangeEvent, MouseEvent, KeyboardEvent} from "react";
 import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "./ComponentWithLocalErrors";
 import SocialButton from "./SocialButton";
@@ -69,8 +69,7 @@ export default class SignInForm extends
         this.unsetError("emptyPassword");
     };
 
-    handleSignInClick = (event: MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
+    handleSignIn = () => {
         let ok = true;
         if (this.state.username === "") {
             this.setError("emptyUsername");
@@ -85,6 +84,13 @@ export default class SignInForm extends
         if (ok)
             this.props.onSignIn(this.state.username, this.state.password);
     };
+
+    handleSignInClick = (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        this.handleSignIn();
+    };
+
+    handleEnter = (event: KeyboardEvent<HTMLInputElement>) => event.key === "Enter" && this.handleSignIn();
 
     renderOAuthButtons = (): JSX.Element => {
         return <div className="btn-toolbar text-center social-btn-toolbar">
@@ -112,6 +118,7 @@ export default class SignInForm extends
                         onChange={this.handleUsernameChange}
                         value={this.state.username}
                         disabled={this.props.disabled}
+                        onKeyPress={this.handleEnter}
                     />
                 </div>
                 <div className={`form-group  ${this.state.localErrors.emptyPassword && "has-error"}`}>
@@ -128,6 +135,7 @@ export default class SignInForm extends
                         onChange={this.handlePasswordChange}
                         value={this.state.password}
                         disabled={this.props.disabled}
+                        onKeyPress={this.handleEnter}
                     />
                 </div>
             </form>
