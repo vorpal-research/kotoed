@@ -3,13 +3,24 @@ package org.jetbrains.research.kotoed.web.eventbus
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.ReplyException
+import io.vertx.core.json.JsonObject
+import org.jetbrains.kotlin.utils.join
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.DatabaseJoin
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.Tables.COURSE
+import org.jetbrains.research.kotoed.database.Tables.DENIZEN
+import org.jetbrains.research.kotoed.database.Tables.PROJECT
+import org.jetbrains.research.kotoed.database.Tables.SUBMISSION
 import org.jetbrains.research.kotoed.database.tables.SubmissionComment
 import org.jetbrains.research.kotoed.database.tables.records.*
+import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.util.fromJson
 
 import org.jetbrains.research.kotoed.util.sendJsonableAsync
+import org.jetbrains.research.kotoed.util.sendJsonableCollectAsync
 
 suspend fun EventBus.commentByIdOrNull(id: Int): SubmissionCommentRecord? {
     val comment: SubmissionCommentRecord
@@ -80,5 +91,62 @@ suspend fun EventBus.courseByIdOrNull(id: Int): CourseRecord? {
         else throw ex
     }
     return course
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Complex stuff
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+data class ProjectWithRelated(val course: CourseRecord, val author: DenizenRecord, val project: ProjectRecord) {
+    companion object {
+
+        fun makeQuery(find: ProjectRecord? = null): ComplexDatabaseQuery {
+            val q = ComplexDatabaseQuery(PROJECT.name)
+                    .join(DENIZEN.name, resultField = "author")
+                    .join(COURSE.name)
+
+            return find?.let {
+                q.find(it)
+            } ?: q
+        }
+
+        suspend fun fetchByIdOrNull(eventBus: EventBus, id: Int): ProjectWithRelated? {
+            val query = makeQuery(ProjectRecord().apply { this.id = id })
+
+            val res: List<JsonObject> = eventBus.sendJsonableCollectAsync(Address.DB.query(PROJECT.name), query)
+
+            return res.firstOrNull()?.run { Companion.fromJson(this) }
+        }
+
+        fun fromJson(obj: JsonObject): ProjectWithRelated =
+                ProjectWithRelated(
+                        obj.getJsonObject("course").toRecord<CourseRecord>(),
+                        obj.getJsonObject("author").toRecord<DenizenRecord>(),
+                        obj.toRecord<ProjectRecord>()
+                )
+    }
+}
+
+data class SubmissionWithRelated(val course: CourseRecord,
+                                 val author: DenizenRecord,
+                                 val project: ProjectRecord,
+                                 val submission: SubmissionRecord) {
+    companion object {
+        suspend fun fetchByIdOrNull(eventBus: EventBus, id: Int): SubmissionWithRelated? {
+            val query = ComplexDatabaseQuery(
+                    SUBMISSION.name,
+                    joins = listOf(DatabaseJoin(query = ProjectWithRelated.makeQuery())))
+                    .find(ProjectRecord().apply { this.id = id })
+
+            val res: List<JsonObject> = eventBus.sendJsonableCollectAsync(Address.DB.query(PROJECT.name), query)
+
+            return res.firstOrNull()?.run { Companion.fromJson(this) }
+        }
+
+        private fun fromJson(obj: JsonObject): SubmissionWithRelated {
+            val pwr = ProjectWithRelated.fromJson(obj.getJsonObject("project"))
+            return SubmissionWithRelated(pwr.course, pwr.author, pwr.project, obj.toRecord<SubmissionRecord>())
+        }
+    }
 }
 

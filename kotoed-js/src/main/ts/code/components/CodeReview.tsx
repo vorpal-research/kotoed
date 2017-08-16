@@ -108,7 +108,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        scrollTo={this.props.editor.scrollTo}
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
-                    />
+                    />;
                 else
                     return <div className="no-file-chosen"><div>Please choose file</div></div>
         }
@@ -124,7 +124,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
     render() {
         return (
             <div className="row code-review">
-                <div className="col-md-3" style={{height: "100%", overflowY: "scroll"}}>
+                <div className="col-md-3" id="code-review-left">
                     {this.renderFileTreeVeil()}
                     <div className="code-review-tree-container">
                         <FileTree root={this.props.fileTree.root}
@@ -144,7 +144,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                         </div>
                     </div>
                 </div>
-                <div className="col-md-9" style={{height: "100%", overflowY: "scroll"}}>
+                <div className="col-md-9" id="code-review-right">
                     {this.renderRightSide()}
                 </div>
             </div>
