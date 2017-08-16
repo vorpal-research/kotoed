@@ -5,6 +5,8 @@ import 'react-tabs/style/react-tabs.less';
 import SignUpForm from "./SignUpForm";
 import {RouteComponentProps} from "react-router";
 
+import "less/common.less"
+
 export interface SignInOrUpProps {
     signInErrors: Array<string>
     signUpErrors: Array<string>
@@ -48,7 +50,7 @@ export default class SignInOrUp extends React.Component<RouteComponentProps<{}> 
                         <Tab className="" disabled={this.props.disabled}><a>Sign In</a></Tab>
                         <Tab className="" disabled={this.props.disabled}><a>Sign Up</a></Tab>
                     </TabList>
-                    <br/>
+                    <div className="vspace-10"/>
                     <TabPanel>
                         <SignInForm
                             errors={this.props.signInErrors}
