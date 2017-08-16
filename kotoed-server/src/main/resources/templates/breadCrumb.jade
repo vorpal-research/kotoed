@@ -1,8 +1,0 @@
-if context.get("breadcrumb")
-    ol(class="breadcrumb")
-        for elem in context.get("breadcrumb").elements
-            li
-                if !elem.getActive() && elem.getHref()
-                    a(href=elem.href)=elem.getText()
-                else
-                    =elem.getText()
