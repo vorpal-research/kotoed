@@ -2,10 +2,7 @@ package org.jetbrains.research.kotoed.db.processors
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import io.vertx.core.Future
-import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.api.bang
@@ -43,6 +40,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
+        log.trace("Handling process for: $msg")
+        log.trace("Old status: $oldStatus")
+        log.trace("New status: ${cache[id].bang()}")
         process(data)
         return cache[id].bang()
     }
@@ -56,6 +56,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
+        log.trace("Handling verify for: $msg")
+        log.trace("Old status: $oldStatus")
+        log.trace("New status: ${cache[id].bang()}")
         return cache[id].bang()
     }
 
@@ -66,13 +69,16 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
         val oldData = cache[id].bang()
 
+        log.trace("Processing: $data")
+        log.trace("Old data: $oldData")
+
         when (oldData.status) {
             VerificationStatus.Processed, VerificationStatus.NotReady -> {
                 // do nothing
             }
             else -> {
 
-                val notReady = oldData.copy(VerificationStatus.NotReady)
+                val notReady = oldData.copy(status = VerificationStatus.NotReady)
 
                 val ok = cacheMap.replace(id, oldData, notReady)
 
@@ -80,11 +86,17 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
                     val prereqVerificationData = checkPrereqs(data)
 
+                    log.trace("Prereqs: $prereqVerificationData")
+
                     if (prereqVerificationData.all { VerificationStatus.Processed == it.status }) {
+
+                        log.trace("Going in!")
 
                         cacheMap.replace(id, notReady, doProcess(data))
 
                     } else if (prereqVerificationData.any { VerificationStatus.Invalid == it.status }) {
+
+                        log.trace("Some prereqs failed!")
 
                         cacheMap.replace(id, notReady,
                                 prereqVerificationData
@@ -94,10 +106,15 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
                     } else {
 
+                        log.trace("Wat???")
+
                         cacheMap.replace(id, notReady, VerificationData.Unknown)
 
                     }
                 } else { // retry
+
+                    log.trace("Come again?")
+
                     process(data)
                 }
             }
