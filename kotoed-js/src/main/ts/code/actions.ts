@@ -19,8 +19,7 @@ import {
     fetchComments,
     postComment as doPostComment,
     setCommentState as doSetCommentState,
-    editComment as doEditComment, UNKNOWN_FILE, UNKNOWN_LINE
-
+    editComment as doEditComment
 } from "./remote/comments";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";

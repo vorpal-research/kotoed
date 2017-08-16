@@ -15,6 +15,8 @@ object Address {
             const val Create = "kotoed.api.project.create"
             const val Read = "kotoed.api.project.read"
             const val Error = "kotoed.api.project.error"
+            const val Search = "kotoed.api.project.search"
+            const val SearchCount = "kotoed.api.project.search.count"
         }
 
         object Submission {

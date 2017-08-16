@@ -15,9 +15,9 @@ import {CodeReviewState} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
-import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
 import {Redirect} from "react-router";
 import {makeCodeReviewCodePath} from "../../util/url";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
