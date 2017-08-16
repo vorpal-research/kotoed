@@ -7,9 +7,10 @@ import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
 import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
-import {CommentAggregate, UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/comments";
+import {CommentAggregate} from "../remote/comments";
 import {makeSecondaryLabel} from "../util/filetree";
 import SpinnerWithVeil from "./SpinnerWithVeil";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 
 export interface CodeReviewProps {
     submissionId: number

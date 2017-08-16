@@ -1,7 +1,7 @@
 
 // TODO properly support relative paths
 import {Kotoed} from "./kotoed-api";
-import {UNKNOWN_FILE, UNKNOWN_LINE} from "../code/remote/comments";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "../code/remote/constants";
 export function fromLocationHost(path: string): string {
     let location = window.location;
     let normPath = (path.length > 0 && path[0] === '/') ? path.slice(1) : path;

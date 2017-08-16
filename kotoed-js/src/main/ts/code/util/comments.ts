@@ -1,8 +1,7 @@
 import {List, Map} from "immutable";
 
 import {
-    CommentsResponse, CommentToRead, ReviewComments as ServerReviewComments, UNKNOWN_FILE,
-    UNKNOWN_LINE
+    CommentsResponse, CommentToRead, ReviewComments as ServerReviewComments
 } from "../remote/comments";
 import {ReviewComments, FileComments, LineComments, Comment, CommentsState, LostFoundComments} from "../state/comments";
 import {Capabilities} from "../remote/capabilities";
