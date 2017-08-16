@@ -1,0 +1,40 @@
+
+// OMG!
+
+.for(@list, @code) {
+  & {
+    .loop(@i:1) when (@i =< length(@list)) {
+      @value: extract(@list, @i);
+
+      @code();
+
+      .loop(@i + 1);
+    }
+
+    .loop();
+  }
+}
+
+@5: 5;
+@10: 10;
+
+
+@spacings: 5, 10, 15, 20, 25, 30, 35, 40, 45, 50;
+
+.for(@spacings, {
+  .vspace-@{value} {
+    display: block;
+    margin: 0;
+    padding: 0;
+    height: ~"@{value}px";
+  }
+});
+
+.for(@spacings, {
+  .hspace-@{value} {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    width: ~"@{value}px";
+  }
+});

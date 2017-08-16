@@ -4,6 +4,8 @@ import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "./ComponentWithLocalErrors";
 import SocialButton from "./SocialButton";
 
+import "less/common.less"
+
 type LocalErrors = {
     emptyUsername: boolean
     emptyPassword: boolean
@@ -84,10 +86,12 @@ export default class SignInForm extends
             this.props.onSignIn(this.state.username, this.state.password);
     };
 
-    renderOAuthButtons = (): Array<JSX.Element> => {
-        return this.props.oAuthProviders.map((provider: string) => {
-            return <SocialButton key={provider} provider={provider} onClick={this.props.onStartOAuth}/>
-        })
+    renderOAuthButtons = (): JSX.Element => {
+        return <div className="btn-toolbar text-center social-btn-toolbar">
+            {this.props.oAuthProviders.map((provider: string) => {
+                return <SocialButton key={provider} provider={provider} onClick={this.props.onStartOAuth}/>
+            })}
+        </div>;
     };
 
     render() {
@@ -132,6 +136,7 @@ export default class SignInForm extends
                     disabled={this.props.disabled}>
                 Sign in
             </button>
+            <div className="vspace-10"/>
             {this.renderOAuthButtons()}
         </div>
 
