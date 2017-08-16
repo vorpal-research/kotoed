@@ -28,9 +28,7 @@ object UrlPattern {
         const val Search = "/views/comment/search"
     }
 
-    object Debug {
-        const val Navigation = "/web/debug/navigation"
-    }
+    const val NotImplemented = "/notImplemented"
 
     const val EventBus = "/eventbus/*"
     const val Static = "/static/*"

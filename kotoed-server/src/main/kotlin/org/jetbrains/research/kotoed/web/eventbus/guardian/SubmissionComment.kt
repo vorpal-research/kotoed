@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.isAuthorisedAsync
 import org.jetbrains.research.kotoed.util.set
+import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.filters.logResult
@@ -55,7 +56,7 @@ class CommentUpdateFilter(val vertx: Vertx) : BridgeEventFilter {
         if (submission.state != SubmissionState.open)
             return@run false
 
-        return@run (comment.authorId == user.principal()["id"]) || user.isAuthorisedAsync("teacher")
+        return@run (comment.authorId == user.principal()["id"]) || user.isAuthorisedAsync(Authority.Teacher)
     }.also {
         logResult(be, it)
     }

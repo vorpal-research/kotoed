@@ -190,5 +190,5 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
 
 render(
     <SearchableCommentTable/>,
-    document.getElementById('container')
+    document.getElementById('comment-search-app')
 );
