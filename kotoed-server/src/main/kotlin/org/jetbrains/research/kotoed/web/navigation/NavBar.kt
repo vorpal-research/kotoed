@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.web.navigation
 import io.vertx.ext.auth.User
 import org.jetbrains.research.kotoed.util.isAuthorisedAsync
 import org.jetbrains.research.kotoed.web.UrlPattern
+import org.jetbrains.research.kotoed.web.auth.Authority
 
 val NavBarContextName = "navbar"
 
@@ -27,9 +28,9 @@ data class NavBar(val leftElems: List<NavBarElement> = listOf(),
 suspend private fun User?.getUtilities() =
         when {
             this == null -> listOf()
-            isAuthorisedAsync("teacher") -> listOf(
-                    NavBarLink("Comment search", "/todo"),
-                    NavBarLink("Whatever", "/todo")) // TODO
+            isAuthorisedAsync(Authority.Teacher) -> listOf(
+                    NavBarLink("Comment search", UrlPattern.Comment.Search),
+                    NavBarLink("Whatever", UrlPattern.NotImplemented))
             else -> listOf()
         }
 
@@ -48,9 +49,10 @@ suspend fun kotoedNavBar(user: User?): NavBar {
             else
                 listOf(
                         NavBarMenu(
-                                user.principal()?.getString("denizenId") ?: "???",
+                                user.principal()?.getString("denizenId") ?:
+                                        throw IllegalArgumentException("I can work only with UavUsers"),
                                 listOf(
-                                        NavBarLink("Profile", "/todo"), // TODO
+                                        NavBarLink("Profile", UrlPattern.NotImplemented),
                                         NavBarLink("Logout", UrlPattern.Auth.Logout)
                                 )))
     return NavBar(leftElems = leftElems, rightElems = rightElems, rootHref = UrlPattern.Index)

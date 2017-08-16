@@ -254,9 +254,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
     render() {
         return (
-            <div style={{
-                height: "100%"
-            }}>
+            <div className="codemirror-with-veil">
                 {this.renderVeil()}
                 <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
             </div>
