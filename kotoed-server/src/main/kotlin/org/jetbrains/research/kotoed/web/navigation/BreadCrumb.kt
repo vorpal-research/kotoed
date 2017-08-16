@@ -51,7 +51,13 @@ fun UtilitiesBreadCrumbElement(active: Boolean) =
 fun CommentSearchBreadCrumbElement(active: Boolean) =
         BreadCrumbElement(text= "Comment search", active = active, href=UrlPattern.Comment.Search)
 
+fun ProjectSearchBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text= "Project search", active = active, href=UrlPattern.Comment.Search)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Crumbs
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 val RootBreadCrumb = BreadCrumb(RootBreadCrumbElement(true))
 
 fun CourseBreadCrumb(course: CourseRecord) = RootBreadCrumbElement(false) + CourseBreadCrumbElement(true, course)
@@ -89,3 +95,9 @@ val CommentSearchBreadCrumb =
         RootBreadCrumbElement(false) +
                 UtilitiesBreadCrumbElement(true) +
                 CommentSearchBreadCrumbElement(true)
+
+val ProjectSearchBreadCrumb =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(true) +
+                ProjectSearchBreadCrumbElement(true)
+

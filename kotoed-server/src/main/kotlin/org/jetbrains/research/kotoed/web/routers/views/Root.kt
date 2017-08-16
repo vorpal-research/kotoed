@@ -34,6 +34,7 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
 suspend fun handleCommentSearch(context: RoutingContext) {
     if (!context.user().isAuthorisedAsync(Authority.Teacher)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
+        return
     }
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, CommentSearchBreadCrumb)
@@ -44,4 +45,10 @@ suspend fun handleCommentSearch(context: RoutingContext) {
 @LoginRequired
 @JsBundle("projectSearch")
 suspend fun handleProjectSearch(context: RoutingContext) {
+    if (!context.user().isAuthorisedAsync(Authority.Teacher)) {
+        context.fail(HttpResponseStatus.FORBIDDEN)
+        return
+    }
+    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
 }
