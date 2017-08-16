@@ -27,7 +27,6 @@ export interface SearchBarProps {
 }
 
 export interface SearchBarState {
-    openOnly: boolean,
     text: string
 }
 
@@ -35,8 +34,7 @@ class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
     constructor(props: SearchBarProps) {
         super(props);
         this.state = {
-            text: "",
-            openOnly: true
+            text: ""
         };
     }
 
@@ -44,10 +42,6 @@ class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
 
     updateText = (newText: string) => {
         this.setState({text: newText}, this.notify);
-    };
-
-    onOpenOnlyChange = (event: any) => {
-        this.setState({openOnly: event.target.value}, this.notify);
     };
 
     render() {
@@ -78,7 +72,7 @@ export interface SearchableCommentTableState extends SearchBarState {
 
 const PAGESIZE = 20;
 
-class CommentSearchResult extends React.Component<{ comment: CommentToRead }, {}> {
+class CommentSearchResult extends React.PureComponent<{ comment: CommentToRead }> {
     constructor(props: { comment: CommentToRead }) {
         super(props);
 
@@ -128,7 +122,6 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
 
         this.state = {
             text: "",
-            openOnly: false,
             currentPage: 0,
             pageCount: 0,
             currentComments: []
@@ -154,6 +147,7 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
     };
 
     onPageChanged = (page: number) => {
+        page = Math.round(Math.max(0, Math.min(page, this.state.pageCount - 1)));
         this.setState({currentPage: page}, this.queryComments)
     };
 
@@ -163,6 +157,22 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
             this.queryComments()
         });
     };
+
+    onKeyPressedGlobal = _.debounce((e: any) => {
+        if(e.ctrlKey && e.key === "ArrowLeft") {
+            this.onPageChanged(this.state.currentPage - 1)
+        } else if(e.ctrlKey && e.key === "ArrowRight") {
+            this.onPageChanged(this.state.currentPage + 1)
+        }
+    }, 40);
+
+    componentWillMount() {
+        document.addEventListener("keydown", this.onKeyPressedGlobal)
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressedGlobal)
+    }
 
     render() {
         return (
