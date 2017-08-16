@@ -48,6 +48,12 @@ data class ComplexDatabaseQuery(
              key: String? = null) =
             copy(joins = (joins ?: listOf()) + DatabaseJoin(table, field, resultField, key))
 
+    fun join(query: ComplexDatabaseQuery,
+             field: String? = query.table?.let(::defaultField),
+             resultField: String? = field?.let(::defaultResultField),
+             key: String? = null) =
+            copy(joins = (joins ?: listOf()) + DatabaseJoin(query, field, resultField, key))
+
     fun find(record: Record) = copy(find = record.toJson())
 
     fun fillDefaults(): ComplexDatabaseQuery {
