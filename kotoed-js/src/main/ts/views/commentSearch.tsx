@@ -164,7 +164,7 @@ class SearchableCommentTable extends React.Component<SearchableCommentTableProps
         } else if(e.ctrlKey && e.key === "ArrowRight") {
             this.onPageChanged(this.state.currentPage + 1)
         }
-    }, 80);
+    }, 40);
 
     componentWillMount() {
         document.addEventListener("keydown", this.onKeyPressedGlobal)
