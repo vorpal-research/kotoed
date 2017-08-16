@@ -22,7 +22,4 @@ suspend fun handleIndex(context: RoutingContext) {
 @Templatize("todo.jade")
 @EnableSessions
 @JsBundle("hello", withCss = false)
-suspend fun handleNotImplemented(context: RoutingContext) {
-    ProjectWithRelated.fetchByIdOrNull(context.vertx().eventBus(), 3)
-    SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), 9)
-}
+suspend fun handleNotImplemented(context: RoutingContext) {}
