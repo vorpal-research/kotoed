@@ -111,31 +111,30 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comments)
     suspend fun handleComments(message: SubmissionRecord): CommentsResponse {
-        val bloatComments = dbQueryAsync(
+        val comments = dbQueryAsync(
                 ComplexDatabaseQuery(table = SUBMISSION_COMMENT.name)
                         .find(SubmissionCommentRecord().apply { submissionId = message.id })
                         .join(DENIZEN.name, SUBMISSION_COMMENT.AUTHOR_ID.name)
                         .join(SUBMISSION_COMMENT.name, SUBMISSION_COMMENT.PERSISTENT_COMMENT_ID.name,
                                 "original", SUBMISSION_COMMENT.PERSISTENT_COMMENT_ID.name)
-        ).filter {
-            it["original", SUBMISSION_COMMENT.ORIGINAL_SUBMISSION_ID.name] ==
-                    it["original", SUBMISSION_COMMENT.SUBMISSION_ID.name]
-        }.map {
+                        .filter("original.${SUBMISSION_COMMENT.ORIGINAL_SUBMISSION_ID.name} == " +
+                                "original.${SUBMISSION_COMMENT.SUBMISSION_ID.name}")
+        ).map {
             Tuple() +
                     it.toRecord<SubmissionCommentRecord>() +
                     it.getJsonObject("author").toRecord<DenizenRecord>() +
                     it.getJsonObject("original").toRecord<SubmissionCommentRecord>()
         }
 
-        val byFile = bloatComments.filterNot { (it, _, _) ->
+        val byFile = comments.filterNot { (it, _, _) ->
             it.isLost()
         }.groupBy { (it, _, _) ->
             it.sourcefile
         }.mapValues { (_, fileComments) ->
             fileComments.groupBy { (it, _, _) ->
                 it.sourceline
-            }.map { (line, bloatComments) ->
-                SubmissionComments.LineComments(line, bloatComments.sortedBy { it.v0.datetime }.map {
+            }.map { (line, lineComments) ->
+                SubmissionComments.LineComments(line, lineComments.sortedBy { it.v0.datetime }.map {
                     (comment, author, original) ->
                     comment.toJson().apply {
                         put("denizen_id", author.denizenId)
@@ -147,7 +146,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             SubmissionComments.FileComments(file, fileComments)
         }
 
-        val lost = bloatComments.filter {
+        val lost = comments.filter {
             it.v0.isLost()
         }
 
