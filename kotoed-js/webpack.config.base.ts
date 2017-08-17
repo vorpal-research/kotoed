@@ -18,13 +18,14 @@ const neverPutInVendorBundle: Array<RegExp> = [
 
 const config: webpack.Configuration = {
     context: srcMain,
+
     entry: {
-        hello: ["babel-polyfill", "./ts/hello.ts"],
+        hello: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/hello.ts"],
         login: ["babel-polyfill", "./ts/login/index.tsx"],
-        code: ["babel-polyfill", "./ts/code/index.tsx"],
-        submissionResults: ["babel-polyfill", "./ts/views/submissionResults.tsx"],
-        commentSearch: ["babel-polyfill", "./ts/views/commentSearch.tsx"],
-        projectSearch: ["babel-polyfill", "./ts/views/projectSearch.tsx"]
+        code: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/code/index.tsx"],
+        submissionResults: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/submissionResults.tsx"],
+        commentSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/commentSearch.tsx"],
+        projectSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/projectSearch.tsx"]
     },
     output: {
         path: dstPath,

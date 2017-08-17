@@ -16,7 +16,7 @@ data class NavBarLink(val text: String, val href: String = "#") : NavBarElement 
 }
 
 // Only one nesting level, sorry
-data class NavBarMenu(val text: String, val children: List<NavBarLink>) : NavBarElement {
+data class NavBarMenu(val text: String, val children: List<NavBarLink>, val id: String? = null) : NavBarElement {
     override val type = "menu"
 }
 
@@ -39,7 +39,9 @@ suspend fun kotoedNavBar(user: User?): NavBar {
     val utils = user.getUtilities()
     val leftElems =
             if (utils.isNotEmpty())
-                listOf(NavBarMenu("Utilities", children = utils))
+                listOf(NavBarMenu("Utilities", children = utils),
+                        NavBarMenu("Updates", children = listOf(), id = "notifications-menu")
+                )
             else
                 listOf()
 

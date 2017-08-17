@@ -27,4 +27,6 @@ class NotificationVerticle : AbstractKotoedVerticle() {
                     }
             )
 
+
+
 }
