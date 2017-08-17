@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.tables.ProjectTextSearch
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.parseCondition
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -387,3 +388,6 @@ class NotificationVerticle : CrudDatabaseVerticleWithReferences<NotificationReco
 
 @AutoDeployable
 class SubmissionCommentTextSearchVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentTextSearchRecord>(Tables.SUBMISSION_COMMENT_TEXT_SEARCH)
+
+@AutoDeployable
+class ProjectTextSearchVerticle : CrudDatabaseVerticleWithReferences<ProjectTextSearchRecord>(Tables.PROJECT_TEXT_SEARCH)

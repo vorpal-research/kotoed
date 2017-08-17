@@ -11,12 +11,21 @@ interface SocialButtonProps {
 }
 
 export default class SocialButton extends React.Component<SocialButtonProps> {
+    ref: HTMLAnchorElement;
+
+    componentDidMount() {
+        $(this.ref).tooltip();
+    }
+
     render() {
         return (
-            <button className={`btn btn-lg btn-social btn-block btn-${this.props.provider.toLowerCase()}`}
-                    onClick={() => this.props.onClick(this.props.provider)}>
+            <a className={`btn btn-sm btn-social btn-social-icon btn-${this.props.provider.toLowerCase()}`}
+               ref={(me: HTMLAnchorElement) => this.ref = me}
+               onClick={() => this.props.onClick(this.props.provider)}
+               data-toggle="tooltip"
+               data-placement="top"
+               title={`Sign in with ${this.props.provider}`}>
                 <span className={`fa fa-${this.props.provider.toLowerCase()}`}/>
-                Sign in with {this.props.provider}
-            </button>)
+            </a>)
     }
 }

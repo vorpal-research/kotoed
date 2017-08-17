@@ -19,7 +19,9 @@ export namespace Kotoed {
             Project: {
                 Create: "kotoed.api.project.create",
                 Read: "kotoed.api.project.read",
-                Error: "kotoed.api.project.error"
+                Error: "kotoed.api.project.error",
+                Search: "kotoed.api.project.search",
+                SearchCount: "kotoed.api.project.search.count"
             },
 
             Submission: {

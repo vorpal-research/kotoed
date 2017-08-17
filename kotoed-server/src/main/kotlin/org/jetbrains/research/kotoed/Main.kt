@@ -4,23 +4,18 @@ import io.vertx.core.*
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
-import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
-import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
-import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
-import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
-import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedFilter
-import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedPatcher
 
 fun main(args: Array<String>) {
     launch(Unconfined) { startApplication() }
@@ -77,7 +72,10 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
                 sessionStore = LocalSessionStore.create(vertx),
-                templateHelpers = mapOf("static" to staticFilesHelper),
+                templateHelpers = mapOf(
+                        "static" to staticFilesHelper,
+                        "url" to KotoedUrlHelper()
+                ),
                 staticFilesHelper = staticFilesHelper,
                 loggingHandler = LoggerHandler.create(LoggerFormat.SHORT)
         )

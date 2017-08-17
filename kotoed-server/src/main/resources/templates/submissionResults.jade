@@ -1,9 +1,9 @@
-extends ./base
+extends ./baseWithNav
 
 block title
     title Submission results
 
-block content
+append content
     div(
     id="view-submission-results"
     data-submission-id=context.get("submission-id")

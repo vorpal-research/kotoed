@@ -1,5 +1,5 @@
 import * as React from "react";
-import "bootstrap-less"
+import "bootstrap"
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 
