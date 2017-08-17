@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.statistics
 
+import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
@@ -51,7 +52,7 @@ class KFirstRunnerVerticle : AbstractKotoedVerticle(), Loggable {
 
         log.trace("Processing log $logContent")
 
-        val json = logContent.content.tryToJson()
+        val json = JsonObject(logContent.content)
 
         val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId))
                 .firstOrNull() ?: throw IllegalStateException(
