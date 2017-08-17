@@ -8,8 +8,8 @@ import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
-class Google(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
-    override val baseUri: String = "https://accounts.google.com/"
+class Google(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri) {
+    override val providerBaseUri: String = "https://accounts.google.com/"
     override val authorizeUri by lazy {
         "https://accounts.google.com/o/oauth2/v2/auth"
     }

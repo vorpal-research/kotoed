@@ -73,12 +73,6 @@ class GlobalConfig : Configuration() {
 
     val Notifications by NotificationsConfig()
 
-    class OAuthConfig: Configuration() {
-        val BaseUrl by "http://localhost:9000"
-    }
-
-    val OAuth by OAuthConfig()
-
     class RootConfig : Configuration() {
         val Port: Int by 9000
     }

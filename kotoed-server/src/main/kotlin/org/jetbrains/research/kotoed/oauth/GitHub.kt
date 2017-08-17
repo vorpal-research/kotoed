@@ -8,8 +8,8 @@ import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
-class GitHub(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
-    override val baseUri: String = "https://github.com/login/oauth/"
+class GitHub(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri) {
+    override val providerBaseUri: String = "https://github.com/login/oauth/"
     private val apiUri = "https://api.github.com"
     private val userEndpoint = "/user"
 

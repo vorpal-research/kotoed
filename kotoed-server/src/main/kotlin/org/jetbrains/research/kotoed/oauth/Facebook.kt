@@ -8,8 +8,8 @@ import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
-class Facebook(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
-    override val baseUri: String = "https://www.facebook.com/v2.10/"
+class Facebook(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri) {
+    override val providerBaseUri: String = "https://www.facebook.com/v2.10/"
     override val authorizeUri by lazy {
         "https://www.facebook.com/v2.10/dialog/oauth"
     }
