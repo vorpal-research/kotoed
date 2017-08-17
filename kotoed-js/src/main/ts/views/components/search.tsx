@@ -7,6 +7,8 @@ import * as QueryString from "query-string";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 import "less/search.less";
+import "less/common.less";
+import {identity} from "../../util/common";
 
 export interface SearchBarProps {
     initialText: string
@@ -18,11 +20,17 @@ export interface SearchBarState {
 }
 
 export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
+    private input: HTMLInputElement;
+
     constructor(props: SearchBarProps) {
         super(props);
         this.state = {
             text: props.initialText
         };
+    }
+
+    componentDidMount() {
+        this.input.focus();
     }
 
     private notify = _.debounce(() => this.props.onChange(this.state), 300);
@@ -34,13 +42,19 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
     render() {
         return (
             <div className="search-bar">
-                <div className="input-group">
-                    <input className="search-query form-control"
+                <div className="input-group col-md-12">
+                    <input className="search-query form-control input-lg"
+                           ref={(me: HTMLInputElement) => this.input = me}
                            placeholder="Search"
                            type="text"
                            value={this.state.text}
                            onChange={(e) => this.updateText(e.target.value)}
                     />
+                    <span className="input-group-btn">
+                        <span className="btn btn-info btn-lg">
+                            <i className="glyphicon glyphicon-search"/>
+                        </span>
+                    </span>
                 </div>
             </div>
         );
@@ -77,29 +91,76 @@ export class SearchResult extends React.PureComponent<SearchResultProps> {
 
 }
 
-export interface SearchTableProps<DataType> {
+type ShouldPerformInitialSearch = {
+    (text: string, page: number): boolean
+}
+
+type MakeBaseQuery<T> = {
+    (): T
+}
+
+interface GroupProps {
+    by: number
+    using: (children: Array<JSX.Element>) => JSX.Element
+}
+
+export interface SearchTableProps<DataType, QueryType = {}> {
     searchAddress: string,
     countAddress: string,
     elementComponent: (key: string, data: DataType) => JSX.Element
+    shouldPerformInitialSearch?: ShouldPerformInitialSearch
+    makeBaseQuery?: MakeBaseQuery<QueryType>
+    forcePagination?: boolean
+    pageSize?: number
+    wrapResults?: (children: Array<JSX.Element>) => JSX.Element // Wanna table? This is for you!
+    group?: GroupProps // Wanna group to columns or something other?
 }
 
 export interface SearchTableState<DataType> extends SearchBarState {
     currentPage: number,
     pageCount: number,
     currentResults: Array<DataType>
+    touched: boolean
 }
 
-export class SearchTable<DataType> extends
-    React.Component<SearchTableProps<DataType>, SearchTableState<DataType>> {
-    constructor(props: SearchTableProps<DataType>) {
+interface SearchQuery {
+    text: string,
+    currentPage: number,
+    pageSize: number
+}
+
+export class SearchTable<DataType, QueryType = {}> extends
+    React.Component<SearchTableProps<DataType, QueryType>, SearchTableState<DataType>> {
+
+    private shouldPerformInitialSearch: ShouldPerformInitialSearch;
+    private makeBaseQuery: MakeBaseQuery<Partial<QueryType>>;
+    private wrapResults: (children: Array<JSX.Element>) => JSX.Element | Array<JSX.Element>; // Array if if we're doing no wrap
+    private pageSize: number;
+
+    private setPrivateFields(props: SearchTableProps<DataType, QueryType> ) {
+        this.shouldPerformInitialSearch = props.shouldPerformInitialSearch || ((text, page) => (text !== "" || page != 0));
+        this.makeBaseQuery = props.makeBaseQuery || (() => {return {}});
+        this.wrapResults = props.wrapResults || identity;
+        this.pageSize = props.pageSize || PAGESIZE;
+    }
+
+    constructor(props: SearchTableProps<DataType, QueryType>) {
         super(props);
+
+        this.setPrivateFields(props);
 
         this.state = {
             text: QueryString.parse(location.hash).text || "",
             currentPage: parseInt(QueryString.parse(location.hash).currentPage) || 0,
             pageCount: 0,
-            currentResults: []
+            currentResults: [],
+            touched: false
         };
+    }
+
+
+    componentWillReceiveProps(props: SearchTableProps<DataType, QueryType>) {
+        this.setPrivateFields(props);
     }
 
     private hash = () => {
@@ -119,15 +180,17 @@ export class SearchTable<DataType> extends
             .then((resp: any) => this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)}))
     };
 
-    private queryData = () => {
+    private queryData = async () => {
         history.replaceState(undefined, this.state.text, this.hash());
-        let message = {
+        let searchQuery: SearchQuery = {
             text: this.state.text,
             currentPage: this.state.currentPage,
-            pageSize: PAGESIZE
+            pageSize: this.pageSize
         };
-        sendAsync(this.props.searchAddress, message)
-            .then<any>(resp => this.setState({currentResults: resp as any[]}))
+
+        let message: SearchQuery & Partial<QueryType> = Object.assign({}, searchQuery, this.makeBaseQuery());
+        sendAsync<SearchQuery & Partial<QueryType>, Array<DataType>>(this.props.searchAddress, message)
+            .then(resp => this.setState({currentResults: resp, touched: true}))
     };
 
     onPageChanged = (page: number) => {
@@ -155,7 +218,7 @@ export class SearchTable<DataType> extends
     }
 
     componentDidMount() {
-        if(this.state.text !== "" || this.state.currentPage != 0) {
+        if(this.shouldPerformInitialSearch(this.state.text, this.state.currentPage)) {
             this.queryCount();
             this.queryData();
         }
@@ -165,14 +228,11 @@ export class SearchTable<DataType> extends
         document.removeEventListener("keydown", this.onKeyPressedGlobal);
     }
 
-    render() {
-        return (
-            <div>
-                <SearchBar
-                    initialText={this.state.text}
-                    onChange={this.onSearchStateChanged}
-                />
+    renderPagination = () => {
+        if (this.state.pageCount > 1 || this.props.forcePagination)
+            return <div className="text-center">
                 <Pagination
+                    className="pagination-lg"
                     prev
                     next
                     first
@@ -182,9 +242,38 @@ export class SearchTable<DataType> extends
                     items={this.state.pageCount}
                     maxButtons={5}
                     activePage={this.state.currentPage + 1}
-                    onSelect={(e: any) => this.onPageChanged(e as number - 1)}
+                    onSelect={(e: any) => this.onPageChanged(e as number - 1)}/>
+            </div>;
+        else
+            return <div className="vspace-10"/>
+    };
+
+    renderResults = () => {
+        if (this.state.currentResults.length === 0)
+            return <div className="text-center no-results">{this.state.touched ? "No results" : "Please start typing"}</div>;
+        else {
+            let resEls = this.state.currentResults.map((result, index) => this.props.elementComponent("result"+index, result));
+            let toWrap: Array<JSX.Element>;
+            if (this.props.group) {
+                toWrap = _.chunk(resEls, this.props.group.by).map(this.props.group.using);
+            } else {
+                toWrap = resEls;
+            }
+            return this.wrapResults(toWrap)
+        }
+
+    };
+
+    render() {
+        return (
+            <div>
+                <SearchBar
+                    initialText={this.state.text}
+                    onChange={this.onSearchStateChanged}
                 />
-                {this.state.currentResults.map((result, index) => this.props.elementComponent("result"+index, result))}
+                {this.renderPagination()}
+                {this.renderResults()}
+                {this.renderPagination()}
             </div>
         );
     }
