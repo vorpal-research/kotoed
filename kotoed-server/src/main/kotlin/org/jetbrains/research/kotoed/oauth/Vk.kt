@@ -2,8 +2,8 @@ package org.jetbrains.research.kotoed.oauth
 
 import io.vertx.core.Vertx
 
-class Vk(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
-    override val baseUri: String = "https://oauth.vk.com"
+class Vk(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri) {
+    override val providerBaseUri: String = "https://oauth.vk.com"
 
     suspend override fun doGetUserId(): String =
             getAccessTokenResponseBody().getInteger("user_id")?.toString() ?:

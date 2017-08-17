@@ -6,8 +6,8 @@ import io.vertx.core.Vertx
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
-class Bitbucket(vertx: Vertx) : AbstractOAuthProvider(Name, vertx) {
-    override val baseUri: String = "https://bitbucket.org/site/oauth2/"
+class Bitbucket(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri) {
+    override val providerBaseUri: String = "https://bitbucket.org/site/oauth2/"
     private val apiUri = "https://api.bitbucket.org/2.0/"
     private val userEndpoint = "/user"
 

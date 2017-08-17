@@ -6,7 +6,6 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.WebClient
-import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.OauthProviderRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -17,8 +16,11 @@ import org.jetbrains.research.kotoed.web.UrlPattern
 
 class OAuthException(message: String) : Exception(message)
 
-abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx) : Loggable {
-    abstract val baseUri: String
+abstract class AbstractOAuthProvider(
+        val name: String,
+        private val vertx: Vertx,
+        val callbackBaseUri: String) : Loggable {
+    abstract val providerBaseUri: String
 
     open val authorizePath: String = "/authorize"
     open val accessTokenPath: String = "/access_token"
@@ -57,11 +59,11 @@ abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx)
     suspend fun getClientSecret(): String = getProviderDbRecord().clientSecret
 
     open val redirectUri by lazy {
-        "${Config.OAuth.BaseUrl}${UrlPattern.reverse(UrlPattern.Auth.OAuthCallback, mapOf("providerName" to name))}".normalizeUri()
+        "$callbackBaseUri${UrlPattern.reverse(UrlPattern.Auth.OAuthCallback, mapOf("providerName" to name))}".normalizeUri()
     }
 
     open val authorizeUri by lazy {
-        "$baseUri/$authorizePath".normalizeUri()
+        "$providerBaseUri/$authorizePath".normalizeUri()
     }
 
     suspend fun getAuthorizeUriWithQuery() = codeUri ?: run {
@@ -79,7 +81,7 @@ abstract class AbstractOAuthProvider(val name: String, private val vertx: Vertx)
     }
 
     open val accessTokenUri by lazy {
-        "$baseUri/$accessTokenPath".normalizeUri()
+        "$providerBaseUri/$accessTokenPath".normalizeUri()
     }
 
     suspend fun getAccessTokenResponseBody(): JsonObject = accessTokenResponseBody ?: run {

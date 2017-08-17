@@ -19,6 +19,7 @@ import org.reflections.Reflections
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.scanners.TypeAnnotationsScanner
 import org.slf4j.LoggerFactory
+import java.net.URI
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
@@ -42,6 +43,11 @@ operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): 
 
 suspend fun HttpServerRequest.bodyAsync(): Buffer =
         vxt { bodyHandler(it) }
+
+fun HttpServerRequest.getRootUrl() =
+        URI(absoluteURI()).run {
+            "${URI(scheme, userInfo, host, port, "/", null, null)}"
+        }
 
 suspend fun <T> HttpRequest<T>.sendAsync() = vxa<HttpResponse<T>> { send(it) }
 

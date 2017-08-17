@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.http.HttpMethod
+import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.data.db.OAuthLoginMsg
 import org.jetbrains.research.kotoed.data.db.OAuthSignUpMsg
@@ -15,6 +16,7 @@ import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.SignUpHandler
+import java.net.URI
 
 @HandlerFor(UrlPattern.Auth.Index)
 @EnableSessions
@@ -63,7 +65,7 @@ private fun providerOrNull(name: String?, context: RoutingContext): AbstractOAut
     }
 
     return try {
-        getOAuthProvider(name, context.vertx())
+        getOAuthProvider(name, context.vertx(), context.request().getRootUrl())
     } catch (ex: OAuthException) {
         return null
     }
