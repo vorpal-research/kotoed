@@ -80,7 +80,11 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
                     resultList.push(result);
                 }
             }
-            tabs.push([resultHolder.props.name, resultList, resultHolder.state.rowDefinition]);
+            tabs.push([
+                resultHolder.props.name,
+                Array.of<ResultT>().concat(...resultList.map(resultHolder.props.transformer)),
+                resultHolder.state.rowDefinition
+            ]);
         }
 
         return <Tabs

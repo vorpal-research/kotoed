@@ -1,4 +1,4 @@
-import {Component} from "react";
+import {Component, ReactNode} from "react";
 import {components} from "griddle-react";
 import {isArray} from "util";
 import RowDefinition = components.RowDefinition;
@@ -6,6 +6,7 @@ import RowDefinition = components.RowDefinition;
 export interface ResultHolderProps<ResultT> {
     name: string
     selector: (r: ResultT) => boolean
+    transformer: (r: ResultT) => ResultT[]
 }
 
 export interface ResultHolderState {
@@ -20,6 +21,16 @@ export class ResultHolder<ResultT> extends Component<ResultHolderProps<ResultT>,
             this.state = {rowDefinition: this.props.children[0] as any};
         } else {
             this.state = {rowDefinition: this.props.children as any};
+        }
+    }
+
+    componentWillReceiveProps(nextProps: ResultHolderProps<ResultT> & { children?: ReactNode }) {
+        if (nextProps.children != this.props.children) {
+            if (isArray(nextProps.children)) {
+                this.setState({rowDefinition: nextProps.children[0] as any});
+            } else {
+                this.setState({rowDefinition: nextProps.children as any});
+            }
         }
     }
 }
