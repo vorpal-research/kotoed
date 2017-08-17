@@ -92,7 +92,7 @@ class OAuthTestIntegration {
 
         val newProvider = wpost(
                 path = "debug/eventbus/${Address.DB.create("oauth_provider")}",
-                payload = """ { "name" : "http://spbstu.ru" } """
+                payload = """ { "name" : "http://spbstu.ru", "client_id": "soClient", "client_secret": "muchSecret" } """
         ).let(::JsonObject)
         use(newProvider)
 
