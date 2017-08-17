@@ -111,9 +111,8 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                                 StringLocator("steps")
                     },
                     Address.Buildbot.Build.StepCrawl,
-                    {
-                        c, v ->
-                        StepCrawl(c.buildId, v.stepid)
+                    { c, v ->
+                        StepCrawl(c.buildRequestId, c.buildId, v.stepid)
                     }
             )
 
@@ -126,9 +125,8 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                                 StringLocator("logs")
                     },
                     Address.Buildbot.Build.LogCrawl,
-                    {
-                        c, v ->
-                        LogCrawl(c.buildId, c.stepId, v.logid, v.name)
+                    { c, v ->
+                        LogCrawl(c.buildRequestId, c.buildId, c.stepId, v.logid, v.name)
                     }
             )
 
@@ -141,9 +139,8 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                                 StringLocator("contents")
                     },
                     Address.Buildbot.Build.LogContent,
-                    {
-                        c, v ->
-                        LogContent(c.buildId, c.stepId, c.logId, c.logName, v.content)
+                    { c, v ->
+                        LogContent(c.buildRequestId, c.buildId, c.stepId, c.logId, c.logName, v.content)
                     }
             )
 
