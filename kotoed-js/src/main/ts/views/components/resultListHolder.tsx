@@ -74,6 +74,17 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
         let tabs: TabData[] = [];
 
         for (let resultHolder of this.state.resultHolders) {
+
+            // Skipping data processing for non-active tabs
+            if (this.state.activeTabIndex != tabs.length) {
+                tabs.push([
+                    resultHolder.props.name,
+                    [],
+                    resultHolder.state.rowDefinition
+                ]);
+                continue;
+            }
+
             let resultList = [];
             for (let result of this.state.results) {
                 if (resultHolder.props.selector(result)) {
