@@ -12,15 +12,18 @@ data class BuildRequestInfo(
 ) : EventBusDatum<BuildRequestInfo>()
 
 data class BuildCrawl(
+        val buildRequestId: Int,
         val buildId: Int
 ) : EventBusDatum<BuildCrawl>()
 
 data class StepCrawl(
+        val buildRequestId: Int,
         val buildId: Int,
         val stepId: Int
 ) : EventBusDatum<StepCrawl>()
 
 data class LogCrawl(
+        val buildRequestId: Int,
         val buildId: Int,
         val stepId: Int,
         val logId: Int,
@@ -28,6 +31,7 @@ data class LogCrawl(
 ) : EventBusDatum<LogCrawl>()
 
 data class LogContent(
+        val buildRequestId: Int,
         val buildId: Int,
         val stepId: Int,
         val logId: Int,

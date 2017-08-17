@@ -72,11 +72,11 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
 
             for (build in builds.filterNot { it.buildid in processedBuildIds }) {
                 if (build.complete) {
-                    log.trace("Build ${build.buildid} finished")
+                    log.trace("Build ${build.buildid} finished for $buildRequestId")
 
                     eb.publish(
                             Address.Buildbot.Build.BuildCrawl,
-                            BuildCrawl(build.buildid).toJson()
+                            BuildCrawl(buildRequestId, build.buildid).toJson()
                     )
 
                     processedBuildIds += build.buildid
