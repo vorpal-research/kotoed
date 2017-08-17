@@ -7,9 +7,11 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.notification.NotificationType
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -45,7 +47,29 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
             }
             else -> throw IllegalArgumentException("Applying comment to an incorrect or incomplete submission")
         }
-        return DbRecordWrapper(res, VerificationData.Processed)
+
+        val ret = DbRecordWrapper(res, VerificationData.Processed)
+
+        // notifications
+        val thread: List<SubmissionCommentRecord> = dbFindAsync(SubmissionCommentRecord().apply {
+            submissionId = comment.submissionId
+            sourcefile = comment.sourcefile
+            sourceline = comment.sourceline
+        })
+
+        thread.groupBy { it.authorId }
+                .filterKeys { it != comment.authorId }
+                .forEach { (author, _) ->
+                    dbCreateAsync (
+                            NotificationRecord().apply {
+                                denizenId = author
+                                type = NotificationType.COMMENT_REPLIED_TO.toString()
+                                body = ret.record
+                            }
+                    )
+                }
+
+        return ret
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Read)
@@ -64,7 +88,10 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         comment.sourceline           = existing.sourceline
         comment.authorId             = existing.authorId
         comment.persistentCommentId  = existing.persistentCommentId
-        return DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
+
+        val res = DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
+
+        return res
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Search)
