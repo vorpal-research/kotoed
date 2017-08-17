@@ -10,6 +10,7 @@ import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerForDynamic
 import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.expecting
+import org.jooq.impl.DSL
 
 @AutoDeployable
 class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionCommentRecord>(Tables.SUBMISSION_COMMENT) {
@@ -17,6 +18,43 @@ class SubmissionCommentVerticle : CrudDatabaseVerticleWithReferences<SubmissionC
     val fullAddress get() = Address.DB.full(entityName)
     val lastAddress get() = Address.DB.last(entityName)
     val textSearchAddress get() = Address.DB.searchText(entityName)
+
+    suspend override fun handleCreate(message: SubmissionCommentRecord): SubmissionCommentRecord {
+        log.trace("Create requested in table ${table.name}:\n" +
+                message.toJson().encodePrettily())
+
+        message.reset(Tables.SUBMISSION_COMMENT.ID)
+
+        return db {
+            with(Tables.SUBMISSION_COMMENT) {
+                val previousCommentQuery =
+                        select(ID)
+                                .from(this@with)
+                                .where(SUBMISSION_ID equal message.submissionId)
+                                .and(SOURCEFILE equal message.sourcefile)
+                                .and(SOURCELINE equal message.sourceline)
+                                .orderBy(DATETIME.desc())
+                                .limit(1)
+
+                if(message[PREVIOUS_COMMENT_ID] != null) {
+                    insertInto(table)
+                            .set(message)
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
+                            .first()
+                } else {
+                    insertInto(table)
+                            .set(message)
+                            .set(PREVIOUS_COMMENT_ID, previousCommentQuery)
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
+                            .first()
+                }
+            }
+        }
+    }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "fullAddress")
     suspend fun handleFull(query: SubmissionCommentRecord): JsonObject {

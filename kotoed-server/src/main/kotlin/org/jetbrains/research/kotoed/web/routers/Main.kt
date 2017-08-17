@@ -16,8 +16,6 @@ suspend fun handleIndex(context: RoutingContext) {
     context.put("who", "Kotoed")
 }
 
-
-
 @HandlerFor(UrlPattern.NotImplemented)
 @Templatize("todo.jade")
 @EnableSessions
