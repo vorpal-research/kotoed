@@ -16,7 +16,7 @@ import {
     registerOpenComment, updateAggregate
 } from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
-import {UNKNOWN_FILE, UNKNOWN_LINE} from "./remote/comments";
+import {UNKNOWN_FILE, UNKNOWN_LINE} from "./remote/constants";
 import {List} from "immutable";
 
 const initialFileTreeState: FileTreeState = {

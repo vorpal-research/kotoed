@@ -2,9 +2,6 @@ import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 
-export const UNKNOWN_FILE = "/dev/null";
-export const UNKNOWN_LINE = 0;
-
 type CommentState = "open" | "closed";
 
 interface BaseComment {

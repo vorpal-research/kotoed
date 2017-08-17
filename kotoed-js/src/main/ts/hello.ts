@@ -5,9 +5,9 @@
 import * as $ from 'jquery';
 
 import "less/kotoed-bootstrap/bootstrap.less";
-import "bootstrap-less";
+import "bootstrap";
 
 
 $(function() {
-    console.log("READY!!!");
+
 });

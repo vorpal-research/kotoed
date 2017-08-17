@@ -23,45 +23,50 @@ operator fun BreadCrumbElement.plus(other: BreadCrumbElement) = BreadCrumb(listO
 // Elements
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-fun RootBreadCrumbElement(active: Boolean) = BreadCrumbElement(text = "Root", href = UrlPattern.Index)
+fun RootBreadCrumbElement(active: Boolean) = BreadCrumbElement(text = "Root", href = UrlPattern.Index, active = active)
 
 fun CourseBreadCrumbElement(active: Boolean, course: CourseRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = course.name, active = active, href="/todo") // TODO
+    return BreadCrumbElement(text = course.name, active = active, href=UrlPattern.NotImplemented) // TODO
 }
 
 fun ProjectBreadCrumbElement(active: Boolean,
                              author: DenizenRecord,
                              project: ProjectRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = "${project.name} by ${author.denizenId}", active = active, href="/todo") // TODO
+    return BreadCrumbElement(text = "${project.name} by ${author.denizenId}", active = active, href=UrlPattern.NotImplemented)
 }
 
 
-fun SubmissionBreadCrumbElement(active: Boolean, submission: SubmissionRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = "Submission #${submission.id}", active = active, href="/todo") // TODO
-}
+fun SubmissionBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
+        BreadCrumbElement(text = "Submission #${submission.id}", active = active, href=UrlPattern.NotImplemented) // TODO
 
-fun SubmissionResultBreadCrumbElement(active: Boolean, submission: SubmissionRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = "Results", active = active, href="/todo") // TODO
-}
+fun SubmissionResultBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
+        BreadCrumbElement(text = "Results", active = active, href=UrlPattern.NotImplemented) // TODO
 
-fun SubmissionReviewBreadCrumbElement(active: Boolean, submission: SubmissionRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = "Review", active = active, href="/todo") // TODO
-}
+fun SubmissionReviewBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
+        BreadCrumbElement(text = "Review", active = active, href=UrlPattern.NotImplemented) // TODO
 
+fun UtilitiesBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text = "Utilities", active = active)
 
+fun CommentSearchBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text= "Comment search", active = active, href=UrlPattern.Comment.Search)
 
+fun ProjectSearchBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text= "Project search", active = active, href=UrlPattern.Comment.Search)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Crumbs
-fun RootBreadCrumb() = BreadCrumb(RootBreadCrumbElement(true))
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-fun CourseBreadCrumb(course: CourseRecord): BreadCrumb {
-    return RootBreadCrumbElement(false) + CourseBreadCrumbElement(true, course)
-}
+val RootBreadCrumb = BreadCrumb(RootBreadCrumbElement(true))
 
-fun ProjectBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord): BreadCrumb {
-    return RootBreadCrumbElement(false) +
-            CourseBreadCrumbElement(false, course) +
-            ProjectBreadCrumbElement(true, author, project)
-}
+fun CourseBreadCrumb(course: CourseRecord) = RootBreadCrumbElement(false) + CourseBreadCrumbElement(true, course)
+
+
+fun ProjectBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord) =
+        RootBreadCrumbElement(false) +
+                CourseBreadCrumbElement(false, course) +
+                ProjectBreadCrumbElement(true, author, project)
 
 fun SubmissionBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord): BreadCrumb {
     return RootBreadCrumbElement(false) +
@@ -70,18 +75,29 @@ fun SubmissionBreadCrumb(course: CourseRecord, author: DenizenRecord, project: P
             SubmissionBreadCrumbElement(true, submission)
 }
 
-fun SubmissionResultBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord): BreadCrumb {
-    return RootBreadCrumbElement(false) +
+fun SubmissionResultBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
+        RootBreadCrumbElement(false) +
             CourseBreadCrumbElement(false, course) +
             ProjectBreadCrumbElement(false, author, project) +
             SubmissionBreadCrumbElement(false, submission) +
             SubmissionResultBreadCrumbElement(true, submission)
-}
 
-fun SubmissionReviewBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord): BreadCrumb {
-    return RootBreadCrumbElement(false) +
+
+fun SubmissionReviewBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
+        RootBreadCrumbElement(false) +
             CourseBreadCrumbElement(false, course) +
             ProjectBreadCrumbElement(false, author, project) +
             SubmissionBreadCrumbElement(false, submission) +
             SubmissionReviewBreadCrumbElement(true, submission)
-}
+
+
+val CommentSearchBreadCrumb =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(true) +
+                CommentSearchBreadCrumbElement(true)
+
+val ProjectSearchBreadCrumb =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(true) +
+                ProjectSearchBreadCrumbElement(true)
+
