@@ -1,7 +1,5 @@
 import * as React from "react";
 import {SearchResult, SearchTable} from "./components/search";
-import CommentComponent from "../code/components/CommentComponent";
-import {doNothing} from "../util/common";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {makeCodeReviewCodePath} from "../util/url";

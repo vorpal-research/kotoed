@@ -124,8 +124,23 @@ class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)
     }
 }
 
+class TsQueryOrOperator(val lhv: Field<Any>, val rhv: Field<Any>)
+    : CustomField<Any>("||", DSL.getDataType(Any::class.java)) {
+
+    override fun accept(ctx: Context<*>) = with(ctx) {
+        expect(ctx.dialect().family() == SQLDialect.POSTGRES)
+        parens {
+            visit(lhv).sql(" || ").visit(rhv)
+        }
+    }
+}
+
 fun toTSQuery(field: Field<String>): Field<Any> = FunctionCall("to_tsquery", DSL.inline("russian"), field)
-fun toPlainTSQuery(field: Field<String>): Field<Any> = FunctionCall("plainto_tsquery", DSL.inline("russian"), field)
+fun toPlainTSQuery(field: Field<String>): Field<Any> =
+        TsQueryOrOperator(
+                FunctionCall("plainto_tsquery", DSL.inline("russian"), field),
+                FunctionCall("plainto_tsquery", DSL.inline("simple"), field)
+        )
 
 infix fun Field<Any>.documentMatch(query: String): Field<Boolean> =
         TextDocumentMatch(this, DSL.field("to_tsquery('russian', '$query')"))

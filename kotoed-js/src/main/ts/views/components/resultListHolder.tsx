@@ -9,12 +9,14 @@ import {
     ErrorDesc,
     GenericResponse,
     sendAsync,
-    VerificationData
+    VerificationData,
+    VerificationStatus
 } from "./common";
 import {ErrorTable} from "./errorTable";
 import {ResultHolder} from "./resultHolder";
 import {ResultTable} from "./resultTable";
 
+import {sleep} from "../../util/common";
 import {Kotoed} from "../../util/kotoed-api";
 
 export interface ResultListHolderProps {
@@ -46,24 +48,44 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
         };
     }
 
-    protected processResults = (r: GenericResponse<ResultT>): void => {
-        let records = Promise.resolve(r.records);
-        let errors = 0 < r.verificationData.errors.length
+    componentDidMount() {
+        this.loadResults()
+            .then(this.processResults)
+    }
+
+    abstract loadResults: () => Promise<any>;
+
+    protected processResults = (response: GenericResponse<ResultT>): Promise<any> => {
+        let records = Promise.resolve(response.records);
+        let errors = 0 < response.verificationData.errors.length
             ? sendAsync<VerificationData, ErrorDesc[]>
-            (Kotoed.Address.Api.Submission.Error, r.verificationData)
+            (Kotoed.Address.Api.Submission.Error, response.verificationData)
             : Promise.resolve([] as ErrorDesc[]);
 
-        Promise.all([records, errors])
+        return Promise.all([records, errors])
             .then(res => {
                 let [r, e] = res;
                 let activeTabIndex = e.length > 0
                     ? this.state.resultHolders.length
-                    : 0;
+                    : this.state.activeTabIndex;
                 this.setState({
                     results: r,
                     errors: e,
                     activeTabIndex: activeTabIndex
                 });
+
+                let shouldRetry =
+                    VerificationStatus[VerificationStatus.NotReady] == response.verificationData.status
+                    || VerificationStatus[VerificationStatus.Unknown] == response.verificationData.status
+                    || 0 == r.length + e.length;
+
+                if (shouldRetry) {
+                    return sleep(15000)
+                        .then(this.loadResults)
+                        .then(this.processResults);
+                } else {
+                    return Promise.resolve();
+                }
             });
     };
 
@@ -74,6 +96,17 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
         let tabs: TabData[] = [];
 
         for (let resultHolder of this.state.resultHolders) {
+
+            // Skipping data processing for non-active tabs
+            if (this.state.activeTabIndex != tabs.length) {
+                tabs.push([
+                    resultHolder.props.name,
+                    [],
+                    resultHolder.state.rowDefinition
+                ]);
+                continue;
+            }
+
             let resultList = [];
             for (let result of this.state.results) {
                 if (resultHolder.props.selector(result)) {

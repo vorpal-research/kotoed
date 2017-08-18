@@ -7,13 +7,12 @@ import org.jetbrains.research.kotoed.web.eventbus.*
 import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.Index)
-@Templatize("main.jade")
+@Templatize("courses.jade")
 @LoginRequired
-@JsBundle("hello", withCss = false)
+@JsBundle("courseList")
 suspend fun handleIndex(context: RoutingContext) {
     context.put(BreadCrumbContextName, RootBreadCrumb)
     context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put("who", "Kotoed")
 }
 
 @HandlerFor(UrlPattern.NotImplemented)

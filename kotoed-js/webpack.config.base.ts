@@ -4,7 +4,8 @@ import * as ExtractTextPlugin from "extract-text-webpack-plugin"
 
 declare const __dirname: string;
 
-const srcMain = path.resolve(__dirname, "src/main/");
+const src = path.resolve(__dirname, "src");
+const srcMain = path.resolve(src, "main");
 // Maybe we should put it to webroot/static in kotoed-server's pom.xml
 const dstPath = path.resolve(__dirname, "target/js/webroot/static/");
 
@@ -16,16 +17,29 @@ const neverPutInVendorBundle: Array<RegExp> = [
     /.*@blueprintjs.*/ // Sets global styles without classes
 ];
 
+function kotoedEntry(root: string, notifications: boolean = true): string[] {
+    function* gen() {
+        yield "babel-polyfill";
+        if (notifications)
+            yield "./ts/views/notificationMenu.tsx";
+        yield root;
+    }
+    return [...gen()]
+}
+
 const config: webpack.Configuration = {
     context: srcMain,
 
     entry: {
-        hello: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/hello.ts"],
-        login: ["babel-polyfill", "./ts/login/index.tsx"],
-        code: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/code/index.tsx"],
-        submissionResults: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/submissionResults.tsx"],
-        commentSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/commentSearch.tsx"],
-        projectSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/projectSearch.tsx"]
+        hello: kotoedEntry("./ts/hello.ts"),
+        login: kotoedEntry("./ts/login/index.tsx", false),
+        code: kotoedEntry("./ts/code/index.tsx"),
+        submissionResults: kotoedEntry("./ts/views/submissionResults.tsx"),
+        commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
+        projectSearch: kotoedEntry("./ts/views/projectSearch.tsx"),
+        courseList: kotoedEntry("./ts/courses/list.tsx"),
+
+        images: "./ts/images.ts"
     },
     output: {
         path: dstPath,
@@ -38,6 +52,7 @@ const config: webpack.Configuration = {
             ts: path.resolve(srcMain, "ts"),
             js: path.resolve(srcMain, "js"),
             less: path.resolve(srcMain, "less"),
+            res: path.resolve(src, "resources")
 
         }
     },
@@ -125,7 +140,15 @@ const config: webpack.Configuration = {
                     name: "fonts/[name].[ext]",
                     publicPath: '../'  // CSS are put into css/ folder by ExtractTextPlugin
                 }
-            }
+            },
+            {
+                test: /\.(png|jpg)(\?v=\d+\.\d+\.\d+)?$/,
+                loader: "file-loader",
+                options: {
+                    name: "img/[name].[ext]",
+                }
+            },
+
 
         ]
     },
