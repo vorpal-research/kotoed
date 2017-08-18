@@ -28,7 +28,7 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Comment.SearchCount to Permissive,
         Address.Api.Project.Search to Permissive,
         Address.Api.Project.SearchCount to Permissive,
-        Address.Api.Notification.Current to Permissive
+        Address.Api.Notification.RenderCurrent to Permissive
 )
 
 val KotoedPerAddressAnonymousFilter = PerAddress(
@@ -49,7 +49,7 @@ class KotoedFilter(vertx: Vertx): BridgeEventFilter {
 
 val KotoedPerAddressPatcher = PerAddressPatcher(
         Address.Api.Submission.Comment.Create to CommentCreatePatcher,
-        Address.Api.Notification.Current to NotificationPatcher
+        Address.Api.Notification.RenderCurrent to NotificationPatcher
 )
 
 val KotoedPatcher = KotoedPerAddressPatcher

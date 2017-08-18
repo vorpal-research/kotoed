@@ -2,8 +2,13 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.api.*
+import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.SearchQuery
+import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
@@ -11,13 +16,58 @@ import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.notification.NotificationType
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 
 @AutoDeployable
 class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
+
+    private suspend fun queryCommentsWithAuthorAndSubmission(record: SubmissionCommentRecord) =
+        dbQueryAsync(
+                ComplexDatabaseQuery(find = record)
+                        .join(Tables.DENIZEN, field = Tables.SUBMISSION_COMMENT.AUTHOR_ID.name)
+                        .join(field = Tables.SUBMISSION_COMMENT.SUBMISSION_ID.name,
+                              query = ComplexDatabaseQuery(Tables.SUBMISSION)
+                                      .join(Tables.PROJECT, field = Tables.SUBMISSION.PROJECT_ID.name)
+                        )
+        )
+
+    private suspend fun notifyCreated(record: SubmissionCommentRecord) {
+        val rich = queryCommentsWithAuthorAndSubmission(
+                SubmissionCommentRecord().apply{ id = record.id }
+        ).first()
+
+        val thread: List<SubmissionCommentRecord> = dbFindAsync(SubmissionCommentRecord().apply {
+            submissionId = record.submissionId
+            sourcefile = record.sourcefile
+            sourceline = record.sourceline
+        })
+
+        val submissionOwner = rich["submission", "project", "denizenId"] as? Int
+
+        if(record.authorId != submissionOwner) {
+            dbCreateAsync (
+                    NotificationRecord().apply {
+                        denizenId = submissionOwner
+                        type = NotificationType.NEW_COMMENT.toString()
+                        body = rich
+                    }
+            )
+        }
+
+        thread.groupBy { it.authorId }
+                .filterKeys { it != record.authorId }
+                .forEach { (author, _) ->
+                    dbCreateAsync (
+                            NotificationRecord().apply {
+                                denizenId = author
+                                type = NotificationType.COMMENT_REPLIED_TO.toString()
+                                body = rich
+                            }
+                    )
+                }
+    }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Create)
     suspend fun handleCreate(comment: SubmissionCommentRecord): DbRecordWrapper {
@@ -50,24 +100,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
         val ret = DbRecordWrapper(res, VerificationData.Processed)
 
-        // notifications
-        val thread: List<SubmissionCommentRecord> = dbFindAsync(SubmissionCommentRecord().apply {
-            submissionId = comment.submissionId
-            sourcefile = comment.sourcefile
-            sourceline = comment.sourceline
-        })
-
-        thread.groupBy { it.authorId }
-                .filterKeys { it != comment.authorId }
-                .forEach { (author, _) ->
-                    dbCreateAsync (
-                            NotificationRecord().apply {
-                                denizenId = author
-                                type = NotificationType.COMMENT_REPLIED_TO.toString()
-                                body = ret.record
-                            }
-                    )
-                }
+        launch(UnconfinedWithExceptions(this)) { notifyCreated(res) }
 
         return ret
     }
@@ -75,6 +108,31 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Read)
     suspend fun handleRead(comment: SubmissionCommentRecord) =
             DbRecordWrapper(dbFetchAsync(comment), VerificationData.Processed)
+
+    private suspend fun notifyStateChanged(before: SubmissionCommentRecord, after: SubmissionCommentRecord) {
+        val rich = queryCommentsWithAuthorAndSubmission(SubmissionCommentRecord().apply { id = after.id }).first()
+
+        val submissionOwner = rich["submission", "project", "denizenId"] as? Int
+
+        val notificationType = when(before.state to after.state) {
+            (SubmissionCommentState.open to SubmissionCommentState.closed) ->
+                    NotificationType.COMMENT_CLOSED.toString()
+            (SubmissionCommentState.closed to SubmissionCommentState.open) ->
+                    NotificationType.COMMENT_REOPENED.toString()
+            else -> return // wt*
+        }
+
+        if(after.authorId != submissionOwner) {
+            dbCreateAsync (
+                    NotificationRecord().apply {
+                        denizenId = submissionOwner
+                        type = notificationType
+                        body = rich
+                    }
+            )
+        }
+
+    }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Update)
     suspend fun handleUpdate(comment: SubmissionCommentRecord): DbRecordWrapper {
@@ -90,6 +148,10 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         comment.persistentCommentId  = existing.persistentCommentId
 
         val res = DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
+
+        if(comment.state != existing.state) {
+            launch(UnconfinedWithExceptions(this)) { notifyStateChanged(existing, comment) }
+        }
 
         return res
     }

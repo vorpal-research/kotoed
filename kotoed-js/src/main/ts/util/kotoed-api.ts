@@ -59,6 +59,7 @@ export namespace Kotoed {
             Notification: {
                 Create: "kotoed.api.notification.create",
                 Current: "kotoed.api.notification.current",
+                RenderCurrent: "kotoed.api.notification.current.render",
                 MarkRead: "kotoed.api.notification.markRead"
             },
             OAuthProvider: {
