@@ -9,6 +9,8 @@ object Address {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
             const val Error = "kotoed.api.course.error"
+            const val Search = "kotoed.api.course.search"
+            const val SearchCount = "kotoed.api.project.course.count"
         }
 
         object Project {
