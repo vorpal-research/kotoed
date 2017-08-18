@@ -212,10 +212,10 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
 
-        if (buildInfos.isNotEmpty()) {
-            return VerificationData.Processed
+        return if (buildInfos.isNotEmpty()) {
+            VerificationData.Processed
         } else {
-            return VerificationData.Unknown
+            VerificationData.Unknown
         }
     }
 

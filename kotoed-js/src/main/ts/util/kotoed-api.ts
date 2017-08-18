@@ -13,7 +13,9 @@ export namespace Kotoed {
             Course: {
                 Create: "kotoed.api.course.create",
                 Read: "kotoed.api.course.read",
-                Error: "kotoed.api.course.error"
+                Error: "kotoed.api.course.error",
+                Search: "kotoed.api.course.search",
+                SearchCount: "kotoed.api.project.course.count"
             },
 
             Project: {
