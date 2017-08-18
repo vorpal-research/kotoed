@@ -16,16 +16,26 @@ const neverPutInVendorBundle: Array<RegExp> = [
     /.*@blueprintjs.*/ // Sets global styles without classes
 ];
 
+function kotoedEntry(root: string, notifications: boolean = true): string[] {
+    function* gen() {
+        yield "babel-polyfill";
+        if (notifications)
+            yield "./ts/views/notificationMenu.tsx";
+        yield root;
+    }
+    return [...gen()]
+}
+
 const config: webpack.Configuration = {
     context: srcMain,
 
     entry: {
-        hello: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/hello.ts"],
-        login: ["babel-polyfill", "./ts/login/index.tsx"],
-        code: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/code/index.tsx"],
-        submissionResults: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/submissionResults.tsx"],
-        commentSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/commentSearch.tsx"],
-        projectSearch: ["babel-polyfill", "./ts/views/notificationMenu.tsx", "./ts/views/projectSearch.tsx"]
+        hello: kotoedEntry("./ts/hello.ts"),
+        login: kotoedEntry("./ts/login/index.tsx", false),
+        code: kotoedEntry("./ts/code/index.tsx"),
+        submissionResults: kotoedEntry("./ts/views/submissionResults.tsx"),
+        commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
+        projectSearch: kotoedEntry("./ts/views/projectSearch.tsx")
     },
     output: {
         path: dstPath,

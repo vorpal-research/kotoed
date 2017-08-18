@@ -10,7 +10,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/main/ts/**/*"
+    "src/main/ts/**/*",
+    "webpack.config.*.ts"
   ],
   "exclude": [
     "node_modules"
