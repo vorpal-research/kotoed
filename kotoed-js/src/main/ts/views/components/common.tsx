@@ -13,7 +13,7 @@ export enum VerificationStatus {
 }
 
 export interface VerificationData {
-    status: VerificationStatus
+    status: string
     errors: number[]
 }
 
