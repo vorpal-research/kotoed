@@ -42,7 +42,7 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
     render() {
         return (
             <div className="search-bar">
-                <div className="input-group col-md-12">
+                <div className="input-group">
                     <input className="search-query form-control input-lg"
                            ref={(me: HTMLInputElement) => this.input = me}
                            placeholder="Search"
