@@ -76,6 +76,8 @@ export namespace Kotoed {
 
         Star: "/*",
 
+        NotImplemented: "/notImplemented",
+
         CodeReview: {
             Index: "/codereview/:id/*",
             Capabilities: "/codereview-api/caps/:id"
