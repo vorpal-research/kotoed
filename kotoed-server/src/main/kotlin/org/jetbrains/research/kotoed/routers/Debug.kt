@@ -15,12 +15,14 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsonResponse
+import org.jetbrains.research.kotoed.util.routing.Order
 import org.jooq.impl.DSL
 import org.jooq.util.postgres.PostgresDataType
 
 // XXX: testing, remove in production
 
 @HandlerFor("/debug/*")
+@Order(0)
 fun RoutingContext.handleDebug() {
     if (request().connection().run { localAddress().host() == remoteAddress().host() }) {
         next()
@@ -32,10 +34,12 @@ fun RoutingContext.handleDebug() {
 
 @HandlerFor("/debug/settings")
 @JsonResponse
+@Order(1)
 fun RoutingContext.handleDebugSettings() = response().end(Config)
 
 @HandlerFor("/debug/request")
 @JsonResponse
+@Order(1)
 fun RoutingContext.handleDebugRequest() {
     val req = request()
     val result = object : Jsonable {
@@ -54,14 +58,17 @@ fun RoutingContext.handleDebugRequest() {
 
 @HandlerFor("/debug/crash/now")
 @JsonResponse
+@Order(1)
 fun RoutingContext.handleDebugCrashNow(): Unit = throw IllegalStateException("Forced crash")
 
 @HandlerFor("/debug/crash/suspend")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugCrashSuspend(): Unit = throw IllegalStateException("Forced crash")
 
 @HandlerFor("/debug/crash/delay")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugCrash() {
     val vertx = vertx()
     vertx.delayAsync(500)
@@ -70,6 +77,7 @@ suspend fun RoutingContext.handleDebugCrash() {
 
 @HandlerFor("/debug/database/create")
 @JsonResponse
+@Order(1)
 fun RoutingContext.handleDebugDatabaseCreate() {
     val vertx = vertx()
 
@@ -90,6 +98,7 @@ fun RoutingContext.handleDebugDatabaseCreate() {
 
 @HandlerFor("/debug/database/fill")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugDatabaseFill() {
     val vertx = vertx()
 
@@ -140,6 +149,7 @@ suspend fun RoutingContext.handleDebugDatabaseFill() {
 
 @HandlerFor("/debug/database/read/:id")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugDatabaseRead() {
     val vertx = vertx()
 
@@ -171,6 +181,7 @@ suspend fun RoutingContext.handleDebugDatabaseRead() {
 
 @HandlerFor("/debug/database/clear")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugDatabaseClear() {
     val vertx = vertx()
 
@@ -193,6 +204,7 @@ suspend fun RoutingContext.handleDebugDatabaseClear() {
 
 @HandlerFor("/debug/eventbus/:address")
 @JsonResponse
+@Order(1)
 suspend fun RoutingContext.handleDebugEventBus() {
     val vertx = vertx()
 
@@ -228,6 +240,7 @@ internal fun cssClassByPath(path: String) =
         }
 
 @HandlerFor("""\/debug\/code\/([^\/]+)\/([^\/]+)\/(.*)""", isRegex = true)
+@Order(1)
 suspend fun RoutingContext.handleDebugCode() = with(response()) {
     val req = request()
     val param0 by req
