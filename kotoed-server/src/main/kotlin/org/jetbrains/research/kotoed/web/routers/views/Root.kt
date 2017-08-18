@@ -57,26 +57,18 @@ suspend fun handleCommentById(context: RoutingContext) {
 
 @HandlerFor(UrlPattern.Comment.Search)
 @Templatize("commentSearch.jade")
-@LoginRequired
+@AuthorityRequired(Authority.Teacher)
 @JsBundle("commentSearch")
 suspend fun handleCommentSearch(context: RoutingContext) {
-    if (!context.user().isAuthorisedAsync(Authority.Teacher)) {
-        context.fail(HttpResponseStatus.FORBIDDEN)
-        return
-    }
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, CommentSearchBreadCrumb)
 }
 
 @HandlerFor(UrlPattern.Project.Search)
 @Templatize("projectSearch.jade")
-@LoginRequired
+@AuthorityRequired(Authority.Teacher)
 @JsBundle("projectSearch")
 suspend fun handleProjectSearch(context: RoutingContext) {
-    if (!context.user().isAuthorisedAsync(Authority.Teacher)) {
-        context.fail(HttpResponseStatus.FORBIDDEN)
-        return
-    }
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
 }

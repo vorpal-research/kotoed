@@ -5,7 +5,6 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.*
 import org.reflections.Reflections
-import org.reflections.scanners.FieldAnnotationsScanner
 import org.reflections.scanners.MethodAnnotationsScanner
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.scanners.TypeAnnotationsScanner
@@ -155,14 +154,35 @@ private fun Router.makeRouteProto(annoEl: AnnotatedElement): RouteProto {
     return proto.applyRouteAnnotations(annos)
 }
 
-private val CHAINING_ANNOTATIONS = listOf(
+private val ChainingAnnotations = listOf(
         Chain::class.java,
         Templatize::class.java
 )
 
+private val EnablingSessionsAnnotations = listOf(
+        EnableSessions::class.java,
+        LoginRequired::class.java,
+        AuthorityRequired::class.java
+)
+
+
+private val LoginRequiringAnnotations = listOf(
+        LoginRequired::class.java,
+        AuthorityRequired::class.java
+)
+
+
 private fun AnnotatedElement.shouldChainHandler(): Boolean =
         getAnnotation(ChainedByHandler::class.java) == null &&
-                CHAINING_ANNOTATIONS.any { getAnnotation(it) != null}
+                ChainingAnnotations.any { getAnnotation(it) != null}
+
+private fun AnnotatedElement.shouldEnableSessions(): Boolean =
+        EnablingSessionsAnnotations.any { getAnnotation(it) != null }
+
+
+private fun AnnotatedElement.shouldRequireLogin(): Boolean =
+        LoginRequiringAnnotations.any { getAnnotation(it) != null }
+
 
 fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
     val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
@@ -178,18 +198,18 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
 
         val logReq = annoEl.getAnnotation(LoginRequired::class.java)
 
-        logReq?.apply {
-            routeProto.requireLogin(
-                    routingConfig,
-                    rejectAnon = annoEl.getAnnotation(JsonResponse::class.java) != null)
+        if (annoEl.shouldEnableSessions()) {
+            routeProto.enableSessions(routingConfig)
         }
 
+        if (annoEl.shouldRequireLogin()) {
+            @Suppress("DEPRECATION")
+            routeProto.requireLoginOnly(routingConfig)
+        }
 
-        annoEl.getAnnotation(EnableSessions::class.java)?.apply {
-            if (logReq == null)  // LoginRequired implies EnableSessions
-                routeProto.enableSessions(routingConfig)
-            else
-                log.warn("EnableSessions annotation is useless together with LoginRequired")
+        annoEl.getAnnotation(AuthorityRequired::class.java)?.apply {
+            @Suppress("DEPRECATION")
+            routeProto.requireAuthorityOnly(routingConfig, authority)
         }
 
         annoEl.getAnnotation(AddBodyHandler::class.java)?.apply {

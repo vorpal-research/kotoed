@@ -7,6 +7,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.*
 import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.templ.TemplateEngine
+import kotlinx.Warnings
 import org.jetbrains.research.kotoed.util.RouteProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
@@ -44,14 +45,32 @@ class RoutingConfig(
         routeProto.makeRoute().handler(sessionProlongator)
     }
 
-    fun requireLogin(routeProto: RouteProto, rejectAnon: Boolean = false) {
-        enableSessions(routeProto)
+    @Deprecated("You probably should call requireLogin()", ReplaceWith("requireLogin()"))
+    fun requireLoginOnly(routeProto: RouteProto, rejectAnon: Boolean = false) {
         if (rejectAnon)
-            // Basic auth handler might work here but we don't want to bypass login form with basic auth
+        // Basic auth handler might work here but we don't want to bypass login form with basic auth
             routeProto.makeRoute().handler(rejectAuthHandler)
         else
             routeProto.makeRoute().handler(redirectAuthHandler)
     }
+
+    fun requireLogin(routeProto: RouteProto, rejectAnon: Boolean = false) {
+        enableSessions(routeProto)
+        @Suppress(Warnings.DEPRECATION)
+        requireLoginOnly(routeProto, rejectAnon)
+    }
+
+    @Deprecated("You probably should call requireAuthority()", ReplaceWith("requireAuthority()"))
+    fun requireAuthorityOnly(routeProto: RouteProto, authority: String) {
+        routeProto.makeRoute().handler(RequireAuthorityHandler(authority))
+    }
+
+    fun requireAuthority(routeProto: RouteProto, authority: String, rejectAnon: Boolean = false) {
+        requireLogin(routeProto, rejectAnon)
+        @Suppress("DEPRECATION")
+        requireAuthorityOnly(routeProto, authority)
+    }
+
 
     fun addBodyHandler(routeProto: RouteProto) {
         routeProto.makeRoute().handler(BodyHandler.create())
@@ -95,9 +114,26 @@ fun RouteProto.enableSessions(config: RoutingConfig) = apply {
     config.enableSessions(this)
 }
 
+@Deprecated("You probably should call requireLogin()", ReplaceWith("requireLogin()"))
+fun RouteProto.requireLoginOnly(config: RoutingConfig, rejectAnon: Boolean = false) = apply {
+    @Suppress("DEPRECATION")
+    config.requireLoginOnly(this, rejectAnon)
+}
+
 fun RouteProto.requireLogin(config: RoutingConfig, rejectAnon: Boolean = false) = apply {
     config.requireLogin(this, rejectAnon)
 }
+
+@Deprecated("You probably should call requireAuthority()", ReplaceWith("requireAuthority()"))
+fun RouteProto.requireAuthorityOnly(config: RoutingConfig, authority: String) = apply {
+    @Suppress("DEPRECATION")
+    config.requireAuthorityOnly(this, authority)
+}
+
+fun RouteProto.requireAuthority(config: RoutingConfig, authority: String, rejectAnon: Boolean = false) = apply {
+    config.requireAuthority(this, authority, rejectAnon)
+}
+
 
 fun RouteProto.addBodyHandler(config: RoutingConfig) = apply {
     config.addBodyHandler(this)

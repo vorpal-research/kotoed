@@ -22,6 +22,8 @@ annotation class Last
 // Add context.next() to the end of handler
 annotation class Chain
 
+// context.next() is called explicitly by handler, so we should add next() call to this handler
+// Useful together with Templatize annotation
 annotation class ChainedByHandler
 
 // Add content-type: application/json to response
@@ -39,5 +41,6 @@ annotation class JsBundle(val bundleName: String,
                           val vendorName: String = "vendor")
 
 annotation class LoginRequired
+annotation class AuthorityRequired(val authority: String)
 annotation class EnableSessions
 annotation class AddBodyHandler
