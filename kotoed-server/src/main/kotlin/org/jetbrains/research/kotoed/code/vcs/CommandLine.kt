@@ -24,7 +24,9 @@ data class CommandLine(val args: List<String>) : Loggable {
 
         log.info("Running: " + args.joinToString(" "))
 
-        val pb = ProcessBuilder(args).directory(wd).start()
+        val pb = ProcessBuilder(args).apply {
+            environment().put("GIT_ASKPASS", "echo")
+        }.directory(wd).start()
 
         val cin = pb.outputStream.writer()
         for (l in input) cin.append(l).appendln()

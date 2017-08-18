@@ -227,7 +227,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                     }
                     vertx.goToEventLoop()
 
-                    log.trace("Cloning request for $url successful")
+                    log.trace("Cloning request for $url finished")
 
                     resp =
                             resp.copy(
@@ -238,6 +238,9 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                                     },
                                     errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
                             )
+
+                    log.trace("Cloning request for $url status: ${resp.status}")
+
                     procs[url] = resp
                 } catch (ex: Exception) {
                     procs[url] = resp.copy(status = CloneStatus.failed, errors = listOf(ex.message.toString()))

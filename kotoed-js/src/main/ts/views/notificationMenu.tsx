@@ -3,9 +3,16 @@ import {render} from "react-dom";
 import {sendAsync} from "./components/common";
 import {Kotoed} from "../util/kotoed-api";
 
+interface LinkData {
+    entity: string
+    id: string
+}
+
 interface NotificationDisplayProps {
-    type: string,
-    body: object
+    data: {
+        contents: string,
+        linkTo: LinkData
+    }
 }
 
 class NotificationDisplay extends React.PureComponent<NotificationDisplayProps> {
@@ -13,9 +20,13 @@ class NotificationDisplay extends React.PureComponent<NotificationDisplayProps> 
         super(props)
     }
 
+    makeProperLink = (link: LinkData) => {
+        return `/views/${link.entity}/id/${link.id}`
+    };
+
     render() {
-        return <a className="list-group-item">
-            {this.props.body.toString()}
+        return <a className="list-group-item" href={this.makeProperLink(this.props.data.linkTo)}>
+            <span dangerouslySetInnerHTML={{ __html: this.props.data.contents }} />
         </a>
     }
 }
@@ -35,7 +46,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
     }
 
     componentDidMount() {
-        sendAsync(Kotoed.Address.Api.Notification.Current, {})
+        sendAsync(Kotoed.Address.Api.Notification.RenderCurrent, {})
             .then((data: Array<any>) => this.setState({ currentNotifications: data }))
     }
 
@@ -43,7 +54,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
         return <div className="list-group">
             {
                 this.state.currentNotifications.map( (obj: any, index) =>
-                    <NotificationDisplay type={obj.type} body={obj.body} key={"notification-item-" + index} />
+                    <NotificationDisplay data={obj} key={"notification-item-" + index} />
                 )
             }
         </div>

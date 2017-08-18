@@ -25,6 +25,7 @@ object UrlPattern {
     }
     
     object Comment {
+        const val ById = "/views/comment/id/:id"
         const val Search = "/views/comment/search"
     }
 

@@ -7,13 +7,12 @@ import org.jetbrains.research.kotoed.database.tables.SubmissionResult
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.isAuthorisedAsync
-import org.jetbrains.research.kotoed.util.routing.HandlerFor
-import org.jetbrains.research.kotoed.util.routing.JsBundle
-import org.jetbrains.research.kotoed.util.routing.LoginRequired
-import org.jetbrains.research.kotoed.util.routing.Templatize
+import org.jetbrains.research.kotoed.util.redirect
+import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
+import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.Submission.Results)
@@ -37,6 +36,23 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, SubmissionResultBreadCrumb(course, author, project, submission))
 
+}
+
+@HandlerFor(UrlPattern.Comment.ById)
+@LoginRequired
+suspend fun handleCommentById(context: RoutingContext) {
+    val id by context.request()
+
+    val comment = context.vertx().eventBus().commentByIdOrNull(id!!.toInt())
+    comment ?: return context.fail(HttpResponseStatus.INTERNAL_SERVER_ERROR)
+
+    context.response().redirect(UrlPattern.reverse(
+            UrlPattern.CodeReview.Index,
+            mapOf(
+                    "id" to comment.submissionId
+            ),
+            star = "code/${comment.sourcefile}#${comment.sourceline}"
+    ))
 }
 
 @HandlerFor(UrlPattern.Comment.Search)
@@ -64,3 +80,6 @@ suspend fun handleProjectSearch(context: RoutingContext) {
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
 }
+
+
+

@@ -53,6 +53,7 @@ object Address {
 
         object Notification {
             const val Current = "kotoed.api.notification.current"
+            const val RenderCurrent = "kotoed.api.notification.current.render"
             const val MarkRead = "kotoed.api.notification.markRead"
         }
 

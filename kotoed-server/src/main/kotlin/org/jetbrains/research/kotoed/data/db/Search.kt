@@ -5,6 +5,8 @@ import kotlinx.Warnings.NOTHING_TO_INLINE
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
+import org.jooq.Table
+import org.jooq.TableRecord
 import kotlin.coroutines.experimental.buildSequence
 
 @Suppress(NOTHING_TO_INLINE)
@@ -48,6 +50,12 @@ data class ComplexDatabaseQuery(
              key: String? = null) =
             copy(joins = (joins ?: listOf()) + DatabaseJoin(table, field, resultField, key))
 
+    fun<R: Record> join(table: Table<R>,
+             field: String = defaultField(table.name),
+             resultField: String = defaultResultField(field),
+             key: String? = null) = join(table.name, field, resultField, key)
+
+
     fun join(query: ComplexDatabaseQuery,
              field: String? = query.table?.let(::defaultField),
              resultField: String? = field?.let(::defaultResultField),
@@ -68,6 +76,12 @@ data class ComplexDatabaseQuery(
     fun offset(offset: Int) = copy(offset = offset)
 
 }
+
+fun <R: TableRecord<R>> ComplexDatabaseQuery(find: R) =
+        ComplexDatabaseQuery(table = find.table.name, find = find.toJson())
+
+fun <R: Record> ComplexDatabaseQuery(table: Table<R>) =
+        ComplexDatabaseQuery(table = table.name)
 
 data class TextSearchRequest(val text: String): Jsonable
 
