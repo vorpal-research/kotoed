@@ -4,6 +4,7 @@ import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.filters.*
 import org.jetbrains.research.kotoed.web.eventbus.patchers.PerAddressPatcher
 
@@ -24,8 +25,8 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Comment.Update to CommentUpdateFilter(vertx),
         Address.Api.Submission.Result.Read to Permissive,
         Address.Api.Submission.Error to Permissive,
-        Address.Api.Submission.Comment.Search to Permissive,
-        Address.Api.Submission.Comment.SearchCount to Permissive,
+        Address.Api.Submission.Comment.Search to AuthorityRequired(Authority.Teacher),
+        Address.Api.Submission.Comment.SearchCount to AuthorityRequired(Authority.Teacher),
         Address.Api.Project.Search to Permissive,
         Address.Api.Project.SearchCount to Permissive,
         Address.Api.Notification.RenderCurrent to Permissive,
