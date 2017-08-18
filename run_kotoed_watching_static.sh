@@ -10,16 +10,21 @@
 trap 'await_death' INT TERM HUP
 
 function await_death() {
+    DIE_REQUESTED=true
     trap '' INT TERM HUP
-    echo "Shutting down webpack..."
-    kill -TERM ${WEBPACK_PID}
-    wait ${WEBPACK_PID}
+    if [[ -n "${WEBPACK_PID}" ]]; then
+        echo "Shutting down webpack..."
+        kill -TERM ${WEBPACK_PID}
+        wait ${WEBPACK_PID}
+        echo "Webpack is down!"
+    fi
 
-
-    echo "Shutting down kotoed..."
-    kill -TERM ${KOTOED_PID}
-    wait ${KOTOED_PID}
-
+    if [[ -n "${KOTOED_PID}" ]]; then
+        echo "Shutting down kotoed..."
+        kill -TERM ${KOTOED_PID}
+        wait ${KOTOED_PID}
+        echo "Kotoed is down!"
+    fi
     cd ${DIR}
 
     # rm -rf .vertx/*  # Shall we?
@@ -29,16 +34,19 @@ function await_death() {
 
 DIR=$PWD
 
-java -jar kotoed-server/target/kotoed-server-0.1.0-SNAPSHOT-fat.jar &
-
-KOTOED_PID=$!
-
+if [[ -z "${DIE_REQUESTED}" ]]; then
+    java -jar kotoed-server/target/kotoed-server-0.1.0-SNAPSHOT-fat.jar &
+    KOTOED_PID=$!
+fi
 sleep 10 # Is it enough to vertx to extract cache?
 
 cd kotoed-js
 
-webpack --progress --colors --watch --config=webpack.config.watch.ts &
+if [[ -z "${DIE_REQUESTED}" ]]; then
+    webpack --progress --colors --watch --config=webpack.config.watch.ts &
+    WEBPACK_PID=$!
+fi
 
-WEBPACK_PID=$!
-
-cat # Doing nothing
+if [[ -z "${DIE_REQUESTED}" ]]; then
+    cat # Doing nothing
+fi
