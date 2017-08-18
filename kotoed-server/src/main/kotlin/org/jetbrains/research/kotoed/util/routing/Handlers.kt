@@ -85,3 +85,16 @@ object HtmlFailureHandler : Handler<RoutingContext> {
 
     fun create() = this
 }
+
+class RequireAuthorityHandler(val authority: String) : AsyncRoutingContextHandler() {
+    override suspend fun doHandleAsync(context: RoutingContext) {
+        if (context.user().isAuthorisedAsync(authority))
+            context.next()
+        else
+            context.fail(HttpResponseStatus.FORBIDDEN)
+
+    }
+    companion object {
+        fun create(authority: String) = RequireAuthorityHandler(authority)
+    }
+}
