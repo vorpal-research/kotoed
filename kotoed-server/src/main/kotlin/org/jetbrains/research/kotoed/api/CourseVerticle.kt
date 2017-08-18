@@ -1,12 +1,18 @@
 package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -48,4 +54,27 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
             verificationData.errors
                     .map { fetchByIdAsync(Tables.COURSE_STATUS, it) }
 
+
+    @JsonableEventBusConsumerFor(Address.Api.Course.Search)
+    suspend fun handleSearch(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val currentPage = query.currentPage ?: 0
+        val q_ = ComplexDatabaseQuery("course_text_search")
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
+
+        val q = if (query.text.trim() == "") q_ else q_.filter("""document matches "${query.text}"""")
+
+        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course"), q)
+
+        return JsonArray(req)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Course.SearchCount)
+    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
+        val q_ = ComplexDatabaseQuery("course_text_search")
+        val q = if (query.text.trim() == "") q_ else q_.filter("""document matches "${query.text}"""")
+
+        return sendJsonableAsync(Address.DB.count("course"), q)
+    }
 }

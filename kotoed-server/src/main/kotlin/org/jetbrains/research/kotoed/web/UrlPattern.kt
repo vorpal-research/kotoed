@@ -4,7 +4,8 @@ object UrlPattern {
     // TODO maybe make parameter names const values
     const val Star = "/*"
     const val Index =  "/"
-    
+    const val NotImplemented = "/notImplemented"
+
     object CodeReview {
         const val Index = "/codereview/:id/*"
         const val Capabilities = "/codereview-api/caps/:id"
@@ -27,8 +28,6 @@ object UrlPattern {
     object Comment {
         const val Search = "/views/comment/search"
     }
-
-    const val NotImplemented = "/notImplemented"
 
     object Project {
         const val Search = "/views/project/search"
