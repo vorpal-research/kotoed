@@ -17,11 +17,10 @@ export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
         super(props, context);
     }
 
-    componentWillMount() {
-        sendAsync<IdRequest, GenericResponse<ResultT>>
+    loadResults = () => {
+        return sendAsync<IdRequest, GenericResponse<ResultT>>
         (Kotoed.Address.Api.Submission.Result.Read, {"id": this.props.id})
-            .then(this.processResults);
-    }
+    };
 }
 
 let rootElement = document.getElementById("view-submission-results")!;
