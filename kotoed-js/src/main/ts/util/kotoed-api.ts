@@ -79,8 +79,7 @@ export namespace Kotoed {
         NotImplemented: "/notImplemented",
 
         CodeReview: {
-            Index: "/codereview/:id/*",
-            Capabilities: "/codereview-api/caps/:id"
+            Index: "/codereview/:id/*"
         },
 
         Auth: {
@@ -91,6 +90,14 @@ export namespace Kotoed {
             Logout: "/logout",
             OAuthStart: "/login/oauth/start/:providerName",
             OAuthCallback: "/login/oauth/callback/:providerName"
+        },
+
+        AuthHelpers: {
+           WhoAmI: "/whoAmI",
+           RootPerms: "/perms/root",
+           CoursePerms: "/perms/course/:id",
+           ProjectPerms: "/perms/project/:id",
+           SubmissionPerms: "/perms/submission/:id"
         },
 
         Submission: {

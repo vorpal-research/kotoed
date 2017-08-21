@@ -6,6 +6,7 @@ import {Course} from "./data";
 import {imagePath} from "../images";
 import {SearchTable} from "../views/components/search";
 import {eventBus, SoftError} from "../eventBus";
+import {fetchPermissions} from "./remote";
 
 class CourseComponent extends React.PureComponent<Course> {
     constructor(props: Course) {
@@ -115,7 +116,28 @@ class CourseCreate extends React.Component<CourseCreateProps, CourseCreateState>
     }
 }
 
-class CoursesSearch extends React.PureComponent {
+class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
+
+
+    constructor(props: {}) {
+        super(props);
+        this.state = {
+            canCreateCourse: false
+        };
+    }
+
+    componentDidMount() {
+        fetchPermissions().then((perms) =>
+            this.setState({canCreateCourse: perms.createCourse})
+        );
+    }
+
+    toolbarComponent = (redoSearch: () => void) => {
+        if (this.state.canCreateCourse)
+            return <CourseCreate onCreate={redoSearch}/>;
+        else
+            return null;
+    };
 
     renderRow = (children: Array<JSX.Element>): JSX.Element => {
         return <Row key={`row-${children[0].key}`}>
@@ -134,7 +156,7 @@ class CoursesSearch extends React.PureComponent {
                     by: 4,
                     using: this.renderRow
                 }}
-                toolbarComponent={(redoSearch) => <CourseCreate onCreate={redoSearch}/>}
+                toolbarComponent={this.toolbarComponent}
             />
         );
     }
