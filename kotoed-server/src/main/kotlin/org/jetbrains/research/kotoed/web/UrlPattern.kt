@@ -8,7 +8,6 @@ object UrlPattern {
 
     object CodeReview {
         const val Index = "/codereview/:id/*"
-        const val Capabilities = "/codereview-api/caps/:id"
     }
 
     object Auth {
@@ -19,6 +18,14 @@ object UrlPattern {
         const val Logout = "/logout"
         const val OAuthStart = "/login/oauth/start/:providerName"
         const val OAuthCallback = "/login/oauth/callback/:providerName"
+    }
+
+    object AuthHelpers {
+        const val WhoAmI = "/whoAmI"
+        const val RootPerms = "/perms/root"
+        const val CoursePerms = "/perms/course/:id"
+        const val ProjectPerms = "/perms/project/:id"
+        const val SubmissionPerms = "/perms/submission/:id"
     }
 
     object Submission {

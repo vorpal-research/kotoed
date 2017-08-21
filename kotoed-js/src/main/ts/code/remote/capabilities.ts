@@ -2,14 +2,6 @@ import axios from "axios"
 import {keysToCamelCase} from "../../util/stringCase";
 import {Kotoed} from "../../util/kotoed-api";
 
-const CAPABILITES_URL = "/codereview-api/caps";
-
-function getCapabilitiesUrl(submissionId: number) {
-    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.CodeReview.Capabilities, {
-        id: submissionId
-    });
-}
-
 export interface Principal {
     denizenId: string
     id: number
@@ -28,7 +20,11 @@ export interface Capabilities {
     permissions: Permissions
 }
 
-export async function fetchCapabilities(submissionid: number) {
-    let resp = await axios.get(getCapabilitiesUrl(submissionid));
-    return keysToCamelCase(resp.data) as Capabilities
+export async function fetchCapabilities(submissionid: number): Promise<Capabilities> {
+    let principalResp = await axios.get(Kotoed.UrlPattern.AuthHelpers.WhoAmI);
+    let permissionsResp = await axios.get(
+        Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.AuthHelpers.SubmissionPerms, {
+            id: submissionid
+        }));
+    return {principal: keysToCamelCase(principalResp.data), permissions: keysToCamelCase(permissionsResp.data)}
 }
