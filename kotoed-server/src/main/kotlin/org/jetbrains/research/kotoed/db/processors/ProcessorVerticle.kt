@@ -33,6 +33,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
     suspend fun handleProcess(msg: JsonObject): VerificationData {
+        log.trace("Handling process for: $msg")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
@@ -40,7 +41,6 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
-        log.trace("Handling process for: $msg")
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
         process(data)
@@ -49,6 +49,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "verifyAddress")
     suspend fun handleVerify(msg: JsonObject): VerificationData {
+        log.trace("Handling verify for: $msg")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
@@ -56,7 +57,6 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             val newStatus = verify(data)
             cacheMap.replace(id, oldStatus, newStatus)
         }
-        log.trace("Handling verify for: $msg")
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
         return cache[id].bang()
@@ -64,6 +64,8 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     suspend fun process(data: JsonObject?) {
         data ?: throw IllegalArgumentException("data is null")
+
+        val eb = vertx.eventBus()
 
         val id = data[pk.name] as Int
 
@@ -88,34 +90,58 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
                     log.trace("Prereqs: $prereqVerificationData")
 
-                    if (prereqVerificationData.all { VerificationStatus.Processed == it.status }) {
+                    when {
 
-                        log.trace("Going in!")
+                        prereqVerificationData.all { (_, data) -> VerificationStatus.Processed == data.status } -> {
+                            log.trace("Going in!")
+                            cacheMap.replace(id, notReady, doProcess(data))
+                        }
 
-                        cacheMap.replace(id, notReady, doProcess(data))
+                        prereqVerificationData.any { (_, data) -> VerificationStatus.Invalid == data.status } -> {
+                            log.trace("Some prereqs failed!")
 
-                    } else if (prereqVerificationData.any { VerificationStatus.Invalid == it.status }) {
+                            // FIXME: this stuff is funky
 
-                        log.trace("Some prereqs failed!")
+                            val failedData = prereqVerificationData
+                                    .filter { (_, data) -> VerificationStatus.Invalid == data.status }
 
-                        cacheMap.replace(id, notReady,
-                                prereqVerificationData
-                                        .filter { VerificationStatus.Invalid == it.status }
-                                        .reduce { acc, datum -> acc.copy(errors = acc.errors + datum.errors) }
-                        )
+                            val failedIds = failedData.flatMap { (table, data) ->
+                                data.errors.map { errorId ->
+                                    val errorData = eb.trySendAsync(
+                                            Address.DB.read("${table.name}_status"),
+                                            JsonObject("id" to errorId))
+                                            ?.body()
+                                            ?.getJsonObject("data")
+                                            ?: return@map -1
 
-                    } else {
+                                    return@map eb.trySendAsync(
+                                            Address.DB.create("${entityName}_status"),
+                                            JsonObject("${entityName}_id" to id, "data" to errorData))
+                                            ?.body()
+                                            ?.getInteger("id")
+                                            ?: -1
+                                }
+                            }.filter { it < 0 } +
+                                    if (VerificationStatus.Invalid == oldData.status)
+                                        oldData.errors
+                                    else
+                                        emptyList()
 
-                        log.trace("Wat???")
+                            cacheMap.replace(id, notReady, VerificationData.Invalid(failedIds))
+                        }
 
-                        cacheMap.replace(id, notReady, VerificationData.Unknown)
+                        else -> {
+                            log.trace("Wat???")
+                            cacheMap.replace(id, notReady, VerificationData.Unknown)
+                        }
 
-                    }
+                    } // when
+
                 } else { // retry
 
                     log.trace("Come again?")
-
                     process(data)
+
                 }
             }
         }
@@ -129,7 +155,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     open val checkedReferences: List<ForeignKey<R, *>> get() = table.references
 
-    suspend open fun checkPrereqs(data: JsonObject): List<VerificationData> {
+    suspend open fun checkPrereqs(data: JsonObject): List<Pair<Table<*>, VerificationData>> {
 
         val eb = vertx.eventBus()
 
@@ -143,16 +169,17 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                     Pair(fkey.key, data[from])
                 }
                 .filter { it.second != null }
-                .mapTo(mutableListOf<VerificationData>()) { (rkey, id) ->
+                .mapTo(mutableListOf<Pair<Table<*>, VerificationData>>()) { (rkey, id) ->
                     val to = rkey.fieldsArray.first()
                     val toTable = rkey.table
 
-                    eb.trySendAsync(Address.DB.verify(toTable.name), JsonObject(to.name to id))
-                            ?.body()
-                            ?.toJsonable()
-                            ?: VerificationData.Processed
+                    toTable to (
+                            eb.trySendAsync(Address.DB.verify(toTable.name), JsonObject(to.name to id))
+                                    ?.body()
+                                    ?.toJsonable()
+                                    ?: VerificationData.Processed
+                            )
                 }
     }
 
 }
-
