@@ -7,22 +7,26 @@ import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
-import kotlinx.coroutines.experimental.yield
+import kotlinx.coroutines.experimental.runBlocking
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.tables.ProjectTextSearch
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.parseCondition
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.database.*
+import org.jetbrains.research.kotoed.util.get
 import org.jooq.*
+import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
-import ru.spbstu.ktuples.*
+import ru.spbstu.ktuples.Tuple
+import ru.spbstu.ktuples.Tuple5
+import ru.spbstu.ktuples.plus
 import kotlin.coroutines.experimental.buildSequence
+import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
 import kotlin.sequences.Sequence
 
@@ -50,6 +54,54 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use { it.body() } }
 
+    protected fun <T> DSLContext.withTransaction(
+            body: DSLContext.() -> T): T =
+            transactionResult { conf -> DSL.using(conf).body() }
+
+    protected suspend fun <T> DSLContext.withTransactionAsync(
+            body: suspend DSLContext.() -> T): T =
+            suspendCoroutine { cont ->
+                transactionResultAsync { conf -> runBlocking(DBPool) { DSL.using(conf).body() } }
+                        .whenComplete { res, ex ->
+                            when (ex) {
+                                null -> cont.resume(res)
+                                else -> cont.resumeWithException(ex)
+                            }
+                        }
+            }
+
+    protected fun <T> DSLContext.sqlStateAware(body: DSLContext.() -> T): T =
+            try {
+                body()
+            } catch (ex: DataAccessException) {
+                val ex_ = (if ("Rollback caused" == ex.message) ex.cause else ex)
+                        as? DataAccessException
+                        ?: throw ex
+                when (ex_.sqlState()) {
+                    "23505" -> throw Conflict(ex_.message ?: "Oops")
+                    else -> throw ex
+                }
+            }
+
+    protected suspend fun <T> DSLContext.sqlStateAwareAsync(body: suspend DSLContext.() -> T): T =
+            try {
+                body()
+            } catch (ex: DataAccessException) {
+                val ex_ = (if ("Rollback caused" == ex.message) ex.cause else ex)
+                        as? DataAccessException
+                        ?: throw ex
+                when (ex_.sqlState()) {
+                    "23505" -> throw Conflict(ex_.message ?: "Oops")
+                    else -> throw ex
+                }
+            }
+
+    protected suspend fun <T> dbWithTransaction(body: DSLContext.() -> T) =
+            db { withTransaction { body() } }
+
+    protected suspend fun <T> dbWithTransactionAsync(body: suspend DSLContext.() -> T) =
+            dbAsync { withTransactionAsync { body() } }
+
     protected fun DSLContext.selectById(id: Any) =
             select().from(table).where(pk.eq(id)).fetch().into(recordClass).firstOrNull()
 
@@ -76,7 +128,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val id = message.getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
 
-        return db {
+        return dbWithTransaction {
             delete(table)
                     .where(pk.eq(id))
                     .returning()
@@ -94,7 +146,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     protected open suspend fun handleRead(message: R): R {
         val id = message.getValue(pk.name)
         log.trace("Read requested for id = $id in table ${table.name}")
-        return db { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
+        return dbWithTransaction { selectById(id) } ?: throw NotFound("Cannot find ${table.name} entry for id $id")
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "findAddress")
@@ -112,7 +164,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 .filter { message[it] != null }
                 .map { it.uncheckedCast<Field<Any>>() }
         val wherePart = queryFields.map { it.eq(query.get(it)) }.toList()
-        val resp = db {
+        val resp = dbWithTransaction {
             selectFrom(table)
                     .where(wherePart)
                     .fetch()
@@ -132,14 +184,18 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Update requested for id = $id in table ${table.name}:\n" +
                 message.toJson().encodePrettily())
         return db {
-            update(table)
-                    .set(message)
-                    .where(pk.eq(id))
-                    .returning()
-                    .fetch()
-                    .into(recordClass)
-                    .firstOrNull()
-                    ?: throw NotFound("Cannot find ${table.name} entry for id $id")
+            sqlStateAware {
+                withTransaction {
+                    update(table)
+                            .set(message)
+                            .where(pk.eq(id))
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
+                            .firstOrNull()
+                            ?: throw NotFound("Cannot find ${table.name} entry for id $id")
+                }
+            }
         }
     }
 
@@ -156,19 +212,23 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         }
 
         return db {
-            insertInto(table)
-                    .set(message)
-                    .returning()
-                    .fetch()
-                    .into(recordClass)
-                    .first()
+            sqlStateAware {
+                withTransaction {
+                    insertInto(table)
+                            .set(message)
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
+                            .first()
+                }
+            }
         }
     }
 
     private fun ComplexDatabaseQuery.joinSequence(tbl: Table<out Record> = tableByName(table!!)!!)
-                : Sequence<Tuple5<Table<out Record>, String, Table<out Record>, JsonObject, String?>> =
+            : Sequence<Tuple5<Table<out Record>, String, Table<out Record>, JsonObject, String?>> =
             buildSequence {
-                for((query, field, resultField, key) in joins!!) {
+                for ((query, field, resultField, key) in joins!!) {
                     val qtable = when {
                         (query?.table == null) -> tbl.tableReferencedBy(tbl.field(field))
                         else -> tableByName(query.table)
@@ -211,24 +271,25 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val joinedTables: List<Table<*>> = joins.map { it.v2 }
         val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
 
-        return db {
+        return dbWithTransaction {
             val select = select(
                     table.fields().asList() + joinedTables.flatMap { it.fields().asList() }
             ).from(table)
-            val join = joins.fold(select) {
-                a, (from, field, to, _, key) ->
-                    a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
+            val join = joins.fold(select) { a, (from, field, to, _, key) ->
+                a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
             }
-            val condition: Condition = joins.fold(DSL.condition(true)) {
-                    a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
+            val condition: Condition = joins.fold(DSL.condition(true)) { a: Condition, (_, _, to, record, _) ->
+                a.and(makeFindCondition(to, record))
             }
             val baseCondition = makeFindCondition(table, message.find!!)
-            val parsedCondition = message.filter?.let{ parseCondition(it) { tname ->
-                when {
-                    tname.isEmpty() -> tableMap[table.name]
-                    else -> tableMap[table.name + "." + tname]
-                } ?: die()
-            } } ?: DSL.condition(true)
+            val parsedCondition = message.filter?.let {
+                parseCondition(it) { tname ->
+                    when {
+                        tname.isEmpty() -> tableMap[table.name]
+                        else -> tableMap[table.name + "." + tname]
+                    } ?: die()
+                }
+            } ?: DSL.condition(true)
             val where = join.where(condition).and(baseCondition).and(parsedCondition)
 
             where
@@ -253,7 +314,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         }.let(::JsonArray)
     }
 
-    data class CountResponse(val count: Int): Jsonable
+    data class CountResponse(val count: Int) : Jsonable
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "queryCountAddress")
     suspend fun handleQueryCountWrapper(message: JsonObject) =
@@ -276,22 +337,23 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val joinedTables: List<Table<*>> = joins.map { it.v2 }
         val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
 
-        return db {
+        return dbWithTransaction {
             val select = select(DSL.count()).from(table)
-            val join = joins.fold(select) {
-                a, (from, field, to, _, key) ->
+            val join = joins.fold(select) { a, (from, field, to, _, key) ->
                 a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
             }
-            val condition: Condition = joins.fold(DSL.condition(true)) {
-                a: Condition, (_, _, to, record, _) -> a.and(makeFindCondition(to, record))
+            val condition: Condition = joins.fold(DSL.condition(true)) { a: Condition, (_, _, to, record, _) ->
+                a.and(makeFindCondition(to, record))
             }
             val baseCondition = makeFindCondition(table, message.find!!)
-            val parsedCondition = message.filter?.let{ parseCondition(it) { tname ->
-                when {
-                    tname.isEmpty() -> tableMap[table.name]
-                    else -> tableMap[table.name + "." + tname]
-                } ?: die()
-            } } ?: DSL.condition(true)
+            val parsedCondition = message.filter?.let {
+                parseCondition(it) { tname ->
+                    when {
+                        tname.isEmpty() -> tableMap[table.name]
+                        else -> tableMap[table.name + "." + tname]
+                    } ?: die()
+                }
+            } ?: DSL.condition(true)
             val where = join.where(condition).and(baseCondition).and(parsedCondition)
 
             where.fetchOne().value1()
@@ -327,7 +389,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
             log.trace("Joined read requested for id = $id in table ${table.name} " +
                     "on key ${fkField.name}")
 
-            dbAsync {
+            dbWithTransactionAsync {
                 val res =
                         select(*table.fields())
                                 .from(table.join(fk.key.table).onKey(fk))
@@ -391,7 +453,6 @@ class SubmissionCommentTextSearchVerticle : CrudDatabaseVerticleWithReferences<S
 
 @AutoDeployable
 class ProjectTextSearchVerticle : CrudDatabaseVerticleWithReferences<ProjectTextSearchRecord>(Tables.PROJECT_TEXT_SEARCH)
-
 
 @AutoDeployable
 class CourseTextSearchVerticle : CrudDatabaseVerticleWithReferences<CourseTextSearchRecord>(Tables.COURSE_TEXT_SEARCH)
