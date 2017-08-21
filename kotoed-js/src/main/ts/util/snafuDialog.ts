@@ -42,6 +42,7 @@ function initSnafuDialog(): JQuery<Node> | undefined {
 
 const dialog = initSnafuDialog();
 
+// TODO find way to stash other open dialogs (including Reacts')
 export default function snafuDialog() {
     if (!dialog)
         alert("Something went wrong. Try reloading this page.");
