@@ -1,11 +1,11 @@
 import * as React from "react";
-import {Button, Thumbnail, Row, Col} from "react-bootstrap";
-import {doNothing} from "../util/common";
+import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {Course} from "./data";
 import {imagePath} from "../images";
 import {SearchTable} from "../views/components/search";
+import {eventBus, SoftError} from "../eventBus";
 
 class CourseComponent extends React.PureComponent<Course> {
     constructor(props: Course) {
@@ -17,7 +17,7 @@ class CourseComponent extends React.PureComponent<Course> {
     render() {
         return (
             <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
-                <h3>{this.props.name}</h3>
+                <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
                 <p>
                     <Button href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary" block>Open</Button>
                 </p>
@@ -25,6 +25,94 @@ class CourseComponent extends React.PureComponent<Course> {
         )
     }
 
+}
+
+interface CourseCreateProps {
+    onCreate: () => void
+}
+
+interface CourseCreateState {
+    showModal: boolean
+    error?: string
+    name: string
+}
+
+class CourseCreate extends React.Component<CourseCreateProps, CourseCreateState> {
+
+
+    constructor(props: CourseCreateProps) {
+        super(props);
+        this.state = {
+            showModal: false,
+            name: ""
+        }
+    }
+
+    showModal = () => {
+        this.setState({showModal: true})
+    };
+
+    hideModal = () => {
+        this.dismissError();
+        this.setState({name: ""});
+        this.setState({showModal: false})
+    };
+
+    dismissError = () => {
+        this.setState({error: undefined});
+    };
+
+    tryCreate = async () => {
+        try {
+            await eventBus.send(Kotoed.Address.Api.Course.Create, {
+                name: this.state.name
+            });
+            this.props.onCreate();
+            this.hideModal();
+        } catch (error) {
+            if (!(error instanceof SoftError))
+                this.hideModal();
+            else {
+                this.setState({
+                    error: error.message
+                });
+            }
+            throw error;
+        }
+    };
+
+    renderError = () => this.state.error && <Alert bsStyle="danger">{this.state.error}</Alert>;
+
+    render() {
+        return <div>
+            <Button bsSize="lg" bsStyle="success" onClick={this.showModal}>Create course</Button>
+            <Modal show={this.state.showModal} onHide={this.hideModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Create new course</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {this.renderError()}
+                    <Form>
+                        <FormGroup
+                            controlId="formBasicText">
+                            <ControlLabel>Course name</ControlLabel>
+                            <FormControl
+                                type="text"
+                                value={this.state.name}
+                                placeholder="Enter text"
+                                onChange={(e: any) =>
+                                    this.setState({name: e.target.value as string || ""})}
+                            />
+                            <FormControl.Feedback />
+                        </FormGroup>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button bsStyle="success" onClick={() => this.tryCreate()}>Create</Button>
+                </Modal.Footer>
+            </Modal>
+        </div>;
+    }
 }
 
 class CoursesSearch extends React.PureComponent {
@@ -46,6 +134,7 @@ class CoursesSearch extends React.PureComponent {
                     by: 4,
                     using: this.renderRow
                 }}
+                toolbarComponent={(redoSearch) => <CourseCreate onCreate={redoSearch}/>}
             />
         );
     }
