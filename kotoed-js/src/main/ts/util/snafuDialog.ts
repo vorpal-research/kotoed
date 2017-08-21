@@ -44,7 +44,7 @@ const dialog = initSnafuDialog();
 
 // TODO find way to stash other open dialogs (including Reacts')
 export default function snafuDialog() {
-    if (!dialog)
+    if (!dialog || $(".modal.in").length > 0)
         alert("Something went wrong. Try reloading this page.");
     else if (!dialog.data(DO_NOT_BOTHER_ME_AGAIN))
         dialog.modal({
