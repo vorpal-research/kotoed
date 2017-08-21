@@ -54,9 +54,16 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
             run(DBPool) { jooq(dataSource).use { it.body() } }
 
+    protected fun DataAccessException.unwrapRollbackException() =
+            (if ("Rollback caused" == message) cause else this) ?: this
+
     protected fun <T> DSLContext.withTransaction(
             body: DSLContext.() -> T): T =
-            transactionResult { conf -> DSL.using(conf).body() }
+            try {
+                transactionResult { conf -> DSL.using(conf).body() }
+            } catch (ex: DataAccessException) {
+                throw ex.unwrapRollbackException()
+            }
 
     protected suspend fun <T> DSLContext.withTransactionAsync(
             body: suspend DSLContext.() -> T): T =
@@ -65,6 +72,7 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
                         .whenComplete { res, ex ->
                             when (ex) {
                                 null -> cont.resume(res)
+                                is DataAccessException -> cont.resumeWithException(ex.unwrapRollbackException())
                                 else -> cont.resumeWithException(ex)
                             }
                         }
@@ -74,12 +82,12 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
             try {
                 body()
             } catch (ex: DataAccessException) {
-                val ex_ = (if ("Rollback caused" == ex.message) ex.cause else ex)
+                val ex_ = ex.unwrapRollbackException()
                         as? DataAccessException
                         ?: throw ex
                 when (ex_.sqlState()) {
                     "23505" -> throw Conflict(ex_.message ?: "Oops")
-                    else -> throw ex
+                    else -> throw ex_
                 }
             }
 
@@ -87,12 +95,12 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
             try {
                 body()
             } catch (ex: DataAccessException) {
-                val ex_ = (if ("Rollback caused" == ex.message) ex.cause else ex)
+                val ex_ = ex.unwrapRollbackException()
                         as? DataAccessException
                         ?: throw ex
                 when (ex_.sqlState()) {
                     "23505" -> throw Conflict(ex_.message ?: "Oops")
-                    else -> throw ex
+                    else -> throw ex_
                 }
             }
 
