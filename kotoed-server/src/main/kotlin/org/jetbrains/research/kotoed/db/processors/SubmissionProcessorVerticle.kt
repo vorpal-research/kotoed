@@ -93,18 +93,44 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         dbUpdateAsync(parent)
     }
 
+    private suspend fun getVcsInfo(project: ProjectRecord): RepositoryInfo {
+        return sendJsonableAsync(
+                Address.Code.Download,
+                RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
+        )
+    }
+
+    private suspend fun getVcsStatus(
+            vcsInfo: RepositoryInfo,
+            submission: SubmissionRecord,
+            project: ProjectRecord): VerificationData {
+
+        return when (vcsInfo.status) {
+            CloneStatus.pending -> VerificationData.Unknown
+            CloneStatus.done -> VerificationData.Processed
+            CloneStatus.failed ->
+                dbCreateAsync(
+                        SubmissionStatusRecord().apply {
+                            this.submissionId = submission.id
+                            this.data = JsonObject(
+                                    "error" to "Fetching remote repository failed",
+                                    "reason" to vcsInfo.toJson()
+                            )
+                        }
+                ).id.let { VerificationData.Invalid(it) }
+        }
+    }
+
     suspend override fun doProcess(data: JsonObject): VerificationData {
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let { fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId) }
 
-        val vcsReq: RepositoryInfo =
-                sendJsonableAsync(
-                        Address.Code.Download,
-                        RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
-                )
+        val vcsReq = getVcsInfo(project)
 
-        if (vcsReq.status != CloneStatus.done) return VerificationData.Unknown
+        val vcsStatus = getVcsStatus(vcsReq, sub, project)
+
+        if (vcsStatus != VerificationData.Processed) return vcsStatus
 
         if (sub.revision == null) {
             val vcsInfo: InfoFormat = sendJsonableAsync(Address.Code.Info, InfoFormat(uid = vcsReq.uid))
@@ -155,27 +181,9 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let { fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId) }
 
-        val vcsReq: RepositoryInfo =
-                sendJsonableAsync(
-                        Address.Code.Download,
-                        RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
-                )
+        val vcsReq = getVcsInfo(project)
 
-        val vcsStatus =
-                when (vcsReq.status) {
-                    CloneStatus.pending -> VerificationData.Unknown
-                    CloneStatus.done -> VerificationData.Processed
-                    CloneStatus.failed ->
-                        dbCreateAsync(
-                                SubmissionStatusRecord().apply {
-                                    this.submissionId = sub.id
-                                    this.data = JsonObject(
-                                            "error" to "Fetching remote repository failed",
-                                            "reason" to vcsReq.toJson()
-                                    )
-                                }
-                        ).id.let { VerificationData.Invalid(it) }
-                }
+        val vcsStatus = getVcsStatus(vcsReq, sub, project)
 
         if (vcsStatus != VerificationData.Processed) return vcsStatus
 
