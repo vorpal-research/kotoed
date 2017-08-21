@@ -28,6 +28,16 @@ export interface EventBusReply<T> {
 
 const RECONNECT_RETRIES = 10;
 
+export interface ReplyError {
+    failureCode: number
+    failureType: "RECIPIENT_FAILURE" | "TIMEOUT" | "NO_HANDLERS"
+    message: string
+}
+
+export function isReplyError(e: Error | ReplyError): e is ReplyError {
+    return e.hasOwnProperty("failureCode") && e.hasOwnProperty("failureType");
+}
+
 /**
  * This event bus allows awaitOpen, sendAsync and reopens connection after loosing it
  */
@@ -38,7 +48,7 @@ export class AsyncEventBus {
     private _isOpen: boolean = false;
     private explicitlyClosed: boolean = false;
     private handlers: Array<EventBusHandler> = [];
-    private onError?: (error: Error) => void;
+    private onError?: (error: Error | ReplyError) => void;
     private nClosed: number = 0;
 
     // Heil POSIX!
@@ -128,9 +138,13 @@ export class AsyncEventBus {
                          headers?: EventBusHeaders): Promise<Reply> {
         return this.awaitOpen().then(() => new Promise<Reply>((resolve, reject) => {
             this.eb.send(address, this.htonJ(message), headers, (error, message: EventBusReply<Reply>) => {
-                if (error)
-                    reject(error);
-                else
+                if (error) {
+                    try {
+                        this.onError && this.onError(error);
+                    } catch (processedError) {
+                        reject(error);
+                    }
+                } else
                     resolve(this.ntohJ(message.body)); // TODO maybe we need the whole reply?
             });
         }));

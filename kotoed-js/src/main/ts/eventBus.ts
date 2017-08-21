@@ -1,14 +1,34 @@
 
-import {AsyncEventBus} from "./util/vertx";
+import {AsyncEventBus, isReplyError, ReplyError} from "./util/vertx";
 import {fromLocationHost} from "./util/url";
 import {keysToCamelCase, keysToSnakeCase} from "./util/stringCase";
 import {Kotoed} from "./util/kotoed-api";
 import snafuDialog from "./util/snafuDialog"
+
+
+export class SoftError {
+    message: string;
+
+    constructor(message: string) {
+        this.message = message
+    }
+}
+
+function isSnafu(e: ReplyError | Error) {
+    return !isReplyError(e) || (isReplyError(e) && e.failureCode !== 409); // just because
+}
 
 export const eventBus = new AsyncEventBus(
     fromLocationHost(Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.EventBus, {})),
     keysToSnakeCase,
     keysToCamelCase,
     undefined,
-    (e: Error) => snafuDialog()
+    (e: Error) => {
+        if (isSnafu(e)) {
+            snafuDialog();
+            throw e;
+        } else {
+            throw new SoftError(e.message || "Unknown error");
+        }
+    }
 );

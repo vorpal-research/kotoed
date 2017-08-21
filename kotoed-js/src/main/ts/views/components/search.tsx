@@ -114,6 +114,7 @@ export interface SearchTableProps<DataType, QueryType = {}> {
     pageSize?: number
     wrapResults?: (children: Array<JSX.Element>) => JSX.Element // Wanna table? This is for you!
     group?: GroupProps // Wanna group to columns or something other?
+    toolbarComponent?: (toggleSearch: () => void) => JSX.Element | null
 }
 
 export interface SearchTableState<DataType> extends SearchBarState {
@@ -136,12 +137,25 @@ export class SearchTable<DataType, QueryType = {}> extends
     private makeBaseQuery: MakeBaseQuery<Partial<QueryType>>;
     private wrapResults: (children: Array<JSX.Element>) => JSX.Element | Array<JSX.Element>; // Array if if we're doing no wrap
     private pageSize: number;
+    private renderToolbar: () => JSX.Element | null;
 
     private setPrivateFields(props: SearchTableProps<DataType, QueryType> ) {
         this.shouldPerformInitialSearch = props.shouldPerformInitialSearch || ((text, page) => (text !== "" || page != 0));
         this.makeBaseQuery = props.makeBaseQuery || (() => {return {}});
         this.wrapResults = props.wrapResults || identity;
         this.pageSize = props.pageSize || PAGESIZE;
+        if (props.toolbarComponent !== undefined) {
+            let tbc = props.toolbarComponent;
+            this.renderToolbar =  () => <div className="search-toolbar">
+                <div className="pull-right">
+                    {tbc(this.redoSearch)}
+                </div>
+                <div className="clearfix"/>
+                <div className="vspace-10"/>
+            </div>;
+        } else {
+            this.renderToolbar = () => null
+        }
     }
 
     constructor(props: SearchTableProps<DataType, QueryType>) {
@@ -196,6 +210,13 @@ export class SearchTable<DataType, QueryType = {}> extends
     onPageChanged = (page: number) => {
         page = Math.round(Math.max(0, Math.min(page, this.state.pageCount - 1)));
         this.setState({currentPage: page}, this.queryData)
+    };
+
+    redoSearch = () => {
+        this.setState({currentPage: 0}, () => {
+            this.queryCount();
+            this.queryData()
+        });
     };
 
     onSearchStateChanged = (state: SearchBarState) => {
@@ -267,6 +288,7 @@ export class SearchTable<DataType, QueryType = {}> extends
     render() {
         return (
             <div>
+                {this.renderToolbar()}
                 <SearchBar
                     initialText={this.state.text}
                     onChange={this.onSearchStateChanged}
