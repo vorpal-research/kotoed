@@ -14,8 +14,18 @@ export class SoftError {
     }
 }
 
-function isSnafu(e: ReplyError | Error) {
+export function isSnafu(e: ReplyError | Error) {
     return !isReplyError(e) || (isReplyError(e) && e.failureCode !== 409); // just because
+}
+
+function makeMsg(e: ReplyError | Error) {
+    if (isReplyError(e) && e.failureCode === 409) {
+        return "Unique constraint violation"
+    } else if (e.message) {
+        return e.message
+    } else {
+        return "Unknown error"
+    }
 }
 
 export const eventBus = new AsyncEventBus(
@@ -28,7 +38,7 @@ export const eventBus = new AsyncEventBus(
             snafuDialog();
             throw e;
         } else {
-            throw new SoftError(e.message || "Unknown error");
+            throw new SoftError(makeMsg(e));
         }
     }
 );

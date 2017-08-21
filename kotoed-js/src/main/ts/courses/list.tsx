@@ -5,7 +5,7 @@ import {render} from "react-dom";
 import {Course} from "./data";
 import {imagePath} from "../images";
 import {SearchTable} from "../views/components/search";
-import {eventBus, SoftError} from "../eventBus";
+import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
 
 class CourseComponent extends React.PureComponent<Course> {
@@ -100,7 +100,7 @@ class CourseCreate extends React.Component<CourseCreateProps, CourseCreateState>
                             <FormControl
                                 type="text"
                                 value={this.state.name}
-                                placeholder="Enter text"
+                                placeholder="Name"
                                 onChange={(e: any) =>
                                     this.setState({name: e.target.value as string || ""})}
                             />

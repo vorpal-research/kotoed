@@ -142,7 +142,7 @@ export class AsyncEventBus {
                     try {
                         this.onError && this.onError(error);
                     } catch (processedError) {
-                        reject(error);
+                        reject(processedError);
                     }
                 } else
                     resolve(this.ntohJ(message.body)); // TODO maybe we need the whole reply?
