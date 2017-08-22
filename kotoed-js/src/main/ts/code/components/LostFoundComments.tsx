@@ -1,20 +1,50 @@
 import * as React from "react"
 import {Comment, LostFoundComments as LostFoundCommentsState} from "../state/comments";
-import CommentComponent from "./CommentComponent";
 import {CommentList} from "./CommentList";
 import {List} from "immutable";
 import ComponentWithLoading, {LoadingProperty} from "./ComponentWithLoading";
+import {ScrollTo} from "../state/index";
+import {BaseCommentToRead} from "../remote/comments";
 
 interface LostFoundCommentsProps {
     comments: LostFoundCommentsState
     onExpand: (comments: List<Comment>) => void
+    onCommentEmphasize: (commentId: number) => void
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onEdit: (id: number, newText: string) => void
-    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
+    scrollTo: ScrollTo
 }
 
 export class LostFoundComments extends ComponentWithLoading<LostFoundCommentsProps & LoadingProperty, {}> {
+
+    private scrollTo = () => {
+        if (this.props.scrollTo === undefined)
+            return;
+
+        let {commentId} = this.props.scrollTo;
+
+        // TODO replace collapsing with scrolling
+        if (commentId === undefined)
+            return;
+
+        this.props.onCommentEmphasize(
+            commentId
+        )
+
+
+    };
+
+    componentDidMount() {
+        this.scrollTo()
+    }
+
+    componentDidUpdate(oldProps: LostFoundCommentsProps) {
+        if (oldProps.scrollTo.commentId !== this.props.scrollTo.commentId)
+            this.scrollTo();
+
+    }
 
     render() {
         return <div>
