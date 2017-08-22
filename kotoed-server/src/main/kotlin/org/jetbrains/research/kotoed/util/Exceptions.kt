@@ -6,6 +6,7 @@ import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.util.StatusCodes.BAD_REQUEST
 import org.jetbrains.research.kotoed.util.StatusCodes.CONFLICT
 import org.jetbrains.research.kotoed.util.StatusCodes.FORBIDDEN
 import org.jetbrains.research.kotoed.util.StatusCodes.NOT_FOUND
@@ -29,14 +30,15 @@ fun NotFound(message: String) = KotoedException(code = NOT_FOUND, message = mess
 fun Forbidden(message: String) = KotoedException(code = FORBIDDEN, message = message)
 fun Unauthorized(message: String) = KotoedException(code = UNAUTHORIZED, message = message)
 fun Conflict(message: String) = KotoedException(code = CONFLICT, message = message)
+fun BadRequest(message: String) = KotoedException(code = BAD_REQUEST, message = message)
 
 val Throwable.unwrapped
     get() =
-    when (this) {
-        is org.jetbrains.research.kotoed.util.WrappedException -> inner ?: this
-        is java.lang.reflect.InvocationTargetException -> cause ?: this
-        else -> this
-    }
+        when (this) {
+            is org.jetbrains.research.kotoed.util.WrappedException -> inner ?: this
+            is java.lang.reflect.InvocationTargetException -> cause ?: this
+            else -> this
+        }
 
 fun codeFor(ex: Throwable): Int =
         when (ex) {
