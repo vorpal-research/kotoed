@@ -15,7 +15,11 @@ export namespace Kotoed {
                 Read: "kotoed.api.course.read",
                 Error: "kotoed.api.course.error",
                 Search: "kotoed.api.course.search",
-                SearchCount: "kotoed.api.project.course.count"
+                SearchCount: "kotoed.api.course.search.count",
+
+                Verification: {
+                    Data: "kotoed.api.course.verification.data"
+                }
             },
 
             Project: {
@@ -23,7 +27,11 @@ export namespace Kotoed {
                 Read: "kotoed.api.project.read",
                 Error: "kotoed.api.project.error",
                 Search: "kotoed.api.project.search",
-                SearchCount: "kotoed.api.project.search.count"
+                SearchCount: "kotoed.api.project.search.count",
+
+                Verification: {
+                    Data: "kotoed.api.project.verification.data"
+                }
             },
 
             Submission: {
@@ -33,6 +41,10 @@ export namespace Kotoed {
                 Comments: "kotoed.api.submission.comments",
                 CommentAggregates: "kotoed.api.submission.commentAggregates",
                 Error: "kotoed.api.submission.error",
+
+                Verification: {
+                    Data: "kotoed.api.submission.verification.data"
+                },
 
                 Comment: {
                     Read: "kotoed.api.submission.comment.read",
@@ -93,11 +105,11 @@ export namespace Kotoed {
         },
 
         AuthHelpers: {
-           WhoAmI: "/whoAmI",
-           RootPerms: "/perms/root",
-           CoursePerms: "/perms/course/:id",
-           ProjectPerms: "/perms/project/:id",
-           SubmissionPerms: "/perms/submission/:id"
+            WhoAmI: "/whoAmI",
+            RootPerms: "/perms/root",
+            CoursePerms: "/perms/course/:id",
+            ProjectPerms: "/perms/project/:id",
+            SubmissionPerms: "/perms/submission/:id"
         },
 
         Submission: {
@@ -107,7 +119,7 @@ export namespace Kotoed {
         EventBus: "/eventbus/*",
         Static: "/static/*",
 
-        reverse(pattern: string, params: {[name: string]: string|number}, star: string|number = ""): string {
+        reverse(pattern: string, params: { [name: string]: string | number }, star: string | number = ""): string {
             let url = pattern;
             for (let k in params) {
                 url = url.replace(`:${k}`, `${params[k]}`)

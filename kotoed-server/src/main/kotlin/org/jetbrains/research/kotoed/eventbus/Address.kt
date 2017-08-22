@@ -10,7 +10,11 @@ object Address {
             const val Read = "kotoed.api.course.read"
             const val Error = "kotoed.api.course.error"
             const val Search = "kotoed.api.course.search"
-            const val SearchCount = "kotoed.api.project.course.count"
+            const val SearchCount = "kotoed.api.course.search.count"
+
+            object Verification {
+                const val Data = "kotoed.api.course.verification.data"
+            }
         }
 
         object Project {
@@ -19,6 +23,10 @@ object Address {
             const val Error = "kotoed.api.project.error"
             const val Search = "kotoed.api.project.search"
             const val SearchCount = "kotoed.api.project.search.count"
+
+            object Verification {
+                const val Data = "kotoed.api.project.verification.data"
+            }
         }
 
         object Submission {
@@ -28,6 +36,10 @@ object Address {
             const val Comments = "kotoed.api.submission.comments"
             const val CommentAggregates = "kotoed.api.submission.commentAggregates"
             const val Error = "kotoed.api.submission.error"
+
+            object Verification {
+                const val Data = "kotoed.api.submission.verification.data"
+            }
 
             object Comment {
                 const val Read = "kotoed.api.submission.comment.read"
