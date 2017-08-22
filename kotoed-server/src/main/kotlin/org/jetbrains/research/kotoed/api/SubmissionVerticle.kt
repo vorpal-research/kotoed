@@ -1,14 +1,12 @@
 package org.jetbrains.research.kotoed.api
 
-import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
-import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
+import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
@@ -47,7 +45,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper {
         var res: SubmissionRecord = dbFetchAsync(submission)
         val status: VerificationData = dbProcessAsync(res)
-        if(status.status == VerificationStatus.Processed
+        if (status.status == VerificationStatus.Processed
                 && res.state != SubmissionState.open) {
             res = dbUpdateAsync(res.apply { state = SubmissionState.open })
         }
@@ -56,7 +54,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord {
         var fst = dbFindAsync(SubmissionRecord().apply { parentSubmissionId = submission.id }).firstOrNull()
-        while(fst != null) {
+        while (fst != null) {
             val sub = dbFindAsync(SubmissionRecord().apply { parentSubmissionId = fst!!.id }).firstOrNull()
             sub ?: return fst
             fst = sub
@@ -76,6 +74,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleError(verificationData: VerificationData): List<SubmissionStatusRecord> =
             verificationData.errors
                     .map { dbFetchAsync(SubmissionStatusRecord().apply { id = it }) }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Verification.Data)
+    suspend fun handleVerificationData(submission: SubmissionRecord): VerificationData =
+            dbVerifyAsync(submission)
 
     private fun CommentAggregatesByFile.register(key: String, comment: SubmissionCommentRecord) {
         this[key] = this.getOrDefault(key, CommentAggregate()).apply {
@@ -134,8 +136,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             fileComments.groupBy { (it, _, _) ->
                 it.sourceline
             }.map { (line, lineComments) ->
-                SubmissionComments.LineComments(line, lineComments.sortedBy { it.v0.datetime }.map {
-                    (comment, author, original) ->
+                SubmissionComments.LineComments(line, lineComments.sortedBy { it.v0.datetime }.map { (comment, author, original) ->
                     comment.toJson().apply {
                         put("denizen_id", author.denizenId)
                         put("original", original.toJson())
@@ -157,6 +158,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             }
         })
     }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
     suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).aggregateByFile()

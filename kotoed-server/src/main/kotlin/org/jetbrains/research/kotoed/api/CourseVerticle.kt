@@ -8,11 +8,8 @@ import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -54,6 +51,9 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
             verificationData.errors
                     .map { fetchByIdAsync(Tables.COURSE_STATUS, it) }
 
+    @JsonableEventBusConsumerFor(Address.Api.Course.Verification.Data)
+    suspend fun handleVerificationData(course: CourseRecord): VerificationData =
+            dbVerifyAsync(course)
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {

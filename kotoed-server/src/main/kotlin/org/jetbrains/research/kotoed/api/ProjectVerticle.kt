@@ -11,7 +11,6 @@ import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -56,6 +55,9 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
             verificationData.errors
                     .map { fetchByIdAsync(Tables.PROJECT_STATUS, it) }
 
+    @JsonableEventBusConsumerFor(Address.Api.Project.Verification.Data)
+    suspend fun handleVerificationData(project: ProjectRecord): VerificationData =
+            dbVerifyAsync(project)
 
     @JsonableEventBusConsumerFor(Address.Api.Project.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {
