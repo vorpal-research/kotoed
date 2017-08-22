@@ -46,7 +46,7 @@ export function performSignIn(payload: SignInPayload) {
                 providerName: payload.oAuthProvider
             });
         } else {
-            window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+            window.location.href = Kotoed.UrlPattern.Auth.LoginDone + window.location.hash
         }
     }
 }
@@ -68,7 +68,7 @@ export function performSignUp(payload: SignUpPayload) {
                 providerName: payload.oAuthProvider
             });
         } else {
-            window.location.href = Kotoed.UrlPattern.Auth.LoginDone
+            window.location.href = Kotoed.UrlPattern.Auth.LoginDone + window.location.hash
         }
     }
 }
