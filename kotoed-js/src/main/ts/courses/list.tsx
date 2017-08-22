@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal} from "react-bootstrap";
+import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal, Label} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {Course} from "./data";
@@ -7,22 +7,47 @@ import {imagePath} from "../images";
 import {SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
+import {
+    isStatusFinal,
+    SearchTableWithVerificationData,
+    WithVerificationDataResp
+} from "../views/components/searchWithVerificationData";
+import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 
-class CourseComponent extends React.PureComponent<Course> {
-    constructor(props: Course) {
+type CourseWithVer = Course & WithVerificationDataResp
+
+class CourseComponent extends React.PureComponent<CourseWithVer> {
+    constructor(props: CourseWithVer) {
         super(props);
 
         this.state = {}
     }
 
+    renderSpinner = () => {
+        if (!isStatusFinal(this.props.verificationData.status))
+            return <SpinnerWithVeil/>;
+        else
+            return null;
+    };
+
+    renderLabel = () => {
+        if (this.props.verificationData.status === "Invalid")
+            return <Label bsStyle="danger">Invalid</Label>
+        else
+            return null
+    };
+
     render() {
         return (
-            <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
-                <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
-                <p>
-                    <Button href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary" block>Open</Button>
-                </p>
-            </Thumbnail>
+            <div>
+                {this.renderSpinner()}
+                <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
+                    <h3>{this.props.name || <span className="text-danger">Unnamed</span>}{" "}{this.renderLabel()}</h3>
+                    <p>
+                        <Button href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary" block>Open</Button>
+                    </p>
+                </Thumbnail>
+            </div>
         )
     }
 
@@ -147,11 +172,11 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
 
     render() {
         return (
-            <SearchTable
+            <SearchTableWithVerificationData
                 shouldPerformInitialSearch={() => true}
                 searchAddress={Kotoed.Address.Api.Course.Search}
                 countAddress={Kotoed.Address.Api.Course.SearchCount}
-                elementComponent={(key, c: Course) => <CourseComponent {...c} key={key} />}
+                elementComponent={(key, c: CourseWithVer) => <CourseComponent {...c} key={key} />}
                 group={{
                     by: 4,
                     using: this.renderRow

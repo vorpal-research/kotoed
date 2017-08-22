@@ -103,6 +103,12 @@
     "@types/history" "*"
     "@types/react" "*"
 
+"@types/react-spinkit@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/@types/react-spinkit/-/react-spinkit-3.0.2.tgz#b4a8ec9f114e593578aa68dd2d52c681f749e204"
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-tabs@~1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/react-tabs/-/react-tabs-1.0.1.tgz#3675b7edbd6e4d257d31c55675fd7510d416e513"
@@ -1345,7 +1351,7 @@ class-utils@^0.3.4:
     lazy-cache "^2.0.2"
     static-extend "^0.1.1"
 
-classnames@^2.2, classnames@^2.2.0, classnames@^2.2.5:
+classnames@^2.2, classnames@^2.2.0, classnames@^2.2.3, classnames@^2.2.5:
   version "2.2.5"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.5.tgz#fb3801d453467649ef3603c7d61a02bd129bde6d"
 
@@ -2726,6 +2732,10 @@ loader-utils@^1.0.2, loader-utils@^1.1.0:
     emojis-list "^2.0.0"
     json5 "^0.5.0"
 
+loaders.css@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/loaders.css/-/loaders.css-0.1.2.tgz#3a9fb43726c73334a38142af9d0629019b658743"
+
 locate-path@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/locate-path/-/locate-path-2.0.0.tgz#2b568b265eec944c6d9c0de9c3dbbbca0354cd8e"
@@ -3711,6 +3721,15 @@ react-router@^4.1.1, react-router@~4.1.1:
     path-to-regexp "^1.5.3"
     prop-types "^15.5.4"
     warning "^3.0.0"
+
+react-spinkit@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-spinkit/-/react-spinkit-3.0.0.tgz#31fdaf4e18177766c57d1b1f3330290f8492a85a"
+  dependencies:
+    classnames "^2.2.3"
+    loaders.css "^0.1.2"
+    object-assign "^4.1.0"
+    prop-types "^15.5.8"
 
 react-tabs@~1.1.0:
   version "1.1.0"

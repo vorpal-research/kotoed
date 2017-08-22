@@ -2,9 +2,9 @@ import * as React from "react"
 import {Comment, LostFoundComments as LostFoundCommentsState} from "../state/comments";
 import {CommentList} from "./CommentList";
 import {List} from "immutable";
-import ComponentWithLoading, {LoadingProperty} from "./ComponentWithLoading";
 import {ScrollTo} from "../state/index";
 import {BaseCommentToRead} from "../remote/comments";
+import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
 
 interface LostFoundCommentsProps {
     comments: LostFoundCommentsState
