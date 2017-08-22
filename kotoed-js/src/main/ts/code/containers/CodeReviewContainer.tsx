@@ -61,14 +61,10 @@ const mapStateToProps = function(store: CodeReviewState,
 const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                                      ownProps: RouteComponentProps<CodeReviewUrl>): CodeReviewCallbacks & OnRoute {
 
-    function conditionallyRemoveHashFromUrl(sourcefile: string, sourceline: number) {
-        if (sourcefile !== UNKNOWN_FILE && sourceline !== UNKNOWN_LINE)
-            removeHashFromUrl()
-    }
-
     function removeHashFromUrl() {
         dispatch(push(makeCodeReviewCodePath(parseInt(ownProps.match.params.submissionId), ownProps.match.params.path)));
     }
+
 
     return {
         editor : {
@@ -86,7 +82,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
 
         comments: {
             onCommentSubmit: (sourcefile, sourceline, text) => {
-                conditionallyRemoveHashFromUrl(sourcefile, sourceline);
                 dispatch(postComment({
                     submissionId: parseInt(ownProps.match.params.submissionId),
                     sourcefile,
@@ -96,14 +91,12 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
             },
 
             onCommentResolve: (sourcefile, sourceline, commentId) => {
-                conditionallyRemoveHashFromUrl(sourcefile, sourceline);
                 dispatch(setCommentState({
                     commentId,
                     state: "closed"
                 }))
             },
             onCommentUnresolve: (sourcefile, sourceline, commentId) => {
-                conditionallyRemoveHashFromUrl(sourcefile, sourceline);
                 dispatch(setCommentState({
                     commentId,
                     state: "open"
@@ -111,7 +104,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
             },
 
             onHiddenExpand: (file, line, comments) => {
-                conditionallyRemoveHashFromUrl(file, line);
                 dispatch(expandHiddenComments({
                     file,
                     line,
@@ -119,7 +111,6 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 }))
             },
             onCommentEdit: (file, line, commentId, newText) => {
-                conditionallyRemoveHashFromUrl(file, line);
                 dispatch(editComment({
                     commentId,
                     newText

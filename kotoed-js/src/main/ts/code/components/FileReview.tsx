@@ -242,8 +242,8 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (this.props.filePath === oldProps.filePath && this.props.comments !== oldProps.comments) {
             this.incrementallyRenderMarkers(oldProps.comments);
         }
-
-        this.scrollToLine();
+        if (oldProps.scrollTo !== this.props.scrollTo)
+            this.scrollToLine();
     }
 
     componentWillUnmount () {
