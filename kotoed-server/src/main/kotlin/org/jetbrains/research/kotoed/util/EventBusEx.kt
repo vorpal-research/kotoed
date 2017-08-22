@@ -88,7 +88,6 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
 }
 
 
-
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
@@ -325,6 +324,10 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
+
+    protected suspend fun <R : TableRecord<R>> dbVerifyAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, VerificationData::class)
 
     protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
                                                               klass: KClass<out R> = instance.recordType.kotlin): R =
