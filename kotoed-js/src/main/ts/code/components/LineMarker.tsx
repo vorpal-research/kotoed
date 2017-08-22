@@ -36,7 +36,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         super(props);
         this.widget = undefined;
         this.state = {
-            expanded: props.expanded
+            expanded: props.expanded && (props.comments.size !== 0 || props.canPostComment)
         };
     }
 
