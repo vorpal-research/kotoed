@@ -67,7 +67,16 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
 
         val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course"), q)
 
-        return JsonArray(req)
+        val reqWithVerificationData = if (query.withVerificationData ?: false) {
+            req.map { json ->
+                val record: CourseRecord = json.toRecord()
+                val vd = dbProcessAsync(record)
+                json["verificationData"] = vd.toJson()
+                json
+            }
+        } else req
+
+        return JsonArray(reqWithVerificationData)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.SearchCount)
