@@ -16,7 +16,7 @@ export interface BaseCommentToRead extends BaseComment {
     authorId: number
     datetime: number
     state: CommentState
-    original?: BaseComment
+    original?: BaseCommentToRead
 }
 
 export interface CommentToRead extends BaseCommentToRead {

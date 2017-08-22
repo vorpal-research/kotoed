@@ -6,6 +6,7 @@ import LineComments from "./LineComments";
 import {List} from "immutable";
 import {Comment} from "../state/comments";
 import {LineWidget} from "codemirror";
+import {BaseCommentToRead} from "../remote/comments";
 
 interface LineMarkerProps {
     canPostComment: boolean
@@ -21,7 +22,7 @@ interface LineMarkerProps {
     onCommentResolve: (lineNumber: number, id: number) => void
     onHiddenExpand: (lineNumber: number, comments: List<Comment>) => void
     onCommentEdit: (line: number, id: number, newText: string) => void
-    makeOriginalCommentLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalCommentLink?: (comment: BaseCommentToRead) => string | undefined
     whoAmI: string
 }
 

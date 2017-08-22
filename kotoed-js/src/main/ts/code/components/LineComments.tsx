@@ -6,6 +6,7 @@ import {Comment, LineComments as LineCommentsState} from "../state/comments";
 import CommentForm from "./CommentForm";
 import CollapsedComments from "./CollapsedComments";
 import {CommentList} from "./CommentList";
+import {BaseCommentToRead} from "../remote/comments";
 
 interface LineCommentsProps {
     canPostComment: boolean
@@ -17,7 +18,7 @@ interface LineCommentsProps {
     onEdit: (id: number, newText: string) => void
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
-    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
     whoAmI: string
 }
 

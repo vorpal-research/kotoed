@@ -10,3 +10,7 @@ export interface CodeReviewState {
     capabilitiesState: CapabilitiesState
 }
 
+export interface ScrollTo {
+    line?: number
+    commentId?: number
+}

@@ -6,6 +6,7 @@ import * as moment from "moment";
 import {Comment} from "../state/comments";
 import {CommentButton} from "./CommentButton";
 import CmrmCodeBlock from "./CmrmCodeBlock";
+import {BaseCommentToRead} from "../remote/comments";
 
 
 
@@ -15,7 +16,7 @@ type CommentProps = Comment & {
     onResolve: (id: number) => void
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
-    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
 }
 
 interface CommentComponentState {
@@ -142,10 +143,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         if (this.props.makeOriginalLink === undefined || this.props.original === undefined)
             return null;
 
-        let originalLink = this.props.makeOriginalLink(
-            this.props.original.submissionId,
-            this.props.original.sourcefile,
-            this.props.original.sourceline);
+        let originalLink = this.props.makeOriginalLink(this.props.original);
 
         if (originalLink === undefined)
             return null;
