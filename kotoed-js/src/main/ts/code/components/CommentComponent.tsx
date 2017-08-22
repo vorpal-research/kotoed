@@ -280,7 +280,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
 
     render() {
         return (
-            <div className={`panel ${this.getPanelClass()} comment`}>
+            <div className={`panel ${this.getPanelClass()} comment`} data-comment-id={this.props.id}>
                 {this.renderPanelHeading()}
                 <div className="panel-body">
                     {this.renderPanelBodyContent()}

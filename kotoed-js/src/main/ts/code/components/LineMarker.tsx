@@ -96,6 +96,8 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     onClick = () => {
+        if (this.props.comments.size == 0 && !this.props.canPostComment)
+            return;
         if (this.state.expanded) {
             this.doCollapse();
             this.props.onCollapse(this.props.lineNumber);
@@ -135,8 +137,10 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     }
 
     render() {
-        if (this.props.comments.size == 0)
+        if (this.props.comments.size == 0 && this.props.canPostComment)
             return this.renderPencil();
+        else if (this.props.comments.size == 0)
+            return null;
         else
             return this.renderCounter();
     }
