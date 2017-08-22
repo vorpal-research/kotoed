@@ -95,7 +95,7 @@ type ShouldPerformInitialSearch = {
     (text: string, page: number): boolean
 }
 
-type MakeBaseQuery<T> = {
+export type MakeBaseQuery<T> = {
     (): T
 }
 
@@ -126,15 +126,19 @@ export interface SearchTableState<DataType> extends SearchBarState {
 
 interface SearchQuery {
     text: string,
-    currentPage: number,
-    pageSize: number
+    currentPage?: number,
+    pageSize?: number
+}
+
+interface CountResponse {
+    count: number
 }
 
 export class SearchTable<DataType, QueryType = {}> extends
     React.Component<SearchTableProps<DataType, QueryType>, SearchTableState<DataType>> {
 
     private shouldPerformInitialSearch: ShouldPerformInitialSearch;
-    private makeBaseQuery: MakeBaseQuery<Partial<QueryType>>;
+    protected makeBaseQuery: MakeBaseQuery<Partial<QueryType>>;
     private wrapResults: (children: Array<JSX.Element>) => JSX.Element | Array<JSX.Element>; // Array if if we're doing no wrap
     private pageSize: number;
     private renderToolbar: () => JSX.Element | null;
@@ -186,15 +190,21 @@ export class SearchTable<DataType, QueryType = {}> extends
         });
     };
 
-    private queryCount = () => {
-        let message = {
+    protected doQueryCount = async () => {
+        let searchQuery = {
             text: this.state.text
         };
-        sendAsync(this.props.countAddress, message)
-            .then((resp: any) => this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)}))
+        let message: SearchQuery & Partial<QueryType> = Object.assign({}, searchQuery, this.makeBaseQuery());
+
+        return sendAsync<SearchQuery & Partial<QueryType>, CountResponse>(this.props.countAddress, message);
     };
 
-    private queryData = async () => {
+    protected queryCount = async () => {
+        let resp = await this.doQueryCount();
+        this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)});
+    };
+
+    protected doQueryData = async () => {
         history.replaceState(undefined, this.state.text, this.hash());
         let searchQuery: SearchQuery = {
             text: this.state.text,
@@ -203,8 +213,12 @@ export class SearchTable<DataType, QueryType = {}> extends
         };
 
         let message: SearchQuery & Partial<QueryType> = Object.assign({}, searchQuery, this.makeBaseQuery());
-        sendAsync<SearchQuery & Partial<QueryType>, Array<DataType>>(this.props.searchAddress, message)
-            .then(resp => this.setState({currentResults: resp, touched: true}))
+        return sendAsync<SearchQuery & Partial<QueryType>, Array<DataType>>(this.props.searchAddress, message);
+    };
+
+    protected queryData = async () => {
+        let resp = await this.doQueryData();
+        this.setState({currentResults: resp, touched: true});
     };
 
     onPageChanged = (page: number) => {

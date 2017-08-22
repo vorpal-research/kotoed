@@ -3,7 +3,7 @@ import * as React from "react";
 import {Classes, Tree} from "@blueprintjs/core";
 import {FileTreeNode, FileTreeProps} from "../state/filetree";
 import {makeLoadingNode} from "../util/filetree";
-import {default as ComponentWithLoading, LoadingProperty} from "./ComponentWithLoading";
+import {LoadingProperty} from "../../views/components/ComponentWithLoading";
 
 export interface FileTreeCallbacks {
     onDirExpand(path: number[]): void
@@ -11,7 +11,7 @@ export interface FileTreeCallbacks {
     onFileSelect(path: number[]): void
 }
 
-export default class FileTree extends React.Component<FileTreeProps & FileTreeCallbacks & LoadingProperty, {}> {
+export default class FileTree extends React.Component<FileTreeProps & FileTreeCallbacks, {}> {
     private onNodeClick = (nodeData: FileTreeNode, path: number[]) => {
         if (nodeData.data.kind === "loading")
             return;

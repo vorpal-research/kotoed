@@ -1,12 +1,11 @@
 import * as React from "react"
-import SpinnerWithVeil from "./SpinnerWithVeil";
-
+import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 export interface LoadingProperty {
     loading: boolean
 }
 
-export default abstract class ComponentWithLoading<Props extends LoadingProperty, State> extends
-    React.Component<Props, State> {
+export default abstract class ComponentWithLoading<Props, State> extends
+    React.Component<Props & LoadingProperty, State> {
 
     renderVeil = () => {
         if (this.props.loading)

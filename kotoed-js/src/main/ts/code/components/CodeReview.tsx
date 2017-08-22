@@ -9,9 +9,9 @@ import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {BaseCommentToRead, CommentAggregate} from "../remote/comments";
 import {makeSecondaryLabel} from "../util/filetree";
-import SpinnerWithVeil from "./SpinnerWithVeil";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 import {ScrollTo} from "../state/index";
+import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 
 export interface CodeReviewProps {
     submissionId: number
