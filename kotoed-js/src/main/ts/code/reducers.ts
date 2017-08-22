@@ -8,7 +8,7 @@ import {
     commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, fileLoad,
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
-    expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound
+    expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize
 } from "./actions";
 import {
     ADD_DELTA,
@@ -227,6 +227,23 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
             newState.lostFound = newState.lostFound.withMutations((mutable) => {
                 doUpdate(mutable)
             });
+        }
+        return newState;
+    } else if (isType(action, commentEmphasize)) {
+        let {file, line, commentId} = action.payload;
+        let newState = {...reviewState};
+
+        const doUpdateComment = (comment: Comment): Comment => {
+            if (comment.id == commentId)
+                return {...comment, collapsed: false};
+            else
+                return {...comment, collapsed: true};
+        };
+        if (file !== UNKNOWN_FILE && line !== UNKNOWN_LINE) {
+            let newComments = newState.comments.getIn([file, line]).map((c: Comment) => doUpdateComment(c));
+            newState.comments = newState.comments.setIn([file, line], newComments);
+        } else {
+            newState.lostFound = newState.lostFound.map((c: Comment) => doUpdateComment(c)) as List<Comment>;
         }
         return newState;
     } else if (isType(action, expandedResetForLine)) {

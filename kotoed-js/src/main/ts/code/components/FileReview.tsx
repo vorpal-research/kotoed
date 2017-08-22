@@ -15,6 +15,8 @@ import {
 import {Comment, FileComments, LineComments} from "../state/comments";
 import {List} from "immutable";
 import ComponentWithLoading, {LoadingProperty} from "./ComponentWithLoading";
+import {ScrollTo} from "../state/index";
+import {BaseCommentToRead} from "../remote/comments";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
@@ -23,7 +25,7 @@ interface FileReviewBaseProps {
     comments: FileComments,
     filePath: string,
     whoAmI: string
-    scrollTo?: number
+    scrollTo: ScrollTo
 }
 
 interface FileReviewCallbacks {
@@ -33,8 +35,10 @@ interface FileReviewCallbacks {
     onMarkerExpand: (file: string, lineNumber: number) => void
     onMarkerCollapse: (file: string, lineNumber: number) => void
     onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
+    // TODO the good thing is to pass this callback further
+    onCommentEmphasize: (file: string, lineNumber: number, commentId: number) => void
     onCommentEdit: (file: string, line: number, id: number, newText: string) => void
-    makeOriginalCommentLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalCommentLink?: (comment: BaseCommentToRead) => string | undefined
 }
 
 export type FileReviewProps = FileReviewBaseProps & FileReviewCallbacks & LoadingProperty
@@ -141,8 +145,8 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private resetExpanded = (props: FileReviewProps) => {
         let newExpanded = Array<boolean>(props.value.split("\n").length).fill(false);
 
-        if (props.scrollTo !== undefined) {
-            newExpanded[toCmLine(props.scrollTo)] = true;
+        if (props.scrollTo !== undefined && props.scrollTo.line !== undefined) {
+            newExpanded[toCmLine(props.scrollTo.line)] = true;
         }
 
         this.setState({
@@ -168,18 +172,36 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     };
 
     private scrollToLine = () => {
-        if (this.props.scrollTo !== undefined) {
-            this.editor.scrollIntoView({
-                from: {
-                    line: toCmLine(this.props.scrollTo),
-                    ch: 0
-                },
-                to: {
-                    line: toCmLine(this.props.scrollTo + 1),
-                    ch: 0
-                }
-            }, 0);
-        }
+        if (this.props.scrollTo === undefined)
+            return;
+
+        let {line, commentId} = this.props.scrollTo;
+
+        if (line === undefined)
+            return;
+
+        this.editor.scrollIntoView({
+            from: {
+                line: toCmLine(line),
+                ch: 0
+            },
+            to: {
+                line: toCmLine(line + 1),
+                ch: 0
+            }
+        }, 0);
+
+        // TODO replace collapsing with scrolling
+        if (commentId === undefined)
+            return;
+
+        this.props.onCommentEmphasize(
+            this.props.filePath,
+            line,
+            commentId
+            )
+
+
     };
 
     componentWillMount() {
@@ -210,7 +232,8 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private shouldResetExpanded(props: FileReviewProps, nextProps: FileReviewProps) {
         if (props.filePath !== nextProps.filePath)
             return true;
-        if (nextProps.scrollTo !== undefined && nextProps.scrollTo !== props.scrollTo)
+
+        if (nextProps.scrollTo.line !== undefined && nextProps.scrollTo.line !== props.scrollTo.line)
             return true;
 
         return false;
@@ -242,7 +265,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (this.props.filePath === oldProps.filePath && this.props.comments !== oldProps.comments) {
             this.incrementallyRenderMarkers(oldProps.comments);
         }
-        if (oldProps.scrollTo !== this.props.scrollTo)
+        if (oldProps.scrollTo.line !== this.props.scrollTo.line || oldProps.scrollTo.commentId !== this.props.scrollTo.commentId)
             this.scrollToLine();
     }
 

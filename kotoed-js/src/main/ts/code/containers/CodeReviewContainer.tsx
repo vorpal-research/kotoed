@@ -1,22 +1,22 @@
 import * as React from "react";
 import * as _ from "lodash"
-
 import {Dispatch} from "redux";
 import {connect} from "react-redux";
-
+import * as QueryString from "query-string";
 
 import CodeReview, {CodeReviewCallbacks, CodeReviewProps, CodeReviewPropsAndCallbacks} from "../components/CodeReview";
 import {
     dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, loadCode, loadLostFound, postComment,
     resetExpandedForLine,
     setCommentState,
-    setCodePath, setLostFoundPath, resetExpandedForLostFound, unselectFile} from "../actions";
-import {CodeReviewState} from "../state";
+    setCodePath, setLostFoundPath, resetExpandedForLostFound, unselectFile, emphasizeComment
+} from "../actions";
+import {CodeReviewState, ScrollTo} from "../state";
 import {RouteComponentProps} from "react-router-dom";
 import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
 import {Redirect} from "react-router";
-import {makeCodeReviewCodePath} from "../../util/url";
+import {makeCodeReviewCodePath, makeCommentPath} from "../../util/url";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 
 interface OnRoute {
@@ -110,13 +110,22 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                     comments
                 }))
             },
+
+            onCommentEmphasize: (file, line, commentId) => {
+                dispatch(emphasizeComment({
+                    file,
+                    line,
+                    commentId
+                }))
+            },
+
             onCommentEdit: (file, line, commentId, newText) => {
                 dispatch(editComment({
                     commentId,
                     newText
                 }))
             },
-            makeOriginalLink: makeCodeReviewCodePath
+            makeOriginalLink: makeCommentPath
         },
 
         fileTree: {
@@ -204,21 +213,21 @@ class RoutingContainer extends React.Component<RoutingCodeReviewProps> {
     };
 
     // TODO this is SUPER fucked up
-    getHash = (): number | undefined => {
-        let hash = window.location.hash.split("#")[1];
-        let hashInt = parseInt(hash);
+    getHash = (): ScrollTo => {
+        // let hash = window.location.hash.split("#")[1];
+        let data = QueryString.parse(window.location.hash);
+        let line = parseInt(data.line) || undefined;
+        let commentId = parseInt(data.commentId) || undefined;
 
-        if (!isNaN(hashInt))
-            return hashInt;
+        return {
+            line,
+            commentId
+        }
 
     };
 
     render() {
-        let crProps = {...this.props};
-        let editorProps = {...crProps.editor};
-        editorProps.scrollTo = this.getHash();
-        crProps.editor = editorProps;
-        return <CodeReview {...crProps} show={this.getCodeReviewMode()}/>
+        return <CodeReview {...this.props} scrollTo={this.getHash()} show={this.getCodeReviewMode()}/>
     }
 }
 
