@@ -3,7 +3,7 @@ import {render} from "react-dom";
 import {ColumnDefinition, RowDefinition} from "griddle-react";
 
 import {GenericResponse, IdRequest, sendAsync} from "./components/common";
-import {ArrayColumn} from "./components/griddleEx"
+import {ArrayColumn, TestDataColumn} from "./components/griddleEx"
 import {ResultHolder} from "./components/resultHolder";
 import {
     ResultListHolder,
@@ -73,17 +73,22 @@ namespace KFirst {
             <ColumnDefinition id="tags"
                               title="Tags"
                               customComponent={ArrayColumn}/>
+            <ColumnDefinition id="results"
+                              title="Results"
+                              customComponent={TestDataColumn}/>
         </RowDefinition>
 
 } // namespace KFirst
 
 render(
     <SubmissionResultTable id={submissionId}>
+        {/*
         <ResultHolder name="JUnit"
                       selector={JUnit.selector}
                       transformer={JUnit.transformer}>
             {JUnit.rowDefinition}
         </ResultHolder>
+        */}
         <ResultHolder name="KFirst"
                       selector={KFirst.selector}
                       transformer={KFirst.transformer}>
