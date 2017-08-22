@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.web.routers.views
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.data.api.SubmissionComments
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.SubmissionResult
 import org.jetbrains.research.kotoed.util.fail
@@ -45,14 +46,22 @@ suspend fun handleCommentById(context: RoutingContext) {
 
     val comment = context.vertx().eventBus().commentByIdOrNull(id!!.toInt())
     comment ?: return context.fail(HttpResponseStatus.INTERNAL_SERVER_ERROR)
-
-    context.response().redirect(UrlPattern.reverse(
-            UrlPattern.CodeReview.Index,
-            mapOf(
-                    "id" to comment.submissionId
-            ),
-            star = "code/${comment.sourcefile}#${comment.sourceline}"
-    ))
+    if (comment.sourceline != SubmissionComments.UnknownLine && comment.sourcefile != SubmissionComments.UnknownFile)
+        context.response().redirect(UrlPattern.reverse(
+                UrlPattern.CodeReview.Index,
+                mapOf(
+                        "id" to comment.submissionId
+                ),
+                star = "code/${comment.sourcefile}#line=${comment.sourceline}&commentId=${comment.id}"
+        ))
+    else
+        context.response().redirect(UrlPattern.reverse(
+                UrlPattern.CodeReview.Index,
+                mapOf(
+                        "id" to comment.submissionId
+                ),
+                star = "lost+found#commentId=${comment.id}"
+        ))
 }
 
 @HandlerFor(UrlPattern.Comment.Search)

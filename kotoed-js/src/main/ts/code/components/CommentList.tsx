@@ -4,6 +4,7 @@ import {Comment} from "../state/comments";
 import {List} from "immutable";
 import CollapsedComments from "./CollapsedComments";
 import CommentComponent from "./CommentComponent";
+import {BaseCommentToRead} from "../remote/comments";
 
 interface CommentListProps {
     comments: List<Comment>
@@ -12,7 +13,7 @@ interface CommentListProps {
     onEdit: (id: number, newText: string) => void
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
-    makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+    makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
 }
 
 export class CommentList extends React.Component<CommentListProps, {}> {
@@ -34,7 +35,7 @@ export class CommentList extends React.Component<CommentListProps, {}> {
         };
 
         this.props.comments.forEach((comment: Comment) => {
-            if (comment.state === "open" || !comment.collapsed) {
+            if (!comment.collapsed) {
                 flushCollapsed();
                 components.push(<CommentComponent
                     notifyEditorAboutChange={this.props.notifyEditorAboutChange}

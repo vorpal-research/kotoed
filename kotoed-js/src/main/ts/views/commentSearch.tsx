@@ -25,7 +25,7 @@ class CommentSearchResult extends React.PureComponent<{ comment: CommentToRead }
     renderOverlay = () => {
         let comment = this.props.comment;
         return (
-            <a target="_blank" href={makeCommentPath(comment.submissionId, comment.sourcefile, comment.sourceline)}>
+            <a target="_blank" href={makeCommentPath(comment)}>
                 <strong>At: {truncateString(comment.sourcefile, 25)} &raquo;</strong>
             </a>
         );

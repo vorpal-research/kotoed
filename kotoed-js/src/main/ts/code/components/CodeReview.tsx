@@ -7,10 +7,11 @@ import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
 import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
-import {CommentAggregate} from "../remote/comments";
+import {BaseCommentToRead, CommentAggregate} from "../remote/comments";
 import {makeSecondaryLabel} from "../util/filetree";
 import SpinnerWithVeil from "./SpinnerWithVeil";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
+import {ScrollTo} from "../state/index";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -19,7 +20,6 @@ export interface CodeReviewProps {
         value: string
         file: string
         comments: FileComments
-        scrollTo?: number
     }
 
     fileTree: {
@@ -42,6 +42,7 @@ export interface CodeReviewProps {
 
 interface CodeReviewPropsFromRouting {
     show: "lost+found" | "code"
+    scrollTo: ScrollTo
 }
 
 export interface CodeReviewCallbacks {
@@ -55,8 +56,9 @@ export interface CodeReviewCallbacks {
         onCommentUnresolve: (filePath: string, lineNumber: number, id: number) => void
         onCommentResolve: (filePath: string, lineNumber: number, id: number) => void
         onHiddenExpand: (file: string, lineNumber: number, comments: List<Comment>) => void
+        onCommentEmphasize: (file: string, lineNumber: number, commentId: number) => void
         onCommentEdit: (file: string, line: number, id: number, newText: string) => void
-        makeOriginalLink?: (submissionId: number, sourcefile: string, sourceline: number) => string | undefined
+        makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
     }
 
     fileTree: {
@@ -75,9 +77,9 @@ export type CodeReviewPropsAndCallbacks = CodeReviewProps & CodeReviewCallbacks
 
 export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting> {
 
-    makeOriginalLinkOrUndefined = (submissionId: number, sourcefile: string, sourceline: number) => {
-        if (this.props.comments.makeOriginalLink && submissionId !== this.props.submissionId)
-            return this.props.comments.makeOriginalLink(submissionId, sourcefile, sourceline)
+    makeOriginalLinkOrUndefined = (comment: BaseCommentToRead) => {
+        if (this.props.comments.makeOriginalLink && comment.submissionId !== this.props.submissionId)
+            return this.props.comments.makeOriginalLink(comment)
     };
 
     renderRightSide = () => {
@@ -86,10 +88,12 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                 return <LostFoundComments comments={this.props.lostFound.comments}
                                           onCommentUnresolve={(id) => this.props.comments.onCommentUnresolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
                                           onCommentResolve={(id) => this.props.comments.onCommentResolve(UNKNOWN_FILE, UNKNOWN_LINE, id)}
+                                          onCommentEmphasize={(comments) => this.props.comments.onCommentEmphasize(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
                                           onExpand={(comments) => this.props.comments.onHiddenExpand(UNKNOWN_FILE, UNKNOWN_LINE, comments)}
                                           onEdit={(id, newText) => this.props.comments.onCommentEdit(UNKNOWN_FILE, UNKNOWN_LINE, id, newText)}
                                           makeOriginalLink={this.props.comments.makeOriginalLink}
                                           loading={this.props.lostFound.loading}
+                                          scrollTo={this.props.scrollTo}
                 />;
             case "code":
                 if (this.props.editor.file !== "")
@@ -104,9 +108,10 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        onMarkerExpand={this.props.editor.onMarkerExpand}
                                        onMarkerCollapse={this.props.editor.onMarkerCollapse}
                                        onHiddenExpand={this.props.comments.onHiddenExpand}
+                                       onCommentEmphasize={this.props.comments.onCommentEmphasize}
                                        onCommentEdit={this.props.comments.onCommentEdit}
                                        whoAmI={this.props.capabilities.whoAmI}
-                                       scrollTo={this.props.editor.scrollTo}
+                                       scrollTo={this.props.scrollTo}
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
                     />;

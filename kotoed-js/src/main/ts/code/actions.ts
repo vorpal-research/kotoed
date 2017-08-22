@@ -76,6 +76,14 @@ interface HiddenCommentsExpandPayload {
     comments: List<Comment>
 }
 
+interface CommentEmphasizePayload {
+    file: string
+    line: number
+    commentId: number
+}
+
+
+
 interface ExpandedResetForLinePayload {
     file: string
     line: number
@@ -96,6 +104,8 @@ export const fileSelect = actionCreator<NodePathPayload>('FILE_SELECT');
 export const fileUnselect = actionCreator<{}>('FILE_UNSELECT');
 export const aggregatesUpdate = actionCreator<AggregatesUpdatePayload>("AGGREGATES_UPDATE");
 export const hiddenCommentsExpand = actionCreator<HiddenCommentsExpandPayload>("HIDDEN_COMMENTS_EXPAND");
+export const commentEmphasize = actionCreator<CommentEmphasizePayload>("COMMENT_EMPHASIZE");
+
 export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("EXPANDED_RESET_FOR_LINE");
 export const expandedResetForFile = actionCreator<ExpandedResetForFilePayload>("EXPANDED_RESET_FOR_FILE");
 export const expandedResetForLostFound = actionCreator<{}>("EXPANDED_RESET_FOR_LOST_FOUND");
@@ -375,6 +385,14 @@ export function expandHiddenComments(payload: HiddenCommentsExpandPayload) {
         dispatch(hiddenCommentsExpand(payload));
     }
 }
+
+export function emphasizeComment(payload: CommentEmphasizePayload) {
+    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(commentEmphasize(payload));
+    }
+}
+
+
 
 export function resetExpandedForLine(payload: ExpandedResetForLinePayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
