@@ -8,6 +8,7 @@ import Griddle, {
 } from "griddle-react";
 
 import {ErrorDesc} from "./common";
+import {JsonColumn} from "./griddleEx";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 
@@ -35,6 +36,7 @@ export class ErrorTable extends Component<ErrorTableProps, any> {
             components={{
                 Filter: () => <span/>,
                 SettingsToggle: () => <span/>,
+                Pagination: () => <span/>,
                 NoResults: () =>
                     <div className="alert alert-warning" role="alert">
                         No data available
@@ -45,6 +47,9 @@ export class ErrorTable extends Component<ErrorTableProps, any> {
             <RowDefinition>
                 <ColumnDefinition id="id" title="Error ID"/>
                 <ColumnDefinition id="data.error" title="Error data"/>
+                <ColumnDefinition id="data"
+                                  title="Details"
+                                  customComponent={JsonColumn}/>
             </RowDefinition>
         </Griddle>;
     }

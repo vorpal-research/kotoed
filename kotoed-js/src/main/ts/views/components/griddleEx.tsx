@@ -5,6 +5,9 @@ import {List} from "immutable";
 export const ArrayColumn = ({value}: { value: List<any> }) =>
     <span>{value.join(", ")}</span>;
 
+export const JsonColumn = ({value}: { value: any }) =>
+    <pre><code>{JSON.stringify(value.toJS(), null, 2)}</code></pre>;
+
 interface UnknownFailureInfo {
     nestedException: string
 }
