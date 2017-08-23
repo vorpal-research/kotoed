@@ -59,7 +59,6 @@ export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
     }
 
     protected queryData = async () => {
-        console.log("QUERYING");
         let results;
         let i = 0;
         let oldState = this.state;
