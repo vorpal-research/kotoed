@@ -1,9 +1,9 @@
 import * as React from "react";
 import {Component} from "react";
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs";
-import {isArray} from "util";
 
 import {components} from "griddle-react";
+import * as _ from "lodash";
 
 import {
     ErrorDesc,
@@ -13,42 +13,50 @@ import {
     VerificationStatus
 } from "./common";
 import {ErrorTable} from "./errorTable";
-import {ResultHolder} from "./resultHolder";
+import {ResultFilter, ResultHolder} from "./resultHolder";
 import {ResultTable} from "./resultTable";
 
 import {sleep} from "../../util/common";
 import {Kotoed} from "../../util/kotoed-api";
 
-export interface ResultListHolderProps {
+export interface ResultListHolderProps<ResultT> {
     id: number
+    resultHolders: ResultHolder<ResultT>[]
 }
 
-export interface ResultListHolderState<ResultT> {
+export type ResultListHolderState<ResultT> = {
     results: ResultT[]
     errors: ErrorDesc[]
-    resultHolders: ResultHolder<ResultT>[],
     activeTabIndex: number
+} & {
+    [key: string]: boolean
 }
 
-export abstract class ResultListHolder<ResultT> extends Component<ResultListHolderProps, ResultListHolderState<ResultT>> {
+export abstract class ResultListHolder<ResultT> extends Component<ResultListHolderProps<ResultT>, ResultListHolderState<ResultT>> {
 
-    constructor(props: ResultListHolderProps, context: undefined) {
+    constructor(props: ResultListHolderProps<ResultT>, context: undefined) {
         super(props, context);
 
-        let resultHolders: any[] =
-            isArray(this.props.children)
-                ? this.props.children
-                : [this.props.children];
+        let flatMappedHolderFilters = _.flatMap(
+            this.props.resultHolders,
+            rh => _.map(rh.props.filters, f => [`${rh.props.name}.${f.name}`, f.isOnByDefault])
+        );
 
-        this.state = {
-            results: [],
-            errors: [],
-            resultHolders: resultHolders.map(rh => new ResultHolder(rh.props, undefined)),
-            activeTabIndex: 0
-        };
+        this.state = _.extend(
+            {
+                results: [],
+                errors: [],
+                activeTabIndex: 0
+            },
+            _.reduce(
+                flatMappedHolderFilters,
+                (acc, [fname, fvalue]) => _.set(acc, fname, fvalue),
+                {}
+            ) as { [key: string]: boolean }
+        );
     }
 
-    componentDidMount() {
+    componentWillMount() {
         this.loadResults()
             .then(this.processResults)
     }
@@ -66,7 +74,7 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
             .then(res => {
                 let [r, e] = res;
                 let activeTabIndex = e.length > 0
-                    ? this.state.resultHolders.length
+                    ? this.props.resultHolders.length
                     : this.state.activeTabIndex;
                 this.setState({
                     results: r,
@@ -89,20 +97,32 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
             });
     };
 
+    isResultFilterActive = (holderName: string, filterName: string) => {
+        let holderFilterName = `${holderName}.${filterName}`;
+        return _.get(this.state, holderFilterName);
+    };
+
+    toggleResultFilter = (holderName: string, filterName: string) => {
+        let holderFilterName = `${holderName}.${filterName}`;
+        this.setState(_.set({}, holderFilterName, !_.get(this.state, holderFilterName)))
+    };
+
     render() {
 
-        type TabData = [string, ResultT[], components.RowDefinition];
+        type TabData = [ResultHolder<ResultT>, string, ResultT[], ResultFilter<ResultT>[], components.RowDefinition];
 
         let tabs: TabData[] = [];
 
-        for (let resultHolder of this.state.resultHolders) {
+        for (let resultHolder of this.props.resultHolders) {
 
             // Skipping data processing for non-active tabs
             if (this.state.activeTabIndex != tabs.length) {
                 tabs.push([
+                    resultHolder,
                     resultHolder.props.name,
                     [],
-                    resultHolder.state.rowDefinition
+                    [],
+                    resultHolder.props.rowDefinition
                 ]);
                 continue;
             }
@@ -113,10 +133,21 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
                     resultList.push(result);
                 }
             }
+
+            resultList = Array.of<ResultT>().concat(...resultList.map(resultHolder.props.transformer));
+
+            for (let filter of resultHolder.props.filters) {
+                if (this.isResultFilterActive(resultHolder.props.name, filter.name)) {
+                    resultList = resultList.filter(_.negate(filter.predicate))
+                }
+            }
+
             tabs.push([
+                resultHolder,
                 resultHolder.props.name,
-                Array.of<ResultT>().concat(...resultList.map(resultHolder.props.transformer)),
-                resultHolder.state.rowDefinition
+                resultList,
+                resultHolder.props.filters,
+                resultHolder.props.rowDefinition
             ]);
         }
 
@@ -126,15 +157,28 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
 
             <TabList>
                 {tabs.map((data) => {
-                    let [name, list, rowDefinition] = data;
+                    let [rh, name, list, filters, rowDefinition] = data;
                     return <Tab key={name}>{name}</Tab>;
                 })}
                 <Tab key="Errors">Errors</Tab>
             </TabList>
 
             {tabs.map((data) => {
-                let [name, list, rowDefinition] = data;
+                let [rh, name, list, filters, rowDefinition] = data;
                 return <TabPanel key={name}>
+                    <div className="btn-toolbar clearfix">
+                        <div className="btn-group float-right">
+                            {filters.map(f => {
+                                let isActive = this.isResultFilterActive(name, f.name);
+                                return <button key={f.name}
+                                               className={isActive ? "btn btn-default active" : "btn btn-default"}
+                                               type="button"
+                                               onClick={(e) => this.toggleResultFilter(name, f.name)}>
+                                    {f.name}
+                                </button>;
+                            })}
+                        </div>
+                    </div>
                     <ResultTable results={list} rowDefinition={rowDefinition}/>
                 </TabPanel>;
             })}

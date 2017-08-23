@@ -1,9 +1,15 @@
 import * as React from "react";
 import {render} from "react-dom";
-import {ColumnDefinition, RowDefinition} from "griddle-react";
+import {ColumnDefinition, components, RowDefinition} from "griddle-react";
+import * as _ from "lodash";
 
 import {GenericResponse, IdRequest, sendAsync} from "./components/common";
-import {ArrayColumn, TestDataColumn} from "./components/griddleEx"
+import {
+    ArrayColumn,
+    isUnknownFailureInfo,
+    TestData,
+    TestDataColumn
+} from "./components/griddleEx"
 import {ResultHolder} from "./components/resultHolder";
 import {
     ResultListHolder,
@@ -13,7 +19,7 @@ import {
 import {Kotoed} from "../util/kotoed-api";
 
 export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
-    constructor(props: ResultListHolderProps, context: undefined) {
+    constructor(props: ResultListHolderProps<ResultT>, context: undefined) {
         super(props, context);
     }
 
@@ -64,7 +70,15 @@ namespace KFirst {
         return result.body.data
     }
 
-    export let rowDefinition =
+    export let hideTodosFilter = {
+        name: "Hide TODOs",
+        predicate: (row: any): boolean => {
+            return _.every(row.results, ((td: TestData) => isUnknownFailureInfo(td.failure)));
+        },
+        isOnByDefault: true
+    };
+
+    export let rowDefinition: components.RowDefinition =
         <RowDefinition>
             <ColumnDefinition id="packageName"
                               title="Package"/>
@@ -76,24 +90,19 @@ namespace KFirst {
             <ColumnDefinition id="results"
                               title="Results"
                               customComponent={TestDataColumn}/>
-        </RowDefinition>
+        </RowDefinition> as any
 
 } // namespace KFirst
 
 render(
-    <SubmissionResultTable id={submissionId}>
-        {/*
-        <ResultHolder name="JUnit"
-                      selector={JUnit.selector}
-                      transformer={JUnit.transformer}>
-            {JUnit.rowDefinition}
-        </ResultHolder>
-        */}
-        <ResultHolder name="KFirst"
-                      selector={KFirst.selector}
-                      transformer={KFirst.transformer}>
-            {KFirst.rowDefinition}
-        </ResultHolder>
-    </SubmissionResultTable>,
-    document.getElementById("view-submission-results")
+    <SubmissionResultTable
+        id={submissionId}
+        resultHolders={[
+            <ResultHolder name="KFirst"
+                          selector={KFirst.selector}
+                          transformer={KFirst.transformer}
+                          filters={[KFirst.hideTodosFilter]}
+                          rowDefinition={KFirst.rowDefinition}/> as any
+        ]}/>,
+    rootElement
 );
