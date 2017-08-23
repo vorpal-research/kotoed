@@ -1,9 +1,14 @@
 import * as React from "react";
 import {Component} from "react";
 
-import Griddle, {components, GriddleStyleConfig} from "griddle-react";
+import Griddle, {components, GriddleStyleConfig, plugins} from "griddle-react";
 
 import "less/kotoed-bootstrap/bootstrap.less";
+import {Bootstrap} from "./griddleEx";
+import Pagination = Bootstrap.Pagination;
+import PreviousButton = Bootstrap.PreviousButton;
+import NextButton = Bootstrap.NextButton;
+import PageDropdown = Bootstrap.PageDropdown;
 
 export interface ResultTableProps<ResultT> {
     results: ResultT[]
@@ -19,7 +24,9 @@ export class ResultTable<ResultT> extends Component<ResultTableProps<ResultT>, a
     styleConfig: GriddleStyleConfig = {
         classNames: {
             Table: 'table table-bordered table-striped table-hover',
-            TableHeading: 'bg-info'
+            TableHeading: 'bg-info',
+
+            Filter: "form-control"
         }
     };
 
@@ -27,8 +34,13 @@ export class ResultTable<ResultT> extends Component<ResultTableProps<ResultT>, a
         return <Griddle
             key="results"
             data={this.props.results}
+            plugins={[plugins.LocalPlugin]}
             components={{
-                Filter: () => <span/>,
+                // Filter: () => <span/>,
+                Pagination: Pagination,
+                PreviousButton: PreviousButton,
+                NextButton: NextButton,
+                PageDropdown: PageDropdown,
                 SettingsToggle: () => <span/>,
                 NoResults: () =>
                     <div className="alert alert-warning" role="alert">
