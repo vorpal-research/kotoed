@@ -13,6 +13,7 @@ import {
     WithVerificationDataResp
 } from "../views/components/searchWithVerificationData";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
+import Planks from "../views/components/Planks";
 
 type CourseWithVer = Course & WithVerificationDataResp
 
@@ -30,21 +31,25 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
             return null;
     };
 
-    renderLabel = () => {
+    renderPlanks = () => {
         if (this.props.verificationData.status === "Invalid")
-            return <Label bsStyle="danger">Invalid</Label>
+            return <Planks/>;
         else
-            return null
+            return null;
     };
 
     render() {
         return (
             <div>
                 {this.renderSpinner()}
+                {this.renderPlanks()}
                 <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
-                    <h3>{this.props.name || <span className="text-danger">Unnamed</span>}{" "}{this.renderLabel()}</h3>
+                    <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
                     <p>
-                        <Button href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary" block>Open</Button>
+                        <Button
+                            disabled={this.props.verificationData.status !== "Processed"}
+                            href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary"
+                            block>Open</Button>
                     </p>
                 </Thumbnail>
             </div>
