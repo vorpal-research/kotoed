@@ -3,8 +3,8 @@ import {Comment, LostFoundComments as LostFoundCommentsState} from "../state/com
 import {CommentList} from "./CommentList";
 import {List} from "immutable";
 import {ScrollTo} from "../state/index";
-import {BaseCommentToRead} from "../remote/comments";
 import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
+import {BaseCommentToRead} from "../../data/comment";
 
 interface LostFoundCommentsProps {
     comments: LostFoundCommentsState

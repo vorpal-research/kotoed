@@ -32,6 +32,7 @@ suspend fun handleCode(context: RoutingContext) {
                 return
             }
 
+    // TODO check verification status
     if (submission.state == SubmissionState.pending || submission.state == SubmissionState.invalid) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return

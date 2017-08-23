@@ -2,11 +2,12 @@ package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.util.end
-import org.jetbrains.research.kotoed.util.fail
-import org.jetbrains.research.kotoed.util.getValue
-import org.jetbrains.research.kotoed.util.isAuthorisedAsync
+import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
+import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsonResponse
 import org.jetbrains.research.kotoed.util.routing.LoginRequired
@@ -31,6 +32,31 @@ suspend fun handleRootPerms(context: RoutingContext) {
 
     context.response().end(Permissions.Root(
             createCourse = isTeacher
+    ))
+}
+
+@HandlerFor(UrlPattern.AuthHelpers.CoursePerms)
+@JsonResponse
+@LoginRequired
+suspend fun handleCoursePerms(context: RoutingContext) {
+    val user = context.user()
+    val id by context.request()
+    val intId = id?.toInt()
+
+    if (intId == null) {
+        context.fail(HttpResponseStatus.BAD_REQUEST)
+        return
+    }
+
+    val courseWrapper: DbRecordWrapper =
+            context.vertx().eventBus().sendJsonableAsync(
+                    Address.Api.Course.Read,
+                    CourseRecord().apply {
+                        this.id = intId
+                    })
+
+    context.response().end(Permissions.Course(
+            createProject = courseWrapper.verificationData.status == VerificationStatus.Processed
     ))
 }
 

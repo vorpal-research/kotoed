@@ -3,7 +3,7 @@ import * as QueryString from "query-string";
 import {Kotoed} from "./kotoed-api";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../code/remote/constants";
 import {ScrollTo} from "../code/state/index";
-import {BaseCommentToRead} from "../code/remote/comments";
+import {BaseCommentToRead} from "../data/comment";
 
 // TODO properly support relative paths
 export function fromLocationHost(path: string): string {

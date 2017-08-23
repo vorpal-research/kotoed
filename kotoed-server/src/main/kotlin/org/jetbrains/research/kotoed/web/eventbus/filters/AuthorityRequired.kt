@@ -7,4 +7,9 @@ class AuthorityRequired(val authority: String) : BridgeEventFilter {
     suspend override fun isAllowed(be: BridgeEvent): Boolean =
             LoginRequired.isAllowed(be) && be.socket().webUser()?.isAuthorisedAsync(authority) ?: false
 
+    override fun toString(): String {
+        return "AuthorityRequired(authority='$authority')"
+    }
+
+
 }

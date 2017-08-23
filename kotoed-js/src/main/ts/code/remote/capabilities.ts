@@ -1,12 +1,7 @@
 import axios from "axios"
 import {keysToCamelCase} from "../../util/stringCase";
 import {Kotoed} from "../../util/kotoed-api";
-
-export interface Principal {
-    denizenId: string
-    id: number
-}
-
+import {DenizenPrincipal} from "../../data/denizen";
 export interface Permissions {
     editOwnComments: boolean
     editAllComments: boolean,
@@ -16,7 +11,7 @@ export interface Permissions {
 }
 
 export interface Capabilities {
-    principal: Principal
+    principal: DenizenPrincipal
     permissions: Permissions
 }
 

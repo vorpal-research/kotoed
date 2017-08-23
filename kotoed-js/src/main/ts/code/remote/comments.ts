@@ -1,27 +1,9 @@
 import {eventBus} from "../../eventBus";
 import {RequestWithId, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
+import {BaseComment, BaseCommentToRead, CommentToRead} from "../../data/comment";
+import {CommentState} from "../state/comments";
 
-type CommentState = "open" | "closed";
-
-interface BaseComment {
-    submissionId: number
-    text: string
-    sourcefile: string
-    sourceline: number
-}
-
-export interface BaseCommentToRead extends BaseComment {
-    id: number
-    authorId: number
-    datetime: number
-    state: CommentState
-    original?: BaseCommentToRead
-}
-
-export interface CommentToRead extends BaseCommentToRead {
-    denizenId: string
-}
 
 export interface LineComments {
     line: number,

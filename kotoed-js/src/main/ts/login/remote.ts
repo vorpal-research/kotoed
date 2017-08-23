@@ -3,16 +3,6 @@ import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase, keysToSnakeCase} from "../util/stringCase";
 import {eventBus} from "../eventBus";
 
-export interface SignInRequest {
-    denizenId: string
-    password: string
-}
-
-export interface SignUpRequest {
-    denizenId: string
-    password: string
-}
-
 export interface SignInResponse {
     succeeded: boolean
     error: string | null

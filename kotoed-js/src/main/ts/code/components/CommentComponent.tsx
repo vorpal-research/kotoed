@@ -6,9 +6,7 @@ import * as moment from "moment";
 import {Comment} from "../state/comments";
 import {CommentButton} from "./CommentButton";
 import CmrmCodeBlock from "./CmrmCodeBlock";
-import {BaseCommentToRead} from "../remote/comments";
-
-
+import {BaseCommentToRead} from "../../data/comment";
 
 
 type CommentProps = Comment & {

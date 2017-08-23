@@ -139,6 +139,7 @@ object SubmissionComments {
 
 data class SearchQuery(
         val text: String,
+        val find: JsonObject?,
         val currentPage: Int?,
         val pageSize: Int?,
         val withVerificationData: Boolean?): Jsonable

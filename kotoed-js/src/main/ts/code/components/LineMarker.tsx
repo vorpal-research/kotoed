@@ -6,7 +6,7 @@ import LineComments from "./LineComments";
 import {List} from "immutable";
 import {Comment} from "../state/comments";
 import {LineWidget} from "codemirror";
-import {BaseCommentToRead} from "../remote/comments";
+import {BaseCommentToRead} from "../../data/comment";
 
 interface LineMarkerProps {
     canPostComment: boolean

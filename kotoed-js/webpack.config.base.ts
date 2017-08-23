@@ -38,7 +38,7 @@ const config: webpack.Configuration = {
         commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
         projectSearch: kotoedEntry("./ts/views/projectSearch.tsx"),
         courseList: kotoedEntry("./ts/courses/list.tsx"),
-
+        projectList: kotoedEntry("./ts/projects/list.tsx"),
         images: "./ts/images.ts"
     },
     output: {

@@ -6,7 +6,7 @@ import {Comment, LineComments as LineCommentsState} from "../state/comments";
 import CommentForm from "./CommentForm";
 import CollapsedComments from "./CollapsedComments";
 import {CommentList} from "./CommentList";
-import {BaseCommentToRead} from "../remote/comments";
+import {BaseCommentToRead} from "../../data/comment";
 
 interface LineCommentsProps {
     canPostComment: boolean

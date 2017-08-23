@@ -4,7 +4,7 @@ import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {makeCodeReviewCodePath} from "../util/url";
 
-interface ProjectData {
+interface Project {
     id: number
     name: string
     repoUrl: string
@@ -14,9 +14,9 @@ interface ProjectData {
     lastSubmissionId: number
 }
 
-class ProjectSearchResult extends React.PureComponent<{ project: ProjectData }> {
+class ProjectSearchResult extends React.PureComponent<{ project: Project }> {
 
-    constructor(props: { project: ProjectData }) {
+    constructor(props: { project: Project }) {
         super(props);
     }
 
@@ -51,7 +51,7 @@ class SearchableProjectTable extends React.PureComponent {
             <SearchTable
                 searchAddress={Kotoed.Address.Api.Project.Search}
                 countAddress={Kotoed.Address.Api.Project.SearchCount}
-                elementComponent={(key, p: ProjectData) => <ProjectSearchResult key={key} project={p} />}
+                elementComponent={(key, p: Project) => <ProjectSearchResult key={key} project={p} />}
             />
         );
     }

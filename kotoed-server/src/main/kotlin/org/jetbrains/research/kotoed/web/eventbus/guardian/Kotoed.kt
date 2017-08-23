@@ -27,13 +27,15 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Submission.Error to Permissive,
         Address.Api.Submission.Comment.Search to AuthorityRequired(Authority.Teacher),
         Address.Api.Submission.Comment.SearchCount to AuthorityRequired(Authority.Teacher),
-        Address.Api.Project.Search to Permissive,
-        Address.Api.Project.SearchCount to Permissive,
+        Address.Api.Project.Search to AuthorityRequired(Authority.Teacher),
+        Address.Api.Project.SearchCount to AuthorityRequired(Authority.Teacher),
         Address.Api.Notification.RenderCurrent to Permissive,
         Address.Api.Notification.Current to Permissive,
         Address.Api.Course.Search to Permissive,
         Address.Api.Course.SearchCount to Permissive,
-        Address.Api.Course.Create to AuthorityRequired(Authority.Teacher)
+        Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),
+        Address.Api.Project.SearchForCourse to Permissive,
+        Address.Api.Project.SearchForCourseCount to Permissive
 )
 
 val KotoedPerAddressAnonymousFilter = PerAddress(
@@ -52,9 +54,12 @@ class KotoedFilter(vertx: Vertx): BridgeEventFilter {
     fun makePermittedOptions() = perAddress.makePermittedOptions() + perAddressAnonymous.makePermittedOptions()
 }
 
-val KotoedPerAddressPatcher = PerAddressPatcher(
+fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Submission.Comment.Create to CommentCreatePatcher,
-        Address.Api.Notification.RenderCurrent to NotificationPatcher
+        Address.Api.Notification.RenderCurrent to NotificationPatcher,
+        Address.Api.Project.SearchForCourse to CourseListPatcher(vertx),
+        Address.Api.Project.SearchForCourseCount to CourseListPatcher(vertx)
+
 )
 
-val KotoedPatcher = KotoedPerAddressPatcher
+fun kotoedPatcher(vertx: Vertx) = kotoedPerAddressPatcher(vertx)

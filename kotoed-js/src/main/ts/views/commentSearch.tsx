@@ -1,11 +1,11 @@
 import * as React from "react";
 import {makeCommentPath} from "../util/url";
-import {CommentToRead} from "../code/remote/comments";
 import {SearchResult, SearchTable} from "./components/search";
 import CommentComponent from "../code/components/CommentComponent";
 import {doNothing} from "../util/common";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
+import {CommentToRead} from "../data/comment";
 
 function truncateString(str: string, len: number): string {
     if (str.length <= len) return str;
