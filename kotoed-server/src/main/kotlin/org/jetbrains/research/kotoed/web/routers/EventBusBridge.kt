@@ -6,7 +6,7 @@ import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
 import org.jetbrains.research.kotoed.web.eventbus.EventBusBridge
 import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedFilter
-import org.jetbrains.research.kotoed.web.eventbus.guardian.KotoedPatcher
+import org.jetbrains.research.kotoed.web.eventbus.guardian.kotoedPatcher
 
 @HandlerFactoryFor(UrlPattern.EventBus)
 @EnableSessions
@@ -18,5 +18,5 @@ fun eventBusHandlerFactory(cfg: RoutingConfig) = with(cfg) {
         for (po in filter.makePermittedOptions())
             addInboundPermitted(po)
     }
-    EventBusBridge(vertx, bo, BridgeGuardian(filter, KotoedPatcher))
+    EventBusBridge(vertx, bo, BridgeGuardian(filter, kotoedPatcher(vertx)))
 }

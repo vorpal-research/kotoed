@@ -2,20 +2,20 @@ import * as React from "react";
 import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal, Label} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
-import {Course} from "./data";
 import {imagePath} from "../images";
 import {SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
 import {
     isStatusFinal,
-    SearchTableWithVerificationData,
-    WithVerificationDataResp
+    SearchTableWithVerificationData
 } from "../views/components/searchWithVerificationData";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import Planks from "../views/components/Planks";
+import {WithVerificationData} from "../data/verification";
+import {Course, CourseToRead} from "../data/course";
 
-type CourseWithVer = Course & WithVerificationDataResp
+type CourseWithVer = CourseToRead & WithVerificationData
 
 class CourseComponent extends React.PureComponent<CourseWithVer> {
     constructor(props: CourseWithVer) {
@@ -39,6 +39,9 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
     };
 
     render() {
+        let href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Course.Index, {
+            id: this.props.id
+        });
         return (
             <div>
                 {this.renderSpinner()}
@@ -48,7 +51,7 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
                     <p>
                         <Button
                             disabled={this.props.verificationData.status !== "Processed"}
-                            href={Kotoed.UrlPattern.NotImplemented} bsSize="large" bsStyle="primary"
+                            href={href} bsSize="large" bsStyle="primary"
                             block>Open</Button>
                     </p>
                 </Thumbnail>

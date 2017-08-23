@@ -11,3 +11,4 @@ export function doNothing() : void {}
 export function typedKeys<T>(obj: T) {
     return Object.keys(obj) as Array<keyof T>
 }
+

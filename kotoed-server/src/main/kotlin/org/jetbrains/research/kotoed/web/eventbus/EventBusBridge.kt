@@ -13,7 +13,7 @@ class EventBusBridge(
         beHandler: Handler<BridgeEvent>
 
 ) : Handler<RoutingContext> {
-    val sockJSHandler: SockJSHandler = SockJSHandler.create(vertx)
+    private val sockJSHandler: SockJSHandler = SockJSHandler.create(vertx)
      init {
          sockJSHandler.bridge(bridgeOptions, beHandler)
      }

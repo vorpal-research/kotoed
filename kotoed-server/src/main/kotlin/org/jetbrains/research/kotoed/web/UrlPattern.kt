@@ -37,12 +37,12 @@ object UrlPattern {
         const val Search = "/views/comment/search"
     }
 
-    object Project {
-        const val Search = "/views/project/search"
+    object Course {
+        const val Index = "/course/:id"
     }
 
-    object Debug {
-        const val Navigation = "/web/debug/navigation"
+    object Project {
+        const val Search = "/views/project/search"
     }
 
     const val EventBus = "/eventbus/*"

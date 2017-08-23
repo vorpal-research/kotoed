@@ -2,21 +2,11 @@ import * as _ from "lodash";
 
 import {MakeBaseQuery, SearchTable, SearchTableProps, SearchTableState} from "./search";
 import {sleep} from "../../util/common";
+import {VerificationStatus, WithVerificationData} from "../../data/verification";
 
 interface WithVerificationDataReq {
     withVerificationData: boolean
 }
-
-type VerificationStatus = "NotReady" | "Invalid" | "Unknown" | "Processed"
-
-export interface VerificationData {
-    status: VerificationStatus
-}
-
-export interface WithVerificationDataResp {
-    verificationData: VerificationData
-}
-
 
 const finalStatuses: Array<VerificationStatus> = ["Invalid", "Processed"];
 
@@ -28,33 +18,36 @@ const RETRIES = 10;
 const SLEEP = 1000;
 
 export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
-        SearchTable<DataType & WithVerificationDataResp,
+        SearchTable<DataType & WithVerificationData,
             QueryType | WithVerificationDataReq> {
 
-
-    constructor(props: SearchTableProps<DataType & WithVerificationDataResp, QueryType | WithVerificationDataReq>) {
+    constructor(props: SearchTableProps<DataType & WithVerificationData, QueryType | WithVerificationDataReq>) {
         super(props);
-        this.makeBaseQuery = props.makeBaseQuery || (() => {
-            return {
+        this.makeBaseQuery = () => {
+            const orig = props.makeBaseQuery || (() => {return {}});
+            return Object.assign({}, orig(), {
                 withVerificationData: true
-            }
-        });
+            })
+        };
+
 
     }
 
-    componentWillReceiveProps(props: SearchTableProps<DataType, QueryType>) {
-        this.makeBaseQuery = props.makeBaseQuery || (() => {
-            return {
+    componentWillReceiveProps(props: SearchTableProps<DataType, QueryType | WithVerificationDataReq>) {
+        super.componentWillReceiveProps(props);
+        this.makeBaseQuery = () => {
+            const orig = props.makeBaseQuery || (() => {return {}});
+            return Object.assign({}, orig(), {
                 withVerificationData: true
-            }
-        });
+            })
+        };
     }
 
-    private isGoodEnough(data: Array<DataType & WithVerificationDataResp>) {
-        return data.every((value: DataType & WithVerificationDataResp) => isStatusFinal(value.verificationData.status))
+    private isGoodEnough(data: Array<DataType & WithVerificationData>) {
+        return data.every((value: DataType & WithVerificationData) => isStatusFinal(value.verificationData.status))
     }
 
-    private isQueryChanged(oldState: SearchTableState<DataType & WithVerificationDataResp>) {
+    private isQueryChanged(oldState: SearchTableState<DataType & WithVerificationData>) {
         return oldState.text !== this.state.text || oldState.currentPage !== this.state.currentPage
     }
 

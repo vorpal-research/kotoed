@@ -1,10 +1,11 @@
 import {List, Map} from "immutable";
 
 import {
-    CommentsResponse, CommentToRead, ReviewComments as ServerReviewComments
+    CommentsResponse, ReviewComments as ServerReviewComments
 } from "../remote/comments";
 import {ReviewComments, FileComments, LineComments, Comment, CommentsState, LostFoundComments} from "../state/comments";
 import {Capabilities} from "../remote/capabilities";
+import {CommentToRead} from "../../data/comment";
 
 export function addRenderingProps(comment: CommentToRead, capabilities: Capabilities): Comment {
     return {

@@ -1,3 +1,5 @@
+import pathToRegexp = require("path-to-regexp");
+
 export namespace Kotoed {
 
     export const Address = {
@@ -28,6 +30,8 @@ export namespace Kotoed {
                 Error: "kotoed.api.project.error",
                 Search: "kotoed.api.project.search",
                 SearchCount: "kotoed.api.project.search.count",
+                SearchForCourse: "kotoed.api.project.searchForCourse",
+                SearchForCourseCount: "kotoed.api.project.searchForCourse.count",
 
                 Verification: {
                     Data: "kotoed.api.project.verification.data"
@@ -116,6 +120,11 @@ export namespace Kotoed {
             Results: "/views/submission/:id/results"
         },
 
+        Course: {
+            Index: "/course/:id"
+        },
+
+
         EventBus: "/eventbus/*",
         Static: "/static/*",
 
@@ -128,6 +137,25 @@ export namespace Kotoed {
             url = url.replace("*", `${star}`);
 
             return url
+        },
+
+        tryResolve(pattern: string, url: string): Map<string | number, string> | undefined {
+            let keys: Array<pathToRegexp.Key> = [];
+            let re = pathToRegexp(pattern, keys);
+            let match = re.exec(url);
+
+            if (match === null)
+                return undefined;
+
+            let res = new Map<string | number, string>();
+
+            for (let i = 1; i < match.length; i++) {
+                let keyIx = i - 1;
+                res.set(keys[keyIx].name, match[i])
+            }
+
+            return res;
         }
-    }
+    };
+
 }

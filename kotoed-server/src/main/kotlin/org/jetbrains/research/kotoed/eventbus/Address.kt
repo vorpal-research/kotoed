@@ -23,6 +23,9 @@ object Address {
             const val Error = "kotoed.api.project.error"
             const val Search = "kotoed.api.project.search"
             const val SearchCount = "kotoed.api.project.search.count"
+            const val SearchForCourse = "kotoed.api.project.searchForCourse"
+            const val SearchForCourseCount = "kotoed.api.project.searchForCourse.count"
+
 
             object Verification {
                 const val Data = "kotoed.api.project.verification.data"

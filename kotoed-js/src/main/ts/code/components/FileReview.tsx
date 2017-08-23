@@ -15,8 +15,8 @@ import {
 import {Comment, FileComments, LineComments} from "../state/comments";
 import {List} from "immutable";
 import {ScrollTo} from "../state/index";
-import {BaseCommentToRead} from "../remote/comments";
 import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
+import {BaseCommentToRead} from "../../data/comment";
 
 interface FileReviewBaseProps {
     canPostComment: boolean

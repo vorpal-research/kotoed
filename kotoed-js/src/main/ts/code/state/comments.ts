@@ -1,6 +1,6 @@
 import {List, Map} from "immutable";
+import {CommentToRead} from "../../data/comment";
 
-import {CommentToRead} from "../remote/comments";
 
 export interface CommentsState {
     comments: ReviewComments

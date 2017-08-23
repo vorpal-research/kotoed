@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
@@ -100,4 +101,50 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         return sendJsonableAsync(Address.DB.count("submission"), q)
     }
 
+
+    // TODO maybe we should have only one universal search for project?
+    @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourse)
+    suspend fun handleSearchForCourse(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val currentPage = query.currentPage ?: 0
+        val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+                .join(Tables.DENIZEN.name)
+                .find(ProjectRecord().apply {
+                    courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
+                    denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
+                })
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
+
+        val qWithSearch = if (query.text == "") q else q.filter("""document matches "${query.text}"""")
+
+        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.COURSE.name), qWithSearch)
+
+        // TODO add "in" operator to DSL and manually join with latest submission (or null)
+
+        val reqWithVerificationData = if (query.withVerificationData ?: false) {
+            req.map { json ->
+                val record: ProjectRecord = json.toRecord()
+                val vd = dbProcessAsync(record)
+                json["verificationData"] = vd.toJson()
+                json
+            }
+        } else req
+
+        return JsonArray(reqWithVerificationData)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
+    suspend fun handleSearchForCourseCount(query: SearchQuery): JsonObject {
+        val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+                .join(Tables.DENIZEN.name)
+                .find(ProjectRecord().apply {
+                    courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
+                    denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
+                })
+
+        val qWithSearch = if (query.text == "") q else q.filter("""document matches "${query.text}"""")
+
+        return sendJsonableAsync(Address.DB.count(Tables.PROJECT.name), qWithSearch)
+    }
 }

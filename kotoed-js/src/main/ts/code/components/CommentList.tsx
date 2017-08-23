@@ -4,7 +4,7 @@ import {Comment} from "../state/comments";
 import {List} from "immutable";
 import CollapsedComments from "./CollapsedComments";
 import CommentComponent from "./CommentComponent";
-import {BaseCommentToRead} from "../remote/comments";
+import {BaseCommentToRead} from "../../data/comment";
 
 interface CommentListProps {
     comments: List<Comment>
