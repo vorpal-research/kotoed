@@ -138,7 +138,7 @@ const config: webpack.Configuration = {
                 loader: "file-loader",
                 options: {
                     name: "fonts/[name].[ext]",
-                    publicPath: '../'  // CSS are put into css/ folder by ExtractTextPlugin
+                    publicPath: '/static/'  // CSS are put into css/ folder by ExtractTextPlugin
                 }
             },
             {
@@ -146,6 +146,7 @@ const config: webpack.Configuration = {
                 loader: "file-loader",
                 options: {
                     name: "img/[name].[ext]",
+                    publicPath: '/static/'
                 }
             },
 
