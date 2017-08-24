@@ -61,9 +61,9 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-bootstrap@^0.0.52":
-  version "0.0.52"
-  resolved "https://registry.yarnpkg.com/@types/react-bootstrap/-/react-bootstrap-0.0.52.tgz#f1a02d8de70f8e6eba840a8c2ecbfbad81fa42ba"
+"@types/react-bootstrap@^0.31.0":
+  version "0.31.0"
+  resolved "https://registry.yarnpkg.com/@types/react-bootstrap/-/react-bootstrap-0.31.0.tgz#9c96e6182380c3d1950bc6fed6c07b90698142db"
   dependencies:
     "@types/react" "*"
 
