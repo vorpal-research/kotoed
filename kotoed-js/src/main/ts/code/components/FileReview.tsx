@@ -45,6 +45,7 @@ export type FileReviewProps = FileReviewBaseProps & FileReviewCallbacks & Loadin
 
 interface FileReviewState {
     expanded: Array<boolean>
+    editor: cm.EditorFromTextArea
 }
 
 const REVIEW_GUTTER = "review-gutter";
@@ -52,7 +53,6 @@ const REVIEW_GUTTER = "review-gutter";
 export default class FileReview extends ComponentWithLoading<FileReviewProps, FileReviewState> {
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
-    private editor: cm.EditorFromTextArea;
     private markerDivs: Map<number, HTMLDivElement> = new Map();
 
     constructor(props: FileReviewProps) {
@@ -60,16 +60,9 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     }
 
     private cleanUpLine = (cmLine: number) => {
-        let lineInfo = this.editor.lineInfo(cmLine);
-
-
-        let componentContainer = this.markerDivs.get(cmLine);
-
-        if (componentContainer)
-            unmountComponentAtNode(componentContainer);
-
+        let lineInfo = this.state.editor.lineInfo(cmLine);
         if (lineInfo.gutterMarkers && lineInfo.gutterMarkers[REVIEW_GUTTER]) {
-            this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null);
+            this.state.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null);
         }
 
     };
@@ -92,56 +85,38 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         this.props.onMarkerCollapse(this.props.filePath, lineNo);
     };
 
-    private renderMarker = (cmLine: number, comments: LineComments) => {
+    private renderMarker = (cmLine: number) => {
         let reviewLine = fromCmLine(cmLine);
         this.cleanUpLine(cmLine);
+        let badge = this.markerDivs.get(cmLine);
 
-        let badge: HTMLDivElement = document.createElement("div");
-        this.markerDivs.set(cmLine, badge);
-        render(<LineMarker
-                canPostComment={this.props.canPostComment}
-                comments={comments}
-                lineNumber={reviewLine}
-                editor={this.editor}
-                arrowOffset={this.arrowOffset}
-                expanded={this.state.expanded[cmLine]}
-                onExpand={this.handleMarkerExpand}
-                onCollapse={this.handleMarkerCollapse}
-                onSubmit={this.props.onSubmit}
-                onCommentResolve={(lineNumber, id) => this.props.onCommentResolve(this.props.filePath, lineNumber, id)}
-                onCommentUnresolve={(lineNumber, id) => this.props.onCommentUnresolve(this.props.filePath, lineNumber, id)}
-                onHiddenExpand={(line, comments) => this.props.onHiddenExpand(this.props.filePath, line, comments)}
-                onCommentEdit={(line, id, newText) => this.props.onCommentEdit(this.props.filePath, line, id, newText)}
-                whoAmI={this.props.whoAmI}
-                makeOriginalCommentLink={this.props.makeOriginalCommentLink}
-            />,
-            badge);
-        this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
+        if (badge === undefined)
+            throw new Error("Rendering marker for wrong line");
+
+        this.state.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
     };
 
     private renderMarkers = () => {
-        let scrollInfo = this.editor.getScrollInfo();
-        for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
+        let scrollInfo = this.state.editor.getScrollInfo();
+        for (let i = 0; i < this.state.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
-            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
-
-            this.renderMarker(cmLine, comments);
+            this.renderMarker(cmLine);
         }
-        this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
+        this.state.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
     private incrementallyRenderMarkers = (oldFileComments: FileComments) => {
-        let scrollInfo = this.editor.getScrollInfo();
-        for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
+        let scrollInfo = this.state.editor.getScrollInfo();
+        for (let i = 0; i < this.state.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
             let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
             let oldComments = oldFileComments.get(reviewLine, LineComments());
             if (comments !== oldComments)
-                this.renderMarker(cmLine, comments);
+                this.renderMarker(cmLine);
         }
-        this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
+        this.state.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
     private resetExpanded = (props: FileReviewProps) => {
@@ -158,7 +133,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
     private updateArrowOffset = () => {
         this.arrowOffset = 0.0;
-        $(this.editor.getGutterElement()).children().each((ix, elem) => {
+        $(this.state.editor.getGutterElement()).children().each((ix, elem) => {
             let jqel = $(elem);
             let width = jqel.width();
             if (width !== undefined) {
@@ -182,7 +157,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (line === undefined)
             return;
 
-        this.editor.scrollIntoView({
+        this.state.editor.scrollIntoView({
             from: {
                 line: toCmLine(line),
                 ch: 0
@@ -214,21 +189,25 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         let newMode = guessCmModeForFile((this.props.filePath));
         requireCmMode(newMode);
 
-        this.editor = cm.fromTextArea(this.textAreaNode, {
-            lineNumbers: true,
-            mode: editorModeParam(newMode),
-            readOnly: true,
-            foldGutter: true,
-            gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
-            lineWrapping: true,
+        this.setState({
+            editor: cm.fromTextArea(this.textAreaNode, {
+                lineNumbers: true,
+                mode: editorModeParam(newMode),
+                readOnly: true,
+                foldGutter: true,
+                gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
+                lineWrapping: true,
+            })
+        }, () => {
+            this.state.editor.setSize(null, this.props.height);
+
+            this.updateArrowOffset();
+
+            this.renderMarkers();
+            this.scrollToLine();
         });
 
-        this.editor.setSize(null, this.props.height);
 
-        this.updateArrowOffset();
-
-        this.renderMarkers();
-        this.scrollToLine();
     }
 
     private shouldResetExpanded(props: FileReviewProps, nextProps: FileReviewProps) {
@@ -249,14 +228,14 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
     componentDidUpdate(oldProps: FileReviewProps) {
         if (oldProps.value !== this.props.value) {
-            this.editor.setValue(this.props.value);
+            this.state.editor.setValue(this.props.value);
             this.updateArrowOffset();
         }
 
         if (this.props.filePath !== oldProps.filePath) {
             let newMode = guessCmModeForFile((this.props.filePath));
             requireCmMode(newMode);
-            this.editor.setOption("mode", editorModeParam(newMode));
+            this.state.editor.setOption("mode", editorModeParam(newMode));
         }
 
         if (this.shouldResetExpanded(oldProps, this.props)) {
@@ -276,16 +255,53 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             unmountComponentAtNode(v);
         });
 
-        if (this.editor) {
-            this.editor.toTextArea();
+        if (this.state.editor) {
+            this.state.editor.toTextArea();
         }
     }
+
+    renderMarkerStash = (): Array<JSX.Element> | null => {
+        let markerEls: Array<JSX.Element> = [];
+
+        if (this.state.editor === undefined) {
+            return null;
+        }
+
+        for (let i = 0; i < this.state.editor.getDoc().lineCount(); i++) {
+            let cmLine = i;
+            let reviewLine = fromCmLine(cmLine);
+            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
+            markerEls.push(<div key={cmLine} className="marker-container" ref={(ref) => this.markerDivs.set(cmLine, ref!)}>
+                <LineMarker
+                    canPostComment={this.props.canPostComment}
+                    comments={comments}
+                    lineNumber={reviewLine}
+                    editor={this.state.editor}
+                    arrowOffset={this.arrowOffset}
+                    expanded={this.state.expanded[cmLine]}
+                    onExpand={this.handleMarkerExpand}
+                    onCollapse={this.handleMarkerCollapse}
+                    onSubmit={this.props.onSubmit}
+                    onCommentResolve={(lineNumber, id) => this.props.onCommentResolve(this.props.filePath, lineNumber, id)}
+                    onCommentUnresolve={(lineNumber, id) => this.props.onCommentUnresolve(this.props.filePath, lineNumber, id)}
+                    onHiddenExpand={(line, comments) => this.props.onHiddenExpand(this.props.filePath, line, comments)}
+                    onCommentEdit={(line, id, newText) => this.props.onCommentEdit(this.props.filePath, line, id, newText)}
+                    whoAmI={this.props.whoAmI}
+                    makeOriginalCommentLink={this.props.makeOriginalCommentLink}
+                />
+            </div>);
+        }
+        return markerEls;
+    };
 
     render() {
         return (
             <div className="codemirror-with-veil">
                 {this.renderVeil()}
                 <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
+                <div className="stash" id="marker-stash">
+                    {this.renderMarkerStash()}
+                </div>
             </div>
         )
     }
