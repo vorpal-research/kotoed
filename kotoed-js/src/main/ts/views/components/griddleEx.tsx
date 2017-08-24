@@ -1,6 +1,9 @@
 import * as React from "react";
 import {Component} from "react";
+import {ListGroup, ListGroupItem} from "react-bootstrap";
 import {List} from "immutable";
+import * as _ from "lodash";
+
 
 export const ArrayColumn = ({value}: { value: List<any> }) =>
     <span>{value.join(", ")}</span>;
@@ -11,15 +14,30 @@ export const JsonColumn = ({value}: { value: any }) =>
 export const CodeColumn = ({value}: { value: any }) =>
     <pre><code>{value}</code></pre>;
 
+
 export interface UnknownFailureInfo {
     nestedException: string
 }
 
 export function isUnknownFailureInfo(failure: FailureInfo): failure is UnknownFailureInfo {
-    return failure && (failure as any).class == "org.jetbrains.research.runner.data.UnknownFailureDatum"
+    return failure &&
+        (failure as any).class === "org.jetbrains.research.runner.data.UnknownFailureDatum";
 }
 
-export type FailureInfo = (UnknownFailureInfo | UnknownFailureInfo)
+export interface TestFailureInfo {
+    input: { [arg: string]: any }
+    output: any
+    expectedOutput: any
+    nestedException: string
+}
+
+export function isTestFailureInfo(failure: FailureInfo): failure is TestFailureInfo {
+    return failure &&
+        (failure as any).class === "org.jetbrains.research.runner.data.TestFailureDatum";
+}
+
+export type FailureInfo = TestFailureInfo | UnknownFailureInfo
+
 
 export interface TestData {
     status: string
@@ -37,16 +55,49 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                     </li>
                 }
                 case "FAILED": {
-                    if (isUnknownFailureInfo(td.failure)) {
+                    let failure = td.failure;
+
+                    if (isTestFailureInfo(failure)) {
                         return <li key={`${value.hashCode()}-${idx}`}
                                    className="list-group-item list-group-item-danger">
-                            Failed with:<br/>{td.failure.nestedException}
+                            Failed with:
+                            <ListGroup>
+                                <ListGroupItem bsStyle="danger">
+                                    Inputs:
+                                    <ListGroup>
+                                        {_.toPairs(failure.input).map(([k, v]) => {
+                                            return <ListGroupItem
+                                                bsStyle="danger">
+                                                <code>{k} -> {v}</code>
+                                            </ListGroupItem>
+                                        })}
+                                    </ListGroup>
+                                </ListGroupItem>
+                                <ListGroupItem bsStyle="danger">
+                                    Output:
+                                    <code>{failure.output}</code>
+                                </ListGroupItem>
+                                <ListGroupItem bsStyle="danger">
+                                    Expected output:
+                                    <code>{failure.expectedOutput}</code>
+                                </ListGroupItem>
+                                <ListGroupItem bsStyle="danger">
+                                    Nested exception:
+                                    {failure.nestedException}
+                                </ListGroupItem>
+                            </ListGroup>
+                        </li>
+                    } else if (isUnknownFailureInfo(failure)) {
+                        return <li key={`${value.hashCode()}-${idx}`}
+                                   className="list-group-item list-group-item-danger">
+                            Failed with:<br/>{failure.nestedException}
                         </li>
                     }
                 }
             }
         })
     }</ul>;
+
 
 export namespace Bootstrap {
 
@@ -107,4 +158,4 @@ export namespace Bootstrap {
         </ul>
     );
 
-}
+} // namespace Bootstrap
