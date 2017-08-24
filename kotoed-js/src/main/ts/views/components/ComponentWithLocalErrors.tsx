@@ -1,13 +1,9 @@
 import * as React from "react"
-import {ErrorMessages} from "../util";
+import {ErrorMessages} from "../../login/util";
 import {typedKeys} from "../../util/common";
 
 interface WithLocalErrors<E> {
     localErrors: E
-}
-
-export type ErrorMessages<Flags> = {
-    [flag in keyof Flags]: string
 }
 
 export abstract class ComponentWithLocalErrors<P, S, E> extends

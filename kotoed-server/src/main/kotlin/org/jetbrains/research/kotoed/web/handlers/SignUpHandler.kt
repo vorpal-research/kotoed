@@ -24,7 +24,7 @@ class SignUpHandler(private val authProvider: AuthProvider) : AsyncRoutingContex
         val newDenizen: DenizenUnsafeRecord = try {
             context.vertx().eventBus().sendJsonableAsync(Address.User.Auth.SignUp, msg)
         } catch (ex: Exception) {
-            context.response().end(Auth.SignUpResponse(false, ex.message ?: "Unknown error"))
+            context.response().end(Auth.SignUpResponse(false, ex.message ?: "Unknown remoteError"))
             return
         }
 
@@ -39,11 +39,11 @@ class SignUpHandler(private val authProvider: AuthProvider) : AsyncRoutingContex
         val user = try {
             vxa<User> { authProvider.authenticate(authInfo, it)}
         } catch (ex: Exception) {
-            context.response().end(Auth.SignUpResponse(false, ex.message ?: "Unknown error"))
+            context.response().end(Auth.SignUpResponse(false, ex.message ?: "Unknown remoteError"))
             return
         } catch (nstt: NoStackTraceThrowable) {
             // We don't throw it in UavAuthProvider, but we're trying to be slightly more universal here
-            context.response().end(Auth.SignUpResponse(false, nstt.message ?: "Unknown error"))
+            context.response().end(Auth.SignUpResponse(false, nstt.message ?: "Unknown remoteError"))
             return
         }
 

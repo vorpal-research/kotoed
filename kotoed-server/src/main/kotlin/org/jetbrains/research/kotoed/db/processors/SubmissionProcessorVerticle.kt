@@ -113,7 +113,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                         SubmissionStatusRecord().apply {
                             this.submissionId = submission.id
                             this.data = JsonObject(
-                                    "error" to "Fetching remote repository failed",
+                                    "remoteError" to "Fetching remote repository failed",
                                     "reason" to vcsInfo.toJson()
                             )
                         }
@@ -165,7 +165,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     SubmissionStatusRecord().apply {
                         this.submissionId = sub.id
                         this.data = JsonObject(
-                                "error" to "Triggering build for $sub:$project failed",
+                                "remoteError" to "Triggering build for $sub:$project failed",
                                 "reason" to ex.message
                         )
                     }
@@ -194,7 +194,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     SubmissionStatusRecord().apply {
                         this.submissionId = sub.id
                         this.data = JsonObject(
-                                "error" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
+                                "remoteError" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
                                 "reason" to ex.message
                         )
                     }

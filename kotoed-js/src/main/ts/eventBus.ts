@@ -24,7 +24,7 @@ function makeMsg(e: ReplyError | Error) {
     } else if (e.message) {
         return e.message
     } else {
-        return "Unknown error"
+        return "Unknown remoteError"
     }
 }
 
