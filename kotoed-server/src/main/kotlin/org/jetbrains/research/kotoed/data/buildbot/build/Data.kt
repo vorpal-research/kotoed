@@ -17,8 +17,7 @@ data class BuildCrawl(
 ) : EventBusDatum<BuildCrawl>()
 
 data class StepCrawl(
-        val buildRequestId: Int,
-        val buildId: Int,
+        val buildCrawl: BuildCrawl,
         val stepId: Int,
         val stepName: String,
         val results: Int?
@@ -39,24 +38,21 @@ enum class LogType(val code: String) {
 }
 
 data class LogCrawl(
-        val buildRequestId: Int,
-        val buildId: Int,
-        val stepId: Int,
-        val stepName: String,
-        val results: Int?,
+        val stepCrawl: StepCrawl,
         val logId: Int,
         val logName: String,
         val logType: LogType
 ) : EventBusDatum<LogCrawl>()
 
 data class LogContent(
-        val buildRequestId: Int,
-        val buildId: Int,
-        val stepId: Int,
-        val stepName: String,
-        val results: Int?,
-        val logId: Int,
-        val logName: String,
-        val logType: LogType,
+        val logCrawl: LogCrawl,
         val content: String
-) : EventBusDatum<LogContent>()
+) : EventBusDatum<LogContent>() {
+    fun buildRequestId() = logCrawl.stepCrawl.buildCrawl.buildRequestId
+
+    fun stepName() = logCrawl.stepCrawl.stepName
+    fun results() = logCrawl.stepCrawl.results
+
+    fun logName() = logCrawl.logName
+    fun logType() = logCrawl.logType
+}
