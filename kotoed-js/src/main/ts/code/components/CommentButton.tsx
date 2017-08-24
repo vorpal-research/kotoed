@@ -1,4 +1,5 @@
 import * as React from "react"
+import {Glyphicon, Tooltip, OverlayTrigger} from "react-bootstrap";
 
 interface CommentButtonProps {
     title: string
@@ -7,27 +8,21 @@ interface CommentButtonProps {
 }
 
 export class CommentButton extends React.Component<CommentButtonProps> {
-    output: HTMLPreElement;
-    ref: HTMLSpanElement;
+    makeTooltip = () => {
+        return <Tooltip id="tooltip">{this.props.title}</Tooltip>
+    };
 
-    componentDidMount() {
-        $(this.ref).tooltip();
-    }
-
-    componentDidUpdate() {
-        // BS does not like tooltip title to be updated so we have to do this BS.
-        $(this.ref).attr('title', this.props.title).tooltip('fixTitle');
-    }
 
     render() {
-        return <span ref={(me: HTMLSpanElement) => this.ref = me}
+        return (
+            <OverlayTrigger placement="left" overlay={this.makeTooltip()}>
+                <span
                      className="comment-button"
                      onClick={this.props.onClick}
-                     data-toggle="tooltip"
-                     data-placement="left"
-                     title={this.props.title}>
-            <span className={`glyphicon glyphicon-${this.props.icon}`} />
-        </span>
+>
+                    <Glyphicon glyph={this.props.icon} />
+                </span>
+            </OverlayTrigger>)
     }
 
 }

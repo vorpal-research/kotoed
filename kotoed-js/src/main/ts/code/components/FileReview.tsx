@@ -1,6 +1,6 @@
 import * as cm from "codemirror"
 import * as React from "react";
-import {render} from "react-dom";
+import {render, unmountComponentAtNode} from "react-dom";
 
 import "codemirror/addon/fold/foldcode"
 import "codemirror/addon/fold/foldgutter"
@@ -53,6 +53,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private textAreaNode: HTMLTextAreaElement;
     private arrowOffset: number;
     private editor: cm.EditorFromTextArea;
+    private markerDivs: Map<number, HTMLDivElement> = new Map();
 
     constructor(props: FileReviewProps) {
         super(props);
@@ -61,11 +62,11 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private cleanUpLine = (cmLine: number) => {
         let lineInfo = this.editor.lineInfo(cmLine);
 
-        if (lineInfo.widgets) {
-            for (let widget of lineInfo.widgets) {
-                widget.clear();
-            }
-        }
+
+        let componentContainer = this.markerDivs.get(cmLine);
+
+        if (componentContainer)
+            unmountComponentAtNode(componentContainer);
 
         if (lineInfo.gutterMarkers && lineInfo.gutterMarkers[REVIEW_GUTTER]) {
             this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, null);
@@ -95,7 +96,8 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         let reviewLine = fromCmLine(cmLine);
         this.cleanUpLine(cmLine);
 
-        let badge = document.createElement("div");
+        let badge: HTMLDivElement = document.createElement("div");
+        this.markerDivs.set(cmLine, badge);
         render(<LineMarker
                 canPostComment={this.props.canPostComment}
                 comments={comments}
@@ -270,6 +272,10 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     }
 
     componentWillUnmount () {
+        this.markerDivs.forEach((v: HTMLDivElement) => {
+            unmountComponentAtNode(v);
+        });
+
         if (this.editor) {
             this.editor.toTextArea();
         }
