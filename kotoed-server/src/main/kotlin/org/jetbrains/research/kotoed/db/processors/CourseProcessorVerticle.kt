@@ -51,7 +51,7 @@ class CourseProcessorVerticle : ProcessorVerticle<CourseRecord>(Tables.COURSE) {
             val error = CourseStatusRecord()
                     .apply {
                         this.courseId = record.id
-                        this.data = JsonObject("error" to "Buildbot endpoint $endpointLocator not available")
+                        this.data = JsonObject("remoteError" to "Buildbot endpoint $endpointLocator not available")
                     }
 
             val errorId = vxa<Message<JsonObject>> {

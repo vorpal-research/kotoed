@@ -1,7 +1,7 @@
 import * as React from "react"
 import {ChangeEvent, MouseEvent} from "react";
 import {ErrorMessages} from "../util";
-import {ComponentWithLocalErrors} from "./ComponentWithLocalErrors";
+import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
 
 type LocalErrors = {
     emptyUsername: boolean

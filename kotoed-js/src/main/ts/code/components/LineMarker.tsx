@@ -1,6 +1,7 @@
 import * as cm from "codemirror"
 import * as React from "react";
-import {render} from "react-dom";
+import {render, unmountComponentAtNode} from "react-dom";
+import {Label, Glyphicon} from "react-bootstrap";
 
 import LineComments from "./LineComments";
 import {List} from "immutable";
@@ -32,7 +33,7 @@ interface LineMarkerState {
 
 export default class LineMarkerComponent extends React.Component<LineMarkerProps, LineMarkerState> {
     private widget: LineWidget | undefined;
-
+    private container: HTMLDivElement = document.createElement("div");
     constructor(props: LineMarkerProps) {
         super(props);
         this.widget = undefined;
@@ -50,14 +51,16 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         // todo think
     }
 
-    private getLabelClasses = () => {
-        let expandedClass =  (this.state.expanded) ? "review-shown" : "review-hidden";
-        let colorClass = (this.state.expanded || this.props.comments.every((c: Comment) => c.state === "closed")) ?
-            "label-default" :
-            "label-danger";
-        return `${expandedClass} ${colorClass}`
+    private getLabelExpanedClass = () => {
+        return this.state.expanded ? "review-shown" : "review-hidden";
     };
-
+    
+    private getLabelStyle = () => {
+        return (this.state.expanded || this.props.comments.every((c: Comment) => c.state === "closed")) ?
+            "default" :
+            "danger";
+    };
+    
     handleLineWidgetChanged = () => {
         if (this.widget)
             this.widget.changed();
@@ -66,7 +69,6 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     private doExpand = () => {
-        let div = document.createElement("div");
         render(
             <LineComments
                 canPostComment={this.props.canPostComment}
@@ -81,8 +83,8 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 makeOriginalLink={this.props.makeOriginalCommentLink}
                 whoAmI={this.props.whoAmI}
             />,
-            div);
-        this.widget = this.props.editor.addLineWidget(this.props.lineNumber - 1, div, {
+            this.container);
+        this.widget = this.props.editor.addLineWidget(this.props.lineNumber - 1, this.container, {
             coverGutter: true,
             noHScroll: false,
             above: false,
@@ -91,6 +93,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     private doCollapse = () => {
+        unmountComponentAtNode(this.container);
         let li = this.props.editor.lineInfo(this.props.lineNumber  - 1);
         li.widgets[0].clear();
         this.widget = undefined;
@@ -122,9 +125,11 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     renderCounter() {
         return (
             <div className="comments-counter-wrapper">
-                <span className={`comments-counter label ${this.getLabelClasses()}`} onClick={this.onClick}>
+                <Label className={`comments-counter ${this.getLabelExpanedClass()}`}
+                       bsStyle={this.getLabelStyle()}
+                       onClick={this.onClick}>
                     {this.props.comments.size}
-                </span>
+                </Label>
             </div>
         );
     }
@@ -132,9 +137,13 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     renderPencil() {
         return (
             <div className={`comments-pencil-wrapper ${this.getPencilWrapperClasses()}`}>
-                <span className={`comments-pencil glyphicon glyphicon-pencil`} onClick={this.onClick}/>
+                <Glyphicon glyph="pencil" onClick={this.onClick}/>
             </div>
         );
+    }
+
+    componentWillUnmount() {
+        unmountComponentAtNode(this.container);
     }
 
     render() {
