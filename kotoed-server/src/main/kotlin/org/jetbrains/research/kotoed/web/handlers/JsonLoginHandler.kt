@@ -34,11 +34,11 @@ class JsonLoginHandler(
             val user = try {
                 vxa<User> { authProvider.authenticate(authInfo, it)}
             } catch (ex: Exception) {
-                context.response().end(Auth.LoginResponse(false, ex.message ?: "Unknown error"))
+                context.response().end(Auth.LoginResponse(false, ex.message ?: "Unknown remoteError"))
                 return
             } catch (nstt: NoStackTraceThrowable) {
                 // We don't throw it in UavAuthProvider, but we're trying to be slightly more universal here
-                context.response().end(Auth.LoginResponse(false, nstt.message ?: "Unknown error"))
+                context.response().end(Auth.LoginResponse(false, nstt.message ?: "Unknown remoteError"))
                 return
             }
 

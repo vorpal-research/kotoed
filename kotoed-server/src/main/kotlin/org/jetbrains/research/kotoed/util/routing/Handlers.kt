@@ -27,7 +27,7 @@ object JsonFailureHandler: Handler<RoutingContext>, Loggable {
                 .end(
                         JsonObject(
                                 "success" to false,
-                                "error" to ex.message,
+                                "remoteError" to ex.message,
                                 "code" to codeFor(ex),
                                 "stacktrace" to JsonArray(
                                         ex.stackTrace

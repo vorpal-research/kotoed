@@ -8,7 +8,7 @@ object Address {
         object Course {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
-            const val Error = "kotoed.api.course.error"
+            const val Error = "kotoed.api.course.remoteError"
             const val Search = "kotoed.api.course.search"
             const val SearchCount = "kotoed.api.course.search.count"
 
@@ -20,7 +20,7 @@ object Address {
         object Project {
             const val Create = "kotoed.api.project.create"
             const val Read = "kotoed.api.project.read"
-            const val Error = "kotoed.api.project.error"
+            const val Error = "kotoed.api.project.remoteError"
             const val Search = "kotoed.api.project.search"
             const val SearchCount = "kotoed.api.project.search.count"
             const val SearchForCourse = "kotoed.api.project.searchForCourse"
@@ -38,7 +38,7 @@ object Address {
             const val Create = "kotoed.api.submission.create"
             const val Comments = "kotoed.api.submission.comments"
             const val CommentAggregates = "kotoed.api.submission.commentAggregates"
-            const val Error = "kotoed.api.submission.error"
+            const val Error = "kotoed.api.submission.remoteError"
 
             object Verification {
                 const val Data = "kotoed.api.submission.verification.data"

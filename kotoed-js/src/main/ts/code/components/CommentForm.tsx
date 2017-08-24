@@ -2,6 +2,7 @@ import * as React from "react";
 import {CommentButton} from "./CommentButton";
 import ReactMarkdown = require("react-markdown");
 import CmrmCodeBlock from "./CmrmCodeBlock";
+import {Button, Panel, Label} from "react-bootstrap";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
@@ -24,12 +25,12 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     }
 
     getPanelClass = () => {
-        return "panel-success"
+        return "success"
     };
 
     renderPanelLabels = () => {
         return this.state.editState === "preview" ?
-            <span key="preview" className="label label-warning">Preview</span> :
+            <Label key="preview" bsStyle="warning">Preview</Label> :
             null
     };
 
@@ -78,7 +79,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     };
 
     renderPanelHeading = () => {
-        return <div className="panel-heading comment-heading clearfix">
+        return <div className="comment-heading clearfix">
             <div className="pull-left">
                 <b>{this.props.whoAmI}</b>{" will write:"}
                 {" "}
@@ -113,15 +114,16 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     };
 
     renderPanelFooter = () => {
-        return <div className="panel-footer">
-            <p>
-                <button type="button" className="btn btn-success"
-                        onClick={() => this.props.onSubmit(this.state.editText)}>
-                    Send
-                </button>
-            </p>
-        </div>;
+        return <p>
+            <Button bsStyle="success"
+                    onClick={() => this.props.onSubmit(this.state.editText)}>
+                Send
+            </Button>
+        </p>;
     };
+
+
+
 
 
     componentDidUpdate(prevProps: CommentFormProps, prevState: CommentFormState) {
@@ -157,15 +159,10 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
 
     render() {
         return (
-            <div className={`panel ${this.getPanelClass()} comment`}>
-                {this.renderPanelHeading()}
-                <div className="panel-body">
-                    {this.renderPanelBodyContent()}
-                    {this.renderEditArea()}
-                </div>
-                {this.renderPanelFooter()}
-
-            </div>
+            <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
+                {this.renderPanelBodyContent()}
+                {this.renderEditArea()}
+            </Panel>
         );
     }
 }

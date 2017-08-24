@@ -1,7 +1,7 @@
 import * as React from "react"
 import {ChangeEvent, MouseEvent, KeyboardEvent} from "react";
 import {ErrorMessages} from "../util";
-import {ComponentWithLocalErrors} from "./ComponentWithLocalErrors";
+import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
 import SocialButton from "./SocialButton";
 
 import "less/common.less"

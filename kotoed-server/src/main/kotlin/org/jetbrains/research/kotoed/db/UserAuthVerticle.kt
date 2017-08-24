@@ -59,7 +59,7 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
                         ?.cleanup()
 
             }
-        } ?: throw IllegalStateException("Database error")
+        } ?: throw IllegalStateException("Database remoteError")
     }
 
     @JsonableEventBusConsumerFor(Address.User.Auth.Login)
@@ -114,7 +114,7 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
                         .returning()
                         .fetchOne()
             }
-        } ?: throw IllegalStateException("Database error")
+        } ?: throw IllegalStateException("Database remoteError")
     }
 
     @JsonableEventBusConsumerFor(Address.User.OAuth.Login)

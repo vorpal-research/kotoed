@@ -24,7 +24,7 @@ export async function signIn(username: string, password: string) {
     let logResp = keysToCamelCase(resp.data) as SignInResponse;
 
     if (!logResp.succeeded)
-        throw new Error(logResp.error || "Unknown error")
+        throw new Error(logResp.error || "Unknown remoteError")
 }
 
 export async function signUp(username: string, password: string, email: string|null) {
@@ -36,7 +36,7 @@ export async function signUp(username: string, password: string, email: string|n
     let logResp = keysToCamelCase(resp.data) as SignUpResponse;
 
     if (!logResp.succeeded)
-        throw new Error(logResp.error || "Unknown error")
+        throw new Error(logResp.error || "Unknown remoteError")
 }
 
 export async function fetchOAuthProviders(): Promise<OAuthProvidersResponse> {

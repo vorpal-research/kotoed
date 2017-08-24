@@ -1,4 +1,5 @@
 import * as React from "react"
+import {Button, Panel, Label} from "react-bootstrap";
 import {File} from "../remote/code";
 import {Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
@@ -55,11 +56,11 @@ export function makeSecondaryLabel(aggregate: CommentAggregate) {
     if (aggregate.open == 0 && aggregate.closed == 0)
         return undefined;
 
-    let labelClass = aggregate.open === 0 ? "label-default" : "label-danger";
+    let labelClass = aggregate.open === 0 ? "default" : "danger";
 
-    return (<span className={`comments-counter label ${labelClass}`}>
+    return (<Label className="comments-counter" bsStyle={labelClass}>
         {aggregate.open + aggregate.closed}
-    </span>)
+    </Label>)
 }
 
 
