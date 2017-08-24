@@ -41,7 +41,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
             val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("error" to
+                        this.data = JsonObject("remoteError" to
                                 "Exception when verifying ${projectRecord.toJson()}: $ex")
                     }
 
@@ -57,7 +57,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
             val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("error" to
+                        this.data = JsonObject("remoteError" to
                                 "Buildbot scheduler for ${projectRecord.name} not available: ${response.statusMessage()}/${response.bodyAsString()}")
                     }
 
@@ -94,7 +94,7 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
             val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("error" to
+                        this.data = JsonObject("remoteError" to
                                 "Exception when processing ${projectRecord.toJson()}: $ex")
                     }
 

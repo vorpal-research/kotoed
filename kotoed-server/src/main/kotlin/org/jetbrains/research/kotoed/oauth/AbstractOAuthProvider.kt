@@ -107,7 +107,7 @@ abstract class AbstractOAuthProvider(
     open protected suspend fun doGetAccessToken(): String {
         val json = getAccessTokenResponseBody()
 
-        return json.getString(AccessToken) ?: throw OAuthException(json.getString("error") ?: "Unknown OAuth error")
+        return json.getString(AccessToken) ?: throw OAuthException(json.getString("remoteError") ?: "Unknown OAuth remoteError")
     }
 
     suspend fun getUserId() = userId ?: run {

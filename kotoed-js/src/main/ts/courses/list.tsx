@@ -14,6 +14,7 @@ import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import Planks from "../views/components/Planks";
 import {WithVerificationData} from "../data/verification";
 import {Course, CourseToRead} from "../data/course";
+import {CourseCreate} from "./create";
 
 type CourseWithVer = CourseToRead & WithVerificationData
 
@@ -61,97 +62,8 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
 
 }
 
-interface CourseCreateProps {
-    onCreate: () => void
-}
-
-interface CourseCreateState {
-    showModal: boolean
-    error?: string
-    name: string
-}
-
-class CourseCreate extends React.Component<CourseCreateProps, CourseCreateState> {
-
-
-    constructor(props: CourseCreateProps) {
-        super(props);
-        this.state = {
-            showModal: false,
-            name: ""
-        }
-    }
-
-    showModal = () => {
-        this.setState({showModal: true})
-    };
-
-    hideModal = () => {
-        this.dismissError();
-        this.setState({name: ""});
-        this.setState({showModal: false})
-    };
-
-    dismissError = () => {
-        this.setState({error: undefined});
-    };
-
-    tryCreate = async () => {
-        try {
-            await eventBus.send(Kotoed.Address.Api.Course.Create, {
-                name: this.state.name
-            });
-            this.props.onCreate();
-            this.hideModal();
-        } catch (error) {
-            if (!(error instanceof SoftError))
-                this.hideModal();
-            else {
-                this.setState({
-                    error: error.message
-                });
-            }
-            throw error;
-        }
-    };
-
-    renderError = () => this.state.error && <Alert bsStyle="danger">{this.state.error}</Alert>;
-
-    render() {
-        return <div>
-            <Button bsSize="lg" bsStyle="success" onClick={this.showModal}>Create course</Button>
-            <Modal show={this.state.showModal} onHide={this.hideModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Create new course</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {this.renderError()}
-                    <Form>
-                        <FormGroup
-                            controlId="formBasicText">
-                            <ControlLabel>Course name</ControlLabel>
-                            <FormControl
-                                type="text"
-                                value={this.state.name}
-                                placeholder="Name"
-                                onChange={(e: any) =>
-                                    this.setState({name: e.target.value as string || ""})}
-                            />
-                            <FormControl.Feedback />
-                        </FormGroup>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button bsStyle="success" onClick={() => this.tryCreate()}>Create</Button>
-                </Modal.Footer>
-            </Modal>
-        </div>;
-    }
-}
 
 class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
-
-
     constructor(props: {}) {
         super(props);
         this.state = {

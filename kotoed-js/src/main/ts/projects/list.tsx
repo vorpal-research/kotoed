@@ -12,6 +12,7 @@ import {
 import {JumboProject, Project} from "../data/project";
 import {WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
+import {ProjectCreate} from "./create";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -70,7 +71,7 @@ class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
 
     toolbarComponent = (redoSearch: () => void) => {
         if (this.state.canCreateProject)
-            return null; // TODO
+            return <ProjectCreate onCreate={redoSearch} courseId={id_}/>;
         else
             return null;
     };
@@ -78,7 +79,7 @@ class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
 
     renderTable = (children: Array<JSX.Element>): JSX.Element => {
         return (
-            <Table responsive>
+            <Table striped bordered condensed hover responsive>
                 <thead>
                     <tr>
                         <th>Id</th>
