@@ -1,4 +1,5 @@
 import * as React from "react";
+import {Button, Panel, Label} from "react-bootstrap";
 
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
@@ -142,12 +143,12 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                   lostFoundAggregate={this.props.lostFound.aggregate}
                         />
                         <div className="lost-found-button-container">
-                            <button className="btn btn-warning lost-found-button" onClick={this.props.lostFound.onSelect}>
+                            <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
                                 Lost + Found {" "}
                                 {makeSecondaryLabel(
                                     this.props.lostFound.aggregate
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

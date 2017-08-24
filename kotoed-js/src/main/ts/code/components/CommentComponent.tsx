@@ -2,6 +2,8 @@ import * as React from "react";
 import "bootstrap"
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
+import {Button, Panel, Label} from "react-bootstrap";
+
 
 import {Comment} from "../state/comments";
 import {CommentButton} from "./CommentButton";
@@ -33,19 +35,19 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
 
     getPanelClass = () => {
         if (this.props.state == "open")
-            return "panel-primary";
+            return "primary";
         else
-            return "panel-default"
+            return "default"
     };
 
     renderPanelLabels = () => {
         let labels: Array<JSX.Element> = [];
 
         if (this.props.state === "closed")
-            labels.push(<span key="resolved" className="label label-default">Resolved</span>);
+            labels.push(<Label key="resolved"  bsStyle="default">Resolved</Label>);
 
         if (this.state.editState === "preview")
-            labels.push(<span key="preview" className="label label-warning">Preview</span>);
+            labels.push(<Label key="preview" bsStyle="warning">Preview</Label>);
 
         return labels
     };
@@ -156,7 +158,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     };
 
     renderPanelHeading = () => {
-        return <div className="panel-heading comment-heading clearfix">
+        return <div className="comment-heading clearfix">
             <div className="pull-left">
                 <b>{this.props.denizenId}</b>
                 {` @ ${moment(this.props.datetime).format('LLLL')}`}
@@ -204,24 +206,22 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     };
 
     renderEditPreviewPanelFooter = () => {
-        return <div className="panel-footer">
-            <p>
-                <button type="button" className="btn btn-success"
-                        onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
-                    Edit
-                </button>
-                {" "}
-                <button type="button" className="btn btn-danger"
-                        onClick={() => {
-                            this.setState({
-                                editState: "display",
-                                editText: ""
-                            })
-                        }}>
-                    Cancel
-                </button>
-            </p>
-        </div>;
+        return <p>
+            <Button bsStyle="success"
+                    onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
+                Edit
+            </Button>
+            {" "}
+            <Button bsStyle="danger"
+                    onClick={() => {
+                        this.setState({
+                            editState: "display",
+                            editText: ""
+                        })
+                    }}>
+                Cancel
+            </Button>
+        </p>;
     };
 
     renderPanelFooter = () => {
@@ -275,16 +275,9 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     };
 
     render() {
-        return (
-            <div className={`panel ${this.getPanelClass()} comment`} data-comment-id={this.props.id}>
-                {this.renderPanelHeading()}
-                <div className="panel-body">
-                    {this.renderPanelBodyContent()}
-                    {this.renderEditArea()}
-                </div>
-                {this.renderPanelFooter()}
-
-            </div>
-        );
+        return <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
+            {this.renderPanelBodyContent()}
+            {this.renderEditArea()}
+        </Panel>;
     }
 }
