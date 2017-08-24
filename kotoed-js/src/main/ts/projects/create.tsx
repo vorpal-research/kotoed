@@ -3,7 +3,7 @@ import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Modal, Radio}
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus, SoftError} from "../eventBus";
 import {RepoType} from "../data/project";
-import {ChangeEvent} from "react";
+import {ChangeEvent, KeyboardEvent} from "react";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ErrorMessages} from "../login/util";
 
@@ -65,12 +65,17 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
     };
 
     hideModal = () => {
-        this.dismissError();
-        this.setState({name: ""});
-        this.setState({showModal: false})
+        this.dismissRemoteError();
+        this.unsetAllErrors();
+        this.setState({
+            name: "",
+            repoUrl: "",
+            repoType: "git",
+            showModal: false
+        });
     };
 
-    dismissError = () => {
+    dismissRemoteError = () => {
         this.setState({remoteError: undefined});
     };
 
@@ -117,11 +122,13 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
         }
     };
 
-    handleRepoTypeChange = (changeEvent: any) => {
+    handleRepoTypeChange = (changeEvent: ChangeEvent<any>) => {
         this.setState({
             repoType: changeEvent.target.value as RepoType
         });
     };
+
+    handleEnter = (event: KeyboardEvent<FormControl>) => event.key === "Enter" && this.handleSubmit();
 
     render() {
         return <div>
@@ -141,10 +148,11 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 type="text"
                                 value={this.state.name}
                                 placeholder="Name"
-                                onChange={(e: any) => {
+                                onChange={(e: ChangeEvent<any>)  => {
                                     this.unsetError("emptyName");
                                     this.setState({name: e.target.value as string || ""})
                                 }}
+                                onKeyPress={this.handleEnter}
                             />
                             <FormControl.Feedback />
                         </FormGroup>
@@ -178,11 +186,12 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 value={this.state.repoUrl}
                                 placeholder="URL"
                                 inputRef={ref => this.urlField = ref!}
-                                onChange={(e: any) => {
+                                onChange={(e: ChangeEvent<any>)  => {
                                     this.unsetError("emptyUrl");
                                     this.unsetError("badUrl");
                                     this.setState({repoUrl: e.target.value as string || ""})
                                 }}
+                                onKeyPress={this.handleEnter}
                             />
                             <FormControl.Feedback />
                         </FormGroup>

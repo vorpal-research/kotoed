@@ -6,7 +6,7 @@ interface WithLocalErrors<E> {
     localErrors: E
 }
 
-export abstract class ComponentWithLocalErrors<P, S, E> extends
+export abstract class ComponentWithLocalErrors<P, S, E extends {[name: string]: boolean}> extends
     React.Component<P, S & WithLocalErrors<E>> {
 
     localErrorMessages: ErrorMessages<E>;
@@ -57,5 +57,18 @@ export abstract class ComponentWithLocalErrors<P, S, E> extends
                 localErrors: newLE
             }
         });
+    }
+
+    unsetAllErrors() {
+        let empty: Partial<E> = {};
+
+
+        typedKeys(this.state.localErrors).forEach((key) => {
+            empty[key] = false;
+        });
+
+        this.setState({
+            localErrors: empty as E
+        })
     }
 }
