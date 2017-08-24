@@ -13,7 +13,7 @@
     "@types/query-string": "~5.0.0",
     "@types/radium": "~0.18.22",
     "@types/react": "~15.0.38",
-    "@types/react-bootstrap": "^0.0.52",
+    "@types/react-bootstrap": "^0.31.0",
     "@types/react-dom": "~15.5.1",
     "@types/react-redux": "~4.4.46",
     "@types/react-router": "~4.0.14",

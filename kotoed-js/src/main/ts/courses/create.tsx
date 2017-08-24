@@ -4,6 +4,7 @@ import {Kotoed} from "../util/kotoed-api";
 import {eventBus, SoftError} from "../eventBus";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ErrorMessages} from "../login/util";
+import {ChangeEvent, FormEvent, KeyboardEvent} from "react";
 
 type LocalErrors = {
     emptyName: false
@@ -52,8 +53,11 @@ export class CourseCreate extends ComponentWithLocalErrors<CourseCreateProps, Co
 
     hideModal = () => {
         this.dismissRemoteError();
-        this.setState({name: ""});
-        this.setState({showModal: false})
+        this.unsetAllErrors();
+        this.setState({
+            name: "",
+            showModal: false
+        });
     };
 
     dismissRemoteError = () => {
@@ -89,6 +93,8 @@ export class CourseCreate extends ComponentWithLocalErrors<CourseCreateProps, Co
         }
     };
 
+    handleEnter = (event: KeyboardEvent<FormControl>) => event.key === "Enter" && this.handleSubmit();
+
     render() {
         return <div>
             <Button bsSize="lg" bsStyle="success" onClick={this.showModal}>Create course</Button>
@@ -107,10 +113,11 @@ export class CourseCreate extends ComponentWithLocalErrors<CourseCreateProps, Co
                                 type="text"
                                 value={this.state.name}
                                 placeholder="Name"
-                                onChange={(e: any) => {
+                                onChange={(e: ChangeEvent<any>) => {
                                     this.unsetError("emptyName");
                                     this.setState({name: e.target.value as string || ""})
                                 }}
+                                onKeyPress={this.handleEnter}
                             />
                             <FormControl.Feedback />
                         </FormGroup>
