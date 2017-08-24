@@ -38,7 +38,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         switch (status) {
             case "NotReady":
             case "Unknown":
-                return <Spinner name="three-bounce" color="green" fadeIn="none"/>;
+                return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
             case "Invalid":
                 return <OverlayTrigger placement="right" overlay={this.invalidTooltip}>
                     <span className="text-danger">
