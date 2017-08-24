@@ -17,7 +17,7 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
     suspend fun consumeLogContent(logContent: LogContent) {
-        if (template !in logContent.logName) return
+        if (template !in logContent.logName()) return
 
         log.trace("Processing log $logContent")
 
@@ -25,14 +25,14 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 
         val json = xml2json(xml)
 
-        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId))
+        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId()))
                 .firstOrNull() ?: throw IllegalStateException(
-                "Build request ${logContent.buildRequestId} not found")
+                "Build request ${logContent.buildRequestId()} not found")
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
             time = Timestamp.from(Instant.now())
-            type = logContent.logName
+            type = logContent.logName()
                     .splitToSequence('/')
                     .last()
             body = json
@@ -49,20 +49,20 @@ class KFirstRunnerVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
     suspend fun consumeLogContent(logContent: LogContent) {
-        if (template !in logContent.logName) return
+        if (template !in logContent.logName()) return
 
         log.trace("Processing log $logContent")
 
         val json = JsonObject(logContent.content)
 
-        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId))
+        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId()))
                 .firstOrNull() ?: throw IllegalStateException(
-                "Build request ${logContent.buildRequestId} not found")
+                "Build request ${logContent.buildRequestId()} not found")
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
             time = Timestamp.from(Instant.now())
-            type = logContent.logName
+            type = logContent.logName()
                     .splitToSequence('/')
                     .last()
             body = json
@@ -77,11 +77,11 @@ class BuildLogVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
     suspend fun consumeLogContent(logContent: LogContent) {
-        if (0 == logContent.results) return
+        if (0 == logContent.results()) return
 
         log.trace("Processing log $logContent")
 
-        val content = when (logContent.logType) {
+        val content = when (logContent.logType()) {
             STDIO -> {
                 logContent.content
                         .lineSequence()
@@ -95,14 +95,14 @@ class BuildLogVerticle : AbstractKotoedVerticle(), Loggable {
 
         val json = JsonObject("log" to content)
 
-        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId))
+        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId()))
                 .firstOrNull() ?: throw IllegalStateException(
-                "Build request ${logContent.buildRequestId} not found")
+                "Build request ${logContent.buildRequestId()} not found")
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
             time = Timestamp.from(Instant.now())
-            type = "Failed build log for ${logContent.stepName}/${logContent.logName}"
+            type = "Failed build log for ${logContent.stepName()}/${logContent.logName()}"
             body = json
         }
 
