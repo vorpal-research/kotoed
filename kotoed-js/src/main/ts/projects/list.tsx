@@ -1,5 +1,8 @@
 import * as React from "react";
-import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Modal, Table} from "react-bootstrap";
+import {Table,
+    Glyphicon,
+    Tooltip,
+    OverlayTrigger} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import * as Spinner from "react-spinkit"
@@ -28,6 +31,8 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <span className={"grayed-out"}>{text}</span>
     };
 
+    private readonly invalidTooltip = <Tooltip id="tooltip">This project is invalid</Tooltip>;
+
     renderIcon = (): JSX.Element | null => {
         let {status} = this.props.verificationData;
         switch (status) {
@@ -35,7 +40,11 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             case "Unknown":
                 return <Spinner name="three-bounce" color="green" fadeIn="none"/>;
             case "Invalid":
-                return <span className="glyphicon glyphicon-exclamation-sign text-danger"/>;
+                return <OverlayTrigger placement="right" overlay={this.invalidTooltip}>
+                    <span className="text-danger">
+                        <Glyphicon glyph="exclamation-sign"/>
+                    </span>
+                </OverlayTrigger>
             case "Processed":
                 return null
         }

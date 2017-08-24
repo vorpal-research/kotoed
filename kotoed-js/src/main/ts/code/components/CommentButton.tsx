@@ -18,8 +18,7 @@ export class CommentButton extends React.Component<CommentButtonProps> {
             <OverlayTrigger placement="left" overlay={this.makeTooltip()}>
                 <span
                      className="comment-button"
-                     onClick={this.props.onClick}
->
+                     onClick={this.props.onClick}>
                     <Glyphicon glyph={this.props.icon} />
                 </span>
             </OverlayTrigger>)
