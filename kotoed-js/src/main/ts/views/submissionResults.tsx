@@ -6,6 +6,7 @@ import * as _ from "lodash";
 import {GenericResponse, IdRequest, sendAsync} from "./components/common";
 import {
     ArrayColumn,
+    CodeColumn,
     isUnknownFailureInfo,
     TestData,
     TestDataColumn
@@ -107,6 +108,27 @@ namespace KFirst {
 
 } // namespace KFirst
 
+namespace BuildLogs {
+
+    export function selector(result: any): boolean {
+        return result["type"].match(/^Failed build log/)
+    }
+
+    export function transformer(result: any): any[] {
+        return [result]
+    }
+
+    export let rowDefinition =
+        <RowDefinition>
+            <ColumnDefinition id="type"
+                              title="Type"/>
+            <ColumnDefinition id="body.log"
+                              title="Log"
+                              customComponent={CodeColumn}/>
+        </RowDefinition> as any
+
+} // namespace BuildLogs
+
 render(
     <SubmissionResultTable
         id={submissionId}
@@ -118,7 +140,12 @@ render(
                               KFirst.hideTodosFilter,
                               KFirst.hideExamplesFilter
                           ]}
-                          rowDefinition={KFirst.rowDefinition}/> as any
+                          rowDefinition={KFirst.rowDefinition}/> as any,
+            <ResultHolder name="Build logs"
+                          selector={BuildLogs.selector}
+                          transformer={BuildLogs.transformer}
+                          filters={[]}
+                          rowDefinition={BuildLogs.rowDefinition}/> as any
         ]}/>,
     rootElement
 );

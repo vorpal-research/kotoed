@@ -9,10 +9,7 @@ import io.vertx.ext.web.client.WebClient
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.buildbot.util.*
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.buildbot.build.BuildCrawl
-import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
-import org.jetbrains.research.kotoed.data.buildbot.build.LogCrawl
-import org.jetbrains.research.kotoed.data.buildbot.build.StepCrawl
+import org.jetbrains.research.kotoed.data.buildbot.build.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
@@ -26,7 +23,8 @@ data class BuildStep(
         val name: String,
         val stepid: Int,
         val number: Int,
-        val complete: Boolean
+        val complete: Boolean,
+        val results: Int?
 ) : Jsonable
 
 data class StepLogsResponse(
@@ -39,6 +37,7 @@ data class StepLog(
         val name: String,
         val logid: Int,
         val slug: String,
+        val type: String,
         val complete: Boolean
 ) : Jsonable
 
@@ -112,7 +111,8 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                     },
                     Address.Buildbot.Build.StepCrawl,
                     { c, v ->
-                        StepCrawl(c.buildRequestId, c.buildId, v.stepid)
+                        StepCrawl(c.buildRequestId, c.buildId,
+                                v.stepid, v.name, v.results)
                     }
             )
 
@@ -126,7 +126,9 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                     },
                     Address.Buildbot.Build.LogCrawl,
                     { c, v ->
-                        LogCrawl(c.buildRequestId, c.buildId, c.stepId, v.logid, v.name)
+                        LogCrawl(c.buildRequestId, c.buildId,
+                                c.stepId, c.stepName, c.results,
+                                v.logid, v.name, LogType.fromCode(v.type))
                     }
             )
 
@@ -140,7 +142,10 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                     },
                     Address.Buildbot.Build.LogContent,
                     { c, v ->
-                        LogContent(c.buildRequestId, c.buildId, c.stepId, c.logId, c.logName, v.content)
+                        LogContent(c.buildRequestId, c.buildId,
+                                c.stepId, c.stepName, c.results,
+                                c.logId, c.logName, c.logType,
+                                v.content)
                     }
             )
 

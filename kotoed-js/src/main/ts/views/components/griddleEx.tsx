@@ -8,6 +8,9 @@ export const ArrayColumn = ({value}: { value: List<any> }) =>
 export const JsonColumn = ({value}: { value: any }) =>
     <pre><code>{JSON.stringify(value.toJS(), null, 2)}</code></pre>;
 
+export const CodeColumn = ({value}: { value: any }) =>
+    <pre><code>{value}</code></pre>;
+
 export interface UnknownFailureInfo {
     nestedException: string
 }
