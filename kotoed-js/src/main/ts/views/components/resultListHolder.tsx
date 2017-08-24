@@ -1,5 +1,6 @@
 import * as React from "react";
 import {Component} from "react";
+import {Badge} from "react-bootstrap";
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs";
 
 import {components} from "griddle-react";
@@ -116,16 +117,16 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
         for (let resultHolder of this.props.resultHolders) {
 
             // Skipping data processing for non-active tabs
-            if (this.state.activeTabIndex != tabs.length) {
-                tabs.push([
-                    resultHolder,
-                    resultHolder.props.name,
-                    [],
-                    [],
-                    resultHolder.props.rowDefinition
-                ]);
-                continue;
-            }
+            // if (this.state.activeTabIndex != tabs.length) {
+            //     tabs.push([
+            //         resultHolder,
+            //         resultHolder.props.name,
+            //         [],
+            //         [],
+            //         resultHolder.props.rowDefinition
+            //     ]);
+            //     continue;
+            // }
 
             let resultList = [];
             for (let result of this.state.results) {
@@ -158,9 +159,15 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
             <TabList>
                 {tabs.map((data) => {
                     let [rh, name, list, filters, rowDefinition] = data;
-                    return <Tab key={name}>{name}</Tab>;
+                    return <Tab key={name}>
+                        {name}
+                        <Badge>{list.length}</Badge>
+                    </Tab>;
                 })}
-                <Tab key="Errors">Errors</Tab>
+                <Tab key="Errors">
+                    Errors
+                    <Badge>{this.state.errors.length}</Badge>
+                </Tab>
             </TabList>
 
             {tabs.map((data) => {
