@@ -104,7 +104,7 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
 
     toggleResultFilter = (holderName: string, filterName: string) => {
         let holderFilterName = `${holderName}.${filterName}`;
-        this.setState(_.set({}, holderFilterName, !_.get(this.state, holderFilterName)))
+        this.setState(_.set(this.state, holderFilterName, !_.get(this.state, holderFilterName)))
     };
 
     render() {
