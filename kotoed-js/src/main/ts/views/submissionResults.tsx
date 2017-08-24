@@ -73,7 +73,20 @@ namespace KFirst {
     export let hideTodosFilter = {
         name: "Hide TODOs",
         predicate: (row: any): boolean => {
-            return _.every(row.results, ((td: TestData) => isUnknownFailureInfo(td.failure)));
+            return _.every(row.results, (td: TestData) =>
+                isUnknownFailureInfo(td.failure)
+                && td.failure.nestedException.match(/kotlin\.NotImplementedError/)
+            );
+        },
+        isOnByDefault: true
+    };
+
+    export let hideExamplesFilter = {
+        name: "Hide examples",
+        predicate: (row: any): boolean => {
+            return _.some(row.tags, tag => {
+                return "Example" === tag;
+            });
         },
         isOnByDefault: true
     };
@@ -101,7 +114,10 @@ render(
             <ResultHolder name="KFirst"
                           selector={KFirst.selector}
                           transformer={KFirst.transformer}
-                          filters={[KFirst.hideTodosFilter]}
+                          filters={[
+                              KFirst.hideTodosFilter,
+                              KFirst.hideExamplesFilter
+                          ]}
                           rowDefinition={KFirst.rowDefinition}/> as any
         ]}/>,
     rootElement
