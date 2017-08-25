@@ -7,17 +7,23 @@ import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import * as Spinner from "react-spinkit"
 
-import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
 import {
     SearchTableWithVerificationData
 } from "../views/components/searchWithVerificationData";
-import {JumboProject, Project} from "../data/project";
 import {WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
+import {JumboProject} from "../data/submission";
+
+import "less/projects.less"
 
 type ProjectWithVer = JumboProject & WithVerificationData
+
+const submissionReview = (id: number): string =>
+    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.CodeReview.Index, {id});
+const submissionResults = (id: number): string =>
+    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Results, {id});
 
 class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     constructor(props: ProjectWithVer) {
@@ -33,7 +39,27 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This project is invalid</Tooltip>;
 
-    renderIcon = (): JSX.Element | null => {
+
+
+    private renderOpenSubmissions = (): JSX.Element => {
+        if (this.props.openSubmissions.length === 0)
+            return <span>&mdash;</span>;
+        else {
+            // Yes, super-minimalistic table
+            return <table>
+                <tbody>
+                    {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
+                        <td><a href={Kotoed.UrlPattern.NotImplemented}>{`#${sub.id}`}</a></td>
+                        <td><a href={submissionReview(sub.id)}>Review</a></td>
+                        <td><a href={submissionReview(sub.id)}>Results</a></td>
+                    </tr>)}
+                </tbody>
+            </table>
+        }
+
+    };
+
+    private renderIcon = (): JSX.Element | null => {
         let {status} = this.props.verificationData;
         switch (status) {
             case "NotReady":
@@ -44,7 +70,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                     <span className="text-danger">
                         <Glyphicon glyph="exclamation-sign"/>
                     </span>
-                </OverlayTrigger>
+                </OverlayTrigger>;
             case "Processed":
                 return null
         }
@@ -56,7 +82,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             <td>{this.linkify(this.props.name)}{" "}{this.renderIcon()}</td>
             <td>{this.props.denizen.denizenId}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
-            <td>{this.linkify("TODO")}</td>
+            <td>{this.renderOpenSubmissions()}</td>
         </tr>
     }
 
@@ -95,7 +121,7 @@ class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
                         <th>Name</th>
                         <th>Author</th>
                         <th>Repo</th>
-                        <th>Last submission</th>
+                        <th>Open submissions</th>
                     </tr>
                 </thead>
                 <tbody>
