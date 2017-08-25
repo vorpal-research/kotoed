@@ -38,6 +38,19 @@ object NullConstant : Constant() {
 
 data class Path(val path: List<String>) : Expression()
 
+// TODO Inclusion operators are now a special case.
+// TODO maybe we should make PrimitiveSubquery a primitive and allow in everywhere sometimes
+
+enum class InclusionOp(val rep: String) {
+    IN("in"),
+    NOT_IN("!in")
+}
+
+// TODO should we allow Path here?
+data class PrimitiveSubquery(val value: List<Constant>): Expression()
+
+data class InclusionExpression(val op: InclusionOp, val lhv: Expression, val rhv: Expression): Expression()
+
 object ExpressionParsers {
     val path = identifier().joinedBy(constant(".")).map(::Path)
     val const = integer().map(::IntConstant) or
@@ -52,6 +65,17 @@ object ExpressionParsers {
         binaryOperator<Expression>(lexeme(op.rep)){ l, r -> BinaryExpression(op, l, r) }
     }
 
+    val inclusionOperators = InclusionOp.values().map {  op ->
+        binaryOperator<Expression>(lexeme(op.rep)){ l, r -> InclusionExpression(op, l, r) }
+    }
+
+    val primitiveSubquery =
+            ((const.between(spaces(), spaces())
+                    .joinedBy(constant(","))) or spaces().map { listOf<Constant>() })
+                    .between(lexeme("["), lexeme("]"))
+                    .between(spaces(), spaces())
+                    .map(::PrimitiveSubquery)
+
     val root = recursive<Expression> { binop ->
         val primitive =
                 binop.between(lexeme("("), lexeme(")")) or
@@ -60,7 +84,8 @@ object ExpressionParsers {
 
         val cmp = operators<Expression> {
             cmpOperators.forEach { infixl(it) }
-        }.build(primitive)
+            inclusionOperators.forEach{ infixl(it) }
+        }.build(primitive or primitiveSubquery) // TODO primitiveSubquery should only be allowed on RHS
 
         operators<Expression> {
             prefix(unaryOperator(lexeme("!"), ::NotExpression))
