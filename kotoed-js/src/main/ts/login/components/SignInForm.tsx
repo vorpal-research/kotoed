@@ -4,7 +4,7 @@ import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
 import SocialButton from "./SocialButton";
 
-import "less/common.less"
+import "less/util.less"
 
 type LocalErrors = {
     emptyUsername: boolean

@@ -54,7 +54,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
         return <div className="list-group">
             {
                 this.state.currentNotifications.map( (obj: any, index) =>
-                    <NotificationDisplay data={obj} key={"notification-item-" + index} />
+                    <NotificationDisplay data={obj} key={`notification-item-${index}`} />
                 )
             }
         </div>

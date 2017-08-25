@@ -19,6 +19,7 @@ const neverPutInVendorBundle: Array<RegExp> = [
 
 function kotoedEntry(root: string, notifications: boolean = true): string[] {
     function* gen() {
+        yield "./less/global.less";
         yield "babel-polyfill";
         if (notifications)
             yield "./ts/views/notificationMenu.tsx";
