@@ -5,7 +5,7 @@ import 'react-tabs/style/react-tabs.less';
 import SignUpForm from "./SignUpForm";
 import {RouteComponentProps} from "react-router";
 
-import "less/common.less"
+import "less/util.less"
 
 export interface SignInOrUpProps {
     signInErrors: Array<string>

@@ -7,7 +7,7 @@ import * as QueryString from "query-string";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 import "less/search.less";
-import "less/common.less";
+import "less/util.less";
 import {identity} from "../../util/common";
 
 export interface SearchBarProps {

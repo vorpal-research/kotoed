@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as Spinner from "react-spinkit"
 
-import "less/common.less"
+import "less/util.less"
 import "react-spinkit/css/base.css"
 import "react-spinkit/css/loaders-css.css"
 
