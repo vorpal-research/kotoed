@@ -9,12 +9,22 @@ import org.jooq.Field
 import org.jooq.Table
 import org.jooq.impl.DSL
 
-private fun<T> convertPrimitive(e: Expression, tables: (String) -> Table<*>): Field<T> = when(e){
-    is Path -> tables(e.path.dropLast(1).joinToString(".")).field(e.path.last()).uncheckedCast()
+private fun<T> convertConstant(e: Expression): Field<T> = when (e) {
     is IntConstant -> DSL.inline(e.value).uncheckedCast()
     is StringConstant -> DSL.inline(e.value).uncheckedCast()
     is NullConstant -> DSL.field("NULL").uncheckedCast()
+    else -> error("convertConstant() is for constants only!")
+}
+
+private fun<T> convertPrimitive(e: Expression, tables: (String) -> Table<*>): Field<T> = when(e){
+    is Path -> tables(e.path.dropLast(1).joinToString(".")).field(e.path.last()).uncheckedCast()
+    is Constant -> convertConstant(e)
     else -> error("convertPrimitive() is for primitives only!")
+}
+
+private fun<T> convertPrimitiveSubquery(e: Expression): Array<Field<T>> = when (e) {
+    is PrimitiveSubquery -> e.value.map { convertConstant<T>(it) }.toTypedArray()
+    else -> error("convertPrimitiveSubquery() is for primitive subqueries only!")
 }
 
 private fun<T> convertCompareExpression(cmp: CompareExpression, tables: (String) -> Table<*>) = when(cmp.op) {
@@ -38,10 +48,16 @@ private fun convertBinaryExpression(bin: BinaryExpression, tables: (String) -> T
     BinaryOp.OR -> convertAst(bin.lhv, tables).or(convertAst(bin.rhv, tables))
 }
 
+private fun <T> convertInclusionExpression(incl: InclusionExpression, tables: (String) -> Table<*>) = when(incl.op) {
+    InclusionOp.IN -> convertPrimitive<T>(incl.lhv, tables).`in`(*convertPrimitiveSubquery<T>(incl.rhv))
+    InclusionOp.NOT_IN -> convertPrimitive<T>(incl.lhv, tables).notIn(*convertPrimitiveSubquery<T>(incl.rhv))
+}
+
 private fun convertAst(e: Expression, tables: (String) -> Table<*>): Condition = when(e) {
     is CompareExpression -> convertCompareExpression<Any>(e, tables)
     is NotExpression -> DSL.not(convertAst(e.rhv, tables))
     is BinaryExpression -> convertBinaryExpression(e, tables)
+    is InclusionExpression -> convertInclusionExpression<Any>(e, tables)
     else -> DSL.condition(convertPrimitive<Any>(e, tables).uncheckedCast<Field<Boolean>>())
 }
 
