@@ -15,4 +15,8 @@ export interface Project {
 
 export interface ProjectToRead extends Project, WithId {}
 
-export interface JumboProject extends ProjectToRead, WithDenizen, WithCourse {}
+export interface BloatProject extends ProjectToRead, WithDenizen, WithCourse {}
+
+export interface WithProject {
+    project: Project
+}

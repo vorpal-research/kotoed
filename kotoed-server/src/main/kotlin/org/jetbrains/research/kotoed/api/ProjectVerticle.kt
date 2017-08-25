@@ -13,6 +13,7 @@ import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.db.condition.lang.inClause
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -118,18 +119,33 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
         val qWithSearch = if (query.text == "") q else q.filter("""document matches "${query.text}"""")
 
-        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.COURSE.name), qWithSearch)
+        val projects: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.COURSE.name), qWithSearch)
 
-        // TODO add "in" operator to DSL and manually join with latest submission (or null)
+        val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
+                .find(SubmissionRecord().apply {
+                    state = SubmissionState.open
+                })
+                .filter("${Tables.SUBMISSION.PROJECT_ID.name} in ${projects.map { it.getInteger("id") }.inClause()}")
+
+        val submissionsJson: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), subQ)
+        // TODO verification data for submissions
+        val submissionsByProject = submissionsJson
+                .map { it.toRecord<SubmissionRecord>() }
+                .groupBy { it.projectId }
+                .mapValues { (_, v) -> v.sortedBy { it.datetime } }
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
-            req.map { json ->
+            projects.map { json ->
                 val record: ProjectRecord = json.toRecord()
                 val vd = dbProcessAsync(record)
                 json["verificationData"] = vd.toJson()
+                json["openSubmissions"] = submissionsByProject[record.id]
+                        ?.map{ it.toJson() }
+                        ?.let(::JsonArray)
+                        ?: JsonArray()
                 json
             }
-        } else req
+        } else projects
 
         return JsonArray(reqWithVerificationData)
     }
