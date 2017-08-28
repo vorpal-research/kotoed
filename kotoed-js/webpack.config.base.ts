@@ -40,6 +40,8 @@ const config: webpack.Configuration = {
         projectSearch: kotoedEntry("./ts/views/projectSearch.tsx"),
         courseList: kotoedEntry("./ts/courses/list.tsx"),
         projectList: kotoedEntry("./ts/projects/list.tsx"),
+        submissionList: kotoedEntry("./ts/submissions/list.tsx"),
+
         images: "./ts/images.ts"
     },
     output: {
@@ -68,8 +70,6 @@ const config: webpack.Configuration = {
                         loader: "awesome-typescript-loader",
                         options: {
                             useBabel: true,
-                            useCache: true,
-                            cacheDirectory: "target/.cache/atsl"
                         }
                     }
                 ]
@@ -78,12 +78,6 @@ const config: webpack.Configuration = {
                 test: /\.jsx?$/,
                 exclude: path.resolve(__dirname, "node_modules/"),
                 use: [
-                    {
-                        loader: "cache-loader",
-                        options: {
-                            cacheDirectory: "target/.cache/jsx"
-                        }
-                    },
                     "babel-loader"
                 ]
             },
@@ -93,12 +87,6 @@ const config: webpack.Configuration = {
                     ExtractTextPlugin.extract({
                         fallback: 'style-loader',
                         use: [
-                            {
-                                loader: "cache-loader",
-                                options: {
-                                    cacheDirectory: "target/.cache/css"
-                                }
-                            },
                             {
                                 loader: 'css-loader',
                                 options: {
@@ -115,12 +103,6 @@ const config: webpack.Configuration = {
                         //resolve-url-loader may be chained before sass-loader if necessary
                         fallback: 'style-loader',
                         use: [
-                            {
-                                loader: "cache-loader",
-                                options: {
-                                    cacheDirectory: "target/.cache/less"
-                                }
-                            },
                             {
                                 loader: 'css-loader',
                                 options: {
