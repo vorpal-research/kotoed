@@ -4,6 +4,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.*
+import java.io.File
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.reflect
@@ -92,6 +93,7 @@ fun <T : Configuration> T.mergeIn(override: T) = loadConfiguration(this, interna
 
 fun fromResource(path: String): JsonObject {
     val file = Configuration::class.java.classLoader.getResource(path)
+            ?: File(path).toURI().toURL()
     return JsonObject(file.readText())
 }
 
