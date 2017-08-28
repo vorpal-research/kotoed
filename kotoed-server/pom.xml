@@ -43,6 +43,16 @@
         <suffixtree.version>1.0.2</suffixtree.version>
         <jparsec.version>3.0</jparsec.version>
 
+        <!--
+            Properties overriten in db.properties
+        -->
+        <!--<db.url/>-->
+        <!--<db.user/>-->
+        <!--<db.password/>-->
+        <!--<testdb.url/>-->
+        <!--<testdb.user/>-->
+        <!--<testdb.password/>-->
+
         <exec.mainClass>org.jetbrains.research.kotoed.MainKt</exec.mainClass>
     </properties>
 
@@ -400,7 +410,7 @@
                                     </resource>
                                 </transformer>
                             </transformers>
-                            <artifactSet></artifactSet>
+                            <artifactSet/>
                             <outputFile>
                                 ${project.build.directory}/${project.artifactId}-${project.version}-fat.jar
                             </outputFile>
@@ -563,7 +573,7 @@
                         <database>
                             <name>org.jooq.util.postgres.PostgresDatabase</name>
                             <includes>.*</includes>
-                            <excludes></excludes>
+                            <excludes/>
                             <inputSchema>public</inputSchema>
                             <forcedTypes>
                                 <forcedType>
