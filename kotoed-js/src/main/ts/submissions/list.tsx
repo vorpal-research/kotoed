@@ -35,12 +35,46 @@ class SubmissionComponent extends React.PureComponent<SubmissionWithVer> {
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This submission is invalid</Tooltip>;
     private readonly closedTooltip = <Tooltip id="tooltip">This submission is closed</Tooltip>;
-    private readonly processedTooltip = <Tooltip id="tooltip">This submission is being processed</Tooltip>;
+
+    private readonly spinner =  <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
+    private readonly exclamation = <OverlayTrigger placement="right" overlay={this.invalidTooltip}>
+        <span className="text-danger">
+            <Glyphicon glyph="exclamation-sign"/>
+        </span>
+    </OverlayTrigger>;
+    private readonly lock = <OverlayTrigger placement="right" overlay={this.closedTooltip}>
+        <span className="text-danger">
+            <Glyphicon glyph="lock"/>
+        </span>
+    </OverlayTrigger>;
+
 
     private renderIcon = (): JSX.Element | null => {
-        return null;
+        let {status} = this.props.verificationData;
+        let {state} = this.props;
+        switch (status) {
+            case "NotReady":
+            case "Unknown":
+                return this.spinner;
+            case "Invalid":
+                return this.exclamation;
+            case "Processed":
+                switch (state) {
+                    case "pending":
+                        return this.spinner;
+                    case "invalid":
+                        return this.exclamation;
+                    case "open":
+                        return null;
+                    case "obsolete":
+                        return null; // Should not happen here
+                    case "closed":
+                        return this.lock;
+                    default:
+                        return null;
+                }
+        }
     };
-
     render() {
         return <tr>
             <td>{this.linkToSubDetails(this.props.id.toString())}{" "}{this.renderIcon()}</td>
