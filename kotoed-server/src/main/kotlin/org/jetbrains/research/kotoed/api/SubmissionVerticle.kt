@@ -1,17 +1,14 @@
 package org.jetbrains.research.kotoed.api
 
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.SubmissionComments
-import org.jetbrains.research.kotoed.data.api.VerificationData
-import org.jetbrains.research.kotoed.data.api.VerificationStatus
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -162,4 +159,42 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
     suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).aggregateByFile()
+
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.List)
+    suspend fun handleList(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+
+        val currentPage = query.currentPage ?: 0
+        val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
+                .find(SubmissionRecord().apply {
+                    projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
+                })
+                .filter("state != \"${SubmissionState.obsolete}\"")
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
+
+        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), q)
+
+        val reqWithVerificationData = if (query.withVerificationData ?: false) {
+            resp.map { json ->
+                val record: SubmissionRecord = json.toRecord()
+                val vd = dbProcessAsync(record)
+                json["verificationData"] = vd.toJson()
+                json
+            }
+        } else resp
+
+        return JsonArray(reqWithVerificationData)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.ListCount)
+    suspend fun handleListCount(query: SearchQuery): JsonObject {
+        val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
+                .find(SubmissionRecord().apply {
+                    projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
+                })
+                .filter("state != ${SubmissionState.obsolete}")
+        return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), q)
+    }
 }

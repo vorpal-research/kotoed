@@ -28,10 +28,6 @@ object UrlPattern {
         const val SubmissionPerms = "/perms/submission/:id"
     }
 
-    object Submission {
-        const val Results = "/views/submission/:id/results"
-    }
-    
     object Comment {
         const val ById = "/views/comment/id/:id"
         const val Search = "/views/comment/search"
@@ -42,7 +38,12 @@ object UrlPattern {
     }
 
     object Project {
+        const val Index = "/project/:id"
         const val Search = "/views/project/search"
+    }
+
+    object Submission {
+        const val Results = "/views/submission/:id/results"
     }
 
     const val EventBus = "/eventbus/*"

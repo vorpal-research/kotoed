@@ -40,3 +40,11 @@ export function makeCommentPath(comment: BaseCommentToRead) {
             commentId: id
         })
 }
+
+export function makeSubmissionReviewUrl(id: number): string {
+    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.CodeReview.Index, {id});
+}
+
+export function makeSubmissionResultsUrl(id: number): string {
+    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Results, {id});
+}
