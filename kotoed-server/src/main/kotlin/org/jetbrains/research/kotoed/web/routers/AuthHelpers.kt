@@ -6,8 +6,10 @@ import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsonResponse
 import org.jetbrains.research.kotoed.util.routing.LoginRequired
@@ -59,6 +61,36 @@ suspend fun handleCoursePerms(context: RoutingContext) {
             createProject = courseWrapper.verificationData.status == VerificationStatus.Processed
     ))
 }
+
+@HandlerFor(UrlPattern.AuthHelpers.ProjectPerms)
+@JsonResponse
+@LoginRequired
+suspend fun handleProjectPerms(context: RoutingContext) {
+    val user = context.user()
+    val id by context.request()
+    val intId = id?.toInt()
+
+    if (intId == null) {
+        context.fail(HttpResponseStatus.BAD_REQUEST)
+        return
+    }
+
+    val projectWrapper: DbRecordWrapper =
+            context.vertx().eventBus().sendJsonableAsync(
+                    Address.Api.Project.Read,
+                    ProjectRecord().apply {
+                        this.id = intId
+                    })
+
+    val project: ProjectRecord = projectWrapper.record.toRecord()
+
+    context.response().end(Permissions.Project(
+            createSubmission = projectWrapper.verificationData.status == VerificationStatus.Processed &&
+                    user?.principal()?.get("id") == project.denizenId
+    ))
+}
+
+
 
 
 @HandlerFor(UrlPattern.AuthHelpers.SubmissionPerms)

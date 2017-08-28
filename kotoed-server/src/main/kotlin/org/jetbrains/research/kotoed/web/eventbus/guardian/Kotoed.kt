@@ -37,8 +37,9 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Project.SearchForCourse to Permissive,
         Address.Api.Project.SearchForCourseCount to Permissive,
         Address.Api.Project.Create to Permissive,
-        Address.Api.Submission.List to Permissive,
-        Address.Api.Submission.ListCount to Permissive
+        Address.Api.Submission.List to (ShouldBeProjectOwnerForFilter(vertx) or AuthorityRequired(Authority.Teacher)),
+        Address.Api.Submission.ListCount to (ShouldBeProjectOwnerForFilter(vertx) or AuthorityRequired(Authority.Teacher)),
+        Address.Api.Submission.Create to ShouldBeProjectOwner(vertx)
 )
 
 val KotoedPerAddressAnonymousFilter = PerAddress(

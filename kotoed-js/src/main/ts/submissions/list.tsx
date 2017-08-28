@@ -18,6 +18,7 @@ import {JumboProject, SubmissionToRead} from "../data/submission";
 
 import "less/projects.less"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
+import {SubmissionCreate} from "./create";
 
 type SubmissionWithVer = SubmissionToRead & WithVerificationData
 
@@ -26,12 +27,29 @@ class SubmissionComponent extends React.PureComponent<SubmissionWithVer> {
         super(props);
     }
 
-    linkToSubDetails = (text: string): JSX.Element => {
+    private linkToSubDetails = (text: string): JSX.Element => {
         if (this.props.verificationData.status === "Processed")
             return <a href={Kotoed.UrlPattern.NotImplemented}>{text}</a>;
         else
             return <span className={"grayed-out"}>{text}</span>
     };
+
+
+    private linkToResults = (): JSX.Element => {
+        if (this.props.verificationData.status === "Processed")
+            return <a href={makeSubmissionResultsUrl(this.props.id)}>Results</a>;
+        else
+            return <span className={"grayed-out"}>Results</span>
+    };
+
+
+    private linkToReview = (): JSX.Element => {
+        if (this.props.verificationData.status === "Processed")
+            return <a href={makeSubmissionReviewUrl(this.props.id)}>Review</a>;
+        else
+            return <span className={"grayed-out"}>Review</span>
+    };
+
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This submission is invalid</Tooltip>;
     private readonly closedTooltip = <Tooltip id="tooltip">This submission is closed</Tooltip>;
@@ -80,8 +98,8 @@ class SubmissionComponent extends React.PureComponent<SubmissionWithVer> {
             <td>{this.linkToSubDetails(this.props.id.toString())}{" "}{this.renderIcon()}</td>
             <td>{this.linkToSubDetails(moment(this.props.datetime).format('LLLL'))}</td>
             <td>{this.props.revision}</td>
-            <td><a href={makeSubmissionResultsUrl(this.props.id)}>Results</a></td>
-            <td><a href={makeSubmissionReviewUrl(this.props.id)}>Review</a></td>
+            <td>{this.linkToResults()}</td>
+            <td>{this.linkToReview()}</td>
         </tr>
     }
 
@@ -104,7 +122,10 @@ class SubmissionList extends React.Component<{}, {canCreateSubmission: boolean}>
     }
 
     toolbarComponent = (redoSearch: () => void) => {
-        return null
+        if (this.state.canCreateSubmission)
+            return <SubmissionCreate onCreate={redoSearch} projectId={id_}/>
+        else
+            return null;
     };
 
 
