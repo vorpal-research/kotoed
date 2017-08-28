@@ -17,13 +17,9 @@ import {ProjectCreate} from "./create";
 import {JumboProject} from "../data/submission";
 
 import "less/projects.less"
+import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 
 type ProjectWithVer = JumboProject & WithVerificationData
-
-const submissionReview = (id: number): string =>
-    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.CodeReview.Index, {id});
-const submissionResults = (id: number): string =>
-    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Results, {id});
 
 class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     constructor(props: ProjectWithVer) {
@@ -32,7 +28,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
     linkify = (text: string): JSX.Element => {
         if (this.props.verificationData.status === "Processed")
-            return <a href={Kotoed.UrlPattern.NotImplemented}>{text}</a>;
+            return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Project.Index, {id: this.props.id})}>{text}</a>;
         else
             return <span className={"grayed-out"}>{text}</span>
     };
@@ -50,8 +46,8 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                 <tbody>
                     {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
                         <td><a href={Kotoed.UrlPattern.NotImplemented}>{`#${sub.id}`}</a></td>
-                        <td><a href={submissionReview(sub.id)}>Review</a></td>
-                        <td><a href={submissionReview(sub.id)}>Results</a></td>
+                        <td><a href={makeSubmissionReviewUrl(sub.id)}>Review</a></td>
+                        <td><a href={makeSubmissionResultsUrl(sub.id)}>Results</a></td>
                     </tr>)}
                 </tbody>
             </table>

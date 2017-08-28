@@ -39,6 +39,9 @@ object Address {
             const val Comments = "kotoed.api.submission.comments"
             const val CommentAggregates = "kotoed.api.submission.commentAggregates"
             const val Error = "kotoed.api.submission.remoteError"
+            const val List = "kotoed.api.submission.list"
+            const val ListCount = "kotoed.api.submission.list.count"
+
 
             object Verification {
                 const val Data = "kotoed.api.submission.verification.data"

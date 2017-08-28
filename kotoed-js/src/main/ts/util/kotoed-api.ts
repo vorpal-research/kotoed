@@ -45,7 +45,8 @@ export namespace Kotoed {
                 Comments: "kotoed.api.submission.comments",
                 CommentAggregates: "kotoed.api.submission.commentAggregates",
                 Error: "kotoed.api.submission.error",
-
+                List: "kotoed.api.submission.list",
+                ListCount: "kotoed.api.submission.list.count",
                 Verification: {
                     Data: "kotoed.api.submission.verification.data"
                 },
@@ -115,14 +116,18 @@ export namespace Kotoed {
             ProjectPerms: "/perms/project/:id",
             SubmissionPerms: "/perms/submission/:id"
         },
+        Course: {
+            Index: "/course/:id"
+        },
+
+        Project: {
+            Index: "/project/:id"
+        },
 
         Submission: {
             Results: "/views/submission/:id/results"
         },
 
-        Course: {
-            Index: "/course/:id"
-        },
 
 
         EventBus: "/eventbus/*",

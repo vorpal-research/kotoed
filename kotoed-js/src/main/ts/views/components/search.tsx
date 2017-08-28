@@ -115,6 +115,7 @@ export interface SearchTableProps<DataType, QueryType = {}> {
     wrapResults?: (children: Array<JSX.Element>) => JSX.Element // Wanna table? This is for you!
     group?: GroupProps // Wanna group to columns or something other?
     toolbarComponent?: (toggleSearch: () => void) => JSX.Element | null
+    withSearch?: boolean
 }
 
 export interface SearchTableState<DataType> extends SearchBarState {
@@ -142,12 +143,14 @@ export class SearchTable<DataType, QueryType = {}> extends
     private wrapResults: (children: Array<JSX.Element>) => JSX.Element | Array<JSX.Element>; // Array if if we're doing no wrap
     private pageSize: number;
     private renderToolbar: () => JSX.Element | null;
+    private withSearch: boolean;
 
     private setPrivateFields(props: SearchTableProps<DataType, QueryType> ) {
         this.shouldPerformInitialSearch = props.shouldPerformInitialSearch || ((text, page) => (text !== "" || page != 0));
         this.makeBaseQuery = props.makeBaseQuery || (() => {return {}});
         this.wrapResults = props.wrapResults || identity;
         this.pageSize = props.pageSize || PAGESIZE;
+        this.withSearch = props.withSearch === undefined ? true : props.withSearch;
         if (props.toolbarComponent !== undefined) {
             let tbc = props.toolbarComponent;
             this.renderToolbar =  () => <div className="search-toolbar">
@@ -303,10 +306,10 @@ export class SearchTable<DataType, QueryType = {}> extends
         return (
             <div>
                 {this.renderToolbar()}
-                <SearchBar
+                {this.withSearch && <SearchBar
                     initialText={this.state.text}
                     onChange={this.onSearchStateChanged}
-                />
+                />}
                 {this.renderPagination()}
                 {this.renderResults()}
                 {this.renderPagination()}
