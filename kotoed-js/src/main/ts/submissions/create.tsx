@@ -17,8 +17,6 @@ interface SubmissionCreateState {
 }
 
 export class SubmissionCreate extends React.Component<SubmissionCreateProps, SubmissionCreateState> {
-    private urlField: HTMLInputElement;
-
     constructor(props: SubmissionCreateProps) {
         super(props);
         this.state = {
