@@ -1,0 +1,19 @@
+Prereqs:
+
+* Repos:
+** kotoed
+** kotoed-buildbot-deploy
+** kotoed-secrets
+
+* TODOs:
+** init postgresql cluster
+** create Kotoed postgresql users / databases
+** apply OAuth secrets
+** create Buildbot systemd .service with Type=forking
+** create Vertx systemd .service with Type=oneshot
+** configure Kotoed
+*** VCS dir
+
+* Packages:
+** postgresql
+** python-virtualenv
