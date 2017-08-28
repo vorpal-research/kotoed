@@ -26,13 +26,19 @@ operator fun BreadCrumbElement.plus(other: BreadCrumbElement) = BreadCrumb(listO
 fun RootBreadCrumbElement(active: Boolean) = BreadCrumbElement(text = "Root", href = UrlPattern.Index, active = active)
 
 fun CourseBreadCrumbElement(active: Boolean, course: CourseRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = course.name, active = active, href=UrlPattern.NotImplemented) // TODO
+    return BreadCrumbElement(
+            text = course.name,
+            active = active,
+            href=UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to course.id)))
 }
 
 fun ProjectBreadCrumbElement(active: Boolean,
                              author: DenizenRecord,
                              project: ProjectRecord): BreadCrumbElement {
-    return BreadCrumbElement(text = "${project.name} by ${author.denizenId}", active = active, href=UrlPattern.NotImplemented)
+    return BreadCrumbElement(
+            text = "${project.name} by ${author.denizenId}",
+            active = active,
+            href=UrlPattern.reverse(UrlPattern.Project.Index, mapOf("id" to project.id)))
 }
 
 
@@ -40,10 +46,16 @@ fun SubmissionBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
         BreadCrumbElement(text = "Submission #${submission.id}", active = active, href=UrlPattern.NotImplemented) // TODO
 
 fun SubmissionResultBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
-        BreadCrumbElement(text = "Results", active = active, href=UrlPattern.NotImplemented) // TODO
+        BreadCrumbElement(
+                text = "Results",
+                active = active,
+                href=UrlPattern.reverse(UrlPattern.Submission.Results, mapOf("id" to submission.id)))
 
 fun SubmissionReviewBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
-        BreadCrumbElement(text = "Review", active = active, href=UrlPattern.NotImplemented) // TODO
+        BreadCrumbElement(
+                text = "Review",
+                active = active,
+                href=UrlPattern.reverse(UrlPattern.CodeReview.Index, mapOf("id" to submission.id)))
 
 fun UtilitiesBreadCrumbElement(active: Boolean) =
         BreadCrumbElement(text = "Utilities", active = active)

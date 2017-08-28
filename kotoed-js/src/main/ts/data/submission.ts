@@ -5,7 +5,7 @@ import {BloatProject, WithProject} from "./project";
 type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
 
 export interface Submission {
-    dateime: number
+    datetime: number
     parentSubmissionId?: number
     projectId: number
     state: SubmissionState
