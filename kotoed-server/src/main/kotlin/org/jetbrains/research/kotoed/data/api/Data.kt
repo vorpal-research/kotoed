@@ -137,6 +137,10 @@ object SubmissionComments {
     data class LastSeenResponse(val location: SubmissionCommentRecord? = null) : Jsonable
 }
 
+object Submission {
+    data class SubmissionHistoryQuery(val submissionId: Int, val limit: Int?) : Jsonable
+}
+
 data class SearchQuery(
         val text: String,
         val find: JsonObject?,
