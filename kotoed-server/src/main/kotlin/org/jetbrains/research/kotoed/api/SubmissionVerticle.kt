@@ -8,7 +8,10 @@ import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.*
+import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -24,7 +27,6 @@ private typealias CommentAggregates = SubmissionComments.CommentAggregates
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
-    // FIXME: insert teamcity calls to build the submission
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
     suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
@@ -34,18 +36,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         expect(submission.projectId is Int)
 
         val res: SubmissionRecord = dbCreateAsync(submission)
-        eb.send(Address.DB.process(submission.table.name), res.toJson())
+        dbProcessAsync(res)
         return DbRecordWrapper(res)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Read)
     suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper {
-        var res: SubmissionRecord = dbFetchAsync(submission)
+        val res: SubmissionRecord = dbFetchAsync(submission)
         val status: VerificationData = dbProcessAsync(res)
-        if (status.status == VerificationStatus.Processed
-                && res.state != SubmissionState.open) {
-            res = dbUpdateAsync(res.apply { state = SubmissionState.open })
-        }
         return DbRecordWrapper(res, status)
     }
 
