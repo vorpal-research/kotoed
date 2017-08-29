@@ -116,6 +116,11 @@ object Address {
             const val Login = "kotoed.user.auth.login"
             const val Info = "kotoed.user.auth.info"
             const val HasPerm = "kotoed.user.auth.hasPerm"
+
+            const val SetPassword = "kotoed.user.auth.setPassword"
+
+            const val Restore = "kotoed.user.auth.restore"
+            const val RestoreSecret = "kotoed.user.auth.restore.secret"
         }
 
         object OAuth {

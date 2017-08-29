@@ -143,3 +143,7 @@ data class SearchQuery(
         val currentPage: Int?,
         val pageSize: Int?,
         val withVerificationData: Boolean?): Jsonable
+
+data class RestorePasswordSecret(
+        val denizenId: String, val secret: String, val newPassword: String
+): Jsonable

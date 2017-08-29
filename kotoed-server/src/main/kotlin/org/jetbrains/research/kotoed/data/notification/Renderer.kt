@@ -8,9 +8,8 @@ import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.safeNav
 import org.jetbrains.research.kotoed.util.uncheckedCast
-import org.jetbrains.research.kotoed.util.uncheckedCastOrNull
 
-private fun renderCommentClosed(body: JsonObject): RenderedData {
+private fun renderCommentClosed(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" closed his comment to "
@@ -18,34 +17,34 @@ private fun renderCommentClosed(body: JsonObject): RenderedData {
     }
 
     val link = LinkData("comment", body["id"].toString())
-    return RenderedData(node, link)
+    return RenderedData(id, node, link)
 }
-private fun renderCommentReopened(body: JsonObject): RenderedData {
+private fun renderCommentReopened(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" reopened his comment to "
         strong { +"submission #${body["submissionId"]}" }
     }
     val link = LinkData("comment", body["id"].toString())
-    return RenderedData(node, link)
+    return RenderedData(id, node, link)
 }
-private fun renderNewComment(body: JsonObject): RenderedData {
+private fun renderNewComment(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" wrote a comment to "
         strong { +"submission #${body["submissionId"]}" }
     }
     val link = LinkData("comment", body["id"].toString())
-    return RenderedData(node, link)
+    return RenderedData(id, node, link)
 }
-private fun renderCommentRepliedTo(body: JsonObject): RenderedData {
+private fun renderCommentRepliedTo(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" wrote a comment to "
         strong { +"submission #${body["submissionId"]}" }
     }
     val link = LinkData("comment", body["id"].toString())
-    return RenderedData(node, link)
+    return RenderedData(id, node, link)
 }
 
 internal val renderers by lazy {
@@ -60,7 +59,7 @@ internal val renderers by lazy {
 fun render(notification: NotificationRecord): RenderedData {
     val type = NotificationType.valueOf(notification.type)
     val body = notification.body.uncheckedCast<JsonObject>()
-    return renderers[type]!!(body)
+    return renderers[type]!!(notification.id, body)
 }
 
 
