@@ -7,6 +7,8 @@ import kotlinx.html.strong
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.safeNav
+import org.jetbrains.research.kotoed.util.uncheckedCast
+import org.jetbrains.research.kotoed.util.uncheckedCastOrNull
 
 private fun renderCommentClosed(body: JsonObject): RenderedData {
     val node = createHTML().div {
@@ -46,13 +48,19 @@ private fun renderCommentRepliedTo(body: JsonObject): RenderedData {
     return RenderedData(node, link)
 }
 
+internal val renderers by lazy {
+    mapOf(
+            NotificationType.COMMENT_CLOSED to ::renderCommentClosed,
+            NotificationType.COMMENT_REOPENED to ::renderCommentReopened,
+            NotificationType.NEW_COMMENT to ::renderNewComment,
+            NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo
+    )
+}
+
 fun render(notification: NotificationRecord): RenderedData {
-    return when(NotificationType.valueOf(notification.type)) {
-        NotificationType.COMMENT_CLOSED -> renderCommentClosed(notification.body as JsonObject)
-        NotificationType.COMMENT_REOPENED -> renderCommentReopened(notification.body as JsonObject)
-        NotificationType.NEW_COMMENT -> renderNewComment(notification.body as JsonObject)
-        NotificationType.COMMENT_REPLIED_TO -> renderCommentRepliedTo(notification.body as JsonObject)
-    }
+    val type = NotificationType.valueOf(notification.type)
+    val body = notification.body.uncheckedCast<JsonObject>()
+    return renderers[type]!!(body)
 }
 
 
