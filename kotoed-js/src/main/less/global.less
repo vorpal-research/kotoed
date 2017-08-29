@@ -3,3 +3,38 @@
 #notifications-menu {
   min-width: 400px;
 }
+
+#notifications-menu .list-group {
+  margin-bottom: 0 !important;
+}
+
+.pacman > div:nth-child(3)::after, .pacman > div:nth-child(4)::after, .pacman > div:nth-child(5)::after {
+  content: '';
+  position: absolute;
+  border-bottom: 7px solid;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  top: -2px;
+  left: 4px;
+  transform: rotate(30deg);
+  -webkit-transform: rotate(30deg);
+  -moz-transform: rotate(30deg);
+  -ms-transform: rotate(30deg);
+  -o-transform: rotate(30deg);
+}
+
+.pacman > div:nth-child(3)::before, .pacman > div:nth-child(4)::before, .pacman > div:nth-child(5)::before {
+  content: '';
+  position: absolute;
+  border-bottom: 7px solid;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  top: -2px;
+  left: -2px;
+  transform: rotate(-30deg);
+  -webkit-transform: rotate(-30deg);
+  -moz-transform: rotate(-30deg);
+  -ms-transform: rotate(-30deg);
+  -o-transform: rotate(-30deg);
+
+}
