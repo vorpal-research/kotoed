@@ -44,7 +44,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
-        process(data)
+        launch { process(data) }
         return cache[id].bang()
     }
 
