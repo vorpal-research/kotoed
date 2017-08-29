@@ -36,12 +36,12 @@ const config: webpack.Configuration = {
         login: kotoedEntry("./ts/login/index.tsx", false),
         code: kotoedEntry("./ts/code/index.tsx"),
         submissionResults: kotoedEntry("./ts/views/submissionResults.tsx"),
+        submissionDetails: kotoedEntry("./ts/submissionDetails/index.tsx"),
         commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
         projectSearch: kotoedEntry("./ts/views/projectSearch.tsx"),
         courseList: kotoedEntry("./ts/courses/list.tsx"),
         projectList: kotoedEntry("./ts/projects/list.tsx"),
         submissionList: kotoedEntry("./ts/submissions/list.tsx"),
-
         images: "./ts/images.ts"
     },
     output: {
