@@ -8,3 +8,8 @@ export interface VerificationData {
 export interface WithVerificationData {
     verificationData: VerificationData
 }
+
+export interface DbRecordWrapper<T> {
+    record: T,
+    verificationData: VerificationData
+}
