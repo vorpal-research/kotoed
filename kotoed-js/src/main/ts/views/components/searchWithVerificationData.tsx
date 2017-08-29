@@ -15,7 +15,7 @@ export function isStatusFinal(status: VerificationStatus) {
 }
 
 const RETRIES = 10;
-const SLEEP = 1000;
+const SLEEP = 15000;
 
 export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
         SearchTable<DataType & WithVerificationData,
