@@ -13,6 +13,7 @@ Prereqs:
 ** create Vertx systemd .service with Type=oneshot
 ** configure Kotoed
 *** VCS dir
+** ssh to bitbucket.org to init host key storage
 
 * Packages:
 ** postgresql
