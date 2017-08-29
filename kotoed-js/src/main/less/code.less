@@ -65,7 +65,10 @@
 }
 
 #code-review-right {
-  flex: none;
+  flex: 1 0 auto;
+  display: flex;
+  flex-flow: column;
+  //position: relative;
 }
 
 
@@ -79,12 +82,30 @@
 .code-review-tree {
   flex: 1 1 auto;
   min-height: 0px;
+  min-width: 0px;
   overflow-y: auto;
 }
 
 .codemirror-with-veil {
+  flex: 1 1 auto;
+  min-width: 1px;
+  min-height: 1px;
+  display: flex;
+  flex-flow: column;
+  //height: 100%;
+  //width: 100%;
+  position: relative;
+}
+
+.codemirror-abs {
+  position: absolute;
   height: 100%;
-  overflow-y: hidden
+  width: 100%;
+}
+
+.CodeMirror {
+  min-width: 0px;
+  flex: 1 1 auto;
 }
 
 .lost-found-button-container {
@@ -193,7 +214,8 @@
 }
 
 .no-file-chosen {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0px;
   color: @gray-light;
   font-size: 40px;
   display: flex;
