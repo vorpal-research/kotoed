@@ -39,6 +39,9 @@ fun <T> HttpRequest<T>.putHeader(name: CharSequence, value: CharSequence): HttpR
 operator fun HttpServerRequest.getValue(thisRef: Nothing?, prop: KProperty<*>): String? =
         this.getParam(prop.name)
 
+val <T> HttpResponse<T>.errorDetails: String
+    get() = "${statusMessage()}/${bodyAsString()}"
+
 /******************************************************************************/
 
 suspend fun HttpServerRequest.bodyAsync(): Buffer =
@@ -51,9 +54,7 @@ fun HttpServerRequest.getRootUrl() =
 
 suspend fun <T> HttpRequest<T>.sendAsync() = vxa<HttpResponse<T>> { send(it) }
 
-
 suspend fun <T> HttpRequest<T>.sendFormAsync(body: MultiMap) = vxa<HttpResponse<T>> { sendForm(body, it) }
-
 
 suspend fun <T> HttpRequest<T>.sendJsonObjectAsync(obj: JsonObject) = vxa<HttpResponse<T>> { sendJsonObject(obj, it) }
 
@@ -72,14 +73,14 @@ fun HttpServerResponse.end(status: HttpResponseStatus): Unit =
         setStatus(status).end(status.toJson())
 
 fun HttpServerResponse.end(json: JsonObject) =
-        this.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+        putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
                 .end(json.encode())
 
 fun HttpServerResponse.end(json: Jsonable) =
-        this.end(json.toJson())
+        end(json.toJson())
 
 fun HttpServerResponse.redirect(to: String, status: HttpResponseStatus = HttpResponseStatus.FOUND) =
-    putHeader(HttpHeaderNames.LOCATION, to).end(status)
+        putHeader(HttpHeaderNames.LOCATION, to).end(status)
 
 fun RoutingContext.fail(status: HttpResponseStatus) =
         this.fail(status.code())
