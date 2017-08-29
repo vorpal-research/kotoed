@@ -223,7 +223,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             lineWrapping: true,
         });
 
-        this.editor.setSize(null, this.props.height);
+        this.editor.setSize("100%", this.props.height);
 
         this.updateArrowOffset();
 
@@ -284,8 +284,10 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     render() {
         return (
             <div className="codemirror-with-veil">
-                {this.renderVeil()}
-                <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
+                <div className="codemirror-abs">
+                    {this.renderVeil()}
+                    <textarea ref={ref => this.textAreaNode = ref as HTMLTextAreaElement} defaultValue={this.props.value}/>
+                </div>
             </div>
         )
     }
