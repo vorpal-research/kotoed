@@ -10,6 +10,7 @@ interface LinkData {
 
 interface NotificationDisplayProps {
     data: {
+        id: number,
         contents: string,
         linkTo: LinkData
     }
@@ -24,8 +25,15 @@ class NotificationDisplay extends React.PureComponent<NotificationDisplayProps> 
         return `/views/${link.entity}/id/${link.id}`
     };
 
+    onClick = () => {
+        sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id }).then()
+    };
+
     render() {
-        return <a className="list-group-item" href={this.makeProperLink(this.props.data.linkTo)}>
+        return <a className="list-group-item"
+                  href={this.makeProperLink(this.props.data.linkTo)}
+                  onClick={this.onClick}
+        >
             <span dangerouslySetInnerHTML={{ __html: this.props.data.contents }} />
         </a>
     }
@@ -51,13 +59,17 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
     }
 
     render() {
-        return <div className="list-group">
-            {
-                this.state.currentNotifications.map( (obj: any, index) =>
-                    <NotificationDisplay data={obj} key={`notification-item-${index}`} />
-                )
-            }
-        </div>
+        if(this.state.currentNotifications.length != 0) {
+            return <div className="list-group">
+                {
+                    this.state.currentNotifications.map( (obj: any, index) =>
+                        <NotificationDisplay data={obj} key={`notification-item-${index}`} />
+                    )
+                }
+            </div>
+        } else {
+            return <div>No current notifications found</div>
+        }
     }
 }
 
