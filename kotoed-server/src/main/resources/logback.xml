@@ -20,7 +20,7 @@
         <appender-ref ref="stdout"/>
     </logger>
 
-    <logger name="io.vertx.ext.web.handler">
+    <logger name="io.vertx.ext.web.handler" level="DEBUG">
         <appender-ref ref="stdout"/>
     </logger>
 

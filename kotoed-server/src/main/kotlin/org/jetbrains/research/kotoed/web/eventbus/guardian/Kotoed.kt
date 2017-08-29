@@ -31,6 +31,7 @@ fun kotoedPerAddressFilter(vertx: Vertx) = PerAddress(
         Address.Api.Project.SearchCount to AuthorityRequired(Authority.Teacher),
         Address.Api.Notification.RenderCurrent to Permissive,
         Address.Api.Notification.Current to Permissive,
+        Address.Api.Notification.MarkRead to ShouldBeNotificationTarget(vertx),
         Address.Api.Course.Search to Permissive,
         Address.Api.Course.SearchCount to Permissive,
         Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),

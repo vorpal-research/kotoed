@@ -26,6 +26,7 @@ data class LinkData(
 ): Jsonable
 
 data class RenderedData(
+        val id: Int,
         val contents: String,
         val linkTo: LinkData
 ): Jsonable
