@@ -46,35 +46,43 @@
 
 #code-review-app {
   flex: 1 1 auto;
-  height: 1px;
+  min-height: 0px;
   overflow: hidden;
+  display: flex;
+  flex-flow: row;
 }
 
 .code-review {
-  height: 100%;
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0px;
+  display: flex;
+  flex-flow: row;
 }
 
 #code-review-left {
-  height: 100%;
-  overflow: hidden;
+  display: flex;
+  flex: none;
+  height: 100%; // TODO ???
+  overflow: hidden; // TODO ???
 }
 
 #code-review-right {
   height: 100%;
   overflow: hidden;
+  flex: none;
 }
 
 
 .code-review-tree-container {
   display: flex;
   flex-flow: column;
-  min-height: 100%
+  min-height: 100%;
+  flex: none;
 }
 
 .code-review-tree {
   flex: 1 1 auto;
-  height: 1px;
+  min-height: 0px;
   overflow-y: auto;
 }
 
