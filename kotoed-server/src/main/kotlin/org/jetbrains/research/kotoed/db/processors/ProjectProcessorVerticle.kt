@@ -12,12 +12,9 @@ import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonObject
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
-import org.jetbrains.research.kotoed.util.sendAsync
-import org.jetbrains.research.kotoed.util.sendJsonableAsync
 
 @AutoDeployable
 class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT) {
@@ -32,33 +29,24 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                 "forceschedulers",
                 Kotoed2Buildbot.projectName2schedulerName(projectRecord.name))
 
-        val response = try {
+        val response = tryOrNull {
             wc.head(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Root + schedulerLocator)
                     .putDefaultBBHeaders()
                     .sendAsync()
-
-        } catch (ex: Exception) {
-            val error = ProjectStatusRecord()
-                    .apply {
-                        this.projectId = projectRecord.id
-                        this.data = JsonObject("remoteError" to
-                                "Exception when verifying ${projectRecord.toJson()}: $ex")
-                    }
-
-            val errorId = dbCreateAsync(error).id
-
-            return VerificationData.Invalid(errorId)
         }
 
-        if (HttpResponseStatus.OK.code() == response.statusCode()) {
+        if (response != null
+                && HttpResponseStatus.OK.code() == response.statusCode()) {
             return VerificationData.Processed
 
         } else {
             val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("remoteError" to
-                                "Buildbot scheduler for ${projectRecord.name} not available: ${response.statusMessage()}/${response.bodyAsString()}")
+                        this.data = JsonObject(
+                                "failure" to "Buildbot scheduler for ${projectRecord.name} not available",
+                                "details" to (response?.errorDetails ?: "Buildbot is down?")
+                        )
                     }
 
             val errorId = dbCreateAsync(error).id
@@ -88,14 +76,18 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
                     createProject
             )
 
+            res.ignore()
+
             return VerificationData.Processed
 
         } catch (ex: Exception) {
             val error = ProjectStatusRecord()
                     .apply {
                         this.projectId = projectRecord.id
-                        this.data = JsonObject("remoteError" to
-                                "Exception when processing ${projectRecord.toJson()}: $ex")
+                        this.data = JsonObject(
+                                "failure" to "Exception when processing ${projectRecord.toJson()}",
+                                "details" to "$ex"
+                        )
                     }
 
             val errorId = dbCreateAsync(error).id

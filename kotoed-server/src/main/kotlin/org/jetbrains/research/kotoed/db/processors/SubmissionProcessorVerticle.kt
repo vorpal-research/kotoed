@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.db.processors
 
-import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
 import org.jetbrains.research.kotoed.code.Filename
@@ -26,7 +25,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
     // parent submission id can be invalid, filter it out
     override val checkedReferences: List<ForeignKey<SubmissionRecord, *>>
-        get() = super.checkedReferences.filterNot { Tables.SUBMISSION.PARENT_SUBMISSION_ID in it.fieldsArray }
+        get() = super.checkedReferences
+                .filterNot { Tables.SUBMISSION.PARENT_SUBMISSION_ID in it.fieldsArray }
 
     private val SubmissionCommentRecord.location
         get() = Location(Filename(path = sourcefile), sourceline)
@@ -41,8 +41,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             }).expecting(
                     message = "Duplicate or missing comment in chain detected: " +
                             "submission.id = ${comment.originalSubmissionId} " +
-                            "comment.id = ${comment.persistentCommentId}")
-            { it.size == 1 }
+                            "comment.id = ${comment.persistentCommentId}"
+            ) { 1 == it.size }
                     .first()
         }
 
@@ -53,7 +53,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                 dbFindAsync(SubmissionCommentRecord().apply { submissionId = child.id }).map { it.persistentCommentId }
 
         // first, we create all the missing comments
-        var childComments: List<SubmissionCommentRecord> =
+
+        val childComments: List<SubmissionCommentRecord> =
                 parentComments
                         .asSequence()
                         .filter { it.persistentCommentId !in alreadyMappedPersistentIds }
@@ -63,7 +64,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         // second, we remap all the locations and reply-chains
 
-        childComments = childComments.map { comment ->
+        childComments.forEach { comment ->
             val ancestorComment = ancestorCommentCacheAsync(comment)
             val ancestorSubmission = submissionCacheAsync(ancestorComment.submissionId)
 
@@ -87,10 +88,6 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
             dbUpdateAsync(comment)
         }
-
-        parent.state = SubmissionState.obsolete
-
-        dbUpdateAsync(parent)
     }
 
     private suspend fun getVcsInfo(project: ProjectRecord): RepositoryInfo {
@@ -102,8 +99,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
     private suspend fun getVcsStatus(
             vcsInfo: RepositoryInfo,
-            submission: SubmissionRecord,
-            project: ProjectRecord): VerificationData {
+            submission: SubmissionRecord): VerificationData {
 
         return when (vcsInfo.status) {
             CloneStatus.pending -> VerificationData.Unknown
@@ -113,8 +109,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                         SubmissionStatusRecord().apply {
                             this.submissionId = submission.id
                             this.data = JsonObject(
-                                    "remoteError" to "Fetching remote repository failed",
-                                    "reason" to vcsInfo.toJson()
+                                    "failure" to "Fetching remote repository failed",
+                                    "details" to vcsInfo.toJson()
                             )
                         }
                 ).id.let { VerificationData.Invalid(it) }
@@ -124,11 +120,13 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     suspend override fun doProcess(data: JsonObject): VerificationData {
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
-        val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let { fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId) }
+        val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
+            fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
+        }
 
         val vcsReq = getVcsInfo(project)
 
-        val vcsStatus = getVcsStatus(vcsReq, sub, project)
+        val vcsStatus = getVcsStatus(vcsReq, sub)
 
         if (vcsStatus != VerificationData.Processed) return vcsStatus
 
@@ -139,66 +137,94 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         }
 
         parentSub?.let {
-            recreateCommentsAsync(vcsReq.uid, parentSub, sub)
+            recreateCommentsAsync(vcsReq.uid, it, sub)
+
+            it.state = SubmissionState.obsolete
+
+            dbUpdateAsync(it)
         }
 
-        // TODO: process possible errors
+        val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
 
-        try {
-            val btr: BuildTriggerResult = sendJsonableAsync(
-                    Address.Buildbot.Build.Trigger,
-                    TriggerBuild(
-                            Kotoed2Buildbot.projectName2schedulerName(project.name),
-                            sub.revision
+        val localVerificationData = try {
+
+            when (buildInfos.size) {
+                0 -> {
+                    val btr: BuildTriggerResult = sendJsonableAsync(
+                            Address.Buildbot.Build.Trigger,
+                            TriggerBuild(
+                                    Kotoed2Buildbot.projectName2schedulerName(project.name),
+                                    sub.revision
+                            )
                     )
-            )
 
-            dbCreateAsync(
-                    BuildRecord().apply {
-                        submissionId = sub.id
-                        buildRequestId = btr.buildRequestId
-                    }
-            )
+                    dbCreateAsync(
+                            BuildRecord().apply {
+                                submissionId = sub.id
+                                buildRequestId = btr.buildRequestId
+                            }
+                    )
+
+                    VerificationData.Processed
+                }
+                else -> {
+                    // FIXME akhin: Reload data from Buildbot if it is missing?
+                    VerificationData.Processed
+                }
+            }
 
         } catch (ex: Exception) {
-            dbCreateAsync(
+            val errorId = dbCreateAsync(
                     SubmissionStatusRecord().apply {
                         this.submissionId = sub.id
                         this.data = JsonObject(
-                                "remoteError" to "Triggering build for $sub:$project failed",
-                                "reason" to ex.message
+                                "failure" to "Triggering build for ${project.name}:${sub.id} failed",
+                                "details" to ex.message
                         )
                     }
-            )
+            ).id
+
+            VerificationData.Invalid(errorId)
         }
 
-        return verify(data)
+        return localVerificationData and verify(data)
     }
 
     suspend override fun verify(data: JsonObject?): VerificationData {
-        data ?: throw IllegalArgumentException("Cannot verify submission $data")
+        data ?: throw IllegalArgumentException("Cannot verify null submission")
+
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
-        val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let { fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId) }
+        val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
+            fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
+        }
 
         val vcsReq = getVcsInfo(project)
 
-        val vcsStatus = getVcsStatus(vcsReq, sub, project)
+        val vcsStatus = getVcsStatus(vcsReq, sub)
 
         if (vcsStatus != VerificationData.Processed) return vcsStatus
 
         try {
-            forceType<ListResponse>(sendJsonableAsync(Address.Code.List, ListRequest(vcsReq.uid, sub.revision)))
-        } catch (ex: ReplyException) {
-            return dbCreateAsync(
+            val list: ListResponse = sendJsonableAsync(
+                    Address.Code.List,
+                    ListRequest(vcsReq.uid, sub.revision)
+            )
+
+            list.ignore()
+
+        } catch (ex: Exception) {
+            val errorId = dbCreateAsync(
                     SubmissionStatusRecord().apply {
                         this.submissionId = sub.id
                         this.data = JsonObject(
-                                "remoteError" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
-                                "reason" to ex.message
+                                "failure" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
+                                "details" to ex.message
                         )
                     }
-            ).id.let { VerificationData.Invalid(it) }
+            ).id
+
+            return VerificationData.Invalid(errorId)
         }
 
         parentSub?.let {
@@ -220,10 +246,20 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
 
-        return if (buildInfos.isNotEmpty()) {
-            VerificationData.Processed
-        } else {
-            VerificationData.Unknown
+        return when (buildInfos.size) {
+            1 -> VerificationData.Processed
+            0 -> VerificationData.Unknown
+            else -> {
+                dbCreateAsync(
+                        SubmissionStatusRecord().apply {
+                            this.submissionId = sub.id
+                            this.data = JsonObject(
+                                    "failure" to "Several builds found for submission ${sub.id}",
+                                    "details" to buildInfos.tryToJson()
+                            )
+                        }
+                ).id.let { VerificationData.Invalid(it) }
+            }
         }
     }
 

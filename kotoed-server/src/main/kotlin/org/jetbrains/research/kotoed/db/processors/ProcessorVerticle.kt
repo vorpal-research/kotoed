@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.api.bang
@@ -24,11 +25,11 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     val processAddress = Address.DB.process(entityName)
     val verifyAddress = Address.DB.verify(entityName)
 
-    val cache: Cache<Int, VerificationData> = CacheBuilder.newBuilder()
-            .expireAfterAccess(30, TimeUnit.MINUTES) // TODO: Move to settings
+    private val cache: Cache<Int, VerificationData> = CacheBuilder.newBuilder()
+            .expireAfterAccess(Config.Processors.CacheExpiration, TimeUnit.MINUTES)
             .build()
 
-    val cacheMap: ConcurrentMap<Int, VerificationData>
+    private val cacheMap: ConcurrentMap<Int, VerificationData>
         get() = cache.asMap()
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
@@ -100,7 +101,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                         prereqVerificationData.any { (_, data) -> VerificationStatus.Invalid == data.status } -> {
                             log.trace("Some prereqs failed!")
 
-                            // FIXME: this stuff is funky
+                            // FIXME akhin: this stuff is funky
 
                             val failedData = prereqVerificationData
                                     .filter { (_, data) -> VerificationStatus.Invalid == data.status }
