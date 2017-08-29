@@ -5,6 +5,7 @@ import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
@@ -117,7 +118,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         }
     }
 
-    suspend override fun doProcess(data: JsonObject): VerificationData {
+    suspend override fun doProcess(data: JsonObject): VerificationData = run {
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
@@ -128,7 +129,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         val vcsStatus = getVcsStatus(vcsReq, sub)
 
-        if (vcsStatus != VerificationData.Processed) return vcsStatus
+        if (vcsStatus != VerificationData.Processed) return@run vcsStatus
 
         if (sub.revision == null) {
             val vcsInfo: InfoFormat = sendJsonableAsync(Address.Code.Info, InfoFormat(uid = vcsReq.uid))
@@ -187,7 +188,15 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             VerificationData.Invalid(errorId)
         }
 
-        return localVerificationData and verify(data)
+        return@run localVerificationData and verify(data)
+
+    }.apply {
+        val sub: SubmissionRecord = data.toRecord()
+        val subFresh = dbFetchAsync(sub)
+        if (status == VerificationStatus.Processed
+                && subFresh.state == SubmissionState.pending) {
+            dbUpdateAsync(subFresh.apply { state = SubmissionState.open })
+        }
     }
 
     suspend override fun verify(data: JsonObject?): VerificationData {
