@@ -21,7 +21,7 @@ object AddressExporter {
                 .forEach {
             w.print("    " * indent)
             w.print(it.name)
-            w.println(": (${it.valueParameters.joinToString(",") { "${it.name}: String" }}) => {")
+            w.println(": (${it.valueParameters.joinToString(",") { "${it.name}: string" }}) => {")
             val args = it.valueParameters.map { "\${${it.name}}" }.toTypedArray()
             it.call(a, *args).let {
                 w.print("    " * (indent + 1))
