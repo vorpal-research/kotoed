@@ -4,10 +4,10 @@ export namespace Generated {
 /*  see org/jetbrains/research/kotoed/eventbus/Address.kt */
     export const Address = {
         Api: {
-            create: (entity: String) => {
+            create: (entity: string) => {
                 `kotoed.api.${entity}.create`
             },
-            read: (entity: String) => {
+            read: (entity: string) => {
                 `kotoed.api.${entity}.read`
             },
             Course: {
@@ -114,6 +114,7 @@ export namespace Generated {
             Search: "/views/project/search",
         },
         Submission: {
+            Index: "/submission/:id",
             Results: "/views/submission/:id/results",
         },
     }
