@@ -93,6 +93,20 @@ suspend fun EventBus.courseByIdOrNull(id: Int): CourseRecord? {
     return course
 }
 
+suspend fun EventBus.notificationByIdOrNull(id: Int): NotificationRecord? {
+    val notification: NotificationRecord
+    try {
+        notification = this.sendJsonableAsync(
+                Address.DB.read(Tables.NOTIFICATION.name),
+                NotificationRecord().apply { this.id = id })
+    } catch (ex: ReplyException) {
+        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
+            return null
+        else throw ex
+    }
+    return notification
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Complex stuff
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
