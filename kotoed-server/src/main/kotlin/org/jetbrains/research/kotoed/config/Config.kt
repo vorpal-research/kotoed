@@ -73,6 +73,12 @@ class GlobalConfig : Configuration() {
 
     val Notifications by NotificationsConfig()
 
+    class ProcessorsConfig : Configuration() {
+        val CacheExpiration: Long by 30L
+    }
+
+    val Processors by ProcessorsConfig()
+
     class RootConfig : Configuration() {
         val Port: Int by 9000
     }
