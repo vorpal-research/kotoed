@@ -197,4 +197,20 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .filter("state != ${SubmissionState.obsolete}")
         return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), q)
     }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.History)
+    suspend fun handleHistory(query: Submission.SubmissionHistoryQuery): JsonArray {
+        val limit = query.limit ?: Int.MAX_VALUE
+        val history = mutableListOf<JsonObject>()
+        var currentId = query.submissionId
+
+        for (i in 0 until limit) {
+            val oldest = dbFetchAsync(SubmissionRecord().apply { id = currentId }) ?:
+                    throw NotFound("Submission ${query.submissionId} not found")
+            history.add(oldest.toJson())
+            currentId = oldest.parentSubmissionId ?: break
+        }
+
+        return JsonArray(history)
+    }
 }
