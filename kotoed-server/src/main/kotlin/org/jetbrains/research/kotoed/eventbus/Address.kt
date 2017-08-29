@@ -41,6 +41,7 @@ object Address {
             const val Error = "kotoed.api.submission.remoteError"
             const val List = "kotoed.api.submission.list"
             const val ListCount = "kotoed.api.submission.list.count"
+            const val History = "kotoed.api.submission.history"
 
 
             object Verification {

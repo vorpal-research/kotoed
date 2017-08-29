@@ -49,6 +49,7 @@ export namespace Generated {
                 Comments: "kotoed.api.submission.comments",
                 Create: "kotoed.api.submission.create",
                 Error: "kotoed.api.submission.remoteError",
+                History: "kotoed.api.submission.history",
                 Last: "kotoed.api.submission.last",
                 List: "kotoed.api.submission.list",
                 ListCount: "kotoed.api.submission.list.count",
