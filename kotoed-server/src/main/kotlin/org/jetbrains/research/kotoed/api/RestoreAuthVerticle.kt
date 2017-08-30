@@ -1,16 +1,23 @@
 package org.jetbrains.research.kotoed.api
 
 import com.google.common.cache.CacheBuilder
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.RestorePasswordSecret
 import org.jetbrains.research.kotoed.data.db.LoginMsg
+import org.jetbrains.research.kotoed.data.notification.MessageFormat
+import org.jetbrains.research.kotoed.data.notification.NotificationMessage
+import org.jetbrains.research.kotoed.data.notification.NotificationService
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.web.UrlPattern
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 @AutoDeployable
-class RestoreAuthVerticle: AbstractKotoedVerticle(), Loggable {
+class RestoreAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
     val requestCache = CacheBuilder
             .newBuilder()
@@ -20,7 +27,41 @@ class RestoreAuthVerticle: AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.User.Auth.Restore)
     suspend fun handleRestore(denizen: DenizenRecord) {
         log.info("Password restoration request from ${denizen.denizenId}")
-        requestCache.put(denizen.denizenId, UUID.randomUUID())
+        val uid = UUID.randomUUID()
+        requestCache.put(denizen.denizenId, uid)
+
+        val callback = "${Config.Root.Host}:${Config.Root.Port}" +
+                UrlPattern.reverse(
+                        UrlPattern.Auth.RestorePassword,
+                        mapOf("uid" to uid)
+                )
+
+        run<Unit> {
+            sendJsonableAsync(
+                    Address.Notifications.Email.Send,
+                    NotificationMessage(
+                            receiverId = denizen.id,
+                            service = NotificationService.EMAIL,
+                            subject = "Password reset requested for user ${denizen.denizenId}",
+                            contentsFormat = MessageFormat.HTML,
+                            contents = createHTML().div {
+                                h2 { +"Hello ${denizen.denizenId}," }
+                                p {
+                                    +"""
+                                    A password change has been requested for you account in Kotoed.
+                                    If you want to reset your password, please follow the link below.
+                                """
+                                }
+                                p {
+                                    +"""
+                                    Otherwise, just ignore this message
+                                """
+                                }
+                                a(href = callback) { +callback }
+                            }
+                    ))
+        }
+
     }
 
     @JsonableEventBusConsumerFor(Address.User.Auth.RestoreSecret)
@@ -29,7 +70,7 @@ class RestoreAuthVerticle: AbstractKotoedVerticle(), Loggable {
                 "with secret '${request.secret}'")
 
         val secret = UUID.fromString(request.secret)
-        if(request.denizenId in requestCache
+        if (request.denizenId in requestCache
                 && requestCache[request.denizenId] == secret) {
 
             run<Unit> {

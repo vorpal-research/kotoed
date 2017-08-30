@@ -13,6 +13,11 @@ export interface SignUpResponse {
     error: string | null
 }
 
+export interface ResetPasswordResponse {
+    succeeded: boolean
+    error: string | null
+}
+
 export type OAuthProvidersRequest = {}
 export type OAuthProvidersResponse = Array<string>
 
@@ -34,6 +39,17 @@ export async function signUp(username: string, password: string, email: string|n
         email: email
     }));
     let logResp = keysToCamelCase(resp.data) as SignUpResponse;
+
+    if (!logResp.succeeded)
+        throw new Error(logResp.error || "Unknown remoteError")
+}
+
+export async function resetPassword(username: string, email: string) {
+    let resp = await axios.post(Kotoed.UrlPattern.Auth.ResetPassword, keysToSnakeCase({
+        denizenId: username,
+        email: email
+    }));
+    let logResp = keysToCamelCase(resp.data) as ResetPasswordResponse;
 
     if (!logResp.succeeded)
         throw new Error(logResp.error || "Unknown remoteError")

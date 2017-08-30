@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.notification
 
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.notification.MessageFormat
 import org.jetbrains.research.kotoed.data.notification.NotificationMessage
 import org.jetbrains.research.kotoed.data.notification.NotificationService
 import org.jetbrains.research.kotoed.database.Tables
@@ -51,7 +52,13 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
                         .from(Config.Notifications.Mail.KotoedSignature, Config.Notifications.Mail.KotoedAddress)
                         .replyTo(Config.Notifications.Mail.KotoedSignature, Config.Notifications.Mail.KotoedAddress)
                         .subject(message.subject)
-                        .text(message.contents)
+                        .run {
+                            if(message.contentsFormat == MessageFormat.HTML) {
+                                textHTML(message.contents)
+                            } else {
+                                text(message.contents)
+                            }
+                        }
                         .build()
 
 
