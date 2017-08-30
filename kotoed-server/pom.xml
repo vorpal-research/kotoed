@@ -21,6 +21,7 @@
         <vertx.version>3.4.0</vertx.version>
         <guava.version>21.0</guava.version>
         <reflections.version>0.9.11</reflections.version>
+        <funktionale.version>1.1</funktionale.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.0.13</logback.version>
         <psqldriver.version>42.0.0</psqldriver.version>
@@ -153,6 +154,11 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>${reflections.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.funktionale</groupId>
+            <artifactId>funktionale-all</artifactId>
+            <version>${funktionale.version}</version>
         </dependency>
 
         <dependency>
@@ -601,7 +607,8 @@
                                     <types>.*tsvector.*</types>
                                 </forcedType>
                             </forcedTypes>
-                            <syntheticPrimaryKeys>public\.[a-z]*\.id</syntheticPrimaryKeys>
+                            <syntheticPrimaryKeys>public\.[a-z]*\.id
+                            </syntheticPrimaryKeys>
                         </database>
                         <target>
                             <packageName>
@@ -618,6 +625,10 @@
 
     <repositories>
         <repository>
+            <id>bintray-jcenter</id>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
+        <repository>
             <id>bintray-vorpal-research-kotlin-maven</id>
             <url>http://dl.bintray.com/vorpal-research/kotlin-maven</url>
         </repository>
@@ -628,7 +639,6 @@
             <id>bintray-kotlin-eap-1.1</id>
             <url>http://dl.bintray.com/kotlin/kotlin-eap-1.1</url>
         </repository>
-
         <repository>
             <snapshots>
                 <enabled>false</enabled>
