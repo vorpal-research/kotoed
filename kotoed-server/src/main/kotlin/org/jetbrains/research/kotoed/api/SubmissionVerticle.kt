@@ -74,6 +74,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleVerificationData(submission: SubmissionRecord): VerificationData =
             dbVerifyAsync(submission)
 
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Verification.Clean)
+    suspend fun handleVerificationClean(submission: SubmissionRecord): VerificationData =
+            dbCleanAsync(submission)
+
     private fun CommentAggregatesByFile.register(key: String, comment: SubmissionCommentRecord) {
         this[key] = this.getOrDefault(key, CommentAggregate()).apply {
             register(comment)

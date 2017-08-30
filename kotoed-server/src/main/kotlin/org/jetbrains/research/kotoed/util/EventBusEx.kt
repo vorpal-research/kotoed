@@ -333,6 +333,10 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, VerificationData::class)
 
+    protected suspend fun <R : TableRecord<R>> dbCleanAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.clean(v.table.name), v, klass, VerificationData::class)
+
     protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
                                                               klass: KClass<out R> = instance.recordType.kotlin): R =
             @Suppress(DEPRECATION)
