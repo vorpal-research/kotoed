@@ -68,6 +68,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.Create to ProjectOwnerOrTeacher(vertx),
             Address.Api.Submission.Error to Permissive, // good enough for now
             Address.Api.Submission.History to SubmissionOwnerOrTeacher(vertx),
+            Address.Api.Submission.Read to SubmissionOwnerOrTeacher(vertx, "id"),
 
             Address.Api.Submission.List to ProjectOwnerOrTeacherForFilter(vertx),
             Address.Api.Submission.ListCount to ProjectOwnerOrTeacherForFilter(vertx),

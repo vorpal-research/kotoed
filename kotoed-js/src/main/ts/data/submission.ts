@@ -20,3 +20,9 @@ export interface BloatSubmission extends SubmissionToRead, WithProject {}
 export interface JumboProject extends BloatProject {
     openSubmissions: Array<SubmissionToRead>
 }
+
+export interface CreateRequest {
+    revision: string | null,
+    projectId: number,
+    parentSubmission: number | null
+}

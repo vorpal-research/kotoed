@@ -11,7 +11,7 @@ export interface SubmissionHistoryProps {
 }
 
 export default class SubmissionHistory extends React.PureComponent<SubmissionHistoryProps> {
-    private hasMore = (): boolean => this.props.items[this.props.items.length - 1].parentSubmissionId !== undefined;
+    private hasMore = (): boolean => this.props.items.length > 0 && this.props.items[this.props.items.length - 1].parentSubmissionId !== undefined;
     private nextId = (): number => {
         let ret = this.props.items[this.props.items.length - 1].parentSubmissionId;
         if (ret === undefined)
@@ -20,7 +20,11 @@ export default class SubmissionHistory extends React.PureComponent<SubmissionHis
     };
 
     private renderChildren = (): Array<JSX.Element> => {
-        let ret = this.props.items.map(sub => <SubmissionComponent {...sub} key={sub.id} verificationData={{status: "Processed"}}/>);
+        let ret = this.props.items.map(sub => <SubmissionComponent
+            {...sub}
+            key={sub.id}
+            verificationData={{status: "Processed"}}
+            pendingIsAvailable={true}/>);
         if (this.hasMore()) {
             ret.push(
                 <tr key="more-submissions">

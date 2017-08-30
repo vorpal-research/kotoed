@@ -3,9 +3,11 @@ import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Modal, SplitB
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus, SoftError} from "../eventBus";
 import {ChangeEvent, KeyboardEvent} from "react";
+import {CreateRequest, SubmissionToRead} from "../data/submission";
+import {DbRecordWrapper} from "../data/verification";
 
 interface SubmissionCreateProps {
-    onCreate: () => void
+    onCreate: (newId: number) => void
     projectId: number
     parentSubmission?: number
 }
@@ -58,12 +60,12 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
             revision = null;
 
         try {
-            await eventBus.send(Kotoed.Address.Api.Submission.Create, {
+            let newSub = await eventBus.send<CreateRequest, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Create, {
                 revision: revision,
                 projectId: this.props.projectId,
                 parentSubmission: this.props.parentSubmission || null
             });
-            this.props.onCreate();
+            this.props.onCreate(newSub.record.id);
             this.hideModal();
         } catch (error) {
             if (!(error instanceof SoftError))
@@ -115,7 +117,6 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
                         <Button bsStyle="success" onClick={() => this.tryCreate(this.state.revision)}>Create</Button>
                     </Modal.Footer>
                 </Modal>
-            </SplitButton>
-            ;
+            </SplitButton>;
     }
 }

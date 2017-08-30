@@ -50,7 +50,7 @@ class SubmissionList extends React.Component<{}, {canCreateSubmission: boolean}>
                     }
                 }}
                 wrapResults={renderSubmissionTable}
-                elementComponent={(key, c: SubmissionWithVer) => <SubmissionComponent {...c} key={key} />}
+                elementComponent={(key, c: SubmissionWithVer) => <SubmissionComponent {...c} key={key} pendingIsAvailable={false}/>}
                 toolbarComponent={this.toolbarComponent}
             />
         );

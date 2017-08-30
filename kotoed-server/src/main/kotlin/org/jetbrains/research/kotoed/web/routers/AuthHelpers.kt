@@ -16,6 +16,7 @@ import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.data.Permissions
+import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
 import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
 @HandlerFor(UrlPattern.AuthHelpers.WhoAmI)
@@ -107,10 +108,12 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
         return
     }
 
-    val submission = context.vertx().eventBus().submissionByIdOrNull(intId) ?: run {
-        context.fail(HttpResponseStatus.NOT_FOUND)
-        return
-    }
+    val (course, author, project, submission) =
+        SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
+            context.fail(HttpResponseStatus.NOT_FOUND)
+            return
+        }
+
 
     val submissionIsOpen = submission.state == SubmissionState.open
 
@@ -119,6 +122,8 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
                     editAllComments = isTeacher && submissionIsOpen,
                     changeStateOwnComments = submissionIsOpen,
                     changeStateAllComments = isTeacher && submissionIsOpen,
-                    postComment = submissionIsOpen
+                    postComment = submissionIsOpen,
+                    resubmit = author.id == context.user()?.principal()?.getInteger("id"),
+                    changeState = isTeacher
             ))
 }
