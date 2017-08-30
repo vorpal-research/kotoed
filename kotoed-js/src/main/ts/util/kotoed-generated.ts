@@ -92,6 +92,8 @@ export namespace Generated {
             Logout: "/logout",
             OAuthCallback: "/login/oauth/callback/:providerName",
             OAuthStart: "/login/oauth/start/:providerName",
+            ResetPassword: "/resetPassword",
+            RestorePassword: "/restorePassword/:uid",
         },
         AuthHelpers: {
             CoursePerms: "/perms/course/:id",

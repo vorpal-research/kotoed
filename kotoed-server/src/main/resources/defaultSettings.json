@@ -1,4 +1,7 @@
 {
+  "root" : {
+    "host": "localhost"
+  },
   "buildbot": {
     "password": "0xDEADC0FFEE"
   }
