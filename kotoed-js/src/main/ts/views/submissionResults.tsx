@@ -129,6 +129,62 @@ namespace BuildLogs {
 
 } // namespace BuildLogs
 
+namespace Statistics {
+
+    export function selector(result: any): boolean {
+        return KFirst.selector(result)
+    }
+
+    export function transformer(result: any): any[] {
+        let data = result.body.data;
+        let res = new Map();
+
+        for (let datum of data) {
+            let packageName = datum.packageName.substr(
+                0, datum.packageName.lastIndexOf("."));
+            let tag = datum.tags[0];
+
+            let tagMap = res.get(packageName) || new Map();
+            if (datum.results.every((r: TestData) => "SUCCESSFUL" == r.status)) {
+                tagMap[tag] = (tagMap[tag] || 0 ) + 1;
+            } else {
+                tagMap[tag] = (tagMap[tag] || 0 );
+            }
+
+            let totalMap = tagMap.get("Total") || new Map();
+            totalMap[tag] = (totalMap[tag] || 0 ) + 1;
+            tagMap.set("Total", totalMap);
+
+            res.set(packageName, tagMap);
+        }
+
+        return [...res.entries()].map(([key, value]) => {
+            let totals = value.get("Total");
+            return {
+                packageName: key,
+                ..._.mapValues(value, (v, k) => `${v} / ${totals[k]}`)
+            };
+        });
+    }
+
+    export let rowDefinition =
+        <RowDefinition>
+            <ColumnDefinition id="packageName"
+                              title="Package"/>
+            <ColumnDefinition id="Trivial"
+                              title="Trivial"/>
+            <ColumnDefinition id="Easy"
+                              title="Easy"/>
+            <ColumnDefinition id="Normal"
+                              title="Normal"/>
+            <ColumnDefinition id="Hard"
+                              title="Hard"/>
+            <ColumnDefinition id="Impossible"
+                              title="Impossible"/>
+        </RowDefinition> as any
+
+} // namespace Statistics
+
 render(
     <SubmissionResultTable
         id={submissionId}
@@ -141,6 +197,11 @@ render(
                               KFirst.hideExamplesFilter
                           ]}
                           rowDefinition={KFirst.rowDefinition}/> as any,
+            <ResultHolder name="Statistics"
+                          selector={Statistics.selector}
+                          transformer={Statistics.transformer}
+                          filters={[]}
+                          rowDefinition={Statistics.rowDefinition}/> as any,
             <ResultHolder name="Build logs"
                           selector={BuildLogs.selector}
                           transformer={BuildLogs.transformer}
