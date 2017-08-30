@@ -145,6 +145,7 @@ object Address {
 
         fun process(entity: String) = "kotoed.db.$entity.process"
         fun verify(entity: String) = "kotoed.db.$entity.verify"
+        fun clean(entity: String) = "kotoed.db.$entity.clean"
     }
 
     object Notifications {

@@ -308,6 +308,10 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
+    protected suspend fun <R : TableRecord<R>> dbDeleteAsync(v: R, klass: KClass<out R> = v::class): R =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.delete(v.table.name), v, klass, klass)
+
     protected suspend fun <R : TableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)

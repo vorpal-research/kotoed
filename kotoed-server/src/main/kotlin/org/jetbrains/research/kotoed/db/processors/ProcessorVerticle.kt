@@ -24,6 +24,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     val processAddress = Address.DB.process(entityName)
     val verifyAddress = Address.DB.verify(entityName)
+    val cleanAddress = Address.DB.clean(entityName)
 
     private val cache: Cache<Int, VerificationData> = CacheBuilder.newBuilder()
             .expireAfterAccess(Config.Processors.CacheExpiration, TimeUnit.MINUTES)
@@ -63,8 +64,24 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         return cache[id].bang()
     }
 
+    @JsonableEventBusConsumerForDynamic(addressProperty = "cleanAddress")
+    suspend fun handleClean(msg: JsonObject): VerificationData {
+        log.trace("Handling clean for: $msg")
+        val id: Int by msg.delegate
+        val data = db { selectById(id) }?.toJson()
+        val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
+        if (VerificationStatus.Unknown == oldStatus.status) {
+            val newStatus = verify(data)
+            cacheMap.replace(id, oldStatus, newStatus)
+        }
+        log.trace("Old status: $oldStatus")
+        log.trace("New status: ${cache[id].bang()}")
+        launch { clean(data) }
+        return cache[id].bang()
+    }
+
     suspend fun process(data: JsonObject?) {
-        data ?: throw IllegalArgumentException("data is null")
+        data ?: throw IllegalArgumentException("Cannot process null submission")
 
         val eb = vertx.eventBus()
 
@@ -148,11 +165,41 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
     }
 
+    suspend fun clean(data: JsonObject?) {
+        data ?: throw IllegalArgumentException("Cannot clean null submission")
+
+        val id = data[pk.name] as Int
+
+        val oldData = cache[id].bang()
+
+        log.trace("Cleaning: $data")
+        log.trace("Old data: $oldData")
+
+        val notReady = oldData.copy(status = VerificationStatus.NotReady)
+
+        val ok = cacheMap.replace(id, oldData, notReady)
+
+        if (ok) {
+
+            log.trace("Going in!")
+            cacheMap.replace(id, notReady, doClean(data))
+
+        } else {
+
+            log.trace("Come again?")
+            clean(data)
+
+        }
+    }
+
     suspend open fun verify(data: JsonObject?): VerificationData =
             VerificationData.Processed
 
     suspend open fun doProcess(data: JsonObject): VerificationData =
             VerificationData.Processed
+
+    suspend open fun doClean(data: JsonObject): VerificationData =
+            VerificationData.Unknown
 
     open val checkedReferences: List<ForeignKey<R, *>> get() = table.references
 
