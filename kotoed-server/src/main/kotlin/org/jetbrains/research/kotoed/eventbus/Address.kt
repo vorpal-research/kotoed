@@ -46,6 +46,7 @@ object Address {
 
             object Verification {
                 const val Data = "kotoed.api.submission.verification.data"
+                const val Clean = "kotoed.api.submission.verification.clean"
             }
 
             object Comment {

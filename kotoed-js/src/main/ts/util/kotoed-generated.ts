@@ -70,6 +70,7 @@ export namespace Generated {
                     Read: "kotoed.api.submission.result.read",
                 },
                 Verification: {
+                    Clean: "kotoed.api.submission.verification.clean",
                     Data: "kotoed.api.submission.verification.data",
                 },
             },

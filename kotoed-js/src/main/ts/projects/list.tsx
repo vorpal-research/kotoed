@@ -18,6 +18,7 @@ import {JumboProject} from "../data/submission";
 
 import "less/projects.less"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
+import {eventBus} from "../eventBus";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -35,7 +36,14 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This project is invalid</Tooltip>;
 
-
+    private cleanSubmission(submissionId: number) {
+        eventBus.awaitOpen().then(_ => {
+            return eventBus.send(
+                Kotoed.Address.Api.Submission.Verification.Clean,
+                {"id": submissionId}
+            )
+        })
+    }
 
     private renderOpenSubmissions = (): JSX.Element => {
         if (this.props.openSubmissions.length === 0)
@@ -48,6 +56,10 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td><a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: this.props.id})}>{`#${sub.id}`}</a></td>
                         <td><a href={makeSubmissionReviewUrl(sub.id)}>Review</a></td>
                         <td><a href={makeSubmissionResultsUrl(sub.id)}>Results</a></td>
+                        <td><a href="#" onClick={_ => this.cleanSubmission(sub.id)}>Clean</a></td>
+                        {
+                            // TODO: Show only to the teachers
+                        }
                     </tr>)}
                 </tbody>
             </table>
