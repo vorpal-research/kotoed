@@ -80,6 +80,7 @@ class GlobalConfig : Configuration() {
     val Processors by ProcessorsConfig()
 
     class RootConfig : Configuration() {
+        val Host: String by "http://localhost"
         val Port: Int by 9000
     }
 

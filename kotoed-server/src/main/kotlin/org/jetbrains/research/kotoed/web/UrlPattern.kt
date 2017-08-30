@@ -18,6 +18,8 @@ object UrlPattern {
         const val Logout = "/logout"
         const val OAuthStart = "/login/oauth/start/:providerName"
         const val OAuthCallback = "/login/oauth/callback/:providerName"
+        const val ResetPassword = "/resetPassword"
+        const val RestorePassword = "/restorePassword/:uid"
     }
 
     object AuthHelpers {

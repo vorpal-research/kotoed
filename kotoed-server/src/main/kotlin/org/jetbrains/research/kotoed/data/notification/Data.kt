@@ -5,11 +5,13 @@ import org.jetbrains.research.kotoed.util.Jsonable
 data class CurrentNotificationsQuery(val denizenId: Int): Jsonable
 
 enum class NotificationService{ EMAIL }
+enum class MessageFormat { PLAIN, HTML }
 
 data class NotificationMessage(
         val receiverId: Int,
         val service: NotificationService,
         val subject: String,
+        val contentsFormat: MessageFormat,
         val contents: String
 ): Jsonable
 
