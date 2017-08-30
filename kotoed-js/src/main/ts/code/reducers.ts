@@ -281,10 +281,12 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             editAllComments: false,
             changeStateOwnComments: false,
             changeStateAllComments: false,
-            postComment: false
+            postComment: false,
+            changeState: false,
+            resubmit: false
         }
     },
-    loading: true
+    loading: true,
 };
 
 export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabilitiesState, action: Action) => {

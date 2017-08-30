@@ -14,25 +14,50 @@ import "less/util.less"
 import {makeAggregatesLabel} from "../../code/util/filetree";
 import {SubmissionCreate} from "../../submissions/create";
 import {DbRecordWrapper} from "../../data/verification";
+import {isSubmissionAvalable} from "../../submissions/util";
+import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url";
+import {WithId} from "../../data/common";
+import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<SubmissionToRead>,
-    history: {
-        items: Array<SubmissionToRead>
-        onMore: (latestId: number) => void
-    },
+    loading: boolean,
+    history: Array<SubmissionToRead>,
     permissions: {
         changeState: boolean,
         resubmit: boolean
     },
     comments: CommentAggregate
-    onResubmit: () => void
+}
+
+export interface SubmissionDetailsCallbacks {
+    history: {
+        onMore: (latestId: number) => void
+    },
+    onResubmit: (newId: number) => void
     onClose: () => void
     onReopen: () => void
     onMount: () => void
 }
 
-export default class SubmissionDetails extends React.Component<SubmissionDetailsProps> {
+export default class SubmissionDetails extends React.Component<SubmissionDetailsProps & SubmissionDetailsCallbacks & WithId> {
+
+
+    private renderResultsLink = (): JSX.Element => {
+        if (isSubmissionAvalable({...this.props.submission.record, verificationData: this.props.submission.verificationData}))
+            return <a href={makeSubmissionResultsUrl(this.props.submission.record.id)}>Link</a>;
+        else
+            return <span className={"grayed-out"}>N/A</span>
+    };
+
+
+    private renderReviewList = (): JSX.Element => {
+        if (isSubmissionAvalable({...this.props.submission.record, verificationData: this.props.submission.verificationData}))
+            return <a href={makeSubmissionReviewUrl(this.props.submission.record.id)}>Link</a>;
+        else
+            return <span className={"grayed-out"}>N/A</span>
+    };
+
 
     private renderParentLink = () => {
         if (this.props.submission.record.parentSubmissionId === undefined)
@@ -48,27 +73,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         })}>Link</a>;
     };
 
-    private renderResultsLink = () => {
-        return <a href={Kotoed.UrlPattern.reverse(
-            Kotoed.UrlPattern.Submission.Results, {
-                id: this.props.submission.record.id
-            })
-        }>Link</a>;
-    };
-
-    private renderReviewLink = () => {
-        return <a href={Kotoed.UrlPattern.reverse(
-            Kotoed.UrlPattern.CodeReview.Index, {
-                id: this.props.submission.record.id
-            })
-        }>Link</a>;
-    };
-
     private renderLabel = (): JSX.Element | null => {
         switch(this.props.submission.verificationData.status) {
             case "Unknown":
             case "NotReady":
-                return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>
+                return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
             case "Invalid":
                 return <Label bsStyle="danger">Invalid</Label>;
             case "Processed":
@@ -82,7 +91,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                     case "open":
                         return <Label bsStyle="success">Open</Label>;
                     case "pending":
-                        return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>
+                        return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
                     default:
                         return null
                 }
@@ -92,7 +101,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
     private renderResubmit = () => {
         if (this.props.permissions.resubmit)
             return <SubmissionCreate
-                onCreate={this.props.onResubmit}
+                onCreate={(id) => this.props.onResubmit(id)}
                 projectId={this.props.submission.record.projectId}
                 parentSubmission={this.props.submission.record.id}/>;
         else
@@ -108,11 +117,22 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" bsSize="lg"  onClick={this.props.onReopen}>Reopen</Button>;
     };
 
+    componentDidMount() {
+        this.props.onMount()
+    }
+
     render() {
+        if (this.props.loading) {
+            return <div style={{
+                position: "relative",
+                width: "100%",
+                height: "500px"
+            }}>
+                <SpinnerWithVeil/>
+            </div>;
+        }
+
         return <div>
-            <Row>
-                <Alert bsStyle="danger"><h1>This page is a sketch with totally dummy data</h1></Alert>
-            </Row>
             <Row>
                 <div className="pull-right">
                     <ButtonToolbar>
@@ -125,6 +145,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             <Row>
                 <div className="vspace-10"/>
             </Row>
+
             <Row>
                 <Well>
                     <h3>{`Submission #${this.props.submission.record.id}`}{" "}{this.renderLabel()}</h3>
@@ -156,16 +177,17 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                             </tr>
                             <tr>
                                 <td className="col-md-3">Review</td>
-                                <td className="col-md-9">{this.renderReviewLink()}{" "}{makeAggregatesLabel(this.props.comments)}</td>
+                                <td className="col-md-9">{this.renderReviewList()}{" "}{makeAggregatesLabel(this.props.comments)}</td>
                             </tr>
                         </tbody>
                     </Table>
                 </Well>
             </Row>
-            <Row>
+            {this.props.history.length > 0 && <Row>
                 <h3>Older versions</h3>
-                <SubmissionHistory onMore={this.props.history.onMore} items={this.props.history.items}/>
-            </Row>
+                {/*TODO Verification data here???*/}
+                <SubmissionHistory onMore={this.props.history.onMore} items={this.props.history}/>
+            </Row>}
         </div>
     }
 }

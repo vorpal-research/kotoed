@@ -2,79 +2,42 @@ import * as React from "react";
 import {render} from "react-dom";
 import {SubmissionToRead} from "../data/submission";
 import SubmissionDetails from "./components/SubmissionDetails";
+import {applyMiddleware, combineReducers, createStore} from "redux";
+import {routerMiddleware} from "react-router-redux";
+import thunk from "redux-thunk";
+import {Provider} from "react-redux";
+import {Kotoed} from "../util/kotoed-api";
+import snafuDialog from "../util/snafuDialog";
+import SubmissionDetailsContainer from "./containers/SubmissionDetailsContainer";
+import {reducer} from "./reducers";
 
-const items: Array<SubmissionToRead> = [
-    {
-        id: 1,
-        datetime: 0,
-        parentSubmissionId: 2,
-        projectId: 42,
-        state: "open",
-        revision: "co5fefe"
-    },
-    {
-        id: 2,
-        datetime: 0,
-        parentSubmissionId: 3,
-        projectId: 42,
-        state: "open",
-        revision: "co5fefe"
-    },
-    {
-        id: 3,
-        datetime: 0,
-        parentSubmissionId: 4,
-        projectId: 42,
-        state: "open",
-        revision: "co5fefe"
-    },
-    {
-        id: 4,
-        datetime: 0,
-        parentSubmissionId: 5,
-        projectId: 42,
-        state: "open",
-        revision: "co5fefe"
-    },
-    {
-        id: 5,
-        datetime: 0,
-        parentSubmissionId: 6,
-        projectId: 42,
-        state: "open",
-        revision: "co5fefe"
-    }
-];
+export const store = createStore(
+    reducer,
+    applyMiddleware(thunk)
+);
+
+let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Submission.Index, window.location.pathname);
+if (params == null) {
+    snafuDialog();
+    throw new Error("Cannot resolve submission id")
+}
+
+let id = params.get("id");
+
+if (id === undefined) {
+    snafuDialog();
+    throw new Error("Cannot resolve submission id")
+}
+
+let id_ = parseInt(id);
+
+if (isNaN(id_)) {
+    snafuDialog();
+    throw new Error("Cannot resolve submission id")
+}
 
 render(
-    <SubmissionDetails
-        submission={{
-            record: {
-                id: 42,
-                parentSubmissionId: 43,
-                revision: "covfefe",
-                state: "closed",
-                datetime: 0,
-                projectId: 42
-            },
-            verificationData: {
-                status: "Invalid"
-            }
-        }}
-        history={{
-            onMore: () => console.log("More clicked"), items: items
-        }}
-        permissions={{
-            resubmit: true,
-            changeState: true
-        }}
-        comments={{
-            open: 42,
-            closed: 25
-        }}
-        onResubmit={() => console.log("Resubmit")}
-        onReopen={() => console.log("Reopen")}
-        onClose={() => console.log("Close")}
-        onMount={() => {}}
-    />,
+    <Provider store={store}>
+        <SubmissionDetailsContainer id={id_}/>
+    </Provider>,
     document.getElementById("submission-details-app"));
