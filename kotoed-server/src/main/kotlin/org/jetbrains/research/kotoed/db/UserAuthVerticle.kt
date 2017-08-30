@@ -62,6 +62,23 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
         } ?: throw IllegalStateException("Database remoteError")
     }
 
+    @JsonableEventBusConsumerFor(Address.User.Auth.SetPassword)
+    suspend fun consumeChangePassword(message: LoginMsg): DenizenUnsafeRecord {
+        val newSalt = authProvider.generateSalt()
+        val newPassword = authProvider.computeHash(message.password, newSalt);
+
+        return db {
+            with(theTable) {
+                update(this).set(PASSWORD, newPassword)
+                        .set(SALT, newSalt)
+                        .where(DENIZEN_ID.eq(message.denizenId))
+                        .returning()
+                        .fetchOne()
+                        ?.cleanup()
+            }
+        } ?: throw IllegalStateException("Database remoteError")
+    }
+
     @JsonableEventBusConsumerFor(Address.User.Auth.Login)
     suspend fun consumeLogin(msg: JsonObject): JsonObject {
         fromJson<LoginMsg>(msg)

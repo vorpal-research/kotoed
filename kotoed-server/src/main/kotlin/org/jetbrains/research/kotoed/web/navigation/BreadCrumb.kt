@@ -43,7 +43,10 @@ fun ProjectBreadCrumbElement(active: Boolean,
 
 
 fun SubmissionBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
-        BreadCrumbElement(text = "Submission #${submission.id}", active = active, href=UrlPattern.NotImplemented) // TODO
+        BreadCrumbElement(
+                text = "Submission #${submission.id}",
+                active = active,
+                href=UrlPattern.reverse(UrlPattern.Submission.Index, mapOf("id" to submission.id))) // TODO
 
 fun SubmissionResultBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
         BreadCrumbElement(

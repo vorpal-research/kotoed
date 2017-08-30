@@ -9,7 +9,7 @@ import {FileNode} from "../state/filetree";
 import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate} from "../remote/comments";
-import {makeSecondaryLabel} from "../util/filetree";
+import {makeAggregatesLabel} from "../util/filetree";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 import {ScrollTo} from "../state/index";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
@@ -145,7 +145,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                         <div className="lost-found-button-container">
                             <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
                                 Lost + Found {" "}
-                                {makeSecondaryLabel(
+                                {makeAggregatesLabel(
                                     this.props.lostFound.aggregate
                                 )}
                             </Button>

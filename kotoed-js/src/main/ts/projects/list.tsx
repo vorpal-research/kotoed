@@ -45,7 +45,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <table>
                 <tbody>
                     {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
-                        <td><a href={Kotoed.UrlPattern.NotImplemented}>{`#${sub.id}`}</a></td>
+                        <td><a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: this.props.id})}>{`#${sub.id}`}</a></td>
                         <td><a href={makeSubmissionReviewUrl(sub.id)}>Review</a></td>
                         <td><a href={makeSubmissionResultsUrl(sub.id)}>Results</a></td>
                     </tr>)}
