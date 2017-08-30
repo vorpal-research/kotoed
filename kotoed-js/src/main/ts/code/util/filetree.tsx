@@ -1,5 +1,5 @@
 import * as React from "react"
-import {Button, Panel, Label} from "react-bootstrap";
+import {Button, Panel, Label, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {File} from "../remote/code";
 import {Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
@@ -52,15 +52,20 @@ export function makeFileNode(file: File) {
     return FileNode(makeFileTreeProps(file));
 }
 
-export function makeSecondaryLabel(aggregate: CommentAggregate) {
+export function makeAggregatesLabel(aggregate: CommentAggregate) {
     if (aggregate.open == 0 && aggregate.closed == 0)
         return undefined;
 
     let labelClass = aggregate.open === 0 ? "default" : "danger";
 
-    return (<Label className="comments-counter" bsStyle={labelClass}>
-        {aggregate.open + aggregate.closed}
-    </Label>)
+    let tooltipText = `Unresolved comments: ${aggregate.open} Resolved comments: ${aggregate.closed}`;
+
+    return (
+        <OverlayTrigger placement="right" overlay={<Tooltip id="comment-aggregates-tooltip">{tooltipText}</Tooltip>}>
+            <Label className="comments-counter" bsStyle={labelClass}>
+                {aggregate.open + aggregate.closed}
+            </Label>
+        </OverlayTrigger>)
 }
 
 
@@ -145,7 +150,7 @@ export function addAggregates(root: FileNode, aggregates: CommentAggregates): Fi
             node.patchAt(nodePath, (patchedNode: FileNode) => {
                 let data = patchedNode.getDataCopy();
                 data.aggregate = updateAggregate(data.aggregate, fileAgg.aggregate);
-                let secondaryLabel = makeSecondaryLabel(data.aggregate);
+                let secondaryLabel = makeAggregatesLabel(data.aggregate);
                 return {
                     data,
                     secondaryLabel
@@ -163,7 +168,7 @@ export function updateAggregates(root: FileNode, path: string, delta: CommentAgg
     return root.patchTowards(nodePath, (node: FileNode) => {
         let data = node.getDataCopy();
         data.aggregate = updateAggregate(data.aggregate, delta);
-        let secondaryLabel = makeSecondaryLabel(data.aggregate);
+        let secondaryLabel = makeAggregatesLabel(data.aggregate);
         return {
             data,
             secondaryLabel
