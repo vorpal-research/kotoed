@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.Tables.*
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -270,6 +271,24 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                 ).id.let { VerificationData.Invalid(it) }
             }
         }
+    }
+
+    suspend override fun doClean(data: JsonObject): VerificationData {
+        val sub: SubmissionRecord = data.toRecord()
+
+        dbWithTransaction {
+            deleteFrom(SUBMISSION_STATUS)
+                    .where(SUBMISSION_STATUS.SUBMISSION_ID.eq(sub.id))
+                    .executeAsync()
+            deleteFrom(SUBMISSION_RESULT)
+                    .where(SUBMISSION_RESULT.SUBMISSION_ID.eq(sub.id))
+                    .executeAsync()
+            deleteFrom(BUILD)
+                    .where(BUILD.SUBMISSION_ID.eq(sub.id))
+                    .executeAsync()
+        }
+
+        return VerificationData.Unknown
     }
 
 }
