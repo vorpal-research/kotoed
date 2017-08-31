@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
+import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
@@ -161,6 +162,31 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.CommentAggregates)
     suspend fun handleCommentAggregates(message: SubmissionRecord): CommentAggregates =
             dbFindAsync(SubmissionCommentRecord().apply { submissionId = message.id }).aggregateByFile()
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.CommentsTotal)
+    suspend fun handleCommentsTotal(message: SubmissionRecord): CommentAggregate =
+            CommentAggregate(
+                    mutableMapOf(
+                            SubmissionCommentState.open to
+                                    dbCountAsync(
+                                            ComplexDatabaseQuery(Tables.SUBMISSION_COMMENT)
+                                                    .find(SubmissionCommentRecord().apply {
+                                                        submissionId = message.id
+                                                        state = SubmissionCommentState.open
+                                                    })).getInteger("count"),
+                            SubmissionCommentState.closed to
+                                    dbCountAsync(
+                                            ComplexDatabaseQuery(Tables.SUBMISSION_COMMENT)
+                                                    .find(SubmissionCommentRecord().apply {
+                                                        submissionId = message.id
+                                                        state = SubmissionCommentState.closed
+                                                    })).getInteger("count")
+
+                            )
+
+            )
+
+
 
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
