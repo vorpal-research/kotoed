@@ -40,7 +40,7 @@ export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable:
     switch (status) {
         case "NotReady":
         case "Unknown":
-            return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
+            return pendingIsAvailable ? <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/> : null;
         case "Invalid":
             return <OverlayTrigger placement="right" overlay={<Tooltip id="tooltip">This submission is invalid</Tooltip>}>
                     <span className="text-danger">
@@ -50,7 +50,7 @@ export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable:
         case "Processed":
             switch (state) {
                 case "pending":
-                    return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
+                    return pendingIsAvailable ? <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/> : null;
                 case "invalid":
                     return <OverlayTrigger placement="right" overlay={<Tooltip id="tooltip">This submission is invalid</Tooltip>}>
                         <span className="text-danger">
