@@ -1,15 +1,15 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {DbRecordWrapper} from "../data/verification";
-import {SubmissionToRead} from "../data/submission";
-import {SubmissionPermissions} from "./remote";
+import {SubmissionState, SubmissionToRead} from "../data/submission";
+import {SubmissionPermissions, SubmissionUpdateRequest} from "./remote";
 import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {
     fetchSubmission as fetchSubmissionRemote,
     fetchPermissions as fetchPermissionsRemote,
     fetchHistory as fetchHistoryRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
-
+    updateSubmission as updateSubmissionRemote,
 } from "./remote";
 import {Kotoed} from "../util/kotoed-api";
 import {isStatusFinal} from "../views/components/searchWithVerificationData";
@@ -18,19 +18,6 @@ import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
 
 const actionCreator = actionCreatorFactory();
-
-interface SignInPayload {
-    username: string
-    password: string
-    oAuthProvider?: string
-}
-
-interface SignUpPayload {
-    username: string
-    password: string
-    email: string|null
-    oAuthProvider?: string
-}
 
 
 export const submissionFetch = actionCreator.async<number, DbRecordWrapper<SubmissionToRead>, {}>('SUB_FETCH');
@@ -78,19 +65,33 @@ export function navigateToNew(submissionId: number) {
     };
 }
 
-export function initialize(id: number) {
+function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionToRead>) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
-        dispatch(submissionFetch.started(id));
-        let sub = await fetchSubmissionRemote(id);
-        dispatch(submissionFetch.done({
+        let sub = initial;
+
+        if (isStatusFinal(sub.verificationData.status))
+            return;
+
+        dispatch(permissionsFetch.done({
             params: id,
-            result: sub
+            result: {
+                resubmit: false,
+                changeState: false,
+                editAllComments: false,
+                changeStateOwnComments: false,
+                postComment: false,
+                changeStateAllComments: false,
+                editOwnComments: false
+            }
+        }));
+        dispatch(commentsTotalFetch.done({
+            params: id,
+            result: {
+                open: 0,
+                closed: 0
+            }
         }));
 
-        await fetchPermissions(id)(dispatch); // TODO do we need it here?
-
-        if (sub.record.parentSubmissionId)
-            await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
         while (!isStatusFinal(sub.verificationData.status)) {
             await sleep(15000);
@@ -113,6 +114,40 @@ export function initialize(id: number) {
         }
 
         await fetchPermissions(id)(dispatch); // Permissions can be changed after status has changed
+    }
+}
+
+export function initialize(id: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionFetch.started(id));
+        let sub = await fetchSubmissionRemote(id);
+        dispatch(submissionFetch.done({
+            params: id,
+            result: sub
+        }));
+
+        await fetchPermissions(id)(dispatch);
+
+        if (sub.record.parentSubmissionId)
+            await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
+
+        pollSubmissionIfNeeded(id, sub)(dispatch)
+
+    }
+}
+
+export function updateSubmission(payload: SubmissionUpdateRequest) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionFetch.started(payload.id));
+        let sub = await updateSubmissionRemote(payload.id, payload.state);
+        dispatch(submissionFetch.done({
+            params: payload.id,
+            result: sub
+        }));
+
+        await fetchPermissions(payload.id)(dispatch);
+
+        pollSubmissionIfNeeded(payload.id, sub)(dispatch)
 
     }
 }

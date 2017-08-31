@@ -55,6 +55,7 @@ export namespace Generated {
                 List: "kotoed.api.submission.list",
                 ListCount: "kotoed.api.submission.list.count",
                 Read: "kotoed.api.submission.read",
+                Update: "kotoed.api.submission.update",
                 Code: {
                     Download: "kotoed.api.submission.code.download",
                     List: "kotoed.api.submission.code.list",

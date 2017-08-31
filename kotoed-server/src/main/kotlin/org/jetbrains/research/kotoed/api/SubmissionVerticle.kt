@@ -48,6 +48,30 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(res, status)
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Update)
+    suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper {
+        val existing = fetchByIdAsync(Tables.SUBMISSION, submission.id)
+
+        submission.apply {
+            datetime = existing.datetime
+            parentSubmissionId = existing.parentSubmissionId
+            projectId = existing.projectId
+            revision = existing.revision
+            state = if (existing.state != SubmissionState.open && existing.state != SubmissionState.closed ||
+                            state != SubmissionState.open && state != SubmissionState.closed)
+                existing.state
+            else
+                state
+
+        }
+
+        val updated = dbUpdateAsync(submission)
+
+        val vd = dbProcessAsync(updated)
+
+        return DbRecordWrapper(updated, vd)
+    }
+
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord {
         var fst = dbFindAsync(SubmissionRecord().apply { parentSubmissionId = submission.id }).firstOrNull()
         while (fst != null) {
