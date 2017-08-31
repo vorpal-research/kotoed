@@ -87,7 +87,7 @@ export function initialize(id: number) {
             result: sub
         }));
 
-        await fetchPermissions(id)(dispatch);
+        await fetchPermissions(id)(dispatch); // TODO do we need it here?
 
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
@@ -111,5 +111,8 @@ export function initialize(id: number) {
                 result: comments
             }));
         }
+
+        await fetchPermissions(id)(dispatch); // Permissions can be changed after status has changed
+
     }
 }
