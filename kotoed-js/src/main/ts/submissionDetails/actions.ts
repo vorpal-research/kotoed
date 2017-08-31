@@ -16,6 +16,7 @@ import {isStatusFinal} from "../views/components/searchWithVerificationData";
 import {sleep} from "../util/common";
 import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
+import {pollDespairing} from "../util/poll";
 
 const actionCreator = actionCreatorFactory();
 
@@ -93,15 +94,21 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
         }));
 
 
-        while (!isStatusFinal(sub.verificationData.status)) {
-            await sleep(15000);
-            dispatch(submissionFetch.started(id));
-            sub = await fetchSubmissionRemote(id);
+        function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
             dispatch(submissionFetch.done({
                 params: id,
-                result: sub
+                result: res
             }));
+            sub = res;
         }
+
+        await pollDespairing({
+            action: () => fetchSubmissionRemote(id),
+            isGoodEnough: (sub) => isStatusFinal(sub.verificationData.status),
+            onIntermediate: dispatchDone,
+            onFinal: dispatchDone,
+            onGiveUp: dispatchDone
+        });
 
         // We wont fetch anything for invalid sub
         if (isSubmissionAvalable({...sub.record, verificationData: sub.verificationData})) {
