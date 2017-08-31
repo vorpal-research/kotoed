@@ -1,21 +1,49 @@
 import {sleep} from "./common";
 
 export abstract class PollingStrategy {
-    abstract shouldGiveUp(): boolean
+    private readonly shouldGiveUpExt: () => boolean;
+    constructor(shouldGiveUp: () => boolean = () => false) {
+        this.shouldGiveUpExt = shouldGiveUp;
+    }
+    /**
+     * Should we give up even if we already have good enough result?
+     * If your polling strategy is based on states based on iterations,
+     * then you should NOT update this state here because it's not guaranteed
+     * to be called exactly once per iteration of polling.
+     */
+    shouldAbruptlyGiveUp(): boolean {
+        return this.shouldGiveUpExt();
+    }
+
+    /**
+     * Should we give up even if we don't have good enough result?
+     *
+     * If your polling strategy is based on states based on iterations,
+     * then you should NOT update this state here because it's not guaranteed
+     * to be called exactly once per iteration of polling.
+     */
+    shouldGiveUp(): boolean {
+        return this.shouldAbruptlyGiveUp();
+    }
+
+    /**
+     * Wait till next iteration.
+     *
+     * This method is called EXACTLY ONCE PER ITERATION, so it's a good place to update your iteration-based state.
+     */
     abstract async wait(): Promise<void>
+}
+
+interface SimplePollingStrategyParams {
+    interval?: number,
+    shouldGiveUp?: () => boolean
 }
 
 export class SimplePollingStrategy extends PollingStrategy {
     private readonly interval: number;
-    private readonly shouldGiveUpExt: () => boolean;
-    constructor(interval: number, shouldGiveUp: () => boolean = () => false) {
-        super();
+    constructor({interval = 1000, shouldGiveUp = () => false}: SimplePollingStrategyParams) {
+        super(shouldGiveUp);
         this.interval = interval;
-        this.shouldGiveUpExt = shouldGiveUp;
-    }
-
-    shouldGiveUp() {
-        return this.shouldGiveUpExt();
     }
 
     async wait() {
@@ -36,7 +64,6 @@ export class DespairingPollingStrategy extends PollingStrategy {
     private readonly baseInterval: number;
     private readonly despairDivider: number;
     private readonly maxDespairDegree: number;
-    private readonly shouldGiveUpExt: () => boolean;
     private currentIteration: number = 0;
     private currentDespairDegree: number = 0;
 
@@ -48,17 +75,16 @@ export class DespairingPollingStrategy extends PollingStrategy {
             maxDespairDegree = 6, // 2**6 = 64s,
             shouldGiveUp = () => false
         }: DespairingPollingStrategyParams) {
-        super();
+        super(shouldGiveUp);
         this.despairFactor = despairFactor;
         this.baseInterval = baseInterval;
         this.despairDivider = despairDivider;
         this.maxDespairDegree = maxDespairDegree;
-        this.shouldGiveUpExt = shouldGiveUp;
     }
 
 
     shouldGiveUp(): boolean {
-        return this.currentDespairDegree > this.maxDespairDegree || this.shouldGiveUpExt();
+        return this.currentDespairDegree > this.maxDespairDegree || this.shouldAbruptlyGiveUp();
     }
 
     async wait(): Promise<void> {
@@ -73,13 +99,13 @@ export class DespairingPollingStrategy extends PollingStrategy {
 
 export async function poll<T>(
     {
-        action,
+        action,  // This action is performed AT LEAST ONCE, so we have at least one result from it.
         isGoodEnough = () => true,
         onIntermediate = () => {},
         beforeAction = () => {},
         onFinal = () => {},
         onGiveUp = () => {},
-        strategy = new SimplePollingStrategy(1000)
+        strategy = new SimplePollingStrategy({})
     } : {
         action: () => Promise<T>,
         isGoodEnough?: (res: T) => boolean,
@@ -94,17 +120,31 @@ export async function poll<T>(
     let iter = 0;
     while (true) {
         beforeAction();
+        // Action is always performed at least once. And we have at least one intermediate result.
         intermediate = await action();
+
+        // Does someone still care about the result?
+        if (strategy.shouldAbruptlyGiveUp()) {
+            gaveUp = true;
+            break;
+        }
+        // Is it good enough?
+        if (isGoodEnough(intermediate))
+            break;
+
+        // Should we try again?
         if (strategy.shouldGiveUp()) {
             gaveUp = true;
             break;
         }
-        if (isGoodEnough(intermediate))
-            break;
-
         // We won't call onIntermediate on our last result
         onIntermediate(intermediate);
         await strategy.wait();
+        // Should we try again still?
+        if (strategy.shouldGiveUp()) {
+            gaveUp = true;
+            break;
+        }
         iter++;
     }
     if (!gaveUp) {
