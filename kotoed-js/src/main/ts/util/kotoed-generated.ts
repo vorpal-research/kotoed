@@ -106,7 +106,7 @@ export namespace Generated {
             Index: "/codereview/:id/*",
         },
         Comment: {
-            ById: "/views/comment/id/:id",
+            ById: "/redirect/comment/:id",
             Search: "/views/comment/search",
         },
         Course: {
@@ -115,6 +115,9 @@ export namespace Generated {
         Project: {
             Index: "/project/:id",
             Search: "/views/project/search",
+        },
+        Redirect: {
+            ById: "/redirect/:entity/:id",
         },
         Submission: {
             Index: "/submission/:id",
