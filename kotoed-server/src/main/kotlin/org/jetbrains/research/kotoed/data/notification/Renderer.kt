@@ -19,6 +19,7 @@ private fun renderCommentClosed(id: Int, body: JsonObject): RenderedData {
     val link = LinkData("comment", body["id"].toString())
     return RenderedData(id, node, link)
 }
+
 private fun renderCommentReopened(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
@@ -28,6 +29,7 @@ private fun renderCommentReopened(id: Int, body: JsonObject): RenderedData {
     val link = LinkData("comment", body["id"].toString())
     return RenderedData(id, node, link)
 }
+
 private fun renderNewComment(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
@@ -37,6 +39,7 @@ private fun renderNewComment(id: Int, body: JsonObject): RenderedData {
     val link = LinkData("comment", body["id"].toString())
     return RenderedData(id, node, link)
 }
+
 private fun renderCommentRepliedTo(id: Int, body: JsonObject): RenderedData {
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
@@ -47,12 +50,22 @@ private fun renderCommentRepliedTo(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
+private fun renderNewSubmissionResults(id: Int, body: JsonObject): RenderedData {
+    val node = createHTML().div {
+        +"New results for "
+        strong { +"submission #${body.safeNav("submissionId")}" }
+    }
+    val link = LinkData("submissionResults", body.safeNav("submissionId").toString())
+    return RenderedData(id, node, link)
+}
+
 internal val renderers by lazy {
     mapOf(
             NotificationType.COMMENT_CLOSED to ::renderCommentClosed,
             NotificationType.COMMENT_REOPENED to ::renderCommentReopened,
             NotificationType.NEW_COMMENT to ::renderNewComment,
-            NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo
+            NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo,
+            NotificationType.NEW_SUBMISSION_RESULTS to ::renderNewSubmissionResults
     )
 }
 
