@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.buildbot.project.CreateProject
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
+import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -25,9 +26,14 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         val projectRecord: ProjectRecord = data?.toRecord()
                 ?: throw IllegalArgumentException("Cannot verify $data")
 
+        val ownerRecord = dbFetchAsync(
+                DenizenRecord().apply { id = projectRecord.denizenId })
+
         val schedulerLocator = DimensionLocator(
                 "forceschedulers",
-                Kotoed2Buildbot.projectName2schedulerName(projectRecord.name))
+                Kotoed2Buildbot.projectName2schedulerName(
+                        Kotoed2Buildbot.asBuildbotProjectName(
+                                ownerRecord.denizenId, projectRecord.name)))
 
         val response = tryOrNull {
             wc.head(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Root + schedulerLocator)
@@ -60,12 +66,16 @@ class ProjectProcessorVerticle : ProcessorVerticle<ProjectRecord>(Tables.PROJECT
         val projectRecord: ProjectRecord = data.toRecord()
 
         val courseRecord = dbFetchAsync(
-                CourseRecord().setId(projectRecord.courseId))
+                CourseRecord().apply { id = projectRecord.courseId })
+
+        val ownerRecord = dbFetchAsync(
+                DenizenRecord().apply { id = projectRecord.denizenId })
 
         val createProject = CreateProject(
                 projectRecord.id,
                 courseRecord.name,
-                projectRecord.name,
+                Kotoed2Buildbot.asBuildbotProjectName(
+                        ownerRecord.denizenId, projectRecord.name),
                 projectRecord.repoUrl,
                 projectRecord.repoType
         )
