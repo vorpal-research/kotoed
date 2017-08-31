@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.buildbot.util
 
+import com.ibm.icu.text.Transliterator
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.ext.web.client.HttpRequest
@@ -27,4 +28,9 @@ object Kotoed2Buildbot {
 
     fun projectName2schedulerName(projectName: String) =
             "scheduler_${string2identifier(projectName)}"
+
+    val trans: Transliterator = Transliterator.getInstance("NFC; Any-Latin; Latin-ASCII")
+
+    fun asBuildbotProjectName(denizenName: String, projectName: String): String =
+            trans.transliterate("${denizenName}_${projectName}")
 }
