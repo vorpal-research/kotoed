@@ -58,7 +58,7 @@ export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
             this.setState({currentResults: results, touched: true}, () => oldState = this.state);
         };
 
-        pollDespairing({
+        await pollDespairing({
             action: this.doQueryData,
             isGoodEnough: this.isGoodEnough,
             onFinal: handleResult,
