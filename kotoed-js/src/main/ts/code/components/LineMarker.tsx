@@ -8,6 +8,8 @@ import {List} from "immutable";
 import {Comment} from "../state/comments";
 import {LineWidget} from "codemirror";
 import {BaseCommentToRead} from "../../data/comment";
+import {CommentAggregate} from "../remote/comments";
+import {makeAggregatesLabel} from "../util/filetree";
 
 interface LineMarkerProps {
     canPostComment: boolean
@@ -54,12 +56,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     private getLabelExpanedClass = () => {
         return this.state.expanded ? "review-shown" : "review-hidden";
     };
-    
-    private getLabelStyle = () => {
-        return (this.state.expanded || this.props.comments.every((c: Comment) => c.state === "closed")) ?
-            "default" :
-            "danger";
-    };
+
     
     handleLineWidgetChanged = () => {
         if (this.widget)
@@ -123,13 +120,14 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     renderCounter() {
+        let agg: CommentAggregate = {
+            open: this.props.comments.filter((c: Comment) => c.state === "open").count(),
+            closed: this.props.comments.filter((c: Comment) => c.state === "closed").count()
+        };
+        let label =  makeAggregatesLabel(agg) || null;
         return (
-            <div className="comments-counter-wrapper">
-                <Label className={`comments-counter ${this.getLabelExpanedClass()}`}
-                       bsStyle={this.getLabelStyle()}
-                       onClick={this.onClick}>
-                    {this.props.comments.size}
-                </Label>
+            <div className="comments-counter-wrapper" onClick={this.onClick}>
+                {label}
             </div>
         );
     }
