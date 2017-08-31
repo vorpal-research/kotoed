@@ -5,6 +5,8 @@ import {OverlayTrigger, Glyphicon, Tooltip} from "react-bootstrap"
 import {Submission} from "../data/submission";
 import {SubmissionWithVer} from "./SubmissionComponent";
 
+import "less/util.less"
+
 export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): boolean {
     let {status} = sub.verificationData;
     let {state} = sub;
@@ -61,7 +63,7 @@ export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable:
                     return null;
                 case "closed":
                     return <OverlayTrigger placement="right" overlay={<Tooltip id="tooltip">This submission is closed</Tooltip>}>
-                        <span className="text-danger">
+                        <span className="grayed-out">
                             <Glyphicon glyph="lock"/>
                         </span>
                     </OverlayTrigger>;

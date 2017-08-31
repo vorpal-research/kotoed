@@ -36,6 +36,7 @@ object Address {
             const val Read = "kotoed.api.submission.read"
             const val Last = "kotoed.api.submission.last"
             const val Create = "kotoed.api.submission.create"
+            const val Update = "kotoed.api.submission.update"
             const val Comments = "kotoed.api.submission.comments"
             const val CommentAggregates = "kotoed.api.submission.commentAggregates"
             const val CommentsTotal = "kotoed.api.submission.commentsTotal"
