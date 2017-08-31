@@ -123,6 +123,7 @@ export interface SearchTableState<DataType> extends SearchBarState {
     pageCount: number,
     currentResults: Array<DataType>
     touched: boolean
+    inProgress: boolean
 }
 
 interface SearchQuery {
@@ -170,12 +171,15 @@ export class SearchTable<DataType, QueryType = {}> extends
 
         this.setPrivateFields(props);
 
+        let text = QueryString.parse(location.hash).text || "";
+        let currentPage = parseInt(QueryString.parse(location.hash).currentPage) || 0;
         this.state = {
-            text: QueryString.parse(location.hash).text || "",
-            currentPage: parseInt(QueryString.parse(location.hash).currentPage) || 0,
+            text,
+            currentPage,
             pageCount: 0,
             currentResults: [],
-            touched: false
+            touched: false,
+            inProgress: this.shouldPerformInitialSearch(text, currentPage)
         };
     }
 
@@ -226,20 +230,34 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     onPageChanged = (page: number) => {
         page = Math.round(Math.max(0, Math.min(page, this.state.pageCount - 1)));
-        this.setState({currentPage: page}, this.queryData)
+        this.setState({currentPage: page}, () => {
+            this.query(false)
+        })
     };
+
+    query = (withCount: boolean = true) => {
+        this.setState({inProgress: true}, async () => {
+            let promises = [this.queryData()];
+            if (withCount) {
+                promises.push(this.queryCount())
+            }
+            await Promise.all(promises);
+            this.setState({inProgress: false});
+        });
+
+
+    };
+
 
     redoSearch = () => {
         this.setState({currentPage: 0}, () => {
-            this.queryCount();
-            this.queryData()
+            this.query()
         });
     };
 
     onSearchStateChanged = (state: SearchBarState) => {
         this.setState({...state, currentPage: 0}, () => {
-            this.queryCount();
-            this.queryData()
+            this.query()
         });
     };
 
@@ -257,8 +275,7 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     componentDidMount() {
         if(this.shouldPerformInitialSearch(this.state.text, this.state.currentPage)) {
-            this.queryCount();
-            this.queryData();
+            this.query();
         }
     }
 
@@ -286,9 +303,22 @@ export class SearchTable<DataType, QueryType = {}> extends
             return <div className="vspace-10"/>
     };
 
+    renderEmptyString = (): JSX.Element => {
+        let str;
+        if (this.state.inProgress)
+            str = "Please wait...";
+        else if (this.state.touched)
+            str = "No results";
+        else
+            str = "Please start typing";
+        return <div className="text-center no-results">
+            {str}
+        </div>
+    };
+
     renderResults = () => {
         if (this.state.currentResults.length === 0)
-            return <div className="text-center no-results">{this.state.touched ? "No results" : "Please start typing"}</div>;
+            return this.renderEmptyString();
         else {
             let resEls = this.state.currentResults.map((result, index) => this.props.elementComponent("result"+index, result));
             let toWrap: Array<JSX.Element>;

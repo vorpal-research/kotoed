@@ -45,8 +45,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
-        launch { process(data) }
-        return cache[id].bang()
+        return cache[id].bang().also {
+            launch { process(data) }
+        }
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "verifyAddress")
@@ -76,8 +77,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
-        launch { clean(data) }
-        return cache[id].bang()
+        return cache[id].bang().also {
+            launch { clean(data) }
+        }
     }
 
     suspend fun process(data: JsonObject?) {

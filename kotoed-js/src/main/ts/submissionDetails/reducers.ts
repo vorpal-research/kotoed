@@ -1,7 +1,7 @@
 import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {Action} from "redux";
 import {isType} from "typescript-fsa";
-import {historyFetch, permissionsFetch, submissionFetch} from "./actions";
+import {commentsTotalFetch, historyFetch, permissionsFetch, submissionFetch} from "./actions";
 
 const initialState: SubmissionDetailsProps = {
     history: [],
@@ -36,6 +36,8 @@ export function reducer(state: SubmissionDetailsProps = initialState, action: Ac
     } else if (isType(action, historyFetch.done)) {
         let newHistory = [...state.history, ...action.payload.result];
         return {...state, history: newHistory}
+    } else if (isType(action, commentsTotalFetch.done)) {
+        return {...state, comments: action.payload.result}
     }
     return state;
 }

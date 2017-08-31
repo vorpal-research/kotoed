@@ -2,9 +2,9 @@ package org.jetbrains.research.kotoed.data.notification
 
 import org.jetbrains.research.kotoed.util.Jsonable
 
-data class CurrentNotificationsQuery(val denizenId: Int): Jsonable
+data class CurrentNotificationsQuery(val denizenId: Int) : Jsonable
 
-enum class NotificationService{ EMAIL }
+enum class NotificationService { EMAIL }
 enum class MessageFormat { PLAIN, HTML }
 
 data class NotificationMessage(
@@ -13,22 +13,23 @@ data class NotificationMessage(
         val subject: String,
         val contentsFormat: MessageFormat,
         val contents: String
-): Jsonable
+) : Jsonable
 
 enum class NotificationType {
     NEW_COMMENT,
     COMMENT_REPLIED_TO,
     COMMENT_CLOSED,
-    COMMENT_REOPENED
+    COMMENT_REOPENED,
+    NEW_SUBMISSION_RESULTS
 }
 
 data class LinkData(
         val entity: String,
         val id: String
-): Jsonable
+) : Jsonable
 
 data class RenderedData(
         val id: Int,
         val contents: String,
         val linkTo: LinkData
-): Jsonable
+) : Jsonable

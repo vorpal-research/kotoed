@@ -44,6 +44,8 @@
         <suffixtree.version>1.0.2</suffixtree.version>
         <jparsec.version>3.0</jparsec.version>
 
+        <icu.version>59.1</icu.version>
+
         <!--
             Properties overriten in db.properties
         -->
@@ -266,6 +268,12 @@
             <groupId>org.jparsec</groupId>
             <artifactId>jparsec</artifactId>
             <version>${jparsec.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>${icu.version}</version>
         </dependency>
 
     </dependencies>
