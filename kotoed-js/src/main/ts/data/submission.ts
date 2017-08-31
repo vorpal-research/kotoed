@@ -2,7 +2,7 @@
 import {WithId} from "./common";
 import {BloatProject, WithProject} from "./project";
 
-type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
+export type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
 
 export interface Submission {
     datetime: number
@@ -24,5 +24,5 @@ export interface JumboProject extends BloatProject {
 export interface CreateRequest {
     revision: string | null,
     projectId: number,
-    parentSubmission: number | null
+    parentSubmissionId: number | null
 }

@@ -39,7 +39,7 @@ export function guessCmModeForFile(filename: string): CmMode {
 }
 
 export function requireCmMode(mode: CmMode) {
-    if (mode.mode)
+    if (mode.mode && mode.mode !== "null")
         require(`codemirror/mode/${mode.mode}/${mode.mode}`);
 }
 

@@ -3,8 +3,7 @@ import {connect, MapStateToPropsParam} from "react-redux";
 import SubmissionDetails, {SubmissionDetailsCallbacks, SubmissionDetailsProps} from "../components/SubmissionDetails";
 import {Dispatch} from "redux";
 import {WithId} from "../../data/common";
-import {fetchHistory, initialize, navigateToNew} from "../actions";
-
+import {fetchHistory, initialize, navigateToNew, updateSubmission} from "../actions";
 type ContainerProps = WithId
 
 const mapStateToProps = function(store: SubmissionDetailsProps,
@@ -24,10 +23,10 @@ const mapDispatchToProps = function (dispatch: Dispatch<SubmissionDetailsProps>,
             dispatch(navigateToNew(newId))
         },
         onClose: () => {
-            // TODO
+            dispatch(updateSubmission({id: ownProps.id, state: "closed"}))
         },
         onReopen: () => {
-            // TODO
+            dispatch(updateSubmission({id: ownProps.id, state: "open"}))
         },
         onMount: () => {
             dispatch(initialize(ownProps.id))

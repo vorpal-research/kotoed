@@ -3,8 +3,9 @@ import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 import {DbRecordWrapper, WithVerificationData} from "../data/verification";
-import {SubmissionToRead} from "../data/submission";
+import {SubmissionState, SubmissionToRead} from "../data/submission";
 import {WithId} from "../data/common";
+import {CommentAggregate} from "../code/remote/comments";
 
 export interface SubmissionPermissions {
     editOwnComments: boolean
@@ -16,10 +17,22 @@ export interface SubmissionPermissions {
     resubmit: boolean
 }
 
+export interface SubmissionUpdateRequest {
+    id: number,
+    state: SubmissionState
+}
 
 export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<SubmissionToRead>> {
     return eventBus.send<WithId, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Read, {
         id: submissionId
+    })
+}
+
+export async function updateSubmission(submissionId: number,
+                                       state: SubmissionState): Promise<DbRecordWrapper<SubmissionToRead>> {
+    return eventBus.send<SubmissionUpdateRequest, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Update, {
+        id: submissionId,
+        state: state
     })
 }
 
@@ -41,5 +54,11 @@ export async function fetchHistory(start: number, limit: number) {
     return eventBus.send<HistoryRequest, Array<SubmissionToRead>>(Kotoed.Address.Api.Submission.History, {
         submissionId: start,
         limit
+    })
+}
+
+export async function fetchCommentsTotal(submissionId: number): Promise<CommentAggregate> {
+    return eventBus.send<WithId, CommentAggregate>(Kotoed.Address.Api.Submission.CommentsTotal, {
+        id: submissionId
     })
 }

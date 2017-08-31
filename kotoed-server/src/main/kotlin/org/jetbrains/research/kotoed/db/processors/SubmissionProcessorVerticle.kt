@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
+import org.jetbrains.research.kotoed.buildbot.verticles.BuildRequestPollerVerticle
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -122,6 +123,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     suspend override fun doProcess(data: JsonObject): VerificationData = run {
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
+        val owner: DenizenRecord = fetchByIdAsync(Tables.DENIZEN, project.denizenId)
+
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
             fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
         }
@@ -155,7 +158,9 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     val btr: BuildTriggerResult = sendJsonableAsync(
                             Address.Buildbot.Build.Trigger,
                             TriggerBuild(
-                                    Kotoed2Buildbot.projectName2schedulerName(project.name),
+                                    Kotoed2Buildbot.projectName2schedulerName(
+                                            Kotoed2Buildbot.asBuildbotProjectName(
+                                                    owner.denizenId, project.name)),
                                     sub.revision
                             )
                     )
@@ -169,9 +174,32 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
                     VerificationData.Processed
                 }
-                else -> {
-                    // FIXME akhin: Reload data from Buildbot if it is missing?
+                1 -> {
+                    val buildInfo = buildInfos[0]
+
+                    val buildResults = dbFindAsync(
+                            SubmissionResultRecord().apply { submissionId = sub.id })
+
+                    if (buildResults.isEmpty()) {
+                        log.info("Retrying polling for build request id: $buildInfo.buildRequestId")
+                        vertx.deployVerticle(
+                                BuildRequestPollerVerticle(buildInfo.buildRequestId))
+                    }
+
                     VerificationData.Processed
+                }
+                else -> {
+                    val errorId = dbCreateAsync(
+                            SubmissionStatusRecord().apply {
+                                this.submissionId = sub.id
+                                this.data = JsonObject(
+                                        "failure" to "Several builds found for submission ${sub.id}",
+                                        "details" to buildInfos.tryToJson()
+                                )
+                            }
+                    ).id
+
+                    return VerificationData.Invalid(errorId)
                 }
             }
 
