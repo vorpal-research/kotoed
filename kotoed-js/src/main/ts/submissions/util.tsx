@@ -32,7 +32,7 @@ export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable:
                     return false;
             }
     }
-};
+}
 
 export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): JSX.Element | null {
     let {status} = sub.verificationData;
@@ -71,4 +71,4 @@ export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable:
                     return null;
             }
     }
-};
+}
