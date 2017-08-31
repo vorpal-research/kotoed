@@ -220,7 +220,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     }
 
     componentDidMount() {
-        let newMode = guessCmModeForFile((this.props.filePath));
+        let newMode = guessCmModeForFile(this.props.filePath);
         requireCmMode(newMode);
 
         this.editor = cm.fromTextArea(this.textAreaNode, {
@@ -263,7 +263,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         }
 
         if (this.props.filePath !== oldProps.filePath) {
-            let newMode = guessCmModeForFile((this.props.filePath));
+            let newMode = guessCmModeForFile(this.props.filePath);
             requireCmMode(newMode);
             this.editor.setOption("mode", editorModeParam(newMode));
         }
