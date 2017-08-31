@@ -93,9 +93,9 @@ fun Field<Any>.jsonGet(index: Int): Field<Any> = JsonGetElem(this, index)
 operator fun Field<Any>.get(key: String) = jsonGet(key)
 operator fun Field<Any>.get(index: Int) = jsonGet(index)
 
-class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val arguments: List<Field<out Any>>)
+class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val arguments: List<QueryPart>)
         : CustomField<T>(function, DSL.getDataType(klass.java)) {
-    constructor(function: String, klass: KClass<T>, vararg arguments: Field<out Any>):
+    constructor(function: String, klass: KClass<T>, vararg arguments: QueryPart):
             this(function, klass, arguments.asList())
 
     override fun accept(ctx: Context<*>) = with(ctx) {
@@ -110,7 +110,7 @@ class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val argum
     }
 }
 
-inline fun <reified T: Any> FunctionCall(function: String, vararg arguments: Field<out Any>) =
+inline fun <reified T: Any> FunctionCall(function: String, vararg arguments: QueryPart) =
         FunctionCall(function, T::class, *arguments)
 
 class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)

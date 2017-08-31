@@ -149,5 +149,5 @@ data class SearchQuery(
         val withVerificationData: Boolean?): Jsonable
 
 data class RestorePasswordSecret(
-        val denizenId: String, val secret: String, val newPassword: String
+        val denizenId: String, val secret: String, val password: String
 ): Jsonable

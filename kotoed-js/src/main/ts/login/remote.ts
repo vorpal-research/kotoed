@@ -2,6 +2,7 @@ import axios from "axios"
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase, keysToSnakeCase} from "../util/stringCase";
 import {eventBus} from "../eventBus";
+import UrlPattern = Kotoed.UrlPattern;
 
 export interface SignInResponse {
     succeeded: boolean
@@ -48,6 +49,22 @@ export async function resetPassword(username: string, email: string) {
     let resp = await axios.post(Kotoed.UrlPattern.Auth.ResetPassword, keysToSnakeCase({
         denizenId: username,
         email: email
+    }));
+    let logResp = keysToCamelCase(resp.data) as ResetPasswordResponse;
+
+    if (!logResp.succeeded)
+        throw new Error(logResp.error || "Unknown remoteError")
+}
+
+export async function changePassword(secret: string, username: string, password: string) {
+    let address = UrlPattern.reverse(
+        Kotoed.UrlPattern.Auth.RestorePassword,
+        { uid: secret }
+    );
+    let resp = await axios.post(
+        address, keysToSnakeCase({
+        denizenId: username,
+        password: password
     }));
     let logResp = keysToCamelCase(resp.data) as ResetPasswordResponse;
 

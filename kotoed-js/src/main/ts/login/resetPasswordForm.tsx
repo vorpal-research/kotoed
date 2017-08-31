@@ -132,9 +132,9 @@ class ResetPasswordForm extends ComponentWithLocalErrors<ResetPasswordFormProps,
                 </button>
             </form></div>;
         else return <div>
-            <p>
+            <div className="alert alert-success">
                 An email to {this.state.email} has been sent
-            </p>
+            </div>
             <a className="btn btn-lg btn-primary btn-block"
                href={UrlPattern.Auth.Index}>
                 Back to login page
