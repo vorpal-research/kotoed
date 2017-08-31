@@ -44,7 +44,7 @@
     "react-markdown": "~2.5.0",
     "style-loader": "~0.18.2",
     "ts-node": "~3.1.0",
-    "typescript": "~2.4.2",
+    "typescript": "~2.5.2",
     "webpack": "~3.2.0"
   },
   "dependencies": {
