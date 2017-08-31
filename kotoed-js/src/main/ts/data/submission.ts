@@ -24,5 +24,5 @@ export interface JumboProject extends BloatProject {
 export interface CreateRequest {
     revision: string | null,
     projectId: number,
-    parentSubmission: number | null
+    parentSubmissionId: number | null
 }
