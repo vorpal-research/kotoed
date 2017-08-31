@@ -140,11 +140,6 @@ export async function poll<T>(
         // We won't call onIntermediate on our last result
         onIntermediate(intermediate);
         await strategy.wait();
-        // Should we try again still?
-        if (strategy.shouldGiveUp()) {
-            gaveUp = true;
-            break;
-        }
         iter++;
     }
     if (!gaveUp) {
