@@ -73,10 +73,11 @@ class RestoreAuthVerticle : AbstractKotoedVerticle(), Loggable {
         if (request.denizenId in requestCache
                 && requestCache[request.denizenId] == secret) {
 
-            run<Unit> {
-                sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(request.denizenId, request.newPassword))
-            }
+            requestCache.invalidate(request.denizenId)
 
+            run<Unit> {
+                sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(request.denizenId, request.password))
+            }
         } else throw Forbidden("Illegal request")
     }
 

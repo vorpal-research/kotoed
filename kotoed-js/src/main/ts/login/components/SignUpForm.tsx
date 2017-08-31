@@ -2,6 +2,8 @@ import * as React from "react"
 import {ChangeEvent, MouseEvent} from "react";
 import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
+import {Kotoed} from "../../util/kotoed-api";
+import UrlPattern = Kotoed.UrlPattern;
 
 type LocalErrors = {
     emptyUsername: boolean

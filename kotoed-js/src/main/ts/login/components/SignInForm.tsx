@@ -5,6 +5,8 @@ import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLoca
 import SocialButton from "./SocialButton";
 
 import "less/util.less"
+import {Kotoed} from "../../util/kotoed-api";
+import UrlPattern = Kotoed.UrlPattern;
 
 type LocalErrors = {
     emptyUsername: boolean
@@ -144,7 +146,9 @@ export default class SignInForm extends
                     disabled={this.props.disabled}>
                 Sign in
             </button>
-            <div className="vspace-10"/>
+            <a className="pull-right" href={UrlPattern.Auth.ResetPassword}>Forgot password?</a>
+            <div className="clearfix" />
+            <div className="vspace-10" />
             {this.renderOAuthButtons()}
         </div>
 
