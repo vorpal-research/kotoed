@@ -19,7 +19,7 @@ interface SubmissionCreateState {
     revision: string
 }
 
-// TODO try to make controlled version
+
 export class SubmissionCreate extends React.Component<SubmissionCreateProps, SubmissionCreateState> {
     constructor(props: SubmissionCreateProps) {
         super(props);
@@ -63,7 +63,7 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
             let newSub = await eventBus.send<CreateRequest, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Create, {
                 revision: revision,
                 projectId: this.props.projectId,
-                parentSubmission: this.props.parentSubmission || null
+                parentSubmissionId: this.props.parentSubmission || null
             });
             this.props.onCreate(newSub.record.id);
             this.hideModal();
