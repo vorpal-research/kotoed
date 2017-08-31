@@ -182,16 +182,25 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (line === undefined)
             return;
 
-        this.editor.scrollIntoView({
-            from: {
-                line: toCmLine(line),
-                ch: 0
-            },
-            to: {
-                line: toCmLine(line + 1),
-                ch: 0
-            }
-        }, 0);
+        let cmLine = toCmLine(line);
+
+        if (cmLine >= this.editor.getDoc().lineCount())
+            return;
+
+        if (cmLine + 1 < this.editor.getDoc().lineCount()) {
+            this.editor.scrollIntoView({
+                from: {
+                    line: cmLine,
+                    ch: 0
+                },
+                to: {
+                    line: cmLine + 1,
+                    ch: 0
+                }
+            }, 0);
+        } else {
+            this.editor.scrollTo(null, this.editor.getScrollInfo().height)
+        }
 
         // TODO replace collapsing with scrolling
         if (commentId === undefined)
