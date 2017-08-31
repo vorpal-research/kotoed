@@ -122,6 +122,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     suspend override fun doProcess(data: JsonObject): VerificationData = run {
         val sub: SubmissionRecord = data.toRecord()
         val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
+        val owner: DenizenRecord = fetchByIdAsync(Tables.DENIZEN, project.denizenId)
+        
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
             fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
         }
@@ -155,7 +157,9 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     val btr: BuildTriggerResult = sendJsonableAsync(
                             Address.Buildbot.Build.Trigger,
                             TriggerBuild(
-                                    Kotoed2Buildbot.projectName2schedulerName(project.name),
+                                    Kotoed2Buildbot.projectName2schedulerName(
+                                            Kotoed2Buildbot.asBuildbotProjectName(
+                                                    owner.denizenId, project.name)),
                                     sub.revision
                             )
                     )
