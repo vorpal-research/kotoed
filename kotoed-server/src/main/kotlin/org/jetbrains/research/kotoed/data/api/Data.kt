@@ -114,7 +114,7 @@ object SubmissionComments {
 
         init {
             for (state in SubmissionCommentState.values()) {
-                map[state] = 0
+                map.computeIfAbsent(state) { 0 }
             } // Forcing zeroes to appear in JSON
         }
 

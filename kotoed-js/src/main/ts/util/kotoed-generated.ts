@@ -47,6 +47,7 @@ export namespace Generated {
             Submission: {
                 CommentAggregates: "kotoed.api.submission.commentAggregates",
                 Comments: "kotoed.api.submission.comments",
+                CommentsTotal: "kotoed.api.submission.commentsTotal",
                 Create: "kotoed.api.submission.create",
                 Error: "kotoed.api.submission.remoteError",
                 History: "kotoed.api.submission.history",

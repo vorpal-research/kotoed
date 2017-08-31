@@ -324,6 +324,9 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
 
+    protected suspend fun dbCountAsync(q: ComplexDatabaseQuery): JsonObject =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
 
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
             @Suppress(DEPRECATION)
