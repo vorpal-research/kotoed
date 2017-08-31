@@ -3,7 +3,7 @@ package org.jetbrains.research.kotoed.web
 object UrlPattern {
     // TODO maybe make parameter names const values
     const val Star = "/*"
-    const val Index =  "/"
+    const val Index = "/"
     const val NotImplemented = "/notImplemented"
 
     object CodeReview {
@@ -47,6 +47,10 @@ object UrlPattern {
     object Submission {
         const val Results = "/views/submission/:id/results"
         const val Index = "/submission/:id"
+    }
+
+    object SubmissionResults {
+        const val ById = "/views/submissionResults/id/:id"
     }
 
     const val EventBus = "/eventbus/*"
