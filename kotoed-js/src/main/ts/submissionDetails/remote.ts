@@ -5,6 +5,7 @@ import {keysToCamelCase} from "../util/stringCase";
 import {DbRecordWrapper, WithVerificationData} from "../data/verification";
 import {SubmissionToRead} from "../data/submission";
 import {WithId} from "../data/common";
+import {CommentAggregate} from "../code/remote/comments";
 
 export interface SubmissionPermissions {
     editOwnComments: boolean
@@ -41,5 +42,11 @@ export async function fetchHistory(start: number, limit: number) {
     return eventBus.send<HistoryRequest, Array<SubmissionToRead>>(Kotoed.Address.Api.Submission.History, {
         submissionId: start,
         limit
+    })
+}
+
+export async function fetchCommentsTotal(submissionId: number): Promise<CommentAggregate> {
+    return eventBus.send<WithId, CommentAggregate>(Kotoed.Address.Api.Submission.CommentsTotal, {
+        id: submissionId
     })
 }

@@ -55,7 +55,6 @@ suspend fun kotoedNavBar(user: User?): NavBar {
                                 user.principal()?.getString("denizenId") ?:
                                         throw IllegalArgumentException("I can work only with UavUsers"),
                                 listOf(
-                                        NavBarLink("Profile", UrlPattern.NotImplemented),
                                         NavBarLink("Logout", UrlPattern.Auth.Logout)
                                 )))
     return NavBar(leftElems = leftElemsSeq.toList(), rightElems = rightElems, rootHref = UrlPattern.Index)
