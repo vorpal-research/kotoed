@@ -6,6 +6,10 @@ object UrlPattern {
     const val Index =  "/"
     const val NotImplemented = "/notImplemented"
 
+    object Redirect {
+        const val ById = "/redirect/:entity/:id"
+    }
+
     object CodeReview {
         const val Index = "/codereview/:id/*"
     }
@@ -31,7 +35,7 @@ object UrlPattern {
     }
 
     object Comment {
-        const val ById = "/views/comment/id/:id"
+        const val ById = "/redirect/comment/:id"
         const val Search = "/views/comment/search"
     }
 
