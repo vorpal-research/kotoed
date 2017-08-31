@@ -15,7 +15,7 @@ export class SimplePollingStrategy extends PollingStrategy {
     }
 
     shouldGiveUp() {
-        return false;
+        return this.shouldGiveUpExt();
     }
 
     async wait() {
@@ -95,17 +95,15 @@ export async function poll<T>(
     while (true) {
         beforeAction();
         intermediate = await action();
-
-        if (isGoodEnough(intermediate))
-            break;
         if (strategy.shouldGiveUp()) {
             gaveUp = true;
             break;
         }
+        if (isGoodEnough(intermediate))
+            break;
 
         // We won't call onIntermediate on our last result
         onIntermediate(intermediate);
-
         await strategy.wait();
         iter++;
     }
@@ -134,6 +132,6 @@ export async function pollDespairing<T>(
         }) {
     await poll({
         action, isGoodEnough, onIntermediate, onFinal, onGiveUp,
-        strategy: new DespairingPollingStrategy({})
+        strategy: new DespairingPollingStrategy(strategyParams)
     })
 }
