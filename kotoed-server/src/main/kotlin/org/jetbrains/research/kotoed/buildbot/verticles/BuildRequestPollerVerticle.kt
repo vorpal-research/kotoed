@@ -7,8 +7,14 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.buildbot.util.*
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.buildbot.build.BuildCrawl
+import org.jetbrains.research.kotoed.data.notification.NotificationType
+import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
+import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toJson
 import java.time.Duration
 
 data class BuildsResponse(
@@ -85,6 +91,26 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
 
             if (buildRequestsResponse.builds.isNotEmpty() &&
                     processedBuildIds.size == buildRequestsResponse.builds.size) {
+
+                // Notify about the results
+
+                // FIXME akhin: Use ComplexDatabaseQuery instead of this shit
+
+                val build = dbFindAsync(
+                        BuildRecord().also { it.buildRequestId = buildRequestId })[0]
+                val sub = dbFetchAsync(
+                        SubmissionRecord().apply { id = build.submissionId })
+                val project = dbFetchAsync(
+                        ProjectRecord().apply { id = sub.projectId });
+
+                dbCreateAsync(
+                        NotificationRecord().apply {
+                            type = NotificationType.NEW_SUBMISSION_RESULTS.name
+                            denizenId = project.denizenId
+                            body = build.toJson()
+                        }
+                )
+
                 log.trace("I'm done here! $buildRequestId")
                 vertx.undeploy(deploymentID())
 
