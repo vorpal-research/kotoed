@@ -8,7 +8,8 @@ import {
     commentsFetch, commentPost, commentStateUpdate, dirCollapse, dirExpand, fileLoad,
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
-    expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize
+    expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize,
+    submissionFetch
 } from "./actions";
 import {
     ADD_DELTA,
@@ -18,6 +19,9 @@ import {
 import {NodePath} from "./state/blueprintTree";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "./remote/constants";
 import {List} from "immutable";
+import {DbRecordWrapper} from "../data/verification";
+import {SubmissionToRead} from "../data/submission";
+import {SubmissionState} from "./state/submission";
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -295,6 +299,18 @@ export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabiliti
             loading: false,
             capabilities: action.payload.result
         }
+    }
+    return state;
+};
+
+const defaultSubmissionState: SubmissionState = {
+    submission: null
+};
+
+export const submissionReducer = (state: SubmissionState = defaultSubmissionState, action: Action): SubmissionState => {
+    if (isType(action, submissionFetch.done)) {
+        console.log(action.payload.result);
+        return {...state, submission: action.payload.result}
     }
     return state;
 };

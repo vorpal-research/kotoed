@@ -11,7 +11,7 @@ import CodeReviewContainer, {
     CODE_ROUTE_PATH, LOST_FOUND_ROUTE_PATH,
     RedirectToRoot
 } from "./containers/CodeReviewContainer";
-import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer} from "./reducers";
+import {capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer, submissionReducer} from "./reducers";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 import '@blueprintjs/core/dist/blueprint.css';
@@ -28,6 +28,7 @@ export const store = createStore(
         editorState: editorReducer,
         commentsState: commentsReducer,
         capabilitiesState: capabilitiesReducer,
+        submissionState: submissionReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),

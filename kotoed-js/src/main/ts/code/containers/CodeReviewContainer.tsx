@@ -17,7 +17,6 @@ import {FileComments} from "../state/comments";
 import {push} from "react-router-redux";
 import {Redirect} from "react-router";
 import {makeCodeReviewCodePath, makeCommentPath} from "../../util/url";
-import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 
 interface OnRoute {
     onCodeRoute(submissionId: number, filename: string): void
@@ -35,6 +34,7 @@ const mapStateToProps = function(store: CodeReviewState,
                                  ownProps: RouteComponentProps<CodeReviewUrl>): CodeReviewProps {
     return {
         submissionId: parseInt(ownProps.match.params.submissionId),
+        submission: store.submissionState.submission,
         editor: {
             loading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
             value: store.editorState.value,
