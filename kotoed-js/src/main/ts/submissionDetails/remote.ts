@@ -2,8 +2,8 @@ import axios from "axios"
 import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
-import {DbRecordWrapper, WithVerificationData} from "../data/verification";
-import {SubmissionState, SubmissionToRead} from "../data/submission";
+import {DbRecordWrapper} from "../data/verification";
+import {SubmissionState, SubmissionToRead, Tag} from "../data/submission";
 import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
 
@@ -61,4 +61,19 @@ export async function fetchCommentsTotal(submissionId: number): Promise<CommentA
     return eventBus.send<WithId, CommentAggregate>(Kotoed.Address.Api.Submission.CommentsTotal, {
         id: submissionId
     })
+}
+
+interface TagRemote {
+    id: number
+    name: string
+}
+
+export async function fetchTagList(submissionId: number): Promise<Tag[]> {
+    return eventBus.send<WithId, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Read, {
+        id: submissionId
+    }).then(tags => {
+        return tags.map(tag => {
+            return {id: tag.id, text: tag.name}
+        })
+    });
 }

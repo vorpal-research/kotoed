@@ -1,19 +1,20 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {DbRecordWrapper} from "../data/verification";
-import {SubmissionState, SubmissionToRead} from "../data/submission";
-import {SubmissionPermissions, SubmissionUpdateRequest} from "./remote";
-import {SubmissionDetailsProps} from "./components/SubmissionDetails";
+import {SubmissionToRead, Tag} from "../data/submission";
 import {
-    fetchSubmission as fetchSubmissionRemote,
-    fetchPermissions as fetchPermissionsRemote,
-    fetchHistory as fetchHistoryRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
-    updateSubmission as updateSubmissionRemote,
+    fetchHistory as fetchHistoryRemote,
+    fetchPermissions as fetchPermissionsRemote,
+    fetchSubmission as fetchSubmissionRemote,
+    fetchTagList as fetchTagListRemote,
+    SubmissionPermissions,
+    SubmissionUpdateRequest,
+    updateSubmission as updateSubmissionRemote
 } from "./remote";
 import {Kotoed} from "../util/kotoed-api";
 import {isStatusFinal} from "../views/components/searchWithVerificationData";
-import {sleep} from "../util/common";
+import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
 import {pollDespairing} from "../util/poll";
@@ -23,9 +24,9 @@ const actionCreator = actionCreatorFactory();
 
 export const submissionFetch = actionCreator.async<number, DbRecordWrapper<SubmissionToRead>, {}>('SUB_FETCH');
 export const permissionsFetch = actionCreator.async<number, SubmissionPermissions, {}>('PERM_FETCH');
-export const historyFetch = actionCreator.async<{start: number, limit: number}, Array<SubmissionToRead>, {}>('HIST_FETCH');
+export const historyFetch = actionCreator.async<{ start: number, limit: number }, Array<SubmissionToRead>, {}>('HIST_FETCH');
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
-
+export const tagListFetch = actionCreator.async<number, Tag[], {}>('TAG_LIST_FETCH');
 
 export function fetchSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -111,7 +112,10 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
         });
 
         // We wont fetch anything for invalid sub
-        if (isSubmissionAvalable({...sub.record, verificationData: sub.verificationData})) {
+        if (isSubmissionAvalable({
+                ...sub.record,
+                verificationData: sub.verificationData
+            })) {
             dispatch(commentsTotalFetch.started(id));
             let comments = await fetchCommentsTotalRemote(id);
             dispatch(commentsTotalFetch.done({
@@ -138,6 +142,8 @@ export function initialize(id: number) {
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
+        await fetchTagList(id)(dispatch);
+
         pollSubmissionIfNeeded(id, sub)(dispatch)
 
     }
@@ -156,5 +162,16 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
 
         pollSubmissionIfNeeded(payload.id, sub)(dispatch)
 
+    }
+}
+
+export function fetchTagList(submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(tagListFetch.started(submissionId));
+        let tagList = await fetchTagListRemote(submissionId);
+        dispatch(tagListFetch.done({
+            params: submissionId,
+            result: tagList
+        }));
     }
 }
