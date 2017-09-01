@@ -9,10 +9,7 @@ import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -59,7 +56,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             projectId = existing.projectId
             revision = existing.revision
             state = if (existing.state != SubmissionState.open && existing.state != SubmissionState.closed ||
-                            state != SubmissionState.open && state != SubmissionState.closed)
+                    state != SubmissionState.open && state != SubmissionState.closed)
                 existing.state
             else
                 state
@@ -207,12 +204,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                                                         state = SubmissionCommentState.closed
                                                     })).getInteger("count")
 
-                            )
+                    )
 
             )
-
-
-
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
     suspend fun handleList(query: SearchQuery): JsonArray {
@@ -265,5 +259,36 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         }
 
         return JsonArray(history)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Create)
+    suspend fun handleTagsCreate(submissionTag: SubmissionTagRecord): SubmissionTagRecord {
+        return dbCreateAsync(submissionTag)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Read)
+    suspend fun handleTagsRead(submission: SubmissionRecord): List<TagRecord> {
+        val query = ComplexDatabaseQuery(Tables.SUBMISSION_TAG)
+                .join(Tables.TAG)
+                .find(SubmissionTagRecord().apply { submissionId = submission.id })
+
+        val res = dbQueryAsync(query)
+
+        return res.map { it.getJsonObject("tag") }
+                .filterNotNull()
+                .map { it.toRecord<TagRecord>() }
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Update)
+    suspend fun handleTagsUpdate(query: Submission.TagUpdateQuery): JsonObject {
+        return sendJsonableAsync(
+                Address.DB.Submission.Tags.Update,
+                query
+        )
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Delete)
+    suspend fun handleTagsDelete(submissionTag: SubmissionTagRecord): SubmissionTagRecord {
+        return dbDeleteAsync(submissionTag)
     }
 }

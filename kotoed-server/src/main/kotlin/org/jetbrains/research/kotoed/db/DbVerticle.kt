@@ -460,3 +460,6 @@ class ProjectTextSearchVerticle : CrudDatabaseVerticleWithReferences<ProjectText
 
 @AutoDeployable
 class CourseTextSearchVerticle : CrudDatabaseVerticleWithReferences<CourseTextSearchRecord>(Tables.COURSE_TEXT_SEARCH)
+
+@AutoDeployable
+class TagVerticle : CrudDatabaseVerticleWithReferences<TagRecord>(Tables.TAG)
