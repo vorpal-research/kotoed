@@ -261,6 +261,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
                     "using function $function"
     )
 
+    // TODO handle parameterless consumers
     // first parameter is the receiver, we need the second one
     val parameterType = function.parameters[1].type
     val resultType = function.returnType
