@@ -44,7 +44,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
 
         pollDespairing({
             action: async () => await fetchProject(id_),
-            isGoodEnough: ((course: DbRecordWrapper<CourseToRead>) => isStatusFinal(course.verificationData.status)),
+            isGoodEnough: ((proj: DbRecordWrapper<ProjectToRead>) => isStatusFinal(proj.verificationData.status)),
             onIntermediate: processProject,
             onGiveUp: processProject,
             onFinal: processProject
@@ -70,7 +70,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                 <Row>
                     {/*TODO add give up handling*/}
                     <VerificationDataAlert
-                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Course #${obj.record.id}`}
+                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Course "${obj.record.name}"`}
                         obj={this.state.project} gaveUp={false}/>
                 </Row>
                 <Row>
