@@ -9,10 +9,7 @@ import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.code.diff.toJson
-import org.jetbrains.research.kotoed.code.vcs.Git
-import org.jetbrains.research.kotoed.code.vcs.Mercurial
-import org.jetbrains.research.kotoed.code.vcs.VcsResult
-import org.jetbrains.research.kotoed.code.vcs.VcsRoot
+import org.jetbrains.research.kotoed.code.vcs.*
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -95,7 +92,10 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val catRes = run(ee) {
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
-            root.cat(path, rev)
+            root.cat(path, rev).recover {
+                root.update()
+                root.cat(path, rev)
+            }
         }.result
 
         return ReadResponse(contents = catRes.joinToString("\n"))
@@ -113,7 +113,10 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val lsRes = run(ee) {
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
-            root.ls(rev)
+            root.ls(rev).recover {
+                root.update()
+                root.ls(rev)
+            }
         }.result
 
         return ListResponse(files = lsRes.toList())
@@ -166,7 +169,10 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val (revRes, brRes) = run(ee) {
             val rev = request.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
-            root.info(rev, request.branch)
+            root.info(rev, request.branch).recover {
+                root.update()
+                root.info(rev, request.branch)
+            }
         }.result
 
         return request.copy(revision = revRes, branch = brRes)
