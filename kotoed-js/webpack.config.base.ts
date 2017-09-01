@@ -21,8 +21,11 @@ function kotoedEntry(root: string, notifications: boolean = true): string[] {
     function* gen() {
         yield "./less/global.less";
         yield "babel-polyfill";
-        if (notifications)
-            yield "./ts/views/notificationMenu.tsx";
+        if (notifications) {
+            yield "./ts/notifications/notificationMenu.tsx";
+            yield "./ts/notifications/popupNotifications.tsx";
+        }
+
         yield root;
     }
     return [...gen()]

@@ -103,7 +103,7 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
                 val project = dbFetchAsync(
                         ProjectRecord().apply { id = sub.projectId });
 
-                dbCreateAsync(
+                createNotification(
                         NotificationRecord().apply {
                             type = NotificationType.NEW_SUBMISSION_RESULTS.name
                             denizenId = project.denizenId

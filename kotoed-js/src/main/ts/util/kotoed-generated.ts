@@ -5,10 +5,10 @@ export namespace Generated {
     export const Address = {
         Api: {
             create: (entity: string) => {
-                `kotoed.api.${entity}.create`
+                return `kotoed.api.${entity}.create`;
             },
             read: (entity: string) => {
-                `kotoed.api.${entity}.read`
+                return `kotoed.api.${entity}.read`;
             },
             Course: {
                 Create: "kotoed.api.course.create",
@@ -25,6 +25,9 @@ export namespace Generated {
                 Read: "kotoed.api.denizen.read",
             },
             Notification: {
+                pushRendered: (id: string) => {
+                    return `kotoed.api.notification.push.${id}.render`;
+                },
                 Current: "kotoed.api.notification.current",
                 MarkRead: "kotoed.api.notification.markRead",
                 RenderCurrent: "kotoed.api.notification.current.render",

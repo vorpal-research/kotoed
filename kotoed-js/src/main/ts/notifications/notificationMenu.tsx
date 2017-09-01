@@ -1,44 +1,14 @@
 import * as React from "react";
+import * as NotificationSystem from "react-notification-system"
 import {render} from "react-dom";
-import {sendAsync} from "./components/common";
+import {sendAsync, setStateAsync} from "../views/components/common";
 import {Kotoed} from "../util/kotoed-api";
 import UrlPattern = Kotoed.UrlPattern;
-
-type LinkData = {
-    entity: string
-    id: string
-}
-
-interface NotificationDisplayProps {
-    data: {
-        id: number,
-        contents: string,
-        linkTo: LinkData
-    }
-}
-
-class NotificationDisplay extends React.PureComponent<NotificationDisplayProps> {
-    constructor(props: NotificationDisplayProps) {
-        super(props)
-    }
-
-    makeProperLink = (link: LinkData) => {
-        return UrlPattern.reverse(UrlPattern.Redirect.ById, link)
-    };
-
-    onClick = () => {
-        sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id }).then()
-    };
-
-    render() {
-        return <a className="list-group-item"
-                  href={this.makeProperLink(this.props.data.linkTo)}
-                  onClick={this.onClick}
-        >
-            <span dangerouslySetInnerHTML={{ __html: this.props.data.contents }} />
-        </a>
-    }
-}
+import {eventBus} from "../eventBus";
+import {myDatabaseId} from "../login/remote";
+import {doNothing, run} from "../util/common";
+import {EventbusMessage} from "../util/vertx";
+import {NotificationDisplay} from "./components/NotificationDisplay";
 
 interface NotificationMenuProps {}
 
@@ -54,9 +24,23 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
         }
     }
 
+    invalidate = async () => {
+        let data = await sendAsync<{}, any[]>(Kotoed.Address.Api.Notification.RenderCurrent, {});
+        await setStateAsync(this,{ currentNotifications: data });
+    };
+
     componentDidMount() {
-        sendAsync(Kotoed.Address.Api.Notification.RenderCurrent, {})
-            .then((data: Array<any>) => this.setState({ currentNotifications: data }))
+        run(async () => {
+            this.invalidate();
+            let eb = eventBus.awaitOpen();
+            let me = await myDatabaseId();
+            await eb;
+            eventBus.registerHandler(
+                Kotoed.Address.Api.Notification.pushRendered(me),
+                {},
+                async (_, message) => this.invalidate()
+            );
+        }).catch(doNothing).then(doNothing);
     }
 
     render() {

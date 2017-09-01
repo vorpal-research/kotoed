@@ -72,6 +72,11 @@ export async function changePassword(secret: string, username: string, password:
         throw new Error(logResp.error || "Unknown remoteError")
 }
 
+export async function myDatabaseId() {
+    let resp = await axios.get(Kotoed.UrlPattern.AuthHelpers.WhoAmI);
+    return keysToCamelCase(resp.data).id
+}
+
 export async function fetchOAuthProviders(): Promise<OAuthProvidersResponse> {
     return await
         eventBus.send<OAuthProvidersRequest, OAuthProvidersResponse>(Kotoed.Address.Api.OAuthProvider.List, {});

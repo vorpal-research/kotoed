@@ -48,7 +48,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val submissionOwner = rich["submission", "project", "denizenId"] as? Int
 
         if(record.authorId != submissionOwner) {
-            dbCreateAsync (
+            createNotification (
                     NotificationRecord().apply {
                         denizenId = submissionOwner
                         type = NotificationType.NEW_COMMENT.toString()
@@ -60,7 +60,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         thread.groupBy { it.authorId }
                 .filterKeys { it != record.authorId }
                 .forEach { (author, _) ->
-                    dbCreateAsync (
+                    createNotification (
                             NotificationRecord().apply {
                                 denizenId = author
                                 type = NotificationType.COMMENT_REPLIED_TO.toString()
@@ -124,7 +124,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         }
 
         if(after.authorId != submissionOwner) {
-            dbCreateAsync (
+            createNotification (
                     NotificationRecord().apply {
                         denizenId = submissionOwner
                         type = notificationType
