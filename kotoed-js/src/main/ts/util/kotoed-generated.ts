@@ -122,6 +122,9 @@ export namespace Generated {
             Index: "/submission/:id",
             Results: "/views/submission/:id/results",
         },
+        SubmissionResults: {
+            ById: "/views/submissionResults/id/:id",
+        },
     }
 
 }
