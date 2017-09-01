@@ -35,6 +35,7 @@ const config: webpack.Configuration = {
         hello: kotoedEntry("./ts/hello.ts"),
         login: kotoedEntry("./ts/login/index.tsx", false),
         resetPassword: kotoedEntry("./ts/login/resetPasswordForm.tsx", false),
+        restorePassword: kotoedEntry("./ts/login/restorePasswordForm.tsx", false),
         code: kotoedEntry("./ts/code/index.tsx"),
         submissionResults: kotoedEntry("./ts/views/submissionResults.tsx"),
         submissionDetails: kotoedEntry("./ts/submissionDetails/index.tsx"),
