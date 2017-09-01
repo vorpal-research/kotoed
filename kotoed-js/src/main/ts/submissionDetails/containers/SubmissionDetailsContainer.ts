@@ -30,7 +30,9 @@ const mapDispatchToProps = function (dispatch: Dispatch<SubmissionDetailsProps>,
         },
         onMount: () => {
             dispatch(initialize(ownProps.id))
-        }
+        },
+        onTagAdd: (tagName: string) => {},
+        onTagDelete: (tagIdx: number) => {}
     }
 };
 
