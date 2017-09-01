@@ -25,6 +25,11 @@ import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
 import {makeCodeReviewCodePath, makeCodeReviewLostFoundPath} from "../util/url";
+import {DbRecordWrapper} from "../data/verification";
+import {SubmissionToRead} from "../data/submission";
+import {pollDespairing} from "../util/poll";
+import {fetchSubmission} from "../submissionDetails/remote";
+import {isStatusFinal} from "../views/components/searchWithVerificationData";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -110,6 +115,10 @@ export const expandedResetForLine = actionCreator<ExpandedResetForLinePayload>("
 export const expandedResetForFile = actionCreator<ExpandedResetForFilePayload>("EXPANDED_RESET_FOR_FILE");
 export const expandedResetForLostFound = actionCreator<{}>("EXPANDED_RESET_FOR_LOST_FOUND");
 
+//Submission fetch actions
+export const submissionFetch = actionCreator.async<SubmissionPayload, DbRecordWrapper<SubmissionToRead>, {}>('SUBMISSION_FETCH');
+
+
 // File or dir fetch actions
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
@@ -126,9 +135,37 @@ export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COM
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
 
+export function pollSubmissionIfNeeded(payload: SubmissionPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
+
+        if (getState().submissionState.submission)
+            return;
+
+        function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
+            console.log("Dispatching done");
+            dispatch(submissionFetch.done({
+                params: payload,
+                result: res
+            }));
+        }
+
+        await pollDespairing({
+            action: () => fetchSubmission(payload.submissionId),
+            isGoodEnough: (sub) => isStatusFinal(sub.verificationData.status),
+            onIntermediate: dispatchDone,
+            onFinal: dispatchDone,
+            onGiveUp: dispatchDone
+        });
+    }
+}
 
 export function loadCode(payload: SubmissionPayload & FilePathPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
+        await pollSubmissionIfNeeded(payload)(dispatch, getState);
+        let sub = getState().submissionState.submission;
+        if (!sub || sub.verificationData.status !== "Processed")
+            return;
+
         await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
@@ -139,6 +176,10 @@ export function loadCode(payload: SubmissionPayload & FilePathPayload) {
 
 export function loadLostFound(payload: SubmissionPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
+        await pollSubmissionIfNeeded(payload);
+        let sub = getState().submissionState.submission;
+        if (!sub || sub.verificationData.status !== "Processed")
+            return;
         await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);

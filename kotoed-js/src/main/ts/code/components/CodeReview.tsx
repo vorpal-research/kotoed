@@ -14,9 +14,14 @@ import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 import {ScrollTo} from "../state/index";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {BaseCommentToRead} from "../../data/comment";
+import {DbRecordWrapper} from "../../data/verification";
+import {SubmissionToRead} from "../../data/submission";
+import VerificationDataAlert from "../../views/components/VerificationDataAlert";
 
 export interface CodeReviewProps {
     submissionId: number
+    submission: DbRecordWrapper<SubmissionToRead> | null
+
     editor: {
         loading: boolean
         value: string
@@ -129,33 +134,58 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
             return null;
     };
 
-    render() {
-        return (
-            <div className="row code-review">
-                <div className="col-md-3" id="code-review-left">
-                    {this.renderFileTreeVeil()}
-                    <div className="code-review-tree-container">
-                        <FileTree root={this.props.fileTree.root}
-                                  onDirExpand={this.props.fileTree.onDirExpand}
-                                  onDirCollapse={this.props.fileTree.onDirCollapse}
-                                  onFileSelect={this.props.fileTree.onFileSelect}
-                                  loading={this.props.fileTree.loading}
-                                  lostFoundAggregate={this.props.lostFound.aggregate}
-                        />
-                        <div className="lost-found-button-container">
-                            <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
-                                Lost + Found {" "}
-                                {makeAggregatesLabel(
-                                    this.props.lostFound.aggregate
-                                )}
-                            </Button>
-                        </div>
+
+    renderReview = () => {
+        return <div className="row code-review">
+            <div className="col-md-3" id="code-review-left">
+                {this.renderFileTreeVeil()}
+                <div className="code-review-tree-container">
+                    <FileTree root={this.props.fileTree.root}
+                              onDirExpand={this.props.fileTree.onDirExpand}
+                              onDirCollapse={this.props.fileTree.onDirCollapse}
+                              onFileSelect={this.props.fileTree.onFileSelect}
+                              loading={this.props.fileTree.loading}
+                              lostFoundAggregate={this.props.lostFound.aggregate}
+                    />
+                    <div className="lost-found-button-container">
+                        <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
+                            Lost + Found {" "}
+                            {makeAggregatesLabel(
+                                this.props.lostFound.aggregate
+                            )}
+                        </Button>
                     </div>
                 </div>
-                <div className="col-md-9" id="code-review-right">
-                    {this.renderRightSide()}
-                </div>
             </div>
-        )
+            <div className="col-md-9" id="code-review-right">
+                {this.renderRightSide()}
+            </div>
+        </div>
+    };
+
+    shouldRenderReview = () => this.props.submission && this.props.submission.verificationData.status === "Processed"
+
+
+    render() {
+        if (!this.props.submission) {
+            return <div className="row code-review" style={{
+                position: "relative"
+            }}>
+                <SpinnerWithVeil/>
+            </div>
+        }
+
+        if (!this.shouldRenderReview) {
+            return <div className="row">
+                <VerificationDataAlert
+                    makeString={(obj: DbRecordWrapper<SubmissionToRead>) => `Submission #${obj.record.id}`}
+                    obj={this.props.submission}
+                    gaveUp={false}/>
+            </div>
+        }
+
+        return <div className="row code-review">
+            {this.renderReview()}
+        </div>
     }
 }

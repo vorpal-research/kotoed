@@ -154,6 +154,7 @@ export async function pollDespairing<T>(
             action,
             isGoodEnough = () => true,
             onIntermediate = () => {},
+            beforeAction = () => {},
             onFinal = () => {},
             onGiveUp = () => {},
             strategyParams = {}
@@ -161,12 +162,13 @@ export async function pollDespairing<T>(
             action: () => Promise<T>,
             isGoodEnough?: (res: T) => boolean,
             onIntermediate?: (intermediate: T) => void,
+            beforeAction?: () => void,
             onFinal?: (final: T) => void,
             onGiveUp?: (last: T) => void,
             strategyParams?: DespairingPollingStrategyParams
         }) {
     await poll({
-        action, isGoodEnough, onIntermediate, onFinal, onGiveUp,
+        action, isGoodEnough, onIntermediate, beforeAction, onFinal, onGiveUp,
         strategy: new DespairingPollingStrategy(strategyParams)
     })
 }
