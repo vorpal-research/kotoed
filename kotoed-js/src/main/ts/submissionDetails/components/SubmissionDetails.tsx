@@ -1,9 +1,10 @@
 import * as React from "react";
 import {Alert, Button, ButtonToolbar, Row, Table, Well, Label} from "react-bootstrap";
 import * as Spinner from "react-spinkit"
+import { WithContext as ReactTags } from 'react-tag-input';
 
 import SubmissionHistory from "./SubmissionHistory";
-import {SubmissionToRead} from "../../data/submission";
+import {SubmissionToRead, Tag} from "../../data/submission";
 import {Kotoed} from "../../util/kotoed-api";
 import {CommentAggregate} from "../../code/remote/comments";
 import moment = require("moment");
@@ -28,7 +29,8 @@ export interface SubmissionDetailsProps {
         changeState: boolean,
         resubmit: boolean
     },
-    comments: CommentAggregate
+    comments: CommentAggregate,
+    tags: Tag[]
 }
 
 export interface SubmissionDetailsCallbacks {
@@ -39,6 +41,8 @@ export interface SubmissionDetailsCallbacks {
     onClose: () => void
     onReopen: () => void
     onMount: () => void
+    onTagAdd: (tagName: string) => void
+    onTagDelete: (tagIdx: number) => void
 }
 
 export default class SubmissionDetails extends React.Component<SubmissionDetailsProps & SubmissionDetailsCallbacks & WithId> {
@@ -118,6 +122,14 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" bsSize="lg"  onClick={this.props.onReopen}>Reopen</Button>;
     };
 
+    private renderTagList = () => {
+        return <ReactTags
+            tags={this.props.tags}
+            handleAddition={this.props.onTagAdd}
+            handleDelete={this.props.onTagDelete}
+        />
+    };
+
     componentDidMount() {
         this.props.onMount()
     }
@@ -154,7 +166,12 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
             <Row>
                 <Well>
-                    <h3>{`Submission #${this.props.submission.record.id}`}{" "}{this.renderLabel()}</h3>
+                    <h3>
+                        {`Submission #${this.props.submission.record.id}`}
+                        {" "}
+                        {this.renderLabel()}
+                        {this.renderTagList()}
+                    </h3>
                     <Table className="submission-details">
                         <tbody>
                             <tr>

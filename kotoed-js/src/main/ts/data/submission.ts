@@ -26,3 +26,8 @@ export interface CreateRequest {
     projectId: number,
     parentSubmissionId: number | null
 }
+
+export interface Tag {
+    id: number,
+    text: string
+}
