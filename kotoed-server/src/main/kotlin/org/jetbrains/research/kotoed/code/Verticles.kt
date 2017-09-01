@@ -171,6 +171,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val (revRes, brRes) = run(ee) {
             val rev = request.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
+            if(rev == VcsRoot.Revision.Trunk) root.update()
             root.info(rev, request.branch).recover {
                 root.update()
                 root.info(rev, request.branch)
