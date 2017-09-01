@@ -77,7 +77,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         switch(this.props.submission.verificationData.status) {
             case "Unknown":
             case "NotReady":
-                return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
+                return <Spinner name="circle" color="gray" fadeIn="none" className="display-inline"/>;
             case "Invalid":
                 return <Label bsStyle="danger">Invalid</Label>;
             case "Processed":
@@ -91,7 +91,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                     case "open":
                         return <Label bsStyle="success">Open</Label>;
                     case "pending":
-                        return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
+                        return <Spinner name="circle" color="gray" fadeIn="none" className="display-inline"/>;
                     default:
                         return null
                 }
