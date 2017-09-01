@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
+import org.jetbrains.research.kotoed.database.tables.records.TagRecord
 import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -139,6 +140,10 @@ object SubmissionComments {
 
 object Submission {
     data class SubmissionHistoryQuery(val submissionId: Int, val limit: Int?) : Jsonable
+
+    data class TagUpdateQuery(
+            val submissionId: Int,
+            val tags: List<TagRecord>) : Jsonable
 }
 
 data class SearchQuery(
@@ -146,8 +151,8 @@ data class SearchQuery(
         val find: JsonObject?,
         val currentPage: Int?,
         val pageSize: Int?,
-        val withVerificationData: Boolean?): Jsonable
+        val withVerificationData: Boolean?) : Jsonable
 
 data class RestorePasswordSecret(
         val denizenId: String, val secret: String, val password: String
-): Jsonable
+) : Jsonable
