@@ -47,6 +47,7 @@ export namespace Generated {
             Submission: {
                 CommentAggregates: "kotoed.api.submission.commentAggregates",
                 Comments: "kotoed.api.submission.comments",
+                CommentsTotal: "kotoed.api.submission.commentsTotal",
                 Create: "kotoed.api.submission.create",
                 Error: "kotoed.api.submission.remoteError",
                 History: "kotoed.api.submission.history",
@@ -54,6 +55,7 @@ export namespace Generated {
                 List: "kotoed.api.submission.list",
                 ListCount: "kotoed.api.submission.list.count",
                 Read: "kotoed.api.submission.read",
+                Update: "kotoed.api.submission.update",
                 Code: {
                     Download: "kotoed.api.submission.code.download",
                     List: "kotoed.api.submission.code.list",
@@ -122,6 +124,9 @@ export namespace Generated {
         Submission: {
             Index: "/submission/:id",
             Results: "/views/submission/:id/results",
+        },
+        SubmissionResults: {
+            ById: "/redirect/submissionResults/:id",
         },
     }
 
