@@ -9,7 +9,7 @@ private fun String.toQuery() = "\"${this.escape()}\""
 
 private fun Any.toQuery() = "$this".toQuery()
 
-fun <T> Iterable<T>.toQuery() = map { // TODO make private
+private fun <T> Iterable<T>.toQuery() = map {
     when(it) {
         is Int -> "$it"
         else -> "$it".toQuery()
