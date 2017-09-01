@@ -32,12 +32,6 @@ suspend fun handleCode(context: RoutingContext) {
                 return
             }
 
-    // TODO check verification status
-    if (submission.state == SubmissionState.pending || submission.state == SubmissionState.invalid) {
-        context.fail(HttpResponseStatus.FORBIDDEN)
-        return
-    }
-
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, SubmissionReviewBreadCrumb(course, author, project, submission))
 }

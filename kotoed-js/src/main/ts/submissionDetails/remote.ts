@@ -25,6 +25,7 @@ export interface SubmissionUpdateRequest {
 }
 
 export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<SubmissionToRead>> {
+    console.log("fetching");
     return eventBus.send<WithId, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Read, {
         id: submissionId
     })
