@@ -13,3 +13,15 @@ export default class SpinnerWithVeil extends React.Component {
         </div>
     }
 }
+
+export class SpinnerWithBigVeil extends React.Component {
+    render() {
+        return <div style={{
+            position: "relative",
+            width: "100%",
+            height: "500px"
+        }}>
+            <SpinnerWithVeil/>
+        </div>;
+    }
+}

@@ -18,8 +18,9 @@ import {DbRecordWrapper, WithVerificationData} from "../../data/verification";
 import {isSubmissionAvalable} from "../../submissions/util";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url";
 import {WithId} from "../../data/common";
-import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
+import SpinnerWithVeil, {SpinnerWithBigVeil} from "../../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
+import {isStatusFinal} from "../../views/components/searchWithVerificationData";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<SubmissionToRead>,
@@ -49,7 +50,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
 
     private renderResultsLink = (): JSX.Element => {
-        if (isSubmissionAvalable({...this.props.submission.record, verificationData: this.props.submission.verificationData}))
+        if (isStatusFinal(this.props.submission.verificationData.status))
             return <a href={makeSubmissionResultsUrl(this.props.submission.record.id)}>Link</a>;
         else
             return <span className={"grayed-out"}>N/A</span>
@@ -140,17 +141,12 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
     render() {
         if (this.props.loading) {
-            return <div style={{
-                position: "relative",
-                width: "100%",
-                height: "500px"
-            }}>
-                <SpinnerWithVeil/>
-            </div>;
+            return <SpinnerWithBigVeil/>;
         }
 
         return <div>
             <Row>
+                {/*TODO add give up handling*/}
                 <VerificationDataAlert
                     makeString={(obj: DbRecordWrapper<SubmissionToRead>) => `Submission #${obj.record.id}`}
                     obj={this.props.submission} gaveUp={false}/>

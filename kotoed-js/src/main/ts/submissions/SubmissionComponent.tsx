@@ -11,6 +11,7 @@ import {WithVerificationData} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import * as moment from "moment";
 import {isSubmissionAvalable, renderSubmissionIcon} from "./util";
+import {isStatusFinal} from "../views/components/searchWithVerificationData";
 
 export type SubmissionWithVer = SubmissionToRead & WithVerificationData
 
@@ -25,7 +26,7 @@ export class SubmissionComponent extends React.PureComponent<SubmissionComponent
     }
 
     private linkToSubDetails = (text: string): JSX.Element => {
-        if (isSubmissionAvalable(this.props, this.props.pendingIsAvailable))
+        if (isStatusFinal(this.props.verificationData.status) || this.props.pendingIsAvailable)
             return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: this.props.id})}>{text}</a>;
         else
             return <span className={"grayed-out"}>{text}</span>
@@ -33,7 +34,7 @@ export class SubmissionComponent extends React.PureComponent<SubmissionComponent
 
 
     private linkToResults = (): JSX.Element => {
-        if (isSubmissionAvalable(this.props, this.props.pendingIsAvailable))
+        if (isStatusFinal(this.props.verificationData.status) || this.props.pendingIsAvailable)
             return <a href={makeSubmissionResultsUrl(this.props.id)}>Results</a>;
         else
             return <span className={"grayed-out"}>Results</span>

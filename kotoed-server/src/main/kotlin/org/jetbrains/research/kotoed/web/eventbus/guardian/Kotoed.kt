@@ -42,6 +42,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Notification.RenderCurrent to Permissive,
 
             Address.Api.Project.Create to Permissive,
+            Address.Api.Project.Read to ProjectOwnerOrTeacher(vertx, "id"),
             Address.Api.Project.Search to AuthorityRequired(Authority.Teacher),
             Address.Api.Project.SearchCount to AuthorityRequired(Authority.Teacher),
             Address.Api.Project.SearchForCourse to Permissive, // filtering is done server-side + patcher covers our asses
