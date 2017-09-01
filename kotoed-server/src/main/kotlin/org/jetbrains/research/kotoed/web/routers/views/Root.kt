@@ -39,31 +39,6 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
 
 }
 
-@HandlerFor(UrlPattern.Comment.ById)
-@LoginRequired
-suspend fun handleCommentById(context: RoutingContext) {
-    val id by context.request()
-
-    val comment = context.vertx().eventBus().commentByIdOrNull(id!!.toInt())
-    comment ?: return context.fail(HttpResponseStatus.INTERNAL_SERVER_ERROR)
-    if (comment.sourceline != SubmissionComments.UnknownLine && comment.sourcefile != SubmissionComments.UnknownFile)
-        context.response().redirect(UrlPattern.reverse(
-                UrlPattern.CodeReview.Index,
-                mapOf(
-                        "id" to comment.submissionId
-                ),
-                star = "code/${comment.sourcefile}#line=${comment.sourceline}&commentId=${comment.id}"
-        ))
-    else
-        context.response().redirect(UrlPattern.reverse(
-                UrlPattern.CodeReview.Index,
-                mapOf(
-                        "id" to comment.submissionId
-                ),
-                star = "lost+found#commentId=${comment.id}"
-        ))
-}
-
 @HandlerFor(UrlPattern.Comment.Search)
 @Templatize("commentSearch.jade")
 @AuthorityRequired(Authority.Teacher)

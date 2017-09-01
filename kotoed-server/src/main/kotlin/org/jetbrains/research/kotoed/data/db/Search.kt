@@ -15,6 +15,8 @@ internal inline fun defaultField(query: ComplexDatabaseQuery) = defaultField(que
 internal inline fun defaultField(table: String) = "${table}_id"
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultResultField(field: String) = field.replace("_id", "")
+@Suppress(NOTHING_TO_INLINE)
+internal inline fun defaultReverseResultField(table: String) = table + "s"
 
 data class DatabaseJoin(
         val query: ComplexDatabaseQuery? = null,
@@ -29,6 +31,13 @@ data class DatabaseJoin(
         return copy(field = field_, resultField = resultField_, query = query_)
     }
 }
+
+data class ManyToOneJoin(
+        val query: ComplexDatabaseQuery?,
+        val field: String?,
+        val resultField: String? = query?.table?.let(::defaultReverseResultField),
+        val key: String? = null // null means pk
+): Jsonable {}
 
 fun DatabaseJoin(table: String,
                  field: String = defaultField(table),
