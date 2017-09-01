@@ -3,6 +3,7 @@ import * as _ from "lodash";
 import {MakeBaseQuery, SearchTable, SearchTableProps, SearchTableState} from "./search";
 import {sleep} from "../../util/common";
 import {VerificationStatus, WithVerificationData} from "../../data/verification";
+import {pollDespairing} from "../../util/poll";
 
 interface WithVerificationDataReq {
     withVerificationData: boolean
@@ -14,9 +15,8 @@ export function isStatusFinal(status: VerificationStatus) {
     return finalStatuses.includes(status);
 }
 
-const RETRIES = 10;
-const SLEEP = 15000;
-
+// TODO maybe add optional polling right into SearchTable
+// TODO because extening react components makes mess
 export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
         SearchTable<DataType & WithVerificationData,
             QueryType | WithVerificationDataReq> {
@@ -43,27 +43,27 @@ export class SearchTableWithVerificationData<DataType, QueryType = {}> extends
         };
     }
 
-    private isGoodEnough(data: Array<DataType & WithVerificationData>) {
+    private isGoodEnough = (data: Array<DataType & WithVerificationData>) => {
         return data.every((value: DataType & WithVerificationData) => isStatusFinal(value.verificationData.status))
-    }
+    };
 
-    private isQueryChanged(oldState: SearchTableState<DataType & WithVerificationData>) {
+    private isQueryChanged = (oldState: SearchTableState<DataType & WithVerificationData>) => {
         return oldState.text !== this.state.text || oldState.currentPage !== this.state.currentPage
-    }
+    };
 
     protected queryData = async () => {
-        let results;
-        let i = 0;
         let oldState = this.state;
-        while (true) {
-            if (this.isQueryChanged(oldState))
-                return;
-            results = await this.doQueryData();
+
+        const handleResult = (results: Array<DataType & WithVerificationData>) => {
             this.setState({currentResults: results, touched: true}, () => oldState = this.state);
-            if (i >= RETRIES || this.isGoodEnough(results))
-                return;
-            i++;
-            await sleep(SLEEP);
-        }
+        };
+
+        await pollDespairing({
+            action: this.doQueryData,
+            isGoodEnough: this.isGoodEnough,
+            onFinal: handleResult,
+            onIntermediate: handleResult,
+            strategyParams: {shouldGiveUp: () => this.isQueryChanged(oldState)}
+        });
     }
 }

@@ -246,7 +246,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
                 })
-                .filter("state != ${SubmissionState.obsolete}")
+                .filter("state != \"${SubmissionState.obsolete}\"")
         return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), q)
     }
 
