@@ -1,7 +1,7 @@
 import * as React from "react";
 import {Alert, Button, ButtonToolbar, Row, Table, Well, Label} from "react-bootstrap";
 import * as Spinner from "react-spinkit"
-import { WithContext as ReactTags } from 'react-tag-input';
+import {ReactTagsProps, WithContext} from 'react-tag-input';
 
 import SubmissionHistory from "./SubmissionHistory";
 import {SubmissionToRead, Tag} from "../../data/submission";
@@ -123,7 +123,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
     };
 
     private renderTagList = () => {
-        return <ReactTags
+        return <WithContext
+            classNames={{
+                tags: "pull-right",
+                tagInputField: "form-control"
+            }}
             tags={this.props.tags}
             handleAddition={this.props.onTagAdd}
             handleDelete={this.props.onTagDelete}
