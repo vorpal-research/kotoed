@@ -10,6 +10,8 @@ import kotlinx.Warnings.DEPRECATION
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.notification.NotificationType
+import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -347,6 +349,12 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
                     Address.DB.read(instance.name),
                     JsonObject("id" to id),
                     JsonObject::class, klass)
+
+    protected fun createNotification(record: NotificationRecord) =
+            vertx.eventBus().send(
+                    Address.Api.Notification.Create,
+                    record.toJson()
+            )
 }
 
 inline suspend fun <

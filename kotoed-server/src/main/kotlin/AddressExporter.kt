@@ -25,7 +25,7 @@ object AddressExporter {
             val args = it.valueParameters.map { "\${${it.name}}" }.toTypedArray()
             it.call(a, *args).let {
                 w.print("    " * (indent + 1))
-                w.println(Json.encode(it).unquote().let { "`$it`" })
+                w.println(Json.encode(it).unquote().let { "return `$it`;" })
             }
             w.print("    " * indent)
             w.println("},")

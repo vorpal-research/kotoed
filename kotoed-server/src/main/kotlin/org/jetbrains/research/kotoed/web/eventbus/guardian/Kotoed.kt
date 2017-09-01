@@ -1,9 +1,11 @@
 package org.jetbrains.research.kotoed.web.eventbus.guardian
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.filters.*
 import org.jetbrains.research.kotoed.web.eventbus.patchers.PerAddressPatcher
@@ -15,6 +17,11 @@ val HarmlessTypes =
                 BridgeEventType.SOCKET_CREATED)
 
 val Send = ByType(BridgeEventType.SEND)
+
+val ClientHandlerTypes =
+        ByTypes(BridgeEventType.REGISTER,
+                BridgeEventType.UNREGISTER,
+                BridgeEventType.RECEIVE)
 
 fun ProjectOwnerOrTeacher(vertx: Vertx, path: String = "project_id"): BridgeEventFilter =
         ShouldBeProjectOwner(vertx, path) or AuthorityRequired(Authority.Teacher)
@@ -30,6 +37,14 @@ fun SubmissionOwnerOrTeacherForFilter(vertx: Vertx, path: String = "submission_i
 
 fun CommentOwnerOrTeacher(vertx: Vertx, path: String = "id"): BridgeEventFilter =
         ShouldBeCommentOwner(vertx, path) or AuthorityRequired(Authority.Teacher)
+
+object ClientPushFilter: ByAddress() {
+    suspend override fun isAllowed(principal: JsonObject, address: String): Boolean {
+        return address == Address.Api.Notification.pushRendered("${principal["id"]}")
+    }
+
+    override fun toString() = "ClientPushFilter"
+}
 
 fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
     return PerAddress(
@@ -93,7 +108,8 @@ class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
     private val underlying = AnyOf(
             HarmlessTypes,
             Send and perAddressAnonymous,
-            LoginRequired and Send and perAddress
+            LoginRequired and Send and perAddress,
+            ClientHandlerTypes and ClientPushFilter
     )
 
     suspend override fun isAllowed(be: BridgeEvent): Boolean = underlying.isAllowed(be)
