@@ -32,6 +32,9 @@ export abstract class ComponentWithLocalErrors<P, S, E extends {[name: string]: 
         if (messages.length === 0)
             return null;
 
+        if(messages.length === 1)
+            return <div className="alert alert-danger">{messages[0]}</div>;
+
         return <div className="alert alert-danger">
             <ul>
                 {this.getErrorMessages().map((msg, ix) => <li key={ix}>{msg}</li>)}

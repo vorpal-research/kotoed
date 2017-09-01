@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.util.jsonValue
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.*
 import org.jooq.impl.DSL
+import org.jooq.impl.DefaultDataType
 import org.jooq.impl.DefaultRecordMapper
 import org.jooq.impl.SQLDataType
 import org.jooq.tools.jdbc.JDBCUtils
@@ -131,7 +132,8 @@ val postgresRecordMappers: RecordMapperProvider =
         }
 
 object PostgresDataTypeEx {
-    val JSONB = SQLDataType.VARCHAR.asConvertedDataType(PostgresJSONBinding())
+    val JSONB = DefaultDataType(SQLDialect.POSTGRES_9_5, SQLDataType.OTHER, "jsonb")
+            .asConvertedDataType(PostgresJSONBBinding())
 }
 
 fun jooq(ds: KotoedDataSource) =

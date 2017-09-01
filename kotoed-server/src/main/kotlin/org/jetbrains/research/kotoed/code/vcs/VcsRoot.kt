@@ -7,11 +7,17 @@ sealed class VcsResult<out T> {
     data class Failure(val output: Sequence<String>) : VcsResult<Nothing>()
 }
 
-inline fun<T, U> VcsResult<T>.map(f: (T) -> U): VcsResult<U> =
-    when(this) {
-        is VcsResult.Success -> VcsResult.Success(f(v))
-        is VcsResult.Failure -> VcsResult.Failure(output)
-    }
+inline fun <T, U> VcsResult<T>.map(f: (T) -> U): VcsResult<U> =
+        when (this) {
+            is VcsResult.Success -> VcsResult.Success(f(v))
+            is VcsResult.Failure -> VcsResult.Failure(output)
+        }
+
+inline fun <T> VcsResult<T>.recover(f: (Sequence<String>) -> VcsResult<T>): VcsResult<T> =
+        when (this) {
+            is VcsResult.Success -> this
+            is VcsResult.Failure -> f(output)
+        }
 
 abstract class VcsRoot(val remote: String, val local: String) {
     sealed class Revision {
@@ -19,7 +25,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
         object Trunk : Revision()
 
         companion object {
-            fun valueOf(rep: String) = when(rep.toLowerCase()) {
+            fun valueOf(rep: String) = when (rep.toLowerCase()) {
                 "tip", "head", "current", "" -> Trunk
                 else -> Id(rep)
             }
@@ -87,12 +93,12 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun info(rev: Revision, branch: String?): VcsResult<Pair<String, String>> {
         val commands = mutableListOf(git, "log", "-1", "--color=never", "--pretty=format:%H+%D")
-        if(rev != Revision.Trunk) {
+        if (rev != Revision.Trunk) {
             commands += rev.rep
         }
 
-        if(branch != null) {
-            if(rev == Revision.Trunk) commands += branch
+        if (branch != null) {
+            if (rev == Revision.Trunk) commands += branch
         }
 
         val res = CommandLine(commands).execute(File(local)).complete()
@@ -102,13 +108,12 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
             val (frev, fbranch) = rr.split("+")
             val (fbranchName) = fbranch.split(", ")
             return VcsResult.Success(Pair(frev, fbranchName))
-        }
-        else return VcsResult.Failure(res.cerr)
+        } else return VcsResult.Failure(res.cerr)
     }
 
     override fun ping(): VcsResult<Unit> {
         val res = CommandLine(git, "ls-remote", "-h", remote).execute(File(local)).complete()
-        if(res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(sequenceOf())
     }
 }
@@ -131,12 +136,12 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun info(rev: Revision, branch: String?): VcsResult<Pair<String, String>> {
         val commands = mutableListOf(mercurial, "identify", "--id", "--branch", "--debug")
-        if(rev != Revision.Trunk) {
+        if (rev != Revision.Trunk) {
             commands += "-r"
             commands += rev.rep
         }
 
-        if(branch != null) {
+        if (branch != null) {
             commands += "-b"
             commands += branch
         }
@@ -185,7 +190,7 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun ping(): VcsResult<Unit> {
         val res = CommandLine(mercurial, "identify", remote).execute(File(local)).complete()
-        if(res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 }

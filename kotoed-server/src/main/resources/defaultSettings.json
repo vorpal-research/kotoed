@@ -1,6 +1,6 @@
 {
   "root" : {
-    "host": "localhost"
+    "host": "http://localhost"
   },
   "buildbot": {
     "password": "0xDEADC0FFEE"

@@ -13,6 +13,7 @@ import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionStatusRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -222,7 +223,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
                 })
-                .filter("state != \"${SubmissionState.obsolete}\"")
+                .filter("state != %s".formatToQuery(SubmissionState.obsolete))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -246,7 +247,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
                 })
-                .filter("state != \"${SubmissionState.obsolete}\"")
+                .filter("state != %s".formatToQuery(SubmissionState.obsolete))
         return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), q)
     }
 

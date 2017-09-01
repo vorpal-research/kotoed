@@ -58,6 +58,9 @@ inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
             put(camelToKey(newName), remove(camelToKey(oldName)))
         } else this
 
+inline fun JsonObject.retainFields(vararg fields: String): JsonObject =
+        this.map.keys.retainAll(fields.map{ camelToKey(it)!! }).let { this }
+
 inline operator fun JsonObject.get(fields: List<String>) =
         fields.dropLast(1).fold(this) { obj, key_ ->
             obj.getJsonObject(camelToKey(key_)!!)

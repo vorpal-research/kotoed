@@ -10,6 +10,7 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -63,7 +64,10 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
-        val q = if (query.text.trim() == "") q_ else q_.filter("""document matches "${query.text}"""")
+        val q = if (query.text.trim() == "")
+            q_
+        else
+            q_.filter("document matches %s".formatToQuery(query.text))
 
         val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course"), q)
 
@@ -82,7 +86,7 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Course.SearchCount)
     suspend fun handleSearchCount(query: SearchQuery): JsonObject {
         val q_ = ComplexDatabaseQuery("course_text_search")
-        val q = if (query.text.trim() == "") q_ else q_.filter("""document matches "${query.text}"""")
+        val q = if (query.text.trim() == "") q_ else q_.filter("document matches %s".formatToQuery(query.text))
 
         return sendJsonableAsync(Address.DB.count("course"), q)
     }
