@@ -8,6 +8,8 @@ export function identity<T>(arg: T): T {
 
 export function doNothing() : void {}
 
+export function run<T>(body: () => T): T { return body() }
+
 export function typedKeys<T>(obj: T) {
     return Object.keys(obj) as Array<keyof T>
 }

@@ -79,6 +79,9 @@ object Address {
             const val Current = "kotoed.api.notification.current"
             const val RenderCurrent = "kotoed.api.notification.current.render"
             const val MarkRead = "kotoed.api.notification.markRead"
+            const val Create = "kotoed.api.notification.create"
+
+            fun pushRendered(id: String) = "kotoed.api.notification.push.$id.render"
         }
 
         object OAuthProvider {

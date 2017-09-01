@@ -31,3 +31,9 @@ export function sendAsync<Request, Response>(address: string, request: Request):
         eventBus.send<Request, Response>(address, request)
     );
 }
+
+export function setStateAsync<S, P, U extends keyof S>(self: React.Component<P, S>, state: Pick<S, U>): Promise<void> {
+    return new Promise(((resolve, _) => {
+        self.setState(state, () => resolve())
+    }));
+}
