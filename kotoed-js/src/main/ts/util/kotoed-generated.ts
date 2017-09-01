@@ -71,10 +71,22 @@ export namespace Generated {
                 Result: {
                     Read: "kotoed.api.submission.result.read",
                 },
+                Tags: {
+                    Create: "kotoed.api.submission.tags.create",
+                    Delete: "kotoed.api.submission.tags.delete",
+                    Read: "kotoed.api.submission.tags.read",
+                    Update: "kotoed.api.submission.tags.update",
+                },
                 Verification: {
                     Clean: "kotoed.api.submission.verification.clean",
                     Data: "kotoed.api.submission.verification.data",
                 },
+            },
+            Tag: {
+                Create: "kotoed.api.tag.create",
+                Delete: "kotoed.api.tag.delete",
+                List: "kotoed.api.tag.list",
+                Read: "kotoed.api.tag.read",
             },
         }
     };
