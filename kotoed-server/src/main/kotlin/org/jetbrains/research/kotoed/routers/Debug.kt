@@ -213,6 +213,8 @@ suspend fun RoutingContext.handleDebugEventBus() {
     val address by req
     address ?: throw IllegalArgumentException("Missing event bus address in: $req")
 
+    val publish by req
+
     val body =
             if (req.method() == HttpMethod.POST) {
                 req.bodyAsync().toJsonObject()
@@ -222,8 +224,14 @@ suspend fun RoutingContext.handleDebugEventBus() {
                         .map { (k, v) -> Pair(k, JsonEx.decode(v)) }
                         .let(::JsonObject)
             }
-    val res = eb.sendAsync<Any>(address, body)
-    response().end("${res.body()}")
+
+    if(publish == "true") {
+        val res = eb.publish(address, body)
+        response().end("{}")
+    } else {
+        val res = eb.sendAsync<Any>(address, body)
+        response().end("${res.body()}")
+    }
 }
 
 internal fun cssClassByPath(path: String) =

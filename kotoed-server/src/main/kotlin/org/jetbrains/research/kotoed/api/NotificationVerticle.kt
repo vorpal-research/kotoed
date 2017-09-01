@@ -33,6 +33,18 @@ class NotificationVerticle : AbstractKotoedVerticle() {
                     }
             )
 
+    @JsonableEventBusConsumerFor(Address.Api.Notification.Create)
+    suspend fun handleCreate(query: NotificationRecord): NotificationRecord {
+        val record = dbCreateAsync(query)
+
+        vertx.eventBus().publish(
+                Address.Api.Notification.pushRendered(record.denizenId.toString()),
+                render(record).toJson()
+        )
+
+        return record;
+    }
+
 
 
 }

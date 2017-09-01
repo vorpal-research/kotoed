@@ -38,6 +38,12 @@ export function isReplyError(e: Error | ReplyError): e is ReplyError {
     return e.hasOwnProperty("failureCode") && e.hasOwnProperty("failureType");
 }
 
+export interface EventbusMessage<Body = any> {
+    body: Body,
+    address: string,
+    type: string
+}
+
 /**
  * This event bus allows awaitOpen, sendAsync and reopens connection after loosing it
  */
@@ -108,7 +114,7 @@ export class AsyncEventBus {
         return this._isOpen;
     }
 
-    registerHandler(address: string, headers: EventBusHeaders, callback: (error: Error, message: any) => void): void {
+    registerHandler(address: string, headers: EventBusHeaders, callback: (error: Error, message: EventbusMessage) => void): void {
         this.handlers.push({
             address,
             headers,
