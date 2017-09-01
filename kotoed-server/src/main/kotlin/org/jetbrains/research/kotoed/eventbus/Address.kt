@@ -32,6 +32,14 @@ object Address {
             }
         }
 
+        object Tag {
+            const val Create = "kotoed.api.tag.create"
+            const val Read = "kotoed.api.tag.read"
+            const val Delete = "kotoed.api.tag.delete"
+
+            const val List = "kotoed.api.tag.list"
+        }
+
         object Submission {
             const val Read = "kotoed.api.submission.read"
             const val Last = "kotoed.api.submission.last"
@@ -45,6 +53,12 @@ object Address {
             const val ListCount = "kotoed.api.submission.list.count"
             const val History = "kotoed.api.submission.history"
 
+            object Tags {
+                const val Create = "kotoed.api.submission.tags.create"
+                const val Read = "kotoed.api.submission.tags.read"
+                const val Update = "kotoed.api.submission.tags.update"
+                const val Delete = "kotoed.api.submission.tags.delete"
+            }
 
             object Verification {
                 const val Data = "kotoed.api.submission.verification.data"
@@ -154,6 +168,12 @@ object Address {
         fun process(entity: String) = "kotoed.db.$entity.process"
         fun verify(entity: String) = "kotoed.db.$entity.verify"
         fun clean(entity: String) = "kotoed.db.$entity.clean"
+
+        object Submission {
+            object Tags {
+                const val Update = "kotoed.db.submission.tags.update"
+            }
+        }
     }
 
     object Notifications {
