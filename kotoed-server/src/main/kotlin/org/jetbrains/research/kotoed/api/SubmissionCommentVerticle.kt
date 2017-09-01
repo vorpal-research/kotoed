@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -162,7 +163,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val currentPage = query.currentPage ?: 0
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
-                .filter("""document matches "${query.text}"""")
+                .filter("document matches %s".formatToQuery(query.text))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -179,7 +180,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleSearchCount(query: SearchQuery): JsonObject {
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
-                .filter("""document matches "${query.text}"""")
+                .filter("document matches %s".formatToQuery(query.text))
 
         return sendJsonableAsync(Address.DB.count("submission_comment_text_search"), q)
     }
