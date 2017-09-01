@@ -6,6 +6,8 @@ import {DbRecordWrapper} from "../data/verification";
 import {SubmissionState, SubmissionToRead, Tag} from "../data/submission";
 import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
+import {CourseToRead} from "../data/course";
+import {sendAsync} from "../views/components/common";
 
 export interface SubmissionPermissions {
     editOwnComments: boolean
@@ -76,4 +78,11 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
             return {id: tag.id, text: tag.name}
         })
     });
+}
+
+export async function fetchCourse(id: number): Promise<DbRecordWrapper<CourseToRead>> {
+    return await sendAsync<WithId, DbRecordWrapper<CourseToRead>>(
+        Kotoed.Address.Api.Course.Read, {
+            id
+        });
 }

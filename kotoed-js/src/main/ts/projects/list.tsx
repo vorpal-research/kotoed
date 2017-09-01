@@ -2,16 +2,17 @@ import * as React from "react";
 import {Table,
     Glyphicon,
     Tooltip,
-    OverlayTrigger} from "react-bootstrap";
+    OverlayTrigger, Row} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import * as Spinner from "react-spinkit"
 
 import {fetchPermissions} from "./remote";
 import {
+    isStatusFinal,
     SearchTableWithVerificationData
 } from "../views/components/searchWithVerificationData";
-import {WithVerificationData} from "../data/verification";
+import {DbRecordWrapper, WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
 import {JumboProject} from "../data/submission";
@@ -19,6 +20,11 @@ import {JumboProject} from "../data/submission";
 import "less/projects.less"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 import {eventBus} from "../eventBus";
+import {CourseToRead} from "../data/course";
+import {SpinnerWithBigVeil} from "../views/components/SpinnerWithVeil";
+import VerificationDataAlert from "../views/components/VerificationDataAlert";
+import {pollDespairing} from "../util/poll";
+import {fetchCourse} from "../submissionDetails/remote";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -96,7 +102,12 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
 }
 
-class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
+interface ProjectSearchProps {
+    canCreateProject: boolean,
+    course?: DbRecordWrapper<CourseToRead>
+}
+
+class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
 
 
     constructor(props: {}) {
@@ -107,9 +118,24 @@ class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
     }
 
     componentDidMount() {
-        fetchPermissions(id_).then((perms) =>
+
+        const processCourse = (course: DbRecordWrapper<CourseToRead>) => {
+            this.setState({
+                course
+            })
+        };
+
+        pollDespairing({
+            action: async () => await fetchCourse(id_),
+            isGoodEnough: ((course: DbRecordWrapper<CourseToRead>) => isStatusFinal(course.verificationData.status)),
+            onIntermediate: processCourse,
+            onGiveUp: processCourse,
+            onFinal: processCourse
+        }).then(() => {
+            return fetchPermissions(id_)
+        }).then((perms) =>
             this.setState({canCreateProject: perms.createProject})
-        );
+        )
     }
 
     toolbarComponent = (redoSearch: () => void) => {
@@ -139,22 +165,34 @@ class ProjectsSearch extends React.Component<{}, {canCreateProject: boolean}> {
     };
 
     render() {
+        if (!this.state.course)
+            return <SpinnerWithBigVeil/>;
         return (
-            <SearchTableWithVerificationData
-                shouldPerformInitialSearch={() => true}
-                searchAddress={Kotoed.Address.Api.Project.SearchForCourse}
-                countAddress={Kotoed.Address.Api.Project.SearchForCourseCount}
-                makeBaseQuery={() => {
-                    return {
-                        find: {
-                            courseId: id_
-                        }
-                    }
-                }}
-                wrapResults={this.renderTable}
-                elementComponent={(key, c: ProjectWithVer) => <ProjectComponent {...c} key={key} />}
-                toolbarComponent={this.toolbarComponent}
-            />
+            <div>
+                <Row>
+                    {/*TODO add give up handling*/}
+                    <VerificationDataAlert
+                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Course "${obj.record.name}"`}
+                        obj={this.state.course} gaveUp={false}/>
+                </Row>
+                <Row>
+                    <SearchTableWithVerificationData
+                        shouldPerformInitialSearch={() => true}
+                        searchAddress={Kotoed.Address.Api.Project.SearchForCourse}
+                        countAddress={Kotoed.Address.Api.Project.SearchForCourseCount}
+                        makeBaseQuery={() => {
+                            return {
+                                find: {
+                                    courseId: id_
+                                }
+                            }
+                        }}
+                        wrapResults={this.renderTable}
+                        elementComponent={(key, c: ProjectWithVer) => <ProjectComponent {...c} key={key} />}
+                        toolbarComponent={this.toolbarComponent}
+                    />
+                </Row>
+            </div>
         );
     }
 }
