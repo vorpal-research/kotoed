@@ -303,8 +303,13 @@ export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabiliti
     return state;
 };
 
-export const submissionReducer = (state: SubmissionState = {submission: null}, action: Action) => {
+const defaultSubmissionState: SubmissionState = {
+    submission: null
+};
+
+export const submissionReducer = (state: SubmissionState = defaultSubmissionState, action: Action): SubmissionState => {
     if (isType(action, submissionFetch.done)) {
+        console.log(action.payload.result);
         return {...state, submission: action.payload.result}
     }
     return state;
