@@ -91,8 +91,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val catRes = run(ee) {
-            if(message.revision == null) root.update()
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
+            if(rev == VcsRoot.Revision.Trunk) root.update()
             root.cat(path, rev).recover {
                 root.update()
                 root.cat(path, rev)
@@ -113,8 +113,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
         val lsRes = run(ee) {
-            if(message.revision == null) root.update()
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
+            if(rev == VcsRoot.Revision.Trunk) root.update()
             root.ls(rev).recover {
                 root.update()
                 root.ls(rev)
