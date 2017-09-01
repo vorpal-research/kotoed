@@ -9,11 +9,18 @@
         </encoder>
     </appender>
 
-    <appender name="logfile" class="ch.qos.logback.core.FileAppender">
-        <file>/tmp/kotoed.log</file>
+    <appender name="logfile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <file>/tmp/kotoed.log</file> -->
         <encoder>
             <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSS} %-5p [%c] - %m%n</pattern>
         </encoder>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>/tmp/kotoed.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
     </appender>
 
     <logger name="org.jetbrains.research">
@@ -24,8 +31,8 @@
         <appender-ref ref="stdout"/>
     </logger>
 
-
     <root level="TRACE">
         <appender-ref ref="logfile"/>
     </root>
+
 </configuration>

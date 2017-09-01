@@ -54,7 +54,7 @@ export function makeFileNode(file: File) {
 
 export function makeAggregatesLabel(aggregate: CommentAggregate) {
     if (aggregate.open == 0 && aggregate.closed == 0)
-        return undefined;
+        return undefined; // TODO maybe null?
 
     let labelClass = aggregate.open === 0 ? "default" : "danger";
 
