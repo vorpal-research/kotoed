@@ -2,8 +2,9 @@ import * as React from "react";
 import {render} from "react-dom";
 import {sendAsync} from "./components/common";
 import {Kotoed} from "../util/kotoed-api";
+import UrlPattern = Kotoed.UrlPattern;
 
-interface LinkData {
+type LinkData = {
     entity: string
     id: string
 }
@@ -22,7 +23,7 @@ class NotificationDisplay extends React.PureComponent<NotificationDisplayProps> 
     }
 
     makeProperLink = (link: LinkData) => {
-        return `/views/${link.entity}/id/${link.id}`
+        return UrlPattern.reverse(UrlPattern.Redirect.ById, link)
     };
 
     onClick = () => {

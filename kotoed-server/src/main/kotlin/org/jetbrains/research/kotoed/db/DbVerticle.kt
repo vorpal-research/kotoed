@@ -18,7 +18,6 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.database.*
-import org.jetbrains.research.kotoed.util.get
 import org.jooq.*
 import org.jooq.exception.DataAccessException
 import org.jooq.impl.DSL
@@ -440,9 +439,6 @@ class CourseVerticle : CrudDatabaseVerticle<CourseRecord>(Tables.COURSE)
 
 @AutoDeployable
 class CourseStatusVerticle : CrudDatabaseVerticleWithReferences<CourseStatusRecord>(Tables.COURSE_STATUS)
-
-@AutoDeployable
-class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT)
 
 @AutoDeployable
 class ProjectStatusVerticle : CrudDatabaseVerticleWithReferences<ProjectStatusRecord>(Tables.PROJECT_STATUS)
