@@ -9,11 +9,11 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
-import org.jetbrains.research.kotoed.db.condition.lang.inClause
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
+import org.jetbrains.research.kotoed.db.condition.lang.toQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -72,7 +72,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission")
                 .find(SubmissionRecord().apply { state = SubmissionState.open })
                 .join(projQ, field = "project_id")
-                .filter("""project.document matches "${query.text}"""")
+                .filter("project.document matches %s".formatToQuery(query.text))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -97,7 +97,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission")
                 .find(SubmissionRecord().apply { state = SubmissionState.open })
                 .join(projQ, field = "project_id")
-                .filter("""project.document matches "${query.text}"""")
+                .filter("project.document matches %s".formatToQuery(query.text))
 
         return sendJsonableAsync(Address.DB.count("submission"), q)
     }
@@ -117,7 +117,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
-        val qWithSearch = if (query.text == "") q else q.filter("""document matches "${query.text}"""")
+        val qWithSearch = if (query.text == "") q else q.filter("document matches %s".formatToQuery(query.text))
 
         val projects: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.COURSE.name), qWithSearch)
 
@@ -125,7 +125,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     state = SubmissionState.open
                 })
-                .filter("${Tables.SUBMISSION.PROJECT_ID.name} in ${projects.map { it.getInteger("id") }.inClause()}")
+                .filter("${Tables.SUBMISSION.PROJECT_ID.name} in %s".formatToQuery(projects.map { it.getInteger("id") }))
 
         val submissionsJson: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), subQ)
         // TODO verification data for submissions
@@ -159,7 +159,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
                 })
 
-        val qWithSearch = if (query.text == "") q else q.filter("""document matches "${query.text}"""")
+        val qWithSearch = if (query.text == "") q else q.filter("document matches %s".formatToQuery(query.text))
 
         return sendJsonableAsync(Address.DB.count(Tables.PROJECT.name), qWithSearch)
     }
