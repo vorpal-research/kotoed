@@ -28,7 +28,7 @@ export const store = createStore(
         editorState: editorReducer,
         commentsState: commentsReducer,
         capabilitiesState: capabilitiesReducer,
-        submission: submissionReducer,
+        submissionState: submissionReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),

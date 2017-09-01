@@ -175,8 +175,10 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
             </div>
         }
 
-        if (!this.shouldRenderReview) {
-            return <div className="row">
+        if (!this.shouldRenderReview()) {
+            return <div style={{
+                flex: "1 0 auto"
+            }}>
                 <VerificationDataAlert
                     makeString={(obj: DbRecordWrapper<SubmissionToRead>) => `Submission #${obj.record.id}`}
                     obj={this.props.submission}
