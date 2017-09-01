@@ -13,11 +13,12 @@ import "less/util.less"
 
 import {makeAggregatesLabel} from "../../code/util/filetree";
 import {SubmissionCreate} from "../../submissions/create";
-import {DbRecordWrapper} from "../../data/verification";
+import {DbRecordWrapper, WithVerificationData} from "../../data/verification";
 import {isSubmissionAvalable} from "../../submissions/util";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url";
 import {WithId} from "../../data/common";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
+import VerificationDataAlert from "../../views/components/VerificationDataAlert";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<SubmissionToRead>,
@@ -77,7 +78,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         switch(this.props.submission.verificationData.status) {
             case "Unknown":
             case "NotReady":
-                return <Spinner name="circle" color="gray" fadeIn="none" className="display-inline"/>;
+                return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
             case "Invalid":
                 return <Label bsStyle="danger">Invalid</Label>;
             case "Processed":
@@ -91,7 +92,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                     case "open":
                         return <Label bsStyle="success">Open</Label>;
                     case "pending":
-                        return <Spinner name="circle" color="gray" fadeIn="none" className="display-inline"/>;
+                        return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
                     default:
                         return null
                 }
@@ -133,6 +134,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         }
 
         return <div>
+            <Row>
+                <VerificationDataAlert
+                    makeString={(obj: DbRecordWrapper<SubmissionToRead>) => `Submission #${obj.record.id}`}
+                    obj={this.props.submission} gaveUp={false}/>
+            </Row>
             <Row>
                 <div className="pull-right">
                     <ButtonToolbar>
