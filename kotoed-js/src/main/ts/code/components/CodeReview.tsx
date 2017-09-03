@@ -186,8 +186,6 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
             </div>
         }
 
-        return <div className="row code-review">
-            {this.renderReview()}
-        </div>
+        return this.renderReview()
     }
 }
