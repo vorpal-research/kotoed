@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed
 
+import io.netty.channel.DefaultChannelId
 import io.vertx.core.*
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.LoggerFormat
@@ -11,15 +12,21 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.util.routing.RoutingConfig
+import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
+import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {
+    DefaultChannelId.newInstance() // warm-up slow DNS
+
     launch(Unconfined) { startApplication() }
 }
+
+val rootLog = LoggerFactory.getLogger(RootVerticle::class.java)
 
 suspend fun startApplication(): Vertx {
     Thread.currentThread().contextClassLoader.getResourceAsStream(
@@ -39,7 +46,11 @@ suspend fun startApplication(): Vertx {
 
     //vertx.eventBus().addInterceptor(DebugInterceptor)
 
-    vxa<CompositeFuture> { autoDeploy(vertx, it) }
+    val cf = vxa<CompositeFuture> { autoDeploy(vertx, it) }
+
+    if (cf.failed()) {
+        rootLog.error("Well funk me sideways...", cf.cause())
+    }
 
     return vertx
 }
@@ -51,7 +62,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val router = Router.router(vertx)
 
         log.info("Alive and standing")
-        
+
         router.initRoutes()
 
         vertx.createHttpServer()
