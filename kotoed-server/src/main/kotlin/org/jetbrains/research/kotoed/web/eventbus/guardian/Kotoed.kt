@@ -38,7 +38,7 @@ fun SubmissionOwnerOrTeacherForFilter(vertx: Vertx, path: String = "submission_i
 fun CommentOwnerOrTeacher(vertx: Vertx, path: String = "id"): BridgeEventFilter =
         ShouldBeCommentOwner(vertx, path) or AuthorityRequired(Authority.Teacher)
 
-object ClientPushFilter: ByAddress() {
+object ClientPushFilter : ByAddress() {
     suspend override fun isAllowed(principal: JsonObject, address: String): Boolean {
         return address == Address.Api.Notification.pushRendered("${principal["id"]}")
     }
@@ -98,7 +98,11 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
 
             Address.Api.Submission.Verification.Clean to AuthorityRequired(Authority.Teacher),
 
-            Address.Api.Submission.Tags.Read to SubmissionOwnerOrTeacher(vertx, "id")
+            Address.Api.Submission.Tags.Read to SubmissionOwnerOrTeacher(vertx, "id"),
+            Address.Api.Submission.Tags.Create to SubmissionOwnerOrTeacher(vertx),
+            Address.Api.Submission.Tags.Delete to SubmissionOwnerOrTeacher(vertx),
+
+            Address.Api.Tag.List to Permissive
     )
 }
 

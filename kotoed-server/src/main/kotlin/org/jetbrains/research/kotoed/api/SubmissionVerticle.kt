@@ -288,7 +288,9 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Delete)
-    suspend fun handleTagsDelete(submissionTag: SubmissionTagRecord): SubmissionTagRecord {
-        return dbDeleteAsync(submissionTag)
+    suspend fun handleTagsDelete(submissionTag: SubmissionTagRecord): List<SubmissionTagRecord> {
+        val dbSubmissionTags = dbFindAsync(submissionTag)
+        dbSubmissionTags.forEach { dbDeleteAsync(it) }
+        return dbSubmissionTags
     }
 }
