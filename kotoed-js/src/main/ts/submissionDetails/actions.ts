@@ -1,6 +1,6 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
-import {DbRecordWrapper} from "../data/verification";
+import {DbRecordWrapper, isStatusFinal} from "../data/verification";
 import {SubmissionToRead, Tag} from "../data/submission";
 import {
     addSubmissionTag as addSubmissionTagRemote,
@@ -17,7 +17,6 @@ import {
     cleanSubmission as cleanSubmissionRemote
 } from "./remote";
 import {Kotoed} from "../util/kotoed-api";
-import {isStatusFinal} from "../views/components/searchWithVerificationData";
 import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
