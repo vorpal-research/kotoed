@@ -23,7 +23,10 @@ import {pollDespairing} from "../util/poll";
 import {truncateString} from "../util/string";
 import {fetchCourse} from "../courses/remote";
 import {ChoosyByVerDataSearchTable, ChoosySearchTable} from "../views/components/search";
-import {linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview} from "../submissions/util";
+import {
+    linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
+    renderSubmissionIcon
+} from "../submissions/util";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -61,6 +64,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td>{linkToSubmissionDetails(sub)}</td>
                         <td>{linkToSubmissionResults(sub)}</td>
                         <td>{linkToSubmissionReview(sub)}</td>
+                        <td>{renderSubmissionIcon(sub)}</td>
                     </tr>)}
                 </tbody>
             </table>
