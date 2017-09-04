@@ -31,7 +31,8 @@ export interface SubmissionDetailsProps {
         resubmit: boolean
     },
     comments: CommentAggregate,
-    tags: Tag[]
+    tags: Tag[],
+    availableTags: Tag[]
 }
 
 export interface SubmissionDetailsCallbacks {
@@ -125,11 +126,8 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
     private renderTagList = () => {
         return <WithContext
-            classNames={{
-                tags: "pull-right",
-                tagInputField: "form-control"
-            }}
             tags={this.props.tags}
+            suggestions={this.props.availableTags.map(tag => tag.text)}
             handleAddition={this.props.onTagAdd}
             handleDelete={this.props.onTagDelete}
         />

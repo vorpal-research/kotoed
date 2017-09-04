@@ -81,6 +81,15 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
     });
 }
 
+export async function fetchAvailableTags(): Promise<Tag[]> {
+    return eventBus.send<{}, TagRemote[]>(Kotoed.Address.Api.Tag.List, {})
+        .then(tags => {
+            return tags.map(tag => {
+                return {id: tag.id, text: tag.name}
+            })
+        });
+}
+
 export async function fetchCourse(id: number): Promise<DbRecordWrapper<CourseToRead>> {
     return await sendAsync<WithId, DbRecordWrapper<CourseToRead>>(
         Kotoed.Address.Api.Course.Read, {
