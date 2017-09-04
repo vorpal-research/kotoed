@@ -54,9 +54,12 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
         )
     }
 
-    toolbarComponent = (redoSearch: () => void) => {
+    toolbarComponent = () => {
         if (this.state.canCreateSubmission)
-            return <SubmissionCreate onCreate={redoSearch} projectId={id_}/>;
+            return <SubmissionCreate onCreate={(newId) =>
+                window.location.href =
+                    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: newId})
+            } projectId={id_}/>;
         else
             return null;
     };
