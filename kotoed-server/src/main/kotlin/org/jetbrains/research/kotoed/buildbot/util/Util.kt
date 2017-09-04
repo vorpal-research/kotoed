@@ -31,6 +31,10 @@ object Kotoed2Buildbot {
 
     val trans: Transliterator = Transliterator.getInstance("NFC; Any-Latin; Latin-ASCII")
 
-    fun asBuildbotProjectName(denizenName: String, projectName: String): String =
-            trans.transliterate("${denizenName}_${projectName}")
+    fun asBuildbotProjectName(denizenName: String, projectName: String): String {
+        val fullName = "${denizenName}_${projectName}"
+        val transliterated = trans.transliterate(fullName).take(100)
+        val suffix = DigestUtils.sha512Hex(fullName).take(4)
+        return "${transliterated}_$suffix"
+    }
 }
