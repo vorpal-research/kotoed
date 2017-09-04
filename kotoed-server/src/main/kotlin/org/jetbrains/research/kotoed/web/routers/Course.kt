@@ -20,7 +20,7 @@ import org.jetbrains.research.kotoed.web.navigation.*
 @JsBundle("projectList")
 suspend fun handleCourseIndex(context: RoutingContext) {
     val id by context.request()
-    val intId = id?.toInt()
+    val intId = id?.toIntOrNull()
 
     if (intId == null) {
         context.fail(HttpResponseStatus.BAD_REQUEST)

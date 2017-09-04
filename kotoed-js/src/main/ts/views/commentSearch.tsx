@@ -6,14 +6,8 @@ import {doNothing} from "../util/common";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {CommentToRead} from "../data/comment";
+import {truncateString} from "../util/string";
 
-function truncateString(str: string, len: number): string {
-    if (str.length <= len) return str;
-    else {
-        let truc = (len - 3) / 2;
-        return str.substr(0, truc) + "..." + str.substr(str.length - truc, truc)
-    }
-}
 
 class CommentSearchResult extends React.PureComponent<{ comment: CommentToRead }> {
     constructor(props: { comment: CommentToRead }) {
