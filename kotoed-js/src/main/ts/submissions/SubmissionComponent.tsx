@@ -10,7 +10,10 @@ import {SubmissionToRead} from "../data/submission";
 import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import * as moment from "moment";
-import {isSubmissionAvalable, renderSubmissionIcon} from "./util";
+import {
+    isSubmissionAvalable, linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
+    renderSubmissionIcon
+} from "./util";
 
 export type SubmissionWithVer = SubmissionToRead & WithVerificationData
 
@@ -24,28 +27,13 @@ export class SubmissionComponent extends React.PureComponent<SubmissionComponent
         super(props);
     }
 
-    private linkToSubDetails = (text: string): JSX.Element => {
-        if (isStatusFinal(this.props.verificationData.status) || this.props.pendingIsAvailable)
-            return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: this.props.id})}>{text}</a>;
-        else
-            return <span className={"grayed-out"}>{text}</span>
-    };
+    private linkToSubDetails = (text: string): JSX.Element => linkToSubmissionDetails(this.props, text, this.props.pendingIsAvailable);
 
 
-    private linkToResults = (): JSX.Element => {
-        if (isStatusFinal(this.props.verificationData.status) || this.props.pendingIsAvailable)
-            return <a href={makeSubmissionResultsUrl(this.props.id)}>Results</a>;
-        else
-            return <span className={"grayed-out"}>Results</span>
-    };
+    private linkToResults = (): JSX.Element => linkToSubmissionResults(this.props, this.props.pendingIsAvailable);
 
 
-    private linkToReview = (): JSX.Element => {
-        if (isSubmissionAvalable(this.props, this.props.pendingIsAvailable))
-            return <a href={makeSubmissionReviewUrl(this.props.id)}>Review</a>;
-        else
-            return <span className={"grayed-out"}>Review</span>
-    };
+    private linkToReview = (): JSX.Element => linkToSubmissionReview(this.props, this.props.pendingIsAvailable);
 
 
     render() {

@@ -362,7 +362,7 @@ export abstract class ChoosySearchTable<DataType, QueryType = {}> extends
         super.componentWillReceiveProps(props);
     }
 
-    protected abstract isGoodEnough: (data: Array<DataType & WithVerificationData>) => boolean;
+    protected abstract isGoodEnough(data: Array<DataType & WithVerificationData>): boolean;
 
     private isQueryChanged = (oldState: SearchTableState<DataType>) => {
         return oldState.text !== this.state.text || oldState.currentPage !== this.state.currentPage
@@ -387,7 +387,7 @@ export abstract class ChoosySearchTable<DataType, QueryType = {}> extends
 
 export class ChoosyByVerDataSearchTable<DataType extends WithVerificationData, QueryType = {}>
         extends ChoosySearchTable<DataType, QueryType> {
-    protected isGoodEnough = (data: Array<DataType>) => {
+    protected isGoodEnough(data: Array<DataType>) {
         return data.every((value: DataType & WithVerificationData) => isStatusFinal(value.verificationData.status))
     };
 }
