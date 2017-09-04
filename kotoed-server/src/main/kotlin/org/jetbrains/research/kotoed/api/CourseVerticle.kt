@@ -22,6 +22,7 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Course.Create)
     suspend fun handleCreate(course: CourseRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
+        course.name = course.name.truncateAt(1024)
 
         val res: CourseRecord = vxa<Message<JsonObject>> {
             eb.send(Address.DB.create(course.table.name), course.toJson(), it)
