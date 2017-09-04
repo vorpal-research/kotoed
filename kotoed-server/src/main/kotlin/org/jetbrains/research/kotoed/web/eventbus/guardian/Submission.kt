@@ -3,6 +3,8 @@ package org.jetbrains.research.kotoed.web.eventbus.guardian
 import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.web.auth.isProjectOwner
+import org.jetbrains.research.kotoed.web.auth.isSubmissionOwner
 import org.jetbrains.research.kotoed.web.eventbus.projectByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
@@ -59,13 +61,11 @@ class SubmissionOpen(
 /* Ownership stuff */
 
 private suspend fun BridgeEvent.checkProjectOwnership(vertx: Vertx, id: Int): Boolean {
-    val project = vertx.eventBus().projectByIdOrNull(id) ?: return false
-    return project.denizenId == this.socket()?.webUser()?.principal()?.getInteger("id")
+    return this.socket()?.webUser()?.isProjectOwner(vertx, id) ?: false
 }
 
 private suspend fun BridgeEvent.checkSubmissionOwnership(vertx: Vertx, id: Int): Boolean {
-    val sub = vertx.eventBus().submissionByIdOrNull(id) ?: return false
-    return checkProjectOwnership(vertx, sub.projectId)
+    return this.socket()?.webUser()?.isSubmissionOwner(vertx, id) ?: false
 }
 
 class ShouldBeProjectOwnerForFilter(
