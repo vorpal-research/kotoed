@@ -12,7 +12,6 @@ import kotlinx.Warnings.UNUSED_PARAMETER
 import java.io.BufferedReader
 import java.io.InputStream
 import java.lang.invoke.MethodHandles
-import java.lang.invoke.MethodType
 import java.net.URI
 import java.net.URLEncoder
 import kotlin.coroutines.experimental.buildSequence
@@ -172,3 +171,7 @@ fun String.normalizeUri() = "${URI(this).normalize()}"
 
 fun Map<String, String>.makeUriQuery() =
         "?" + this.map { (k, v) -> "${URLEncoder.encode(k, "UTF-8")}=${URLEncoder.encode(v, "UTF-8")}" }.joinToString("&")
+
+fun String.truncateAt(index: Int) =
+        if(index < length) take(index - 3) + "..."
+        else this

@@ -25,6 +25,7 @@ import {SpinnerWithBigVeil} from "../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {pollDespairing} from "../util/poll";
 import {fetchCourse} from "../submissionDetails/remote";
+import {truncateString} from "../util/string";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -93,8 +94,8 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     render() {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
-            <td>{this.linkify(this.props.name)}{" "}{this.renderIcon()}</td>
-            <td>{this.props.denizen.denizenId}</td>
+            <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
+            <td>{truncateString(this.props.denizen.denizenId, 30)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>
         </tr>

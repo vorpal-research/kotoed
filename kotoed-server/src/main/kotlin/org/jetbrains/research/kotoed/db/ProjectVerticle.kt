@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.json.JsonObject
-import org.flywaydb.core.internal.dbsupport.postgresql.PostgreSQLType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.eventbus.Address
