@@ -107,13 +107,6 @@ export async function deleteSubmissionTag(tagId: number, submissionId: number): 
     });
 }
 
-export async function fetchCourse(id: number): Promise<DbRecordWrapper<CourseToRead>> {
-    return await sendAsync<WithId, DbRecordWrapper<CourseToRead>>(
-        Kotoed.Address.Api.Course.Read, {
-            id
-        });
-}
-
 export async function cleanSubmission(submissionId: number): Promise<void> {
     return await sendAsync<WithId, void>(
         Kotoed.Address.Api.Submission.Verification.Clean,
