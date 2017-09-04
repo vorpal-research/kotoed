@@ -24,8 +24,8 @@ import {CourseToRead} from "../data/course";
 import {SpinnerWithBigVeil} from "../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {pollDespairing} from "../util/poll";
-import {fetchCourse} from "../submissionDetails/remote";
 import {truncateString} from "../util/string";
+import {fetchCourse} from "../courses/remote";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
