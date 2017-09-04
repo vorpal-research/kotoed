@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.util.redirect
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
+import org.jetbrains.research.kotoed.web.auth.isProjectOwnerOrTeacher
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
 import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.navigation.*
@@ -33,6 +34,11 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
                 context.fail(HttpResponseStatus.NOT_FOUND)
                 return
             }
+
+    if (!context.user().isProjectOwnerOrTeacher(context.vertx(), project)) {
+        context.fail(HttpResponseStatus.FORBIDDEN)
+        return
+    }
 
     context.put(NavBarContextName, kotoedNavBar(context.user()))
     context.put(BreadCrumbContextName, SubmissionResultBreadCrumb(course, author, project, submission))
