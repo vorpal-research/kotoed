@@ -3,6 +3,8 @@ import {Dispatch} from "react-redux";
 import {DbRecordWrapper} from "../data/verification";
 import {SubmissionToRead, Tag} from "../data/submission";
 import {
+    addSubmissionTag as addSubmissionTagRemote,
+    deleteSubmissionTag as deleteSubmissionTagRemote,
     fetchAvailableTags as fetchAvailableTagsRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
     fetchHistory as fetchHistoryRemote,
@@ -29,6 +31,8 @@ export const historyFetch = actionCreator.async<{ start: number, limit: number }
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
 export const tagListFetch = actionCreator.async<number, Tag[], {}>('TAG_LIST_FETCH');
 export const availableTagsFetch = actionCreator.async<null, Tag[], {}>('AVAILABLE_TAGS');
+export const submissionTagAdd = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_ADD');
+export const submissionTagDelete = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_DELETE');
 
 export function fetchSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -187,6 +191,28 @@ export function fetchAvailableTags() {
         dispatch(availableTagsFetch.done({
             params: null,
             result: availableTags
+        }));
+    }
+}
+
+export function addSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagAdd.started({tagId, submissionId}));
+        let res = await addSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagAdd.done({
+            params: {tagId, submissionId},
+            result: tagId
+        }));
+    }
+}
+
+export function deleteSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagDelete.started({tagId, submissionId}));
+        let res = await deleteSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagDelete.done({
+            params: {tagId, submissionId},
+            result: tagId
         }));
     }
 }

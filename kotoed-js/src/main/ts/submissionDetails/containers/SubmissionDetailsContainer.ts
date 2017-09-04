@@ -1,13 +1,24 @@
 import * as _ from "lodash";
-import {connect, MapStateToPropsParam} from "react-redux";
-import SubmissionDetails, {SubmissionDetailsCallbacks, SubmissionDetailsProps} from "../components/SubmissionDetails";
+import {connect} from "react-redux";
+import SubmissionDetails, {
+    SubmissionDetailsCallbacks,
+    SubmissionDetailsProps
+} from "../components/SubmissionDetails";
 import {Dispatch} from "redux";
 import {WithId} from "../../data/common";
-import {fetchHistory, initialize, navigateToNew, updateSubmission} from "../actions";
+import {
+    addSubmissionTag,
+    deleteSubmissionTag,
+    fetchHistory,
+    initialize,
+    navigateToNew,
+    updateSubmission,
+} from "../actions";
+
 type ContainerProps = WithId
 
-const mapStateToProps = function(store: SubmissionDetailsProps,
-                                 ownProps: ContainerProps): SubmissionDetailsProps {
+const mapStateToProps = function (store: SubmissionDetailsProps,
+                                  ownProps: ContainerProps): SubmissionDetailsProps {
     return store
 };
 
@@ -31,8 +42,12 @@ const mapDispatchToProps = function (dispatch: Dispatch<SubmissionDetailsProps>,
         onMount: () => {
             dispatch(initialize(ownProps.id))
         },
-        onTagAdd: (tagName: string) => {},
-        onTagDelete: (tagIdx: number) => {}
+        onTagAdd: (tagId: number) => {
+            dispatch(addSubmissionTag(tagId, ownProps.id))
+        },
+        onTagDelete: (tagId: number) => {
+            dispatch(deleteSubmissionTag(tagId, ownProps.id))
+        }
     }
 };
 
