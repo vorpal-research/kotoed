@@ -25,11 +25,10 @@ import {Capabilities, fetchCapabilities} from "./remote/capabilities";
 import {getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
 import {makeCodeReviewCodePath, makeCodeReviewLostFoundPath} from "../util/url";
-import {DbRecordWrapper} from "../data/verification";
+import {DbRecordWrapper, isStatusFinal} from "../data/verification";
 import {SubmissionToRead} from "../data/submission";
 import {pollDespairing} from "../util/poll";
 import {fetchSubmission} from "../submissionDetails/remote";
-import {isStatusFinal} from "../views/components/searchWithVerificationData";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {

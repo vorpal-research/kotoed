@@ -4,21 +4,18 @@ import {Row} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {fetchPermissions, fetchProject} from "./remote";
-import {
-    isStatusFinal,
-    SearchTableWithVerificationData
-} from "../views/components/searchWithVerificationData";
 import snafuDialog from "../util/snafuDialog";
 import "less/projects.less"
 import {renderSubmissionTable} from "./table";
 import {SubmissionComponent, SubmissionWithVer} from "./SubmissionComponent";
 import {SubmissionCreate} from "./create";
-import {DbRecordWrapper} from "../data/verification";
+import {DbRecordWrapper, isStatusFinal} from "../data/verification";
 import {CourseToRead} from "../data/course";
 import {SpinnerWithBigVeil} from "../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {ProjectToRead} from "../data/project";
 import {pollDespairing} from "../util/poll";
+import {ChoosyByVerDataSearchTable} from "../views/components/search";
 
 interface SubmissionListState {
     canCreateSubmission: boolean
@@ -31,7 +28,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
     constructor(props: {}) {
         super(props);
         this.state = {
-            canCreateSubmission: false
+            canCreateSubmission: false,
         };
     }
 
@@ -51,13 +48,18 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
         }).then(() => {
             return fetchPermissions(id_)
         }).then((perms) =>
-            this.setState({canCreateSubmission: perms.createSubmission})
+            this.setState({
+                canCreateSubmission: perms.createSubmission,
+            })
         )
     }
 
-    toolbarComponent = (redoSearch: () => void) => {
+    toolbarComponent = () => {
         if (this.state.canCreateSubmission)
-            return <SubmissionCreate onCreate={redoSearch} projectId={id_}/>;
+            return <SubmissionCreate onCreate={(newId) =>
+                window.location.href =
+                    Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: newId})
+            } projectId={id_}/>;
         else
             return null;
     };
@@ -70,24 +72,28 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                 <Row>
                     {/*TODO add give up handling*/}
                     <VerificationDataAlert
-                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Course "${obj.record.name}"`}
+                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Project "${obj.record.name}"`}
                         obj={this.state.project} gaveUp={false}/>
                 </Row>
                 <Row>
-                    <SearchTableWithVerificationData
+                    <ChoosyByVerDataSearchTable
                         shouldPerformInitialSearch={() => true}
                         searchAddress={Kotoed.Address.Api.Submission.List}
                         countAddress={Kotoed.Address.Api.Submission.ListCount}
                         withSearch={false}
                         makeBaseQuery={() => {
                             return {
+                                withVerificationData: true,
                                 find: {
                                     projectId: id_
                                 }
                             }
                         }}
                         wrapResults={renderSubmissionTable}
-                        elementComponent={(key, c: SubmissionWithVer) => <SubmissionComponent {...c} key={key} pendingIsAvailable={false}/>}
+                        elementComponent={(key, c: SubmissionWithVer) =>
+                            <SubmissionComponent {...c}
+                                                 key={key}
+                                                 pendingIsAvailable={false}/>}
                         toolbarComponent={this.toolbarComponent}
                     />
                 </Row>

@@ -288,7 +288,51 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Delete)
-    suspend fun handleTagsDelete(submissionTag: SubmissionTagRecord): SubmissionTagRecord {
-        return dbDeleteAsync(submissionTag)
+    suspend fun handleTagsDelete(submissionTag: SubmissionTagRecord): List<SubmissionTagRecord> {
+        val dbSubmissionTags = dbFindAsync(submissionTag)
+        dbSubmissionTags.forEach { dbDeleteAsync(it) }
+        return dbSubmissionTags
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Search)
+    suspend fun handleSearchForTag(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val currentPage = query.currentPage ?: 0
+
+        val denizenQ = ComplexDatabaseQuery("project")
+                .join("denizen")
+
+        val projectQ = ComplexDatabaseQuery("submission")
+                .join(denizenQ)
+
+        val q = ComplexDatabaseQuery("submission_tag")
+                .join(projectQ)
+                .join("tag")
+                .filter("tag.name == %s".formatToQuery(query.text))
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
+
+        val req: List<JsonObject> =
+                sendJsonableCollectAsync(Address.DB.query("submission_tag"), q)
+
+        return req.map { sub ->
+            sub
+        }.let(::JsonArray)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.SearchCount)
+    suspend fun handleSearchForTagCount(query: SearchQuery): JsonObject {
+        val denizenQ = ComplexDatabaseQuery("project")
+                .join("denizen")
+
+        val projectQ = ComplexDatabaseQuery("submission")
+                .join(denizenQ)
+
+        val q = ComplexDatabaseQuery("submission_tag")
+                .join(projectQ)
+                .join("tag")
+                .filter("tag.name == %s".formatToQuery(query.text))
+
+        return sendJsonableAsync(Address.DB.count("submission_tag"), q)
     }
 }

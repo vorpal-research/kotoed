@@ -140,7 +140,12 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                 val vd = dbProcessAsync(record)
                 json["verificationData"] = vd.toJson()
                 json["openSubmissions"] = submissionsByProject[record.id]
-                        ?.map{ it.toJson() }
+                        ?.map {
+                            val vdSub = dbProcessAsync(it)
+                            val subJson = it.toJson()
+                            subJson["verificationData"] = vdSub.toJson()
+                            subJson
+                        }
                         ?.let(::JsonArray)
                         ?: JsonArray()
                 json

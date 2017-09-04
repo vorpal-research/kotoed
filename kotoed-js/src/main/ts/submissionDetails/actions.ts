@@ -1,8 +1,11 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
-import {DbRecordWrapper} from "../data/verification";
+import {DbRecordWrapper, isStatusFinal} from "../data/verification";
 import {SubmissionToRead, Tag} from "../data/submission";
 import {
+    addSubmissionTag as addSubmissionTagRemote,
+    deleteSubmissionTag as deleteSubmissionTagRemote,
+    fetchAvailableTags as fetchAvailableTagsRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
     fetchHistory as fetchHistoryRemote,
     fetchPermissions as fetchPermissionsRemote,
@@ -10,10 +13,10 @@ import {
     fetchTagList as fetchTagListRemote,
     SubmissionPermissions,
     SubmissionUpdateRequest,
-    updateSubmission as updateSubmissionRemote
+    updateSubmission as updateSubmissionRemote,
+    cleanSubmission as cleanSubmissionRemote
 } from "./remote";
 import {Kotoed} from "../util/kotoed-api";
-import {isStatusFinal} from "../views/components/searchWithVerificationData";
 import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
@@ -27,6 +30,9 @@ export const permissionsFetch = actionCreator.async<number, SubmissionPermission
 export const historyFetch = actionCreator.async<{ start: number, limit: number }, Array<SubmissionToRead>, {}>('HIST_FETCH');
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
 export const tagListFetch = actionCreator.async<number, Tag[], {}>('TAG_LIST_FETCH');
+export const availableTagsFetch = actionCreator.async<null, Tag[], {}>('AVAILABLE_TAGS');
+export const submissionTagAdd = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_ADD');
+export const submissionTagDelete = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_DELETE');
 
 export function fetchSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -83,7 +89,8 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
                 changeStateOwnComments: false,
                 postComment: false,
                 changeStateAllComments: false,
-                editOwnComments: false
+                editOwnComments: false,
+                clean: false
             }
         }));
         dispatch(commentsTotalFetch.done({
@@ -123,8 +130,6 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
                 result: comments
             }));
         }
-
-        await fetchPermissions(id)(dispatch); // Permissions can be changed after status has changed
     }
 }
 
@@ -137,15 +142,16 @@ export function initialize(id: number) {
             result: sub
         }));
 
-        await fetchPermissions(id)(dispatch);
-
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
         await fetchTagList(id)(dispatch);
 
-        pollSubmissionIfNeeded(id, sub)(dispatch)
+        await fetchAvailableTags()(dispatch);
 
+        await pollSubmissionIfNeeded(id, sub)(dispatch);
+
+        fetchPermissions(id)(dispatch);
     }
 }
 
@@ -173,5 +179,56 @@ export function fetchTagList(submissionId: number) {
             params: submissionId,
             result: tagList
         }));
+    }
+}
+
+export function fetchAvailableTags() {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(availableTagsFetch.started(null));
+        let availableTags = await fetchAvailableTagsRemote();
+        dispatch(availableTagsFetch.done({
+            params: null,
+            result: availableTags
+        }));
+    }
+}
+
+export function addSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagAdd.started({tagId, submissionId}));
+        let res = await addSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagAdd.done({
+            params: {tagId, submissionId},
+            result: tagId
+        }));
+    }
+}
+
+export function deleteSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagDelete.started({tagId, submissionId}));
+        let res = await deleteSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagDelete.done({
+            params: {tagId, submissionId},
+            result: tagId
+        }));
+    }
+}
+
+export function cleanSubmission(id: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        await cleanSubmissionRemote(id);
+        dispatch(submissionFetch.started(id));
+
+        let sub = await fetchSubmissionRemote(id);
+        dispatch(submissionFetch.done({
+            params: id,
+            result: sub
+        }));
+
+        await pollSubmissionIfNeeded(id, sub)(dispatch);
+
+        fetchPermissions(id)(dispatch);
+
     }
 }

@@ -287,7 +287,8 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             changeStateAllComments: false,
             postComment: false,
             changeState: false,
-            resubmit: false
+            resubmit: false,
+            clean: false
         }
     },
     loading: true,
