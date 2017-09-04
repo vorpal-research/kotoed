@@ -69,5 +69,5 @@ suspend fun handleProjectSearch(context: RoutingContext) {
 @JsBundle("submissionByTagsSearch")
 suspend fun handleSubmissionByTagsSearch(context: RoutingContext) {
     context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
+    context.put(BreadCrumbContextName, SubmissionByTagsSearchBreadCrumb)
 }
