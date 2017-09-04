@@ -63,5 +63,11 @@ suspend fun handleProjectSearch(context: RoutingContext) {
     context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
 }
 
-
-
+@HandlerFor(UrlPattern.Submission.SearchByTags)
+@Templatize("submissionByTagsSearch.jade")
+@AuthorityRequired(Authority.Teacher)
+@JsBundle("submissionByTagsSearch")
+suspend fun handleSubmissionByTagsSearch(context: RoutingContext) {
+    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
+}
