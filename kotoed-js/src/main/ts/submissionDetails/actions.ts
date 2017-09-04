@@ -3,6 +3,7 @@ import {Dispatch} from "react-redux";
 import {DbRecordWrapper} from "../data/verification";
 import {SubmissionToRead, Tag} from "../data/submission";
 import {
+    fetchAvailableTags as fetchAvailableTagsRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
     fetchHistory as fetchHistoryRemote,
     fetchPermissions as fetchPermissionsRemote,
@@ -27,6 +28,7 @@ export const permissionsFetch = actionCreator.async<number, SubmissionPermission
 export const historyFetch = actionCreator.async<{ start: number, limit: number }, Array<SubmissionToRead>, {}>('HIST_FETCH');
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
 export const tagListFetch = actionCreator.async<number, Tag[], {}>('TAG_LIST_FETCH');
+export const availableTagsFetch = actionCreator.async<null, Tag[], {}>('AVAILABLE_TAGS');
 
 export function fetchSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -144,6 +146,8 @@ export function initialize(id: number) {
 
         await fetchTagList(id)(dispatch);
 
+        await fetchAvailableTags()(dispatch);
+
         pollSubmissionIfNeeded(id, sub)(dispatch)
 
     }
@@ -172,6 +176,17 @@ export function fetchTagList(submissionId: number) {
         dispatch(tagListFetch.done({
             params: submissionId,
             result: tagList
+        }));
+    }
+}
+
+export function fetchAvailableTags() {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(availableTagsFetch.started(null));
+        let availableTags = await fetchAvailableTagsRemote();
+        dispatch(availableTagsFetch.done({
+            params: null,
+            result: availableTags
         }));
     }
 }
