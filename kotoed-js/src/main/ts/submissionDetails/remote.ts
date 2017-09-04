@@ -25,8 +25,12 @@ export interface SubmissionUpdateRequest {
     state: SubmissionState
 }
 
+export interface SubmissionTagRequest {
+    tagId: number,
+    submissionId: number
+}
+
 export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<SubmissionToRead>> {
-    console.log("fetching");
     return eventBus.send<WithId, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Read, {
         id: submissionId
     })
@@ -79,6 +83,27 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
         return tags.map(tag => {
             return {id: tag.id, text: tag.name}
         })
+    });
+}
+
+export async function fetchAvailableTags(): Promise<Tag[]> {
+    return eventBus.send<{}, TagRemote[]>(Kotoed.Address.Api.Tag.List, {})
+        .then(tags => {
+            return tags.map(tag => {
+                return {id: tag.id, text: tag.name}
+            })
+        });
+}
+
+export async function addSubmissionTag(tagId: number, submissionId: number): Promise<any> {
+    return eventBus.send<SubmissionTagRequest, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Create, {
+        tagId, submissionId
+    });
+}
+
+export async function deleteSubmissionTag(tagId: number, submissionId: number): Promise<any> {
+    return eventBus.send<SubmissionTagRequest, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Delete, {
+        tagId, submissionId
     });
 }
 

@@ -3,6 +3,9 @@ import {Dispatch} from "react-redux";
 import {DbRecordWrapper} from "../data/verification";
 import {SubmissionToRead, Tag} from "../data/submission";
 import {
+    addSubmissionTag as addSubmissionTagRemote,
+    deleteSubmissionTag as deleteSubmissionTagRemote,
+    fetchAvailableTags as fetchAvailableTagsRemote,
     fetchCommentsTotal as fetchCommentsTotalRemote,
     fetchHistory as fetchHistoryRemote,
     fetchPermissions as fetchPermissionsRemote,
@@ -28,6 +31,9 @@ export const permissionsFetch = actionCreator.async<number, SubmissionPermission
 export const historyFetch = actionCreator.async<{ start: number, limit: number }, Array<SubmissionToRead>, {}>('HIST_FETCH');
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
 export const tagListFetch = actionCreator.async<number, Tag[], {}>('TAG_LIST_FETCH');
+export const availableTagsFetch = actionCreator.async<null, Tag[], {}>('AVAILABLE_TAGS');
+export const submissionTagAdd = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_ADD');
+export const submissionTagDelete = actionCreator.async<{ tagId: number, submissionId: number }, number, {}>('TAG_DELETE');
 
 export function fetchSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -142,6 +148,8 @@ export function initialize(id: number) {
 
         await fetchTagList(id)(dispatch);
 
+        await fetchAvailableTags()(dispatch);
+
         await pollSubmissionIfNeeded(id, sub)(dispatch);
 
         fetchPermissions(id)(dispatch);
@@ -157,13 +165,56 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
             result: sub
         }));
 
-        await pollSubmissionIfNeeded(payload.id, sub)(dispatch);
+        await fetchPermissions(payload.id)(dispatch);
 
-        fetchPermissions(payload.id)(dispatch);
+        pollSubmissionIfNeeded(payload.id, sub)(dispatch)
 
     }
 }
 
+export function fetchTagList(submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(tagListFetch.started(submissionId));
+        let tagList = await fetchTagListRemote(submissionId);
+        dispatch(tagListFetch.done({
+            params: submissionId,
+            result: tagList
+        }));
+    }
+}
+
+export function fetchAvailableTags() {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(availableTagsFetch.started(null));
+        let availableTags = await fetchAvailableTagsRemote();
+        dispatch(availableTagsFetch.done({
+            params: null,
+            result: availableTags
+        }));
+    }
+}
+
+export function addSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagAdd.started({tagId, submissionId}));
+        let res = await addSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagAdd.done({
+            params: {tagId, submissionId},
+            result: tagId
+        }));
+    }
+}
+
+export function deleteSubmissionTag(tagId: number, submissionId: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        dispatch(submissionTagDelete.started({tagId, submissionId}));
+        let res = await deleteSubmissionTagRemote(tagId, submissionId);
+        dispatch(submissionTagDelete.done({
+            params: {tagId, submissionId},
+            result: tagId
+        }));
+    }
+}
 
 export function cleanSubmission(id: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
@@ -180,16 +231,5 @@ export function cleanSubmission(id: number) {
 
         fetchPermissions(id)(dispatch);
 
-    }
-}
-
-export function fetchTagList(submissionId: number) {
-    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
-        dispatch(tagListFetch.started(submissionId));
-        let tagList = await fetchTagListRemote(submissionId);
-        dispatch(tagListFetch.done({
-            params: submissionId,
-            result: tagList
-        }));
     }
 }

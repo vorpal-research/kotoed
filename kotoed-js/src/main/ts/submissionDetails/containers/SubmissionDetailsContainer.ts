@@ -3,7 +3,15 @@ import {connect, MapStateToPropsParam} from "react-redux";
 import SubmissionDetails, {SubmissionDetailsCallbacks, SubmissionDetailsProps} from "../components/SubmissionDetails";
 import {Dispatch} from "redux";
 import {WithId} from "../../data/common";
-import {fetchHistory, initialize, navigateToNew, updateSubmission, cleanSubmission} from "../actions";
+import {
+    addSubmissionTag, cleanSubmission,
+    deleteSubmissionTag,
+    fetchHistory,
+    initialize,
+    navigateToNew,
+    updateSubmission
+} from "../actions";
+
 type ContainerProps = WithId
 
 const mapStateToProps = function(store: SubmissionDetailsProps,
@@ -28,14 +36,18 @@ const mapDispatchToProps = function (dispatch: Dispatch<SubmissionDetailsProps>,
         onReopen: () => {
             dispatch(updateSubmission({id: ownProps.id, state: "open"}))
         },
+        onTagAdd: (tagId: number) => {
+            dispatch(addSubmissionTag(tagId, ownProps.id))
+        },
+        onTagDelete: (tagId: number) => {
+            dispatch(deleteSubmissionTag(tagId, ownProps.id))
+        },
         onClean: () => {
             dispatch(cleanSubmission(ownProps.id))
         },
         onMount: () => {
             dispatch(initialize(ownProps.id))
-        },
-        onTagAdd: (tagName: string) => {},
-        onTagDelete: (tagIdx: number) => {}
+        }
     }
 };
 

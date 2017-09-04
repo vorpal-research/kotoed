@@ -32,7 +32,8 @@ export interface SubmissionDetailsProps {
         clean: boolean
     },
     comments: CommentAggregate,
-    tags: Tag[]
+    tags: Tag[],
+    availableTags: Tag[]
 }
 
 export interface SubmissionDetailsCallbacks {
@@ -44,8 +45,8 @@ export interface SubmissionDetailsCallbacks {
     onReopen: () => void
     onClean: () => void
     onMount: () => void
-    onTagAdd: (tagName: string) => void
-    onTagDelete: (tagIdx: number) => void
+    onTagAdd: (tagId: number) => void
+    onTagDelete: (tagId: number) => void
 }
 
 export default class SubmissionDetails extends React.Component<SubmissionDetailsProps & SubmissionDetailsCallbacks & WithId> {
@@ -132,15 +133,28 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" bsSize="lg"  onClick={this.props.onReopen}>Reopen</Button>;
     };
 
+    private onTagAdd = (tagName: string) => {
+        if (this.props.tags.some(tag => tagName === tag.text)) return;
+
+        let tag = this.props
+            .availableTags
+            .find(tag => tagName === tag.text);
+
+        return tag && this.props.onTagAdd(tag.id);
+    };
+
+    private onTagDelete = (tagIdx: number) => {
+        let tag = this.props.tags[tagIdx];
+
+        return tag && this.props.onTagDelete(tag.id)
+    };
+
     private renderTagList = () => {
         return <WithContext
-            classNames={{
-                tags: "pull-right",
-                tagInputField: "form-control"
-            }}
             tags={this.props.tags}
-            handleAddition={this.props.onTagAdd}
-            handleDelete={this.props.onTagDelete}
+            suggestions={this.props.availableTags.map(tag => tag.text)}
+            handleAddition={this.onTagAdd}
+            handleDelete={this.onTagDelete}
         />
     };
 

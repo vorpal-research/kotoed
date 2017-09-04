@@ -25,6 +25,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleCreate(project: ProjectRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
 
+        project.name = project.name.truncateAt(1024)
         project.id = null
         expect(project.courseId is Int)
         expect(project.denizenId is Int)
