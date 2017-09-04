@@ -156,3 +156,29 @@ data class SearchQuery(
 data class RestorePasswordSecret(
         val denizenId: String, val secret: String, val password: String
 ) : Jsonable
+
+data class ProfileInfo(
+        val id: Int,
+        val denizenId: String,
+        val email: String?,
+        val oauth: Map<String, Int?>,
+        val firstName: String?,
+        val lastName: String?,
+        val group: String?
+): Jsonable
+
+data class PasswordChangeRequest(
+        val oldPassword: String?,
+        val newPassword: String
+): Jsonable
+
+data class ProfileInfoUpdate(
+        val id: Int,
+        val denizenId: String,
+        val email: String?,
+        val oauth: Map<String, Int?>,
+        val firstName: String?,
+        val lastName: String?,
+        val group: String?,
+        val passwordChange: PasswordChangeRequest?
+): Jsonable

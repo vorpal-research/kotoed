@@ -5,7 +5,7 @@ export interface DenizenPrincipal {
 }
 
 export interface Denizen extends DenizenPrincipal {
-    email: string
+    email?: string
 }
 
 export interface WithDenizen {

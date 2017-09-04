@@ -87,6 +87,11 @@ object Address {
         object Denizen {
             const val Create = "kotoed.api.denizen.create"
             const val Read = "kotoed.api.denizen.read"
+
+            object Profile {
+                const val Read = "kotoed.api.denizen.profile.read"
+                const val Update = "kotoed.api.denizen.profile.update"
+            }
         }
 
         object Notification {

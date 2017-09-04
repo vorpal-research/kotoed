@@ -38,6 +38,9 @@ fun SubmissionOwnerOrTeacherForFilter(vertx: Vertx, path: String = "submission_i
 fun CommentOwnerOrTeacher(vertx: Vertx, path: String = "id"): BridgeEventFilter =
         ShouldBeCommentOwner(vertx, path) or AuthorityRequired(Authority.Teacher)
 
+fun SelfOrTeacher(path: String = "id"): BridgeEventFilter =
+        ShouldBeSelfForFilter(path) or AuthorityRequired(Authority.Teacher)
+
 object ClientPushFilter: ByAddress() {
     suspend override fun isAllowed(principal: JsonObject, address: String): Boolean {
         return address == Address.Api.Notification.pushRendered("${principal["id"]}")
@@ -48,6 +51,9 @@ object ClientPushFilter: ByAddress() {
 
 fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
     return PerAddress(
+            Address.Api.Denizen.Profile.Read to SelfOrTeacher(),
+            Address.Api.Denizen.Profile.Update to SelfOrTeacher(),
+
             Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),
             Address.Api.Course.Read to Permissive,
             Address.Api.Course.Search to Permissive,
