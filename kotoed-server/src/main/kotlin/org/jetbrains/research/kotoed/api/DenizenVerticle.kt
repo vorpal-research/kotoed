@@ -1,12 +1,16 @@
 package org.jetbrains.research.kotoed.api
 
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.ProfileInfo
+import org.jetbrains.research.kotoed.data.api.ProfileInfoUpdate
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
+import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProfileRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class DenizenVerticle: AbstractKotoedVerticle() {
@@ -18,5 +22,39 @@ class DenizenVerticle: AbstractKotoedVerticle() {
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Read)
     suspend fun handleRead(denizen: DenizenRecord): DbRecordWrapper =
             DbRecordWrapper(dbFetchAsync(denizen), VerificationData.Processed)
+
+    @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.Read)
+    suspend fun handleProfileRead(denizen: DenizenRecord): ProfileInfo {
+        // FIXME belyaev: do this properly
+
+        val dbDenizen = dbFetchAsync(denizen)
+        val profile = dbFindAsync(ProfileRecord().apply { denizenId = denizen.id }).firstOrNull()
+
+        val oauth = dbQueryAsync(
+                ComplexDatabaseQuery(Tables.OAUTH_PROFILE)
+                .join(Tables.OAUTH_PROVIDER)
+                .find(OauthProfileRecord().apply { denizenId = denizen.id })
+        ).map { (it.safeNav("oauth_provider", "name") as String) to (it.getString("oauth_user_id").toIntOrNull()) }
+                .toMap()
+
+        return ProfileInfo(
+                id = denizen.id,
+                denizenId = dbDenizen.denizenId,
+                email = dbDenizen.email,
+                oauth = oauth,
+                firstName = profile?.firstName,
+                lastName = profile?.lastName,
+                group = profile?.groupId
+        )
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.Update)
+    suspend fun handleProfileUpdate(update: ProfileInfoUpdate): Unit {
+        // FIXME belyaev: do this properly
+
+        if(update.email != null) {
+            dbUpdateAsync(DenizenRecord().apply { id = update.id; email = update.email })
+        }
+    }
 
 }

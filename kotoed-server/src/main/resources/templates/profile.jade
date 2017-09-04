@@ -1,0 +1,7 @@
+extends ./baseWithNav
+
+append content
+    div(id="profile-app" data-id=context.get("id"))
+
+block title
+    title= "Profile"

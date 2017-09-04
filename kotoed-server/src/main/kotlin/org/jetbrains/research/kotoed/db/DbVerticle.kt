@@ -419,9 +419,6 @@ class DebugVerticle : CrudDatabaseVerticle<DebugRecord>(Tables.DEBUG)
 @AutoDeployable
 class DenizenUnsafeVerticle : CrudDatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UNSAFE)
 
-@AutoDeployable
-class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN)
-
 //@AutoDeployable
 //class SubmissionVerticle : CrudDatabaseVerticleWithReferences<SubmissionRecord>(Tables.SUBMISSION)
 
@@ -463,3 +460,7 @@ class CourseTextSearchVerticle : CrudDatabaseVerticleWithReferences<CourseTextSe
 
 @AutoDeployable
 class TagVerticle : CrudDatabaseVerticleWithReferences<TagRecord>(Tables.TAG)
+
+@AutoDeployable
+class ProfileVerticle : CrudDatabaseVerticleWithReferences<ProfileRecord>(Tables.PROFILE)
+

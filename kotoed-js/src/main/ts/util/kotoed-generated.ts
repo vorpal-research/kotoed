@@ -23,11 +23,16 @@ export namespace Generated {
             Denizen: {
                 Create: "kotoed.api.denizen.create",
                 Read: "kotoed.api.denizen.read",
+                Profile: {
+                    Read: "kotoed.api.denizen.profile.read",
+                    Update: "kotoed.api.denizen.profile.update",
+                },
             },
             Notification: {
                 pushRendered: (id: string) => {
                     return `kotoed.api.notification.push.${id}.render`;
                 },
+                Create: "kotoed.api.notification.create",
                 Current: "kotoed.api.notification.current",
                 MarkRead: "kotoed.api.notification.markRead",
                 RenderCurrent: "kotoed.api.notification.current.render",
@@ -128,6 +133,10 @@ export namespace Generated {
         },
         Course: {
             Index: "/course/:id",
+        },
+        Profile: {
+            Edit: "/profile/edit/:id",
+            Index: "/profile/:id",
         },
         Project: {
             Index: "/project/:id",

@@ -53,6 +53,11 @@ object UrlPattern {
         const val Index = "/submission/:id"
     }
 
+    object Profile {
+        const val Index = "/profile/:id"
+        const val Edit = "/profile/edit/:id"
+    }
+
     object SubmissionResults {
         const val ById = "/redirect/submissionResults/:id"
     }
