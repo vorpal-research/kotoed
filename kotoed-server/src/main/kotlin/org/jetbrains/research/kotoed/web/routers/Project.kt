@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.util.routing.JsBundle
 import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.util.routing.Templatize
 import org.jetbrains.research.kotoed.web.UrlPattern
+import org.jetbrains.research.kotoed.web.auth.isProjectOwnerOrTeacher
 import org.jetbrains.research.kotoed.web.eventbus.ProjectWithRelated
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
 import org.jetbrains.research.kotoed.web.eventbus.courseByIdOrNull
@@ -21,7 +22,7 @@ import org.jetbrains.research.kotoed.web.navigation.*
 @JsBundle("submissionList")
 suspend fun handleProjectIndex(context: RoutingContext) {
     val id by context.request()
-    val intId = id?.toInt()
+    val intId = id?.toIntOrNull()
 
     if (intId == null) {
         context.fail(HttpResponseStatus.BAD_REQUEST)
@@ -33,6 +34,11 @@ suspend fun handleProjectIndex(context: RoutingContext) {
                 context.fail(HttpResponseStatus.NOT_FOUND)
                 return
             }
+
+    if (!context.user().isProjectOwnerOrTeacher(context.vertx(), project)) {
+        context.fail(HttpResponseStatus.FORBIDDEN)
+        return
+    }
 
     context.put(BreadCrumbContextName, ProjectBreadCrumb(course, author, project))
     context.put(NavBarContextName, kotoedNavBar(context.user()))
