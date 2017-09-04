@@ -7,11 +7,10 @@ import * as Spinner from "react-spinkit"
 
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 import {SubmissionToRead} from "../data/submission";
-import {WithVerificationData} from "../data/verification";
+import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import * as moment from "moment";
 import {isSubmissionAvalable, renderSubmissionIcon} from "./util";
-import {isStatusFinal} from "../views/components/searchWithVerificationData";
 
 export type SubmissionWithVer = SubmissionToRead & WithVerificationData
 

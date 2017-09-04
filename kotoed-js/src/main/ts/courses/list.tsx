@@ -3,16 +3,12 @@ import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Ro
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {imagePath} from "../images";
-import {SearchTable} from "../views/components/search";
+import {ChoosyByVerDataSearchTable, SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
-import {
-    isStatusFinal,
-    SearchTableWithVerificationData
-} from "../views/components/searchWithVerificationData";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import Planks from "../views/components/Planks";
-import {WithVerificationData} from "../data/verification";
+import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {Course, CourseToRead} from "../data/course";
 import {CourseCreate} from "./create";
 
@@ -92,7 +88,7 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
 
     render() {
         return (
-            <SearchTableWithVerificationData
+            <ChoosyByVerDataSearchTable
                 shouldPerformInitialSearch={() => true}
                 searchAddress={Kotoed.Address.Api.Course.Search}
                 countAddress={Kotoed.Address.Api.Course.SearchCount}
@@ -102,6 +98,11 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
                     using: this.renderRow
                 }}
                 toolbarComponent={this.toolbarComponent}
+                makeBaseQuery={() => {
+                    return {
+                        withVerificationData: true,
+                    }
+                }}
             />
         );
     }

@@ -8,11 +8,7 @@ import {render} from "react-dom";
 import * as Spinner from "react-spinkit"
 
 import {fetchPermissions} from "./remote";
-import {
-    isStatusFinal,
-    SearchTableWithVerificationData
-} from "../views/components/searchWithVerificationData";
-import {DbRecordWrapper, WithVerificationData} from "../data/verification";
+import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
 import {JumboProject} from "../data/submission";
@@ -26,6 +22,7 @@ import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {pollDespairing} from "../util/poll";
 import {truncateString} from "../util/string";
 import {fetchCourse} from "../courses/remote";
+import {ChoosyByVerDataSearchTable} from "../views/components/search";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -173,12 +170,13 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
                         obj={this.state.course} gaveUp={false}/>
                 </Row>
                 <Row>
-                    <SearchTableWithVerificationData
+                    <ChoosyByVerDataSearchTable
                         shouldPerformInitialSearch={() => true}
                         searchAddress={Kotoed.Address.Api.Project.SearchForCourse}
                         countAddress={Kotoed.Address.Api.Project.SearchForCourseCount}
                         makeBaseQuery={() => {
                             return {
+                                withVerificationData: true,
                                 find: {
                                     courseId: id_
                                 }

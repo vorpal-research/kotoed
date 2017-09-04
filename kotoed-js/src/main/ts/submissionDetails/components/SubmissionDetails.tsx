@@ -14,13 +14,12 @@ import "less/util.less"
 
 import {makeAggregatesLabel} from "../../code/util/filetree";
 import {SubmissionCreate} from "../../submissions/create";
-import {DbRecordWrapper, WithVerificationData} from "../../data/verification";
+import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../../data/verification";
 import {isSubmissionAvalable} from "../../submissions/util";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url";
 import {WithId} from "../../data/common";
 import SpinnerWithVeil, {SpinnerWithBigVeil} from "../../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
-import {isStatusFinal} from "../../views/components/searchWithVerificationData";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<SubmissionToRead>,
