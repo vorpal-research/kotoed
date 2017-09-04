@@ -48,3 +48,11 @@ export function makeSubmissionReviewUrl(id: number): string {
 export function makeSubmissionResultsUrl(id: number): string {
     return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Results, {id});
 }
+
+export function makeSubmissionIndexUrl(id: number): string {
+    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id});
+}
+
+export function makeProjectIndexUrl(id: number): string {
+    return Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Project.Index, {id});
+}
