@@ -11,7 +11,7 @@ import {fetchPermissions} from "./remote";
 import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
-import {JumboProject} from "../data/submission";
+import {JumboProject, SubmissionToRead} from "../data/submission";
 
 import "less/projects.less"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
@@ -22,7 +22,8 @@ import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {pollDespairing} from "../util/poll";
 import {truncateString} from "../util/string";
 import {fetchCourse} from "../courses/remote";
-import {ChoosyByVerDataSearchTable} from "../views/components/search";
+import {ChoosyByVerDataSearchTable, ChoosySearchTable} from "../views/components/search";
+import {linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview} from "../submissions/util";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -57,9 +58,9 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <table>
                 <tbody>
                     {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
-                        <td><a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: sub.id})}>{`#${sub.id}`}</a></td>
-                        <td><a href={makeSubmissionReviewUrl(sub.id)}>Review</a></td>
-                        <td><a href={makeSubmissionResultsUrl(sub.id)}>Results</a></td>
+                        <td>{linkToSubmissionDetails(sub)}</td>
+                        <td>{linkToSubmissionResults(sub)}</td>
+                        <td>{linkToSubmissionReview(sub)}</td>
                     </tr>)}
                 </tbody>
             </table>
@@ -101,9 +102,19 @@ interface ProjectSearchProps {
     course?: DbRecordWrapper<CourseToRead>
 }
 
+class ProjectsSearchTable extends ChoosyByVerDataSearchTable<JumboProject & WithVerificationData,
+        {withVerificationData: true, find: {courseId: number }}> {
+
+    protected isGoodEnough(data: (JumboProject & WithVerificationData)[]) {
+        return super.isGoodEnough(data) &&
+            data.every((datum: JumboProject & WithVerificationData) => {
+                return datum.openSubmissions.every((sub: SubmissionToRead & WithVerificationData) =>
+                    isStatusFinal(sub.verificationData.status))
+            })
+    }
+}
+
 class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
-
-
     constructor(props: {}) {
         super(props);
         this.state = {
@@ -170,7 +181,7 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
                         obj={this.state.course} gaveUp={false}/>
                 </Row>
                 <Row>
-                    <ChoosyByVerDataSearchTable
+                    <ProjectsSearchTable
                         shouldPerformInitialSearch={() => true}
                         searchAddress={Kotoed.Address.Api.Project.SearchForCourse}
                         countAddress={Kotoed.Address.Api.Project.SearchForCourseCount}
