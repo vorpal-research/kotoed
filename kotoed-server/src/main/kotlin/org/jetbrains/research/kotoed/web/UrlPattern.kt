@@ -51,6 +51,8 @@ object UrlPattern {
     object Submission {
         const val Results = "/views/submission/:id/results"
         const val Index = "/submission/:id"
+
+        const val SearchByTags = "/views/submission/searchByTags"
     }
 
     object Profile {

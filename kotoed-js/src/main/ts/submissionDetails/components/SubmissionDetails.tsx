@@ -14,13 +14,12 @@ import "less/util.less"
 
 import {makeAggregatesLabel} from "../../code/util/filetree";
 import {SubmissionCreate} from "../../submissions/create";
-import {DbRecordWrapper, WithVerificationData} from "../../data/verification";
+import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../../data/verification";
 import {isSubmissionAvalable} from "../../submissions/util";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url";
 import {WithId} from "../../data/common";
 import SpinnerWithVeil, {SpinnerWithBigVeil} from "../../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
-import {isStatusFinal} from "../../views/components/searchWithVerificationData";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<SubmissionToRead>,
@@ -28,10 +27,12 @@ export interface SubmissionDetailsProps {
     history: Array<SubmissionToRead>,
     permissions: {
         changeState: boolean,
-        resubmit: boolean
+        resubmit: boolean,
+        clean: boolean
     },
     comments: CommentAggregate,
-    tags: Tag[]
+    tags: Tag[],
+    availableTags: Tag[]
 }
 
 export interface SubmissionDetailsCallbacks {
@@ -41,9 +42,10 @@ export interface SubmissionDetailsCallbacks {
     onResubmit: (newId: number) => void
     onClose: () => void
     onReopen: () => void
+    onClean: () => void
     onMount: () => void
-    onTagAdd: (tagName: string) => void
-    onTagDelete: (tagIdx: number) => void
+    onTagAdd: (tagId: number) => void
+    onTagDelete: (tagId: number) => void
 }
 
 export default class SubmissionDetails extends React.Component<SubmissionDetailsProps & SubmissionDetailsCallbacks & WithId> {
@@ -104,6 +106,13 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         }
     };
 
+    private renderClean = () => {
+        if (this.props.permissions.clean)
+            return <Button bsSize="lg" bsStyle="primary" onClick={() => this.props.onClean()}>Clean</Button>;
+        else
+            return null;
+    };
+
     private renderResubmit = () => {
         if (this.props.permissions.resubmit)
             return <SubmissionCreate
@@ -123,15 +132,28 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" bsSize="lg"  onClick={this.props.onReopen}>Reopen</Button>;
     };
 
+    private onTagAdd = (tagName: string) => {
+        if (this.props.tags.some(tag => tagName === tag.text)) return;
+
+        let tag = this.props
+            .availableTags
+            .find(tag => tagName === tag.text);
+
+        return tag && this.props.onTagAdd(tag.id);
+    };
+
+    private onTagDelete = (tagIdx: number) => {
+        let tag = this.props.tags[tagIdx];
+
+        return tag && this.props.onTagDelete(tag.id)
+    };
+
     private renderTagList = () => {
         return <WithContext
-            classNames={{
-                tags: "pull-right",
-                tagInputField: "form-control"
-            }}
             tags={this.props.tags}
-            handleAddition={this.props.onTagAdd}
-            handleDelete={this.props.onTagDelete}
+            suggestions={this.props.availableTags.map(tag => tag.text)}
+            handleAddition={this.onTagAdd}
+            handleDelete={this.onTagDelete}
         />
     };
 
@@ -154,6 +176,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             <Row>
                 <div className="pull-right">
                     <ButtonToolbar>
+                        {this.renderClean()}
                         {this.renderStateChange()}
                         {this.renderResubmit()}
                     </ButtonToolbar>

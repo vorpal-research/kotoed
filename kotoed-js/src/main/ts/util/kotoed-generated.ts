@@ -83,6 +83,8 @@ export namespace Generated {
                     Create: "kotoed.api.submission.tags.create",
                     Delete: "kotoed.api.submission.tags.delete",
                     Read: "kotoed.api.submission.tags.read",
+                    Search: "kotoed.api.submission.tags.search",
+                    SearchCount: "kotoed.api.submission.tags.search.count",
                     Update: "kotoed.api.submission.tags.update",
                 },
                 Verification: {
@@ -148,6 +150,7 @@ export namespace Generated {
         Submission: {
             Index: "/submission/:id",
             Results: "/views/submission/:id/results",
+            SearchByTags: "/views/submission/searchByTags",
         },
         SubmissionResults: {
             ById: "/redirect/submissionResults/:id",

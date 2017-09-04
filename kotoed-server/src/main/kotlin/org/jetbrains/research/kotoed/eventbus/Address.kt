@@ -58,6 +58,9 @@ object Address {
                 const val Read = "kotoed.api.submission.tags.read"
                 const val Update = "kotoed.api.submission.tags.update"
                 const val Delete = "kotoed.api.submission.tags.delete"
+
+                const val Search = "kotoed.api.submission.tags.search"
+                const val SearchCount = "kotoed.api.submission.tags.search.count"
             }
 
             object Verification {

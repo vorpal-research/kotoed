@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.web.navigation
 
-import io.vertx.core.Vertx
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -11,11 +10,12 @@ val BreadCrumbContextName = "breadcrumb"
 
 data class BreadCrumbElement(val text: String, val active: Boolean = false, val href: String? = null)
 class BreadCrumb(val elements: List<BreadCrumbElement>) {
-    constructor(elem: BreadCrumbElement): this(listOf(elem))
+    constructor(elem: BreadCrumbElement) : this(listOf(elem))
 }
 
 // TODO it's not very effective. Consider adding builder.
 operator fun BreadCrumb.plus(elem: BreadCrumbElement) = BreadCrumb(elements + elem)
+
 operator fun BreadCrumb.plus(otherElems: List<BreadCrumbElement>) = BreadCrumb(elements + otherElems)
 operator fun BreadCrumbElement.plus(other: BreadCrumbElement) = BreadCrumb(listOf(this, other))
 
@@ -29,7 +29,7 @@ fun CourseBreadCrumbElement(active: Boolean, course: CourseRecord): BreadCrumbEl
     return BreadCrumbElement(
             text = course.name,
             active = active,
-            href=UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to course.id)))
+            href = UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to course.id)))
 }
 
 fun ProjectBreadCrumbElement(active: Boolean,
@@ -38,7 +38,7 @@ fun ProjectBreadCrumbElement(active: Boolean,
     return BreadCrumbElement(
             text = "${project.name} by ${author.denizenId}",
             active = active,
-            href=UrlPattern.reverse(UrlPattern.Project.Index, mapOf("id" to project.id)))
+            href = UrlPattern.reverse(UrlPattern.Project.Index, mapOf("id" to project.id)))
 }
 
 
@@ -46,28 +46,31 @@ fun SubmissionBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
         BreadCrumbElement(
                 text = "Submission #${submission.id}",
                 active = active,
-                href=UrlPattern.reverse(UrlPattern.Submission.Index, mapOf("id" to submission.id))) // TODO
+                href = UrlPattern.reverse(UrlPattern.Submission.Index, mapOf("id" to submission.id))) // TODO
 
 fun SubmissionResultBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
         BreadCrumbElement(
                 text = "Results",
                 active = active,
-                href=UrlPattern.reverse(UrlPattern.Submission.Results, mapOf("id" to submission.id)))
+                href = UrlPattern.reverse(UrlPattern.Submission.Results, mapOf("id" to submission.id)))
 
 fun SubmissionReviewBreadCrumbElement(active: Boolean, submission: SubmissionRecord) =
         BreadCrumbElement(
                 text = "Review",
                 active = active,
-                href=UrlPattern.reverse(UrlPattern.CodeReview.Index, mapOf("id" to submission.id)))
+                href = UrlPattern.reverse(UrlPattern.CodeReview.Index, mapOf("id" to submission.id)))
 
 fun UtilitiesBreadCrumbElement(active: Boolean) =
         BreadCrumbElement(text = "Utilities", active = active)
 
 fun CommentSearchBreadCrumbElement(active: Boolean) =
-        BreadCrumbElement(text= "Comment search", active = active, href=UrlPattern.Comment.Search)
+        BreadCrumbElement(text = "Comment search", active = active, href = UrlPattern.Comment.Search)
 
 fun ProjectSearchBreadCrumbElement(active: Boolean) =
-        BreadCrumbElement(text= "Project search", active = active, href=UrlPattern.Comment.Search)
+        BreadCrumbElement(text = "Project search", active = active, href = UrlPattern.Project.Search)
+
+fun SubmissionByTagsSearchBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text = "Tag search", active = active, href = UrlPattern.Submission.SearchByTags)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Crumbs
@@ -92,18 +95,18 @@ fun SubmissionBreadCrumb(course: CourseRecord, author: DenizenRecord, project: P
 
 fun SubmissionResultBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
         RootBreadCrumbElement(false) +
-            CourseBreadCrumbElement(false, course) +
-            ProjectBreadCrumbElement(false, author, project) +
-            SubmissionBreadCrumbElement(false, submission) +
-            SubmissionResultBreadCrumbElement(true, submission)
+                CourseBreadCrumbElement(false, course) +
+                ProjectBreadCrumbElement(false, author, project) +
+                SubmissionBreadCrumbElement(false, submission) +
+                SubmissionResultBreadCrumbElement(true, submission)
 
 
 fun SubmissionReviewBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
         RootBreadCrumbElement(false) +
-            CourseBreadCrumbElement(false, course) +
-            ProjectBreadCrumbElement(false, author, project) +
-            SubmissionBreadCrumbElement(false, submission) +
-            SubmissionReviewBreadCrumbElement(true, submission)
+                CourseBreadCrumbElement(false, course) +
+                ProjectBreadCrumbElement(false, author, project) +
+                SubmissionBreadCrumbElement(false, submission) +
+                SubmissionReviewBreadCrumbElement(true, submission)
 
 
 val CommentSearchBreadCrumb =
@@ -116,3 +119,7 @@ val ProjectSearchBreadCrumb =
                 UtilitiesBreadCrumbElement(true) +
                 ProjectSearchBreadCrumbElement(true)
 
+val SubmissionByTagsSearchBreadCrumb =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(true) +
+                SubmissionByTagsSearchBreadCrumbElement(true)

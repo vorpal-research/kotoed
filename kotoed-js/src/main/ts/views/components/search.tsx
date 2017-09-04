@@ -9,6 +9,8 @@ import "less/kotoed-bootstrap/bootstrap.less";
 import "less/search.less";
 import "less/util.less";
 import {identity} from "../../util/common";
+import {isStatusFinal, WithVerificationData} from "../../data/verification";
+import {pollDespairing} from "../../util/poll";
 
 export interface SearchBarProps {
     initialText: string
@@ -346,4 +348,46 @@ export class SearchTable<DataType, QueryType = {}> extends
             </div>
         );
     }
+}
+
+
+export abstract class ChoosySearchTable<DataType, QueryType = {}> extends
+        SearchTable<DataType, QueryType> {
+    constructor(props: SearchTableProps<DataType & WithVerificationData, QueryType>) {
+        super(props);
+
+    }
+
+    componentWillReceiveProps(props: SearchTableProps<DataType, QueryType>) {
+        super.componentWillReceiveProps(props);
+    }
+
+    protected abstract isGoodEnough(data: Array<DataType & WithVerificationData>): boolean;
+
+    private isQueryChanged = (oldState: SearchTableState<DataType>) => {
+        return oldState.text !== this.state.text || oldState.currentPage !== this.state.currentPage
+    };
+
+    protected queryData = async () => {
+        let oldState = this.state;
+
+        const handleResult = (results: Array<DataType & WithVerificationData>) => {
+            this.setState({currentResults: results, touched: true}, () => oldState = this.state);
+        };
+
+        await pollDespairing({
+            action: this.doQueryData,
+            isGoodEnough: this.isGoodEnough,
+            onFinal: handleResult,
+            onIntermediate: handleResult,
+            strategyParams: {shouldGiveUp: () => this.isQueryChanged(oldState)}
+        });
+    }
+}
+
+export class ChoosyByVerDataSearchTable<DataType extends WithVerificationData, QueryType = {}>
+        extends ChoosySearchTable<DataType, QueryType> {
+    protected isGoodEnough(data: Array<DataType>) {
+        return data.every((value: DataType & WithVerificationData) => isStatusFinal(value.verificationData.status))
+    };
 }

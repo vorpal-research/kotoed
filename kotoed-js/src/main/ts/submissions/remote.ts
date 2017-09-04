@@ -3,11 +3,9 @@ import axios from "axios"
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 import {ProjectToRead} from "../data/project";
-import {eventBus} from "../eventBus";
 import {sendAsync} from "../views/components/common";
 import {DbRecordWrapper} from "../data/verification";
 import {WithId} from "../data/common";
-import {CourseToRead} from "../data/course";
 
 interface ProjectPermissions {
     createSubmission: boolean
