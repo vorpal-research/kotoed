@@ -16,7 +16,8 @@ export interface SubmissionPermissions {
     changeStateAllComments: boolean,
     postComment: boolean,
     changeState: boolean,
-    resubmit: boolean
+    resubmit: boolean,
+    clean: boolean
 }
 
 export interface SubmissionUpdateRequest {
@@ -86,4 +87,13 @@ export async function fetchCourse(id: number): Promise<DbRecordWrapper<CourseToR
         Kotoed.Address.Api.Course.Read, {
             id
         });
+}
+
+export async function cleanSubmission(submissionId: number): Promise<void> {
+    return await sendAsync<WithId, void>(
+        Kotoed.Address.Api.Submission.Verification.Clean,
+        {
+            id: submissionId
+        }
+    )
 }

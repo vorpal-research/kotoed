@@ -124,6 +124,7 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
                     changeStateAllComments = isTeacher && submissionIsOpen,
                     postComment = submissionIsOpen,
                     resubmit = author.id == context.user()?.principal()?.getInteger("id"),
-                    changeState = isTeacher
+                    changeState = isTeacher,
+                    clean = isTeacher
             ))
 }

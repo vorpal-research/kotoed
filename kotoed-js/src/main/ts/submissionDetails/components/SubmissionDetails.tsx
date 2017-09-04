@@ -28,7 +28,8 @@ export interface SubmissionDetailsProps {
     history: Array<SubmissionToRead>,
     permissions: {
         changeState: boolean,
-        resubmit: boolean
+        resubmit: boolean,
+        clean: boolean
     },
     comments: CommentAggregate,
     tags: Tag[]
@@ -41,6 +42,7 @@ export interface SubmissionDetailsCallbacks {
     onResubmit: (newId: number) => void
     onClose: () => void
     onReopen: () => void
+    onClean: () => void
     onMount: () => void
     onTagAdd: (tagName: string) => void
     onTagDelete: (tagIdx: number) => void
@@ -104,6 +106,13 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         }
     };
 
+    private renderClean = () => {
+        if (this.props.permissions.clean)
+            return <Button bsSize="lg" bsStyle="primary" onClick={() => this.props.onClean()}>Clean</Button>;
+        else
+            return null;
+    };
+
     private renderResubmit = () => {
         if (this.props.permissions.resubmit)
             return <SubmissionCreate
@@ -154,6 +163,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             <Row>
                 <div className="pull-right">
                     <ButtonToolbar>
+                        {this.renderClean()}
                         {this.renderStateChange()}
                         {this.renderResubmit()}
                     </ButtonToolbar>

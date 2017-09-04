@@ -13,5 +13,6 @@ object Permissions {
                           val changeStateAllComments: Boolean = false,
                           val postComment: Boolean = false,
                           val resubmit: Boolean = false,
-                          val changeState: Boolean = false) : Jsonable
+                          val changeState: Boolean = false,
+                          val clean: Boolean = false) : Jsonable
 }
