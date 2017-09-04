@@ -102,6 +102,9 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.Tags.Create to SubmissionOwnerOrTeacher(vertx),
             Address.Api.Submission.Tags.Delete to SubmissionOwnerOrTeacher(vertx),
 
+            Address.Api.Submission.Tags.Search to AuthorityRequired(Authority.Teacher),
+            Address.Api.Submission.Tags.SearchCount to AuthorityRequired(Authority.Teacher),
+
             Address.Api.Tag.List to Permissive
     )
 }
