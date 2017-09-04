@@ -6,6 +6,9 @@ import {Submission} from "../data/submission";
 import {SubmissionWithVer} from "./SubmissionComponent";
 
 import "less/util.less"
+import {isStatusFinal} from "../data/verification";
+import {Kotoed} from "../util/kotoed-api";
+import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 
 export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): boolean {
     let {status} = sub.verificationData;
@@ -72,3 +75,33 @@ export function renderSubmissionIcon(sub: SubmissionWithVer, pendingIsAvailable:
             }
     }
 }
+
+export function linkToSubmissionDetails(submission: SubmissionWithVer,
+                                        text?: string,
+                                        pendingIsAvailable: boolean = false): JSX.Element {
+
+    text = text || `#${submission.id}`;
+
+    if (isStatusFinal(submission.verificationData.status) || pendingIsAvailable)
+        return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: submission.id})}>{text}</a>;
+    else
+        return <span className={"grayed-out"}>{text}</span>
+}
+
+
+export function linkToSubmissionResults(submission: SubmissionWithVer,
+                                        pendingIsAvailable: boolean = false): JSX.Element {
+    if (isStatusFinal(submission.verificationData.status) || pendingIsAvailable)
+        return <a href={makeSubmissionResultsUrl(submission.id)}>Results</a>;
+    else
+        return <span className={"grayed-out"}>Results</span>
+}
+
+
+export function linkToSubmissionReview(submission: SubmissionWithVer,
+                                       pendingIsAvailable: boolean = false): JSX.Element{
+    if (isSubmissionAvalable(submission, pendingIsAvailable))
+        return <a href={makeSubmissionReviewUrl(submission.id)}>Review</a>;
+    else
+        return <span className={"grayed-out"}>Review</span>
+};

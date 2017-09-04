@@ -69,7 +69,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                 <Row>
                     {/*TODO add give up handling*/}
                     <VerificationDataAlert
-                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Course "${obj.record.name}"`}
+                        makeString={(obj: DbRecordWrapper<CourseToRead>) => `Project "${obj.record.name}"`}
                         obj={this.state.project} gaveUp={false}/>
                 </Row>
                 <Row>
