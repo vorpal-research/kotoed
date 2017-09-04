@@ -10,14 +10,15 @@
 
 /* Example Styles for React Tags*/
 div.ReactTags__tags {
-  .pull-right
+  position: relative;
+  .pull-right;
 }
 
 /* Styles for the input */
 div.ReactTags__tagInput {
   width: 200px;
   // border-radius: 2px;
-  // display: inline-block;
+  display: inline-block;
 }
 
 div.ReactTags__tagInput input.ReactTags__tagInputField,
@@ -29,12 +30,13 @@ div.ReactTags__tagInput input.ReactTags__tagInputField:focus {
 div.ReactTags__selected span.ReactTags__tag {
   border: 1px solid #ddd;
   background: #eee;
-  font-size: 12px;
+  font-size: 20px;
   display: inline-block;
   padding: 5px;
   margin: 0 5px;
   cursor: move;
   border-radius: 2px;
+  .pull-left;
 }
 
 div.ReactTags__selected a.ReactTags__remove {
