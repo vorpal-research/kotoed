@@ -63,10 +63,6 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td><a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: sub.id})}>{`#${sub.id}`}</a></td>
                         <td><a href={makeSubmissionReviewUrl(sub.id)}>Review</a></td>
                         <td><a href={makeSubmissionResultsUrl(sub.id)}>Results</a></td>
-                        <td><a href="#" onClick={_ => this.cleanSubmission(sub.id)}>Clean</a></td>
-                        {
-                            // TODO: Show only to the teachers
-                        }
                     </tr>)}
                 </tbody>
             </table>

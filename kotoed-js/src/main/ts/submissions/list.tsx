@@ -31,7 +31,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
     constructor(props: {}) {
         super(props);
         this.state = {
-            canCreateSubmission: false
+            canCreateSubmission: false,
         };
     }
 
@@ -51,7 +51,9 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
         }).then(() => {
             return fetchPermissions(id_)
         }).then((perms) =>
-            this.setState({canCreateSubmission: perms.createSubmission})
+            this.setState({
+                canCreateSubmission: perms.createSubmission,
+            })
         )
     }
 
@@ -87,7 +89,10 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                             }
                         }}
                         wrapResults={renderSubmissionTable}
-                        elementComponent={(key, c: SubmissionWithVer) => <SubmissionComponent {...c} key={key} pendingIsAvailable={false}/>}
+                        elementComponent={(key, c: SubmissionWithVer) =>
+                            <SubmissionComponent {...c}
+                                                 key={key}
+                                                 pendingIsAvailable={false}/>}
                         toolbarComponent={this.toolbarComponent}
                     />
                 </Row>

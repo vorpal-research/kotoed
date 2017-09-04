@@ -10,7 +10,8 @@ import {
     fetchTagList as fetchTagListRemote,
     SubmissionPermissions,
     SubmissionUpdateRequest,
-    updateSubmission as updateSubmissionRemote
+    updateSubmission as updateSubmissionRemote,
+    cleanSubmission as cleanSubmissionRemote
 } from "./remote";
 import {Kotoed} from "../util/kotoed-api";
 import {isStatusFinal} from "../views/components/searchWithVerificationData";
@@ -83,7 +84,8 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
                 changeStateOwnComments: false,
                 postComment: false,
                 changeStateAllComments: false,
-                editOwnComments: false
+                editOwnComments: false,
+                clean: false
             }
         }));
         dispatch(commentsTotalFetch.done({
@@ -123,8 +125,6 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
                 result: comments
             }));
         }
-
-        await fetchPermissions(id)(dispatch); // Permissions can be changed after status has changed
     }
 }
 
@@ -137,15 +137,14 @@ export function initialize(id: number) {
             result: sub
         }));
 
-        await fetchPermissions(id)(dispatch);
-
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
         await fetchTagList(id)(dispatch);
 
-        pollSubmissionIfNeeded(id, sub)(dispatch)
+        await pollSubmissionIfNeeded(id, sub)(dispatch);
 
+        fetchPermissions(id)(dispatch);
     }
 }
 
@@ -158,9 +157,28 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
             result: sub
         }));
 
-        await fetchPermissions(payload.id)(dispatch);
+        await pollSubmissionIfNeeded(payload.id, sub)(dispatch);
 
-        pollSubmissionIfNeeded(payload.id, sub)(dispatch)
+        fetchPermissions(payload.id)(dispatch);
+
+    }
+}
+
+
+export function cleanSubmission(id: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+        await cleanSubmissionRemote(id);
+        dispatch(submissionFetch.started(id));
+
+        let sub = await fetchSubmissionRemote(id);
+        dispatch(submissionFetch.done({
+            params: id,
+            result: sub
+        }));
+
+        await pollSubmissionIfNeeded(id, sub)(dispatch);
+
+        fetchPermissions(id)(dispatch);
 
     }
 }

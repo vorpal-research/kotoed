@@ -13,7 +13,8 @@ const initialState: SubmissionDetailsProps = {
     history: [],
     permissions: {
         resubmit: false,
-        changeState: false
+        changeState: false,
+        clean: false
     },
     loading: true,
     submission: {
