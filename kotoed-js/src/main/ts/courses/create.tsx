@@ -97,7 +97,7 @@ export class CourseCreate extends ComponentWithLocalErrors<CourseCreateProps, Co
 
     render() {
         return <div>
-            <Button bsSize="lg" bsStyle="success" onClick={this.showModal}>Create course</Button>
+            <Button bsStyle="success" onClick={this.showModal}>Create course</Button>
             <Modal show={this.state.showModal} onHide={this.hideModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>Create new course</Modal.Title>

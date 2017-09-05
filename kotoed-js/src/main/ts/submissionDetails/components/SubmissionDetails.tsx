@@ -108,7 +108,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
     private renderClean = () => {
         if (this.props.permissions.clean)
-            return <Button bsSize="lg" bsStyle="primary" onClick={() => this.props.onClean()}>Clean</Button>;
+            return <Button bsStyle="primary" onClick={() => this.props.onClean()}>Clean</Button>;
         else
             return null;
     };
@@ -127,9 +127,9 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         if (!this.props.permissions.changeState)
             return null;
         else if (this.props.submission.record.state === "open")
-            return <Button bsStyle="danger" bsSize="lg" onClick={this.props.onClose}>Close</Button>;
+            return <Button bsStyle="danger" onClick={this.props.onClose}>Close</Button>;
         else if (this.props.submission.record.state === "closed")
-            return <Button bsStyle="success" bsSize="lg"  onClick={this.props.onReopen}>Reopen</Button>;
+            return <Button bsStyle="success" onClick={this.props.onReopen}>Reopen</Button>;
     };
 
     private onTagAdd = (tagName: string) => {

@@ -132,7 +132,7 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
 
     render() {
         return <div>
-            <Button bsSize="lg" bsStyle="success" onClick={this.showModal}>Create project</Button>
+            <Button bsStyle="success" onClick={this.showModal}>Create project</Button>
             <Modal show={this.state.showModal} onHide={this.hideModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>Create new project</Modal.Title>

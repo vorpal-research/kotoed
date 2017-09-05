@@ -142,7 +142,6 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
 
     render() {
         return <SplitButton
-                    bsSize="lg"
                     bsStyle="success"
                     title={this.props.parentSubmission === undefined ? "Submit" : "Resubmit"}
                     onClick={() => this.checkExistingOrTryCreate()} id="submit-dropdown">
