@@ -195,7 +195,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
     }
 }
 
-let secret = document.getElementById("restore-password-app")!.getAttribute("secret");
+let secret = document.getElementById("restore-password-app")!.getAttribute("data-secret");
 
 if(secret)
     render (
