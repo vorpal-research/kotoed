@@ -53,6 +53,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
     return PerAddress(
             Address.Api.Denizen.Profile.Read to SelfOrTeacher(),
             Address.Api.Denizen.Profile.Update to SelfOrTeacher(),
+            Address.Api.Denizen.Profile.UpdatePassword to SelfOrTeacher(),
 
             Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),
             Address.Api.Course.Read to Permissive,

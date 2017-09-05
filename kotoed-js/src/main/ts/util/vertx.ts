@@ -141,12 +141,13 @@ export class AsyncEventBus {
 
     send<Request, Reply>(address: string,
                          message: Request,
-                         headers?: EventBusHeaders): Promise<Reply> {
+                         headers?: EventBusHeaders,
+                         onError = this.onError): Promise<Reply> {
         return this.awaitOpen().then(() => new Promise<Reply>((resolve, reject) => {
             this.eb.send(address, this.htonJ(message), headers, (error, message: EventBusReply<Reply>) => {
                 if (error) {
                     try {
-                        this.onError && this.onError(error);
+                        onError && onError(error);
                     } catch (processedError) {
                         reject(processedError);
                     }

@@ -28,17 +28,23 @@ function makeMsg(e: ReplyError | Error) {
     }
 }
 
+export function defaultErrorHandler(e: Error | ReplyError) {
+    if (isSnafu(e)) {
+        snafuDialog();
+        throw e;
+    } else {
+        throw new SoftError(makeMsg(e));
+    }
+}
+
+export function fallThroughErrorHandler(e: Error | ReplyError) {
+    throw e;
+}
+
 export const eventBus = new AsyncEventBus(
     fromLocationHost(Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.EventBus, {})),
     keysToSnakeCase,
     keysToCamelCase,
     undefined,
-    (e: Error) => {
-        if (isSnafu(e)) {
-            snafuDialog();
-            throw e;
-        } else {
-            throw new SoftError(makeMsg(e));
-        }
-    }
+    defaultErrorHandler
 );

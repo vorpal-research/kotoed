@@ -74,4 +74,9 @@ export abstract class ComponentWithLocalErrors<P, S, E extends {[name: string]: 
             localErrors: empty as E
         })
     }
+
+    hasErrors() {
+        let errors = this.state.localErrors;
+        return typedKeys(this.state.localErrors).reduce((acc, k) => acc || errors[k], false)
+    }
 }

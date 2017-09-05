@@ -95,6 +95,7 @@ object Address {
             object Profile {
                 const val Read = "kotoed.api.denizen.profile.read"
                 const val Update = "kotoed.api.denizen.profile.update"
+                const val UpdatePassword = "kotoed.api.denizen.profile.updatepassword"
             }
         }
 
