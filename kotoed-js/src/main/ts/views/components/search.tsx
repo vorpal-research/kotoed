@@ -45,7 +45,7 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
         return (
             <div className="search-bar">
                 <div className="input-group">
-                    <input className="search-query form-control input-lg"
+                    <input className="search-query form-control input"
                            ref={(me: HTMLInputElement) => this.input = me}
                            placeholder="Search"
                            type="text"
@@ -53,7 +53,7 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
                            onChange={(e) => this.updateText(e.target.value)}
                     />
                     <span className="input-group-btn">
-                        <span className="btn btn-info btn-lg">
+                        <span className="btn btn-info">
                             <i className="glyphicon glyphicon-search"/>
                         </span>
                     </span>
@@ -289,7 +289,7 @@ export class SearchTable<DataType, QueryType = {}> extends
         if (this.state.pageCount > 1 || this.props.forcePagination)
             return <div className="text-center">
                 <Pagination
-                    className="pagination-lg"
+                    className="pagination"
                     prev
                     next
                     first
