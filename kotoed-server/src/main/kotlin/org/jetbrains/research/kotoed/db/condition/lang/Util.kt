@@ -1,9 +1,16 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.lang3.text.translate.EntityArrays
+import org.apache.commons.lang3.text.translate.LookupTranslator
 
+private val EscapeJavaNoUnicode =
+        LookupTranslator(
+                arrayOf("\"", "\\\""), arrayOf("\\", "\\\\"))
+                .with(
+                        LookupTranslator(*EntityArrays.JAVA_CTRL_CHARS_ESCAPE())
+                )
 
-fun String.escape(): String = StringEscapeUtils.escapeJava(this)
+fun String.escape(): String = EscapeJavaNoUnicode.translate(this)
 
 private fun String.toQuery() = "\"${this.escape()}\""
 
