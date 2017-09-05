@@ -1,7 +1,9 @@
 package org.jetbrains.research.kotoed.web.navigation
 
 import io.vertx.ext.auth.User
+import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.isAuthorisedAsync
+import org.jetbrains.research.kotoed.util.safeNav
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import kotlin.coroutines.experimental.buildSequence
@@ -56,6 +58,11 @@ suspend fun kotoedNavBar(user: User?): NavBar {
                                 user.principal()?.getString("denizenId") ?:
                                         throw IllegalArgumentException("I can work only with UavUsers"),
                                 listOf(
+                                        NavBarLink("Profile",
+                                                UrlPattern.reverse(UrlPattern.Profile.Index, mapOf("id" to
+                                                        user.principal().safeNav("id")!!
+                                                ))
+                                        ),
                                         NavBarLink("Logout", UrlPattern.Auth.Logout)
                                 )))
     return NavBar(leftElems = leftElemsSeq.toList(), rightElems = rightElems, rootHref = UrlPattern.Index)
