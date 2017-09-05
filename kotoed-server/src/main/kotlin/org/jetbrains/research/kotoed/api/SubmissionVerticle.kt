@@ -217,11 +217,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
                 })
-                .filter("state != %s".formatToQuery(SubmissionState.obsolete))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
-        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), q)
+        val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
+
+        val qFiltered = stateIn?.let { q.filter("state in %s".formatToQuery(it)) } ?: q
+
+        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), qFiltered)
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             resp.map { json ->
@@ -241,8 +244,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
                 })
-                .filter("state != %s".formatToQuery(SubmissionState.obsolete))
-        return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), q)
+
+        val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
+
+        val qFiltered = stateIn?.let { q.filter("state in %s".formatToQuery(it)) } ?: q
+
+        return sendJsonableAsync(Address.DB.count(Tables.SUBMISSION.name), qFiltered)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.History)
