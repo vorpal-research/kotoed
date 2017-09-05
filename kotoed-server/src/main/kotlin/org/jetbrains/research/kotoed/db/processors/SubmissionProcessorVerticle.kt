@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.executeKAsync
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
 
@@ -304,16 +305,16 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     suspend override fun doClean(data: JsonObject): VerificationData {
         val sub: SubmissionRecord = data.toRecord()
 
-        dbWithTransaction {
+        dbWithTransactionAsync {
             deleteFrom(SUBMISSION_STATUS)
                     .where(SUBMISSION_STATUS.SUBMISSION_ID.eq(sub.id))
-                    .executeAsync()
+                    .executeKAsync()
             deleteFrom(SUBMISSION_RESULT)
                     .where(SUBMISSION_RESULT.SUBMISSION_ID.eq(sub.id))
-                    .executeAsync()
+                    .executeKAsync()
             deleteFrom(BUILD)
                     .where(BUILD.SUBMISSION_ID.eq(sub.id))
-                    .executeAsync()
+                    .executeKAsync()
         }
 
         return VerificationData.Unknown

@@ -177,21 +177,26 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Cleaning: $data")
         log.trace("Old data: $oldData")
 
-        val notReady = oldData.copy(status = VerificationStatus.NotReady)
+        when (oldData.status) {
+            VerificationStatus.NotReady -> Unit
+            else -> {
 
-        val ok = cacheMap.replace(id, oldData, notReady)
+                val notReady = oldData.copy(status = VerificationStatus.NotReady)
 
-        if (ok) {
+                val ok = cacheMap.replace(id, oldData, notReady)
 
-            log.trace("Going in!")
-            cacheMap.replace(id, notReady, doClean(data))
+                if (ok) {
 
-        } else {
+                    log.trace("Going in!")
+                    cacheMap.replace(id, notReady, doClean(data))
+                    return
 
-            log.trace("Come again?")
-            clean(data)
-
+                }
+            }
         }
+
+        log.trace("Come again?")
+        clean(data)
     }
 
     suspend open fun verify(data: JsonObject?): VerificationData =
