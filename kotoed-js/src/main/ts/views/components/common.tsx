@@ -1,4 +1,4 @@
-import {eventBus} from "../../eventBus";
+import {defaultErrorHandler, eventBus} from "../../eventBus";
 
 export interface ErrorDesc {
     id: number
@@ -26,9 +26,10 @@ export interface GenericResponse<ResultT> {
     verificationData: VerificationData
 }
 
-export function sendAsync<Request, Response>(address: string, request: Request): Promise<Response> {
+export function sendAsync<Request, Response>(address: string, request: Request,
+                                             onError?: typeof defaultErrorHandler): Promise<Response> {
     return eventBus.awaitOpen().then(_ =>
-        eventBus.send<Request, Response>(address, request)
+        eventBus.send<Request, Response>(address, request, undefined, onError)
     );
 }
 

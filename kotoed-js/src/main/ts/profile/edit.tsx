@@ -2,22 +2,16 @@ import * as React from "react";
 import {render} from "react-dom";
 
 import "less/kotoed-bootstrap/bootstrap.less"
-import {Denizen, WithDenizen} from "../data/denizen";
 import {Kotoed} from "../util/kotoed-api";
-import {eventBus} from "../eventBus";
 import {sendAsync, setStateAsync} from "../views/components/common";
-import {DbRecordWrapper} from "../data/verification";
 import {WithId} from "../data/common";
-import ComponentWithLoading, {LoadingProperty} from "../views/components/ComponentWithLoading";
 import UrlPattern = Kotoed.UrlPattern;
-import SocialButton from "../login/components/SocialButton";
 import {ChangeEvent, InputHTMLAttributes, MouseEvent} from "react";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
-import {Simulate} from "react-dom/test-utils";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import Address = Kotoed.Address;
 import {ErrorMessages} from "../login/util";
-import {typedKeys} from "../util/common";
+import {fallThroughErrorHandler} from "../eventBus";
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -32,16 +26,24 @@ interface EditableProfileInfo {
     group?: string
 }
 
+interface EditablePasswordInfo {
+    id: number
+    oldPassword?: string
+    newPassword?: string
+    newPassword2?: string
+}
+
 interface ProfileComponentProps {
     denizen: EditableProfileInfo
 }
 
-let noErrors = { badEmail: false };
-type LocalErrors = typeof noErrors
+let noErrors = { badEmail: false, passwordsDontMatch: false, emptyPassword: false, incorrectPassword: false };
+type LocalErrors = typeof noErrors;
 
 interface ProfileComponentState {
     denizen: EditableProfileInfo
-    pendingErrors: LocalErrors
+    password: EditablePasswordInfo
+    success: boolean
     disabled: boolean
 }
 
@@ -50,124 +52,172 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         super(props);
         this.state = {
             denizen: this.props.denizen,
+            password: {
+                id: this.props.denizen.id,
+                oldPassword: "",
+                newPassword: "",
+                newPassword2: ""
+            },
             disabled: false,
-            localErrors: noErrors,
-            pendingErrors: noErrors
+            success: false,
+            localErrors: {...noErrors}
         }
     }
 
+    // not the react way, but whatever
+    shadowErrors = {...noErrors};
+
     localErrorMessages: ErrorMessages<LocalErrors> = {
-        badEmail: "Incorrect email"
+        badEmail: "Incorrect email",
+        passwordsDontMatch: "Passwords don't match",
+        emptyPassword: "One of your password fields is empty",
+        incorrectPassword: "Your old password is incorrect"
     };
 
-    setPendingError = (error: keyof LocalErrors) =>
-        this.setState({pendingErrors: { ...this.state.pendingErrors, [error]: true }});
-
     setError(error: keyof LocalErrors) {
-        super.setError(error);
-        this.setState({pendingErrors: { ...this.state.pendingErrors, [error]: false }});
+        this.shadowErrors[error] = true;
     }
 
     unsetError(error: keyof LocalErrors) {
+        this.shadowErrors[error] = false;
         super.unsetError(error);
-        this.setState({pendingErrors: { ...this.state.pendingErrors, [error]: false }});
     }
 
     commitErrorsAsync = async () => {
-        setStateAsync(this, { localErrors: this.state.pendingErrors, pendingErrors: noErrors })
+        await setStateAsync(this, { localErrors: this.shadowErrors });
+        this.shadowErrors = {...noErrors};
+    };
+
+    setDenizen = <K extends keyof EditableProfileInfo>(pick: Pick<EditableProfileInfo,K>) => {
+        this.setState({ success: false, denizen: Object.assign(this.state.denizen, pick) });
+    };
+
+    setPassword = <K extends keyof EditablePasswordInfo>(pick: Pick<EditablePasswordInfo,K>) => {
+        this.setState({ success: false, password: Object.assign(this.state.password, pick) },
+            () => {
+                this.unsetError("emptyPassword");
+                this.unsetError("passwordsDontMatch");
+                if(this.state.password.newPassword === ""
+                    || this.state.password.newPassword2 === ""
+                    || this.state.password.oldPassword === "") {
+                    this.setError("emptyPassword")
+                }
+                if(this.state.password.newPassword != this.state.password.newPassword2) {
+                    this.setError("passwordsDontMatch");
+                }
+            });
+    };
+
+    bindInput = <K extends keyof EditableProfileInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
+        this.setDenizen({ [key]: e.target.value } as Pick<EditableProfileInfo, K>)
+    };
+
+    bindPassword = <K extends keyof EditablePasswordInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
+        this.setPassword({ [key]: e.target.value } as Pick<EditablePasswordInfo, K>)
     };
 
     onEmailChanged = (e: ChangeEvent<HTMLInputElement>) => {
         this.unsetError("badEmail");
-        if(e.target.checkValidity()) {
-            this.setState({denizen: {...this.state.denizen, email: e.target.value}})
-        } else this.setPendingError("badEmail");
+        if(!e.target.checkValidity()) this.setError("badEmail");
+        this.setDenizen({ email: e.target.value })
     };
-    onFirstNameChanged = (e: ChangeEvent<HTMLInputElement>) => {
-        this.setState({denizen: {...this.state.denizen, firstName: e.target.value}})
-    };
-    onLastNameChanged = (e: ChangeEvent<HTMLInputElement>) => {
-        this.setState({denizen: {...this.state.denizen, lastName: e.target.value}})
-    };
-    onGroupChanged = (e: ChangeEvent<HTMLInputElement>) => {
-        this.setState({denizen: {...this.state.denizen, group: e.target.value}})
-    };
+
     onSave = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         await this.commitErrorsAsync();
-        if(this.state.localErrors.badEmail) return;
-        await sendAsync(Address.Api.Denizen.Profile.Update, this.state.denizen)
+        if(this.hasErrors()) return;
+
+        await setStateAsync(this, { disabled: true, success: false });
+        await sendAsync(Address.Api.Denizen.Profile.Update, this.state.denizen);
+        await setStateAsync(this, { disabled: false, success: true });
     };
+
+    onSavePassword = async (e: MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        this.unsetError("incorrectPassword");
+        await this.commitErrorsAsync();
+        if(this.hasErrors()) return;
+
+        await setStateAsync(this, { disabled: true, success: false });
+
+        try {
+            await sendAsync(Address.Api.Denizen.Profile.UpdatePassword, this.state.password, fallThroughErrorHandler);
+            await setStateAsync(this, { disabled: false, success: true })
+        } catch(_) {
+            this.setError("incorrectPassword");
+            await this.commitErrorsAsync();
+            await setStateAsync(this, { disabled: false, success: false });
+        }
+    };
+
+    renderSuccess = () => {
+        if(this.state.success) {
+            return <div className="alert alert-success">The profile updated successfully</div>;
+        } else return null;
+    };
+
+    mkPasswordInputFor = (label: string, field: keyof EditablePasswordInfo, onChange = this.bindPassword(field)) =>
+        <div className="form-group">
+            <label className="control-label col-sm-2"
+                   htmlFor={`input-${field}`}>{label}</label>
+            <div className="col-sm-10">
+                <input
+                    className={`form-control`}
+                    id={`input-${field}`}
+                    type="password"
+                    value={this.state.password![field] as string}
+                    placeholder="not specified"
+                    onChange={onChange}
+                />
+            </div>
+        </div>;
+
+    mkInputFor = (label: string, field: keyof EditableProfileInfo, type = "input", onChange = this.bindInput(field)) =>
+        <div className="form-group">
+            <label className="control-label col-sm-2"
+                   htmlFor={`input-${field}`}>{label}</label>
+            <div className="col-sm-10">
+                <input
+                    className="form-control"
+                    id={`input-${field}`}
+                    type={type}
+                    value={this.state.denizen![field] as string}
+                    placeholder="not specified"
+                    onChange={onChange}
+                />
+            </div>
+        </div>;
 
     renderBody = () => {
         return <div className="panel">
             <div className="panel-heading">
-                <h2>{this.props.denizen!.denizenId}</h2>
+                <div className="row">
+                    <div className="col-sm-offset-1 col-sm-11">
+                        <h2>{this.props.denizen!.denizenId}</h2>
+                    </div>
+                </div>
             </div>
-            { this.renderErrors() }
-            <div className={`panel-body ${this.state.disabled? "disabled":""}`}>
-                <form className="form-horizontal">
-                    <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputEmail">Email</label>
-                        <div className="col-sm-10">
-                            <input
-                                className="form-control"
-                                id="inputEmail"
-                                type="email"
-                                value={this.props.denizen!.email}
-                                placeholder="not specified"
-                                onChange={this.onEmailChanged}
-                            />
-                        </div>
+            <div className={`panel-body`}>
+                <form className={`form-horizontal ${this.state.disabled? "disabled":""}`}>
+                    <div className="col-sm-offset-1 col-sm-11">
+                        { this.renderSuccess() }
+                        { this.renderErrors() }
                     </div>
-                    <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputFirstName">First name</label>
-                        <div className="col-sm-10">
-                            <input
-                                className="form-control"
-                                id="inputFirstName"
-                                value={this.props.denizen!.firstName}
-                                placeholder="not specified"
-                                onChange={this.onFirstNameChanged}
-                            />
-                        </div>
-                    </div>
-                    <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputLastName">Last name</label>
-                        <div className="col-sm-10">
-                            <input
-                                className="form-control"
-                                id="inputLastName"
-                                value={this.props.denizen!.lastName}
-                                placeholder="not specified"
-                                onChange={this.onLastNameChanged}
-                            />
-                        </div>
-                    </div>
-                    <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputGroup">Group #</label>
-                        <div className="col-sm-10">
-                            <input
-                                className="form-control"
-                                id="inputGroup"
-                                value={this.props.denizen!.group}
-                                placeholder="not specified"
-                                onChange={this.onGroupChanged}
-                            />
-                        </div>
-                    </div>
+                    { this.mkInputFor("Email", "email", "email", this.onEmailChanged) }
+                    { this.mkInputFor("First name", "firstName") }
+                    { this.mkInputFor("Last name", "lastName") }
+                    { this.mkInputFor("Group #", "group") }
                     <div className="form-group">
                         <div className="col-sm-offset-2 col-sm-10">
                             <a className="btn btn-default" onClick={this.onSave}>Save</a>
                         </div>
                     </div>
+                    { this.mkPasswordInputFor("Old password", "oldPassword") }
+                    { this.mkPasswordInputFor("New password", "newPassword") }
+                    { this.mkPasswordInputFor("Repeat password", "newPassword2") }
                     <div className="form-group">
                         <div className="col-sm-offset-2 col-sm-10">
-                            <a href={UrlPattern.Auth.ResetPassword} className="btn btn-default">Password reset</a>
+                            <a className="btn btn-default" onClick={this.onSavePassword}>Change password</a>
                         </div>
                     </div>
                 </form>

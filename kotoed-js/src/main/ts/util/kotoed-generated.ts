@@ -26,6 +26,7 @@ export namespace Generated {
                 Profile: {
                     Read: "kotoed.api.denizen.profile.read",
                     Update: "kotoed.api.denizen.profile.update",
+                    UpdatePassword: "kotoed.api.denizen.profile.updatepassword",
                 },
             },
             Notification: {
