@@ -15,6 +15,7 @@ interface CommentRenderingProps {
     canStateBeChanged: boolean,
     canBeEdited: boolean
     collapsed: boolean
+    processing: boolean
 }
 
 export type Comment = CommentToRead & CommentRenderingProps

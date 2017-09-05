@@ -9,6 +9,7 @@ import {Comment} from "../state/comments";
 import {CommentButton} from "./CommentButton";
 import CmrmCodeBlock from "./CmrmCodeBlock";
 import {BaseCommentToRead} from "../../data/comment";
+import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 
 
 type CommentProps = Comment & {
@@ -275,9 +276,12 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     };
 
     render() {
-        return <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
-            {this.renderPanelBodyContent()}
-            {this.renderEditArea()}
-        </Panel>;
+        return <div style={{position: "relative"}}>
+            {this.props.processing && <SpinnerWithVeil/>}
+            <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
+                {this.renderPanelBodyContent()}
+                {this.renderEditArea()}
+            </Panel>
+        </div>;
     }
 }

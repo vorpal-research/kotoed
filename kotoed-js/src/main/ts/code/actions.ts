@@ -60,13 +60,17 @@ interface PostCommentPayload {
 }
 
 interface CommentStatePayload {
-    commentId: number,
+    id: number,
+    sourcefile: string
+    sourceline: number
     state: CommentState
 }
 
 interface CommentEditPayload {
-    commentId: number,
-    newText: string
+    id: number,
+    sourcefile: string
+    sourceline: number
+    text: string
 }
 
 interface AggregatesUpdatePayload {
@@ -127,8 +131,8 @@ export const commentsFetch = actionCreator.async<SubmissionPayload, CommentsStat
 export const commentAggregatesFetch =
     actionCreator.async<SubmissionPayload, CommentAggregates, {}>("COMMENT_AGGREGATES_FETCH");
 export const commentPost = actionCreator.async<PostCommentPayload, Comment, {}>('COMMENT_POST');
-export const commentStateUpdate = actionCreator.async<CommentStatePayload, Comment>('COMMENT_STATE_UPDATE');
-export const commentEdit = actionCreator.async<CommentEditPayload, Comment>('COMMENT_EDIT');
+export const commentStateUpdate = actionCreator.async<CommentStatePayload, CommentStatePayload>('COMMENT_STATE_UPDATE');
+export const commentEdit = actionCreator.async<CommentEditPayload, CommentEditPayload>('COMMENT_EDIT');
 
 
 // Capabilities
@@ -141,7 +145,6 @@ export function pollSubmissionIfNeeded(payload: SubmissionPayload) {
             return;
 
         function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
-            console.log("Dispatching done");
             dispatch(submissionFetch.done({
                 params: payload,
                 result: res
@@ -367,15 +370,11 @@ export function setCommentState(payload: CommentStatePayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(commentStateUpdate.started(payload));  // Not used yet
 
-        let result = await doSetCommentState(payload.commentId, payload.state);
+        let result = await doSetCommentState(payload.id, payload.state);
 
         dispatch(commentStateUpdate.done({
             params: payload,
-            result: addRenderingProps({
-                    ...result,
-                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
-                },
-                getState().capabilitiesState.capabilities)
+            result: result
         }));
         dispatch(aggregatesUpdate({
             type: result.state === "open" ? "open" : "close",
@@ -389,15 +388,11 @@ export function editComment(payload: CommentEditPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(commentEdit.started(payload));  // Not used yet
 
-        let result = await doEditComment(payload.commentId, payload.newText);
+        let result = await doEditComment(payload.id, payload.text);
 
         dispatch(commentEdit.done({
             params: payload,
-            result: addRenderingProps({
-                    ...result,
-                    denizenId: getState().capabilitiesState.capabilities.principal.denizenId,  // Will be overriden by reducer
-                },
-                getState().capabilitiesState.capabilities)
+            result: result
         }));
 
     }
