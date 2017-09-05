@@ -85,7 +85,10 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                             return {
                                 withVerificationData: true,
                                 find: {
-                                    projectId: id_
+                                    projectId: id_,
+                                    stateIn: [
+                                        "pending", "invalid", "open", "closed"
+                                    ]
                                 }
                             }
                         }}
