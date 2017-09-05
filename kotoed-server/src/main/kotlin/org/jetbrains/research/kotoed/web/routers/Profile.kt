@@ -11,7 +11,7 @@ import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.util.routing.Templatize
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
-import org.jetbrains.research.kotoed.web.navigation.NavBarContextName
+import org.jetbrains.research.kotoed.web.navigation.Context
 import org.jetbrains.research.kotoed.web.navigation.kotoedNavBar
 
 @HandlerFor(UrlPattern.Profile.Index)
@@ -33,7 +33,7 @@ suspend fun handleProfileIndex(context: RoutingContext) {
         return
     }
 
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
 }
 
 @HandlerFor(UrlPattern.Profile.Edit)
@@ -55,5 +55,5 @@ suspend fun handleProfileEdit(context: RoutingContext) {
         return
     }
 
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
 }

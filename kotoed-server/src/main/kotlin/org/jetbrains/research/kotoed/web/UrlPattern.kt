@@ -4,7 +4,6 @@ object UrlPattern {
     // TODO maybe make parameter names const values
     const val Star = "/*"
     const val Index = "/"
-    const val NotImplemented = "/notImplemented"
 
     object Redirect {
         const val ById = "/redirect/:entity/:id"

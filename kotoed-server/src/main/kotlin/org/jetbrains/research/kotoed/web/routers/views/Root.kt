@@ -40,8 +40,9 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
         return
     }
 
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, SubmissionResultBreadCrumb(course, author, project, submission))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, SubmissionResultBreadCrumb(course, author, project, submission))
+    context.put(Context.Title, "Submission #${submission.id} Results")
 
 }
 
@@ -50,8 +51,8 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("commentSearch")
 suspend fun handleCommentSearch(context: RoutingContext) {
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, CommentSearchBreadCrumb)
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, CommentSearchBreadCrumb)
 }
 
 @HandlerFor(UrlPattern.Project.Search)
@@ -59,8 +60,8 @@ suspend fun handleCommentSearch(context: RoutingContext) {
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("projectSearch")
 suspend fun handleProjectSearch(context: RoutingContext) {
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, ProjectSearchBreadCrumb)
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, ProjectSearchBreadCrumb)
 }
 
 @HandlerFor(UrlPattern.Submission.SearchByTags)
@@ -68,6 +69,6 @@ suspend fun handleProjectSearch(context: RoutingContext) {
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("submissionByTagsSearch")
 suspend fun handleSubmissionByTagsSearch(context: RoutingContext) {
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, SubmissionByTagsSearchBreadCrumb)
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, SubmissionByTagsSearchBreadCrumb)
 }

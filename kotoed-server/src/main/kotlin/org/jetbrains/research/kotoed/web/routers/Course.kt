@@ -32,6 +32,7 @@ suspend fun handleCourseIndex(context: RoutingContext) {
         return
     }
 
-    context.put(BreadCrumbContextName, CourseBreadCrumb(course))
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, CourseBreadCrumb(course))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.Title, course.name)
 }

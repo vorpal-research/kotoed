@@ -58,6 +58,7 @@ export namespace Generated {
                 CommentsTotal: "kotoed.api.submission.commentsTotal",
                 Create: "kotoed.api.submission.create",
                 Error: "kotoed.api.submission.remoteError",
+                HasOpen: "kotoed.api.submission.hasOpen",
                 History: "kotoed.api.submission.history",
                 Last: "kotoed.api.submission.last",
                 List: "kotoed.api.submission.list",
@@ -105,7 +106,6 @@ export namespace Generated {
     export const UrlPattern = {
         EventBus: "/eventbus/*",
         Index: "/",
-        NotImplemented: "/notImplemented",
         Star: "/*",
         Static: "/static/*",
         Auth: {

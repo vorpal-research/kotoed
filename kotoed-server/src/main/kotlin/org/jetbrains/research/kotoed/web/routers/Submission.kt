@@ -41,6 +41,7 @@ suspend fun handleSubmissionIndex(context: RoutingContext) {
         return
     }
 
-    context.put(BreadCrumbContextName, SubmissionBreadCrumb(course, author, project, submission))
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, SubmissionBreadCrumb(course, author, project, submission))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.Title, "Submission #${submission.id}")
 }
