@@ -1,0 +1,15 @@
+INSERT INTO tag(name) VALUES
+('to be investigated'),
+('excellent'),
+('good'),
+('fair'),
+('mediocre'),
+('AA'),
+('BS'),
+('EK'),
+('IE'),
+('KG'),
+('MA'),
+('MB'),
+('MG'),
+('MP');
