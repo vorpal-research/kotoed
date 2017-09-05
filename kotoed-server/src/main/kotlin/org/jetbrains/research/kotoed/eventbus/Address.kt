@@ -192,6 +192,7 @@ object Address {
     object Notifications {
         object Email {
             const val Send = "kotoed.notifications.email.send"
+            const val TriggerSpam = "kotoed.notifications.email.trigger"
         }
     }
 
