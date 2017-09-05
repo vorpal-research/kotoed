@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Row} from "react-bootstrap";
+import {Row, ButtonToolbar, Button, OverlayTrigger, Tooltip} from "react-bootstrap";
 
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
@@ -55,13 +55,20 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
     }
 
     toolbarComponent = () => {
-        if (this.state.canCreateSubmission)
-            return <SubmissionCreate onCreate={(newId) =>
+        return <ButtonToolbar>
+            {this.state.project &&
+                <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip">New tab</Tooltip>}>
+                    <Button bsStyle="link"
+                            href={this.state.project.record.repoUrl}
+                            target="_blank">
+                        Go to repo
+                    </Button>
+                </OverlayTrigger>}
+            {this.state.canCreateSubmission && <SubmissionCreate onCreate={(newId) =>
                 window.location.href =
                     Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: newId})
-            } projectId={id_}/>;
-        else
-            return null;
+            } projectId={id_}/>}
+        </ButtonToolbar>
     };
 
     render() {
