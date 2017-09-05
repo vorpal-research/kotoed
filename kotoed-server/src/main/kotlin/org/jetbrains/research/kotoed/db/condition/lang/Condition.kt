@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.jetbrains.research.kotoed.util.database.FunctionCall
 import org.jetbrains.research.kotoed.util.database.documentMatch
 import org.jetbrains.research.kotoed.util.database.toPlainTSQuery
@@ -11,7 +12,7 @@ import org.jooq.impl.DSL
 
 private fun<T> convertConstant(e: Expression): Field<T> = when (e) {
     is IntConstant -> DSL.inline(e.value).uncheckedCast()
-    is StringConstant -> DSL.inline(e.value).uncheckedCast()
+    is StringConstant -> DSL.inline(StringEscapeUtils.unescapeJava(e.value)).uncheckedCast()
     is NullConstant -> DSL.field("NULL").uncheckedCast()
     else -> error("convertConstant() is for constants only!")
 }
