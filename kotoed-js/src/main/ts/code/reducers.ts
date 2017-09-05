@@ -153,8 +153,9 @@ export const defaultCommentsState = {
     loading: true
 };
 
-function updateComment(reviewState: CommentsState, comment: Comment) {
-    let {id, state, sourcefile, sourceline, text} = comment;
+
+function updateComment(reviewState: CommentsState, comment: Partial<Comment>) {
+    let {id, sourcefile, sourceline, text} = comment;
     let newState = {...reviewState};
 
     const doUpdate = (comments: List<Comment>) => {
@@ -163,7 +164,7 @@ function updateComment(reviewState: CommentsState, comment: Comment) {
         if (!oldComment)
             throw new Error("Comment to update not found");
 
-        let newComment = {...oldComment, text, state};
+        let newComment = {...oldComment, ...comment};
 
         return comments.set(oldCommentIx, newComment);
     };
@@ -202,10 +203,12 @@ export const commentsReducer = (reviewState: CommentsState = defaultCommentsStat
         comments = comments.push(action.payload.result);
         newState.comments = reviewState.comments.setIn([sourcefile, sourceline], comments);
         return newState;
+    } else if (isType(action, commentStateUpdate.started) || isType(action, commentEdit.started)) {
+        return updateComment(reviewState, {...action.payload, processing: true});
     } else if (isType(action, commentStateUpdate.done)) {
-        return updateComment(reviewState, action.payload.result);
+        return updateComment(reviewState, {...action.payload.result, processing: false});
     } else if (isType(action, commentEdit.done)) {
-        return updateComment(reviewState, action.payload.result);
+        return updateComment(reviewState, {...action.payload.result, processing: false});
     } else if (isType(action, hiddenCommentsExpand)) {
         let {comments, file, line} = action.payload;
         let newState = {...reviewState};

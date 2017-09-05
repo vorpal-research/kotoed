@@ -46,6 +46,7 @@ class CommentSearchResult extends React.PureComponent<{ comment: CommentToRead }
                     onResolve={doNothing}
                     notifyEditorAboutChange={doNothing}
                     onEdit={doNothing}
+                    processing={false}
                 />
             </SearchResult>
         )

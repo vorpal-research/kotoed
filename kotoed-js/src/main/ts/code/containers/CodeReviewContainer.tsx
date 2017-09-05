@@ -90,15 +90,19 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 }))
             },
 
-            onCommentResolve: (sourcefile, sourceline, commentId) => {
+            onCommentResolve: (sourcefile, sourceline, id) => {
                 dispatch(setCommentState({
-                    commentId,
+                    sourcefile,
+                    sourceline,
+                    id,
                     state: "closed"
                 }))
             },
-            onCommentUnresolve: (sourcefile, sourceline, commentId) => {
+            onCommentUnresolve: (sourcefile, sourceline, id) => {
                 dispatch(setCommentState({
-                    commentId,
+                    sourcefile,
+                    sourceline,
+                    id,
                     state: "open"
                 }))
             },
@@ -119,10 +123,12 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 }))
             },
 
-            onCommentEdit: (file, line, commentId, newText) => {
+            onCommentEdit: (sourcefile, sourceline, id, newText) => {
                 dispatch(editComment({
-                    commentId,
-                    newText
+                    sourcefile,
+                    sourceline,
+                    id,
+                    text: newText
                 }))
             },
             makeOriginalLink: makeCommentPath
