@@ -6,7 +6,6 @@ import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.web.UrlPattern
 
-val BreadCrumbContextName = "breadcrumb"
 
 data class BreadCrumbElement(val text: String, val active: Boolean = false, val href: String? = null)
 class BreadCrumb(val elements: List<BreadCrumbElement>) {

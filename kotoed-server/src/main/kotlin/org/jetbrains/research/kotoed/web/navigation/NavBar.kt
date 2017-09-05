@@ -6,7 +6,6 @@ import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import kotlin.coroutines.experimental.buildSequence
 
-val NavBarContextName = "navbar"
 
 interface NavBarElement {
     val type: String // To make things easier for template engine. It cannot do instanceof

@@ -11,12 +11,6 @@ import org.jetbrains.research.kotoed.web.navigation.*
 @LoginRequired
 @JsBundle("courseList")
 suspend fun handleIndex(context: RoutingContext) {
-    context.put(BreadCrumbContextName, RootBreadCrumb)
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, RootBreadCrumb)
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
 }
-
-@HandlerFor(UrlPattern.NotImplemented)
-@Templatize("todo.jade")
-@EnableSessions
-@JsBundle("hello", withCss = false)
-suspend fun handleNotImplemented(context: RoutingContext) {}

@@ -40,6 +40,7 @@ suspend fun handleProjectIndex(context: RoutingContext) {
         return
     }
 
-    context.put(BreadCrumbContextName, ProjectBreadCrumb(course, author, project))
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, ProjectBreadCrumb(course, author, project))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.Title, "${project.name} by ${author.denizenId}")
 }

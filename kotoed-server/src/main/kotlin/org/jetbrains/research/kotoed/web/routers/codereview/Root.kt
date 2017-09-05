@@ -9,10 +9,7 @@ import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.isProjectOwnerOrTeacher
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
-import org.jetbrains.research.kotoed.web.navigation.BreadCrumbContextName
-import org.jetbrains.research.kotoed.web.navigation.NavBarContextName
-import org.jetbrains.research.kotoed.web.navigation.SubmissionReviewBreadCrumb
-import org.jetbrains.research.kotoed.web.navigation.kotoedNavBar
+import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.CodeReview.Index)
 @Templatize("code.jade")
@@ -38,6 +35,7 @@ suspend fun handleCode(context: RoutingContext) {
         return
     }
 
-    context.put(NavBarContextName, kotoedNavBar(context.user()))
-    context.put(BreadCrumbContextName, SubmissionReviewBreadCrumb(course, author, project, submission))
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+    context.put(Context.BreadCrumb, SubmissionReviewBreadCrumb(course, author, project, submission))
+    context.put(Context.Title, "Submission #${submission.id} Review")
 }
