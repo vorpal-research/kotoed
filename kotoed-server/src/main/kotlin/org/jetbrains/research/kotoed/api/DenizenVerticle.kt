@@ -1,10 +1,8 @@
 package org.jetbrains.research.kotoed.api
 
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.ProfileInfo
-import org.jetbrains.research.kotoed.data.api.ProfileInfoUpdate
-import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.LoginMsg
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
@@ -55,6 +53,28 @@ class DenizenVerticle: AbstractKotoedVerticle() {
         if(update.email != null) {
             dbUpdateAsync(DenizenRecord().apply { id = update.id; email = update.email })
         }
+
+        val profile = dbFindAsync(ProfileRecord().apply{ denizenId = update.id }).firstOrNull();
+
+        val newProf = ProfileRecord().apply {
+            denizenId = update.id
+            update.firstName?.let { firstName = it }
+            update.lastName?.let { lastName = it }
+            update.group?.let { groupId = it }
+        }
+
+        if(profile != null) {
+            dbUpdateAsync(newProf.apply{ id = profile.id})
+        } else {
+            dbCreateAsync(newProf)
+        }
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.UpdatePassword)
+    suspend fun handlePasswordUpdate(update: PasswordChangeRequest): Unit {
+        val denizen = dbFetchAsync(DenizenRecord().apply{ id = update.id })
+        run<Unit> { sendJsonableAsync(Address.User.Auth.Login, LoginMsg(denizen.denizenId, update.oldPassword)) }
+        run<Unit> { sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(denizen.denizenId, update.newPassword)) }
     }
 
 }

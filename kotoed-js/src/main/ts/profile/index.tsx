@@ -43,15 +43,14 @@ export class ProfileComponent extends ComponentWithLoading<ProfileComponentProps
     renderBody = () => {
         return <div className="panel">
             <div className="panel-heading">
-                <h2>{this.props.denizen!.denizenId}</h2>
+                <div className="row">
+                    <div className="col-sm-offset-1 col-sm-11">
+                        <h2>{this.props.denizen!.denizenId}</h2>
+                    </div>
+                </div>
             </div>
             <div className="panel-body">
                 <form className="form-horizontal">
-                    <div className="form-group">
-                        <div className="col-sm-offset-2 col-sm-10">
-                            <a className="btn btn-default" href={this.editUrl}>Edit</a>
-                        </div>
-                    </div>
                     <div className="form-group">
                         <label className="control-label col-sm-2"
                                htmlFor="inputEmail">Email</label>
@@ -78,6 +77,11 @@ export class ProfileComponent extends ComponentWithLoading<ProfileComponentProps
                                htmlFor="inputGroup">Group #</label>
                         <div className="col-sm-10">
                             <p className="form-control-static">{this.props.denizen!.group || "not specified"}</p>
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <div className="col-sm-offset-2 col-sm-10">
+                            <a className="btn btn-default" href={this.editUrl}>Edit</a>
                         </div>
                     </div>
                 </form>
