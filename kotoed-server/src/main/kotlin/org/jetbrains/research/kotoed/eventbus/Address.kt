@@ -52,6 +52,7 @@ object Address {
             const val List = "kotoed.api.submission.list"
             const val ListCount = "kotoed.api.submission.list.count"
             const val History = "kotoed.api.submission.history"
+            const val HasOpen = "kotoed.api.submission.hasOpen"
 
             object Tags {
                 const val Create = "kotoed.api.submission.tags.create"
