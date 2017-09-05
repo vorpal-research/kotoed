@@ -30,11 +30,13 @@ class SpammerVerticle: AbstractNotificationVerticle() {
 
     suspend fun setNext() {
         run<Unit> {
-            val nextEvent = LocalDateTime.now(ZoneOffset.UTC)
+            val now = LocalDateTime.now(ZoneOffset.UTC)
+            var nextEvent = now
                     .withHour(14)
                     .withMinute(0)
                     .withSecond(0)
-                    .plusDays(1)
+
+            if(nextEvent < now) nextEvent = nextEvent.plusDays(1)
 
             sendJsonableAsync(
                     Address.Schedule,
