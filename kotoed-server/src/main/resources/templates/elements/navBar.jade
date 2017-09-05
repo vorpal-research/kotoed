@@ -25,7 +25,8 @@ mixin makeNavbar(navbar)
                         span(class="sr-only") Toggle navigation
                         span(class="icon-bar")
                         span(class="icon-bar")
-                    a(href=navbar.getRootHref(), class="navbar-brand") Kotoed
+                    a(href=navbar.getRootHref(), class="navbar-brand")
+                        img(alt="Kotoed", src=static.staticPath("img/kotoed3w.png", true) style="height: 38px; margin-top: -9px")
                 div(class="collapse navbar-collapse" id="navbar")
                     if navbar.getLeftElems()
                         ul(class="nav navbar-nav")
