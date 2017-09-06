@@ -20,7 +20,7 @@ private fun String.asFilename() =
             else -> Filename(FileLocType.NORMAL, this)
         }
 
-fun Location.applyDiffs(diffs: Sequence<Diff>): Location {
+fun Location.applyDiffs(diffs: List<Diff>): Location {
     val relevant = diffs.find { it.fromFileName == filename.path }
     relevant ?: return this
 

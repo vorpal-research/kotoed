@@ -8,6 +8,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
+import org.jetbrains.research.kotoed.code.diff.parseGitDiff
 import org.jetbrains.research.kotoed.code.diff.toJson
 import org.jetbrains.research.kotoed.code.vcs.*
 import org.jetbrains.research.kotoed.config.Config
@@ -304,7 +305,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             else root.diffAll(from, to)
         }.result
 
-        return DiffResponse(contents = parseDiff(diffRes).map { it.toJson() }.toList())
+        return DiffResponse(contents = parseGitDiff(diffRes).map { it.toJson() })
     }
 
     @JsonableEventBusConsumerFor(Address.Code.LocationDiff)
@@ -323,6 +324,6 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             root.diffAll(from, to)
         }.result
 
-        return LocationResponse(location = message.location.applyDiffs(parseDiff(diffRes)))
+        return LocationResponse(location = message.location.applyDiffs(parseGitDiff(diffRes)))
     }
 }
