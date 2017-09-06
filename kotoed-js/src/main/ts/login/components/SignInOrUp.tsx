@@ -46,12 +46,11 @@ export default class SignInOrUp extends React.Component<RouteComponentProps<{}> 
                     onSelect={index => this.props.onTabSelect(index)}
                     selectedTabClassName="active"
                     disabledTabClassName="disabled">
-                    <TabList className="nav nav-pills nav-justified">
+                    <TabList className="nav nav-tabs nav-justified">
                         <Tab className="" disabled={this.props.disabled}><a>Sign In</a></Tab>
                         <Tab className="" disabled={this.props.disabled}><a>Sign Up</a></Tab>
                     </TabList>
-                    <div className="vspace-10"/>
-                    <TabPanel>
+                    <TabPanel className="login-tab" selectedClassName="login-tab-selected">
                         <SignInForm
                             errors={this.props.signInErrors}
                             disabled={this.props.disabled}
@@ -60,7 +59,7 @@ export default class SignInOrUp extends React.Component<RouteComponentProps<{}> 
                             onStartOAuth={this.props.onStartOAuth}
                         />
                     </TabPanel>
-                    <TabPanel>
+                    <TabPanel className="login-tab" selectedClassName="login-tab-selected">
                         <SignUpForm
                             errors={this.props.signUpErrors}
                             disabled={this.props.disabled}
