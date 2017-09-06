@@ -147,6 +147,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
     val erasure = klass.jvmErasure
     val companion = erasure.companionObjectInstance
     return when (this) {
+        in Equals(null) and Guard { klass.isMarkedNullable } -> null
         is JsonObject -> {
             when {
                 erasure.isSubclassOf(JsonObject::class) -> this
@@ -244,7 +245,7 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
         val value = data.getValue(key)
         if (value == null && !it.returnType.isMarkedNullable)
             throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
-        else Pair(it.name, value?.tryFromJson(it.returnType))
+        else Pair(it.name, value.tryFromJson(it.returnType))
     }.toMap()
 
     return try {
