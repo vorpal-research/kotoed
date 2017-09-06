@@ -114,7 +114,7 @@ export default class SignInForm extends
                         required
                         type="text"
                         id="signin-input-username"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="username"
                         placeholder="Username"
                         onChange={this.handleUsernameChange}
@@ -131,7 +131,7 @@ export default class SignInForm extends
                         required
                         type="password"
                         id="signin-input-password"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="password"
                         placeholder="Password"
                         onChange={this.handlePasswordChange}
