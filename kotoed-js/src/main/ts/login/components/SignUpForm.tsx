@@ -149,7 +149,7 @@ export default class SignUpForm extends
                     required
                     type="text"
                     id="signup-input-username"
-                    className="form-control"
+                    className="form-control input-lg"
                     name="username"
                     placeholder="Username"
                     onChange={this.handleUsernameChange}
@@ -165,7 +165,7 @@ export default class SignUpForm extends
                     ref={ref => this.eMailField = ref!}
                     type="email"
                     id="signup-input-email"
-                    className="form-control"
+                    className="form-control input-lg"
                     name="email"
                     placeholder="E-Mail"
                     onChange={this.handleEmailChange}
@@ -181,7 +181,7 @@ export default class SignUpForm extends
                     required
                     type="password"
                     id="signup-input-password"
-                    className="form-control"
+                    className="form-control input-lg"
                     name="password"
                     placeholder="Password"
                     onChange={this.handlePasswordChange}
@@ -197,7 +197,7 @@ export default class SignUpForm extends
                     required
                     type="password"
                     id="signup-input-password2"
-                    className="form-control"
+                    className="form-control input-lg"
                     name="password2"
                     placeholder="Retype password"
                     onChange={this.handlePassword2Change}

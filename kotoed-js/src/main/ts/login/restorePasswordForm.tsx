@@ -140,7 +140,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         required
                         type="text"
                         id="signup-input-username"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="username"
                         placeholder="Username"
                         onChange={this.handleUsernameChange}
@@ -155,7 +155,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         required
                         type="password"
                         id="signup-input-password"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="password"
                         placeholder="Password"
                         onChange={this.handlePasswordChange}
@@ -170,7 +170,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         required
                         type="password"
                         id="signup-input-password2"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="password2"
                         placeholder="Retype password"
                         onChange={this.handlePassword2Change}
