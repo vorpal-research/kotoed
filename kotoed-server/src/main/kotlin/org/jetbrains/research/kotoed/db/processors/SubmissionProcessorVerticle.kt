@@ -130,6 +130,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
         }
 
+        parentSub?.let {
+            it.state = SubmissionState.obsolete
+            dbUpdateAsync(it)
+        }
+
         val vcsReq = getVcsInfo(project)
 
         val vcsStatus = getVcsStatus(vcsReq, sub)
@@ -144,10 +149,6 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         parentSub?.let {
             recreateCommentsAsync(vcsReq.uid, it, sub)
-
-            it.state = SubmissionState.obsolete
-
-            dbUpdateAsync(it)
         }
 
         val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
