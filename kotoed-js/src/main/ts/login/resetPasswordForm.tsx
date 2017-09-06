@@ -96,7 +96,7 @@ class ResetPasswordForm extends ComponentWithLocalErrors<ResetPasswordFormProps,
         if (!this.state.done)
             return <div><form className="form-signin">
                 {this.renderErrors()}
-                <div className={`form-group ${localErrors.emptyUsername && "has-error"}`}>
+                <div className={`form-group ${localErrors.emptyUsername && "has-error" || ""}`}>
                     <label htmlFor="signup-input-login" className="sr-only">
                         Username
                     </label>
@@ -111,7 +111,7 @@ class ResetPasswordForm extends ComponentWithLocalErrors<ResetPasswordFormProps,
                         value={this.state.username}
                     />
                 </div>
-                <div className={`form-group ${localErrors.badEmail && "has-error"}`}>
+                <div className={`form-group ${localErrors.badEmail && "has-error" || ""}`}>
                     <label htmlFor="signup-input-email" className="sr-only">
                         E-mail
                     </label>
