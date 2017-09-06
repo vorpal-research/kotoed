@@ -104,7 +104,7 @@ class ResetPasswordForm extends ComponentWithLocalErrors<ResetPasswordFormProps,
                         required
                         type="text"
                         id="signup-input-username"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="username"
                         placeholder="Username"
                         onChange={this.handleUsernameChange}
@@ -119,7 +119,7 @@ class ResetPasswordForm extends ComponentWithLocalErrors<ResetPasswordFormProps,
                         ref={ref => this.eMailField = ref!}
                         type="email"
                         id="signup-input-email"
-                        className="form-control"
+                        className="form-control input-lg"
                         name="email"
                         placeholder="E-Mail"
                         onChange={this.handleEmailChange}
