@@ -132,7 +132,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
         if(!this.state.done) {
             return <div><form className="form-signin">
                 {this.renderErrors()}
-                <div className={`form-group ${localErrors.emptyUsername && "has-error"}`}>
+                <div className={`form-group ${localErrors.emptyUsername && "has-error" || ""}`}>
                     <label htmlFor="signup-input-login" className="sr-only">
                         Username
                     </label>
@@ -147,7 +147,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         value={this.state.username}
                     />
                 </div>
-                <div className={`form-group  ${(localErrors.emptyPassword || localErrors.passwordsDoNotMatch) && "has-error"}`}>
+                <div className={`form-group  ${(localErrors.emptyPassword || localErrors.passwordsDoNotMatch) && "has-error" || ""}`}>
                     <label htmlFor="signup-input-password" className="sr-only">
                         Password
                     </label>
@@ -162,7 +162,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         value={this.state.password}
                     />
                 </div>
-                <div className={`form-group  ${(localErrors.emptyPassword2 || localErrors.passwordsDoNotMatch) && "has-error"}`}>
+                <div className={`form-group  ${(localErrors.emptyPassword2 || localErrors.passwordsDoNotMatch) && "has-error" || ""}`}>
                     <label htmlFor="signup-input-password2" className="sr-only">
                         Retype password
                     </label>

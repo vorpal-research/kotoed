@@ -43,22 +43,16 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
 
     render() {
         return (
-            <div className="search-bar">
-                <div className="input-group">
-                    <input className="search-query form-control input"
+                <div className="has-feedback">
+                    <input className="form-control input"
                            ref={(me: HTMLInputElement) => this.input = me}
                            placeholder="Search"
                            type="text"
                            value={this.state.text}
                            onChange={(e) => this.updateText(e.target.value)}
                     />
-                    <span className="input-group-btn">
-                        <span className="btn btn-info">
-                            <i className="glyphicon glyphicon-search"/>
-                        </span>
-                    </span>
+                    <span className="glyphicon glyphicon-search form-control-feedback grayed-out"/>
                 </div>
-            </div>
         );
     }
 }
