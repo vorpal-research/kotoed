@@ -73,6 +73,18 @@ export function navigateToNew(submissionId: number) {
     };
 }
 
+function fetchCommentsTotal(id: number) {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+
+        dispatch(commentsTotalFetch.started(id));
+        let comments = await fetchCommentsTotalRemote(id);
+        dispatch(commentsTotalFetch.done({
+            params: id,
+            result: comments
+        }));
+    }
+}
+
 function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionToRead>) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
         let sub = initial;
@@ -117,19 +129,6 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
             onFinal: dispatchDone,
             onGiveUp: dispatchDone
         });
-
-        // We wont fetch anything for invalid sub
-        if (isSubmissionAvalable({
-                ...sub.record,
-                verificationData: sub.verificationData
-            })) {
-            dispatch(commentsTotalFetch.started(id));
-            let comments = await fetchCommentsTotalRemote(id);
-            dispatch(commentsTotalFetch.done({
-                params: id,
-                result: comments
-            }));
-        }
     }
 }
 
@@ -151,6 +150,8 @@ export function initialize(id: number) {
 
         await pollSubmissionIfNeeded(id, sub)(dispatch);
 
+        await fetchCommentsTotal(id)(dispatch);
+
         fetchPermissions(id)(dispatch);
     }
 }
@@ -164,9 +165,9 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
             result: sub
         }));
 
-        await fetchPermissions(payload.id)(dispatch);
+        await pollSubmissionIfNeeded(payload.id, sub)(dispatch)
 
-        pollSubmissionIfNeeded(payload.id, sub)(dispatch)
+        fetchPermissions(payload.id)(dispatch);
 
     }
 }
