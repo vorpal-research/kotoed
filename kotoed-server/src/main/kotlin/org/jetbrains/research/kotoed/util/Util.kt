@@ -176,3 +176,10 @@ fun Map<String, String>.makeUriQuery() =
 fun String.truncateAt(index: Int) =
         if(index < length) take(index - 3) + "..."
         else this
+
+inline operator fun MatchGroupCollection.component1() = get(0)
+inline operator fun MatchGroupCollection.component2() = get(1)
+inline operator fun MatchGroupCollection.component3() = get(2)
+inline operator fun MatchGroupCollection.component4() = get(3)
+inline operator fun MatchGroupCollection.component5() = get(4)
+inline operator fun MatchGroupCollection.component6() = get(5)

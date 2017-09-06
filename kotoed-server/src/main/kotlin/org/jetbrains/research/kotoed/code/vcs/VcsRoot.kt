@@ -167,7 +167,7 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
     override fun diff(path: String, from: Revision, to: Revision): VcsResult<Sequence<String>> {
         val res = CommandLine(
                 mercurial, "diff",
-                "--noprefix",
+                "--git",
                 "-r", from.rep, "-r", to.rep, path).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
@@ -176,7 +176,7 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
     override fun diffAll(from: Revision, to: Revision): VcsResult<Sequence<String>> {
         val res = CommandLine(
                 mercurial, "diff",
-                "--noprefix",
+                "--git",
                 "-r", from.rep, "-r", to.rep).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
