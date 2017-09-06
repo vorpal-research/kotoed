@@ -27,6 +27,7 @@ import {
     linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
     renderSubmissionIcon
 } from "../submissions/util";
+import {Denizen} from "../data/denizen";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -40,6 +41,12 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Project.Index, {id: this.props.id})}>{text}</a>;
         else
             return <span className={"grayed-out"}>{text}</span>
+    };
+
+    profileLink = (denizen: Denizen): JSX.Element => {
+        return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: denizen.id})}>
+            {truncateString(this.props.denizen.denizenId, 30)}
+            </a>
     };
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This project is invalid</Tooltip>;
@@ -93,7 +100,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
             <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
-            <td>{truncateString(this.props.denizen.denizenId, 30)}</td>
+            <td>{this.profileLink(this.props.denizen)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>
         </tr>
