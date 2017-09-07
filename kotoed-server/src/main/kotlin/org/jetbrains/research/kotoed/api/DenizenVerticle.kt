@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
+@CleanupJsonFields(arrayOf("password", "initiatorPassword", "newPassword"))
 class DenizenVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Create)
