@@ -4,6 +4,7 @@ import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
 import {Kotoed} from "../../util/kotoed-api";
 import UrlPattern = Kotoed.UrlPattern;
+import {PasswordErrors, PasswordInput} from "../../views/components/PasswordInput";
 
 type LocalErrors = {
     emptyUsername: boolean
@@ -13,11 +14,17 @@ type LocalErrors = {
     passwordsDoNotMatch: boolean
 }
 
+const defaultLocalErrors = {
+    emptyUsername: false,
+    emptyPassword: false,
+    emptyPassword2: false,
+    badEmail: false,
+    passwordsDoNotMatch: false,
+};
 
 interface SignUpFormState {
     username: string
     password: string
-    password2: string
     email: string
 }
 
@@ -35,9 +42,16 @@ export default class SignUpForm extends
     localErrorMessages: ErrorMessages<LocalErrors> = {
         emptyUsername: "Please enter username",
         emptyPassword: "Please enter password",
-        emptyPassword2: "Please retype your password",
+        emptyPassword2: "Please re-enter your password",
         badEmail: "Please enter proper e-mail address",
         passwordsDoNotMatch: "Passwords do not match",
+    };
+
+    // This field does not directly affect rendering
+    private passwordErrors: PasswordErrors = {
+        emptyPassword: false,
+        emptyPassword2: false,
+        passwordsDoNotMatch: false,
     };
 
     constructor(props: SignUpFormProps) {
@@ -45,7 +59,6 @@ export default class SignUpForm extends
         this.state = {
             username: "",
             password: "",
-            password2: "",
             email: "",
             localErrors: {
                 emptyUsername: false,
@@ -72,20 +85,14 @@ export default class SignUpForm extends
         this.unsetError("emptyUsername");
     };
 
-    handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+    handlePasswordChange = (password: string, errors: PasswordErrors) => {
         this.setState({
-            password: event.target.value
+            password
         });
+
+        this.passwordErrors = errors;
 
         this.unsetError("emptyPassword");
-        this.unsetError("passwordsDoNotMatch")
-    };
-
-    handlePassword2Change = (event: ChangeEvent<HTMLInputElement>) => {
-        this.setState({
-            password2: event.target.value
-        });
-
         this.unsetError("emptyPassword2");
         this.unsetError("passwordsDoNotMatch")
     };
@@ -100,6 +107,9 @@ export default class SignUpForm extends
 
     handleSignUpClick = (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
+
+        this.setState({localErrors: defaultLocalErrors});
+
         let ok = true;
         if (this.state.username === "") {
             this.setError("emptyUsername");
@@ -108,19 +118,19 @@ export default class SignUpForm extends
 
         let passwordOk = true;
 
-        if (this.state.password === "") {
+        if (this.passwordErrors.emptyPassword) {
             this.setError("emptyPassword");
             ok = false;
             passwordOk = false;
         }
 
-        if (this.state.password2 === "") {
+        if (this.passwordErrors.emptyPassword2) {
             this.setError("emptyPassword2");
             ok = false;
             passwordOk = false;
         }
 
-        if (passwordOk && this.state.password2 !== this.state.password) {
+        if (passwordOk && this.passwordErrors.passwordsDoNotMatch) {
             this.setError("passwordsDoNotMatch");
             ok = false;
         }
@@ -141,7 +151,7 @@ export default class SignUpForm extends
         const {localErrors} = this.state;
         return <form className="form-signin">
             {this.renderErrors()}
-            <div className={`form-group ${localErrors.emptyUsername && "has-error"}`}>
+            <div className={`form-group ${localErrors.emptyUsername && "has-error" || ""}`}>
                 <label htmlFor="signup-input-login" className="sr-only">
                     Username
                 </label>
@@ -157,7 +167,7 @@ export default class SignUpForm extends
                     disabled={this.props.disabled}
                 />
             </div>
-            <div className={`form-group ${localErrors.badEmail && "has-error"}`}>
+            <div className={`form-group ${localErrors.badEmail && "has-error" || ""}`}>
                 <label htmlFor="signup-input-email" className="sr-only">
                     E-mail
                 </label>
@@ -173,38 +183,15 @@ export default class SignUpForm extends
                     disabled={this.props.disabled}
                 />
             </div>
-            <div className={`form-group  ${(localErrors.emptyPassword || localErrors.passwordsDoNotMatch) && "has-error"}`}>
-                <label htmlFor="signup-input-password" className="sr-only">
-                    Password
-                </label>
-                <input
-                    required
-                    type="password"
-                    id="signup-input-password"
-                    className="form-control input-lg"
-                    name="password"
-                    placeholder="Password"
-                    onChange={this.handlePasswordChange}
-                    value={this.state.password}
-                    disabled={this.props.disabled}
-                />
-            </div>
-            <div className={`form-group  ${(localErrors.emptyPassword2 || localErrors.passwordsDoNotMatch) && "has-error"}`}>
-                <label htmlFor="signup-input-password2" className="sr-only">
-                    Retype password
-                </label>
-                <input
-                    required
-                    type="password"
-                    id="signup-input-password2"
-                    className="form-control input-lg"
-                    name="password2"
-                    placeholder="Retype password"
-                    onChange={this.handlePassword2Change}
-                    value={this.state.password2}
-                    disabled={this.props.disabled}
-                />
-            </div>
+            <PasswordInput
+                onChange={this.handlePasswordChange}
+                onEnter={() => {}}
+                prefix="signup-"
+                classNames={{
+                    label: "sr-only",
+                    input: "input-lg"
+                }}
+            />
             <button className="btn btn-lg btn-primary btn-block"
                     onClick={this.handleSignUpClick}
                     disabled={this.props.disabled}>

@@ -161,15 +161,16 @@ data class ProfileInfo(
         val id: Int,
         val denizenId: String,
         val email: String?,
-        val oauth: Map<String, Int?>,
+        val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
         val group: String?
 ): Jsonable
 
 data class PasswordChangeRequest(
-        val id: Int,
-        val oldPassword: String,
+        val initiatorDenizenId: String,
+        val initiatorPassword: String,
+        val targetId: Int,
         val newPassword: String
 ): Jsonable
 
@@ -177,7 +178,7 @@ data class ProfileInfoUpdate(
         val id: Int,
         val denizenId: String,
         val email: String?,
-        val oauth: Map<String, Int?>,
+        val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
         val group: String?
