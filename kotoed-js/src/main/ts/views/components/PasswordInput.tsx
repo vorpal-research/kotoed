@@ -44,7 +44,7 @@ const defaultProps: Partial<PasswordInputProps> = {
     placeholder: "Password",
     placeholderRepeat: "Repeat password",
     label: "Password",
-    labelRepeat: "RepeatPassword"
+    labelRepeat: "Repeat Password"
 };
 
 export class PasswordInput extends React.Component<PasswordInputProps, PasswordInputState> {
