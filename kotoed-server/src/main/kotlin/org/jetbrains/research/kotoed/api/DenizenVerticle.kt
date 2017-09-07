@@ -32,7 +32,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
                 ComplexDatabaseQuery(Tables.OAUTH_PROFILE)
                 .join(Tables.OAUTH_PROVIDER)
                 .find(OauthProfileRecord().apply { denizenId = denizen.id })
-        ).map { (it.safeNav("oauth_provider", "name") as String) to (it.getString("oauth_user_id").toIntOrNull()) }
+        ).map { (it.safeNav("oauth_provider", "name") as String) to it.getString("oauth_user_id") }
                 .toMap()
 
         return ProfileInfo(
