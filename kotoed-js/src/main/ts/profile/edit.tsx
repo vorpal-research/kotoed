@@ -20,10 +20,11 @@ interface EditableProfileInfo {
     id: number
     denizenId?: string
     email?: string
-    oauth?: [string, number | null][]
+    oauth?: [string, string | null][]
     firstName?: string
     lastName?: string
     group?: string
+    powerMode: boolean
 }
 
 interface EditablePasswordInfo {
