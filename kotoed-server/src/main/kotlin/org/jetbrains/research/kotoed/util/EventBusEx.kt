@@ -10,7 +10,6 @@ import kotlinx.Warnings.DEPRECATION
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
-import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -119,6 +118,11 @@ annotation class EventBusConsumerForDynamic(val addressProperty: String)
 @Target(AnnotationTarget.FUNCTION)
 annotation class JsonableEventBusConsumerForDynamic(val addressProperty: String)
 
+
+@Target(AnnotationTarget.CLASS)
+annotation class CleanupJsonFields(val fields: Array<String>)
+
+
 private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
     return when {
@@ -193,13 +197,18 @@ object ConsumerAutoRegister : Loggable
 fun AbstractKotoedVerticle.registerAllConsumers() {
     val klass = this::class
 
+    val cleanupJsonFields = klass.annotations
+            .filterIsInstance<CleanupJsonFields>()
+            .firstOrNull()
+            ?.fields ?: emptyArray()
+
     for (function in klass.memberFunctions) {
         for (annotation in function.annotations) {
             when (annotation) {
                 is EventBusConsumerFor ->
-                    registerRawConsumer(function, annotation.address)
+                    registerRawConsumer(function, annotation.address, cleanupJsonFields)
                 is JsonableEventBusConsumerFor ->
-                    registerJsonableConsumer(function, annotation.address)
+                    registerJsonableConsumer(function, annotation.address, cleanupJsonFields)
                 is EventBusConsumerForDynamic -> {
                     val address = klass
                             .memberProperties
@@ -207,7 +216,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                             ?.call(this)
                             as? String
                             ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
-                    registerRawConsumer(function, address)
+                    registerRawConsumer(function, address, cleanupJsonFields)
                 }
                 is JsonableEventBusConsumerForDynamic -> {
                     val address = klass
@@ -216,7 +225,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                             ?.call(this)
                             as? String
                             ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
-                    registerJsonableConsumer(function, address)
+                    registerJsonableConsumer(function, address, cleanupJsonFields)
                 }
             }
         }
@@ -225,7 +234,8 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
 
 private fun AbstractVerticle.registerRawConsumer(
         function: KFunction<*>,
-        address: String
+        address: String,
+        cleanupJsonFields: Array<String>
 ) {
     val klass = this::class
     val eb = vertx.eventBus()
@@ -236,13 +246,13 @@ private fun AbstractVerticle.registerRawConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(msg)) {
+            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))) {
                 function.callAsync(this@registerRawConsumer, msg)
             }
         }
     } else {
         eb.consumer<JsonObject>(address) { msg ->
-            DelegateLoggable(klass.java).withExceptions(msg) {
+            DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
                 function.call(this@registerRawConsumer, msg)
             }
         }
@@ -251,7 +261,8 @@ private fun AbstractVerticle.registerRawConsumer(
 
 private fun AbstractVerticle.registerJsonableConsumer(
         function: KFunction<*>,
-        address: String
+        address: String,
+        cleanupJsonFields: Array<String>
 ) {
     val klass = this::class
     val eb = vertx.eventBus()
@@ -270,7 +281,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(msg)) {
+            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))) {
                 val argument = fromJson(msg.body())
                 val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
                 msg.reply(toJson(res))
@@ -278,7 +289,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
         }
     } else {
         eb.consumer<JsonObject>(address) { msg ->
-            DelegateLoggable(klass.java).withExceptions(msg) {
+            DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
                 val argument = fromJson(msg.body())
                 val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
                 msg.reply(toJson(res))

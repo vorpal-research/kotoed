@@ -5,6 +5,8 @@ import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.ReplyException
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.StatusCodes.BAD_REQUEST
 import org.jetbrains.research.kotoed.util.StatusCodes.CONFLICT
@@ -105,3 +107,27 @@ fun <T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
         } catch (t: Throwable) {
             handleException(ctx, t)
         }
+
+class CleanedUpMessageWrapper<T>(
+        val msg: Message<T>,
+        private val cleanupJsonFields: Array<String>) : Message<T> by msg {
+    override fun body(): T = msg.body().cleanupJsonFields(cleanupJsonFields)
+}
+
+private fun <T> T.cleanupJsonFields(cleanupJsonFields: Array<String>): T {
+    if (cleanupJsonFields.isEmpty()) return this
+
+    return when (this) {
+        is JsonObject -> JsonObject(
+                this.copy()
+                        .removeFields(*cleanupJsonFields)
+                        .map
+                        .mapValues { it.value.cleanupJsonFields(cleanupJsonFields) }
+        ) as T
+        is JsonArray -> JsonArray(
+                this.copy()
+                        .map { it.cleanupJsonFields(cleanupJsonFields) }
+        ) as T
+        else -> this
+    }
+}
