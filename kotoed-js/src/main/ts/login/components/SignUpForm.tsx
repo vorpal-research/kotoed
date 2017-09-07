@@ -42,7 +42,7 @@ export default class SignUpForm extends
     localErrorMessages: ErrorMessages<LocalErrors> = {
         emptyUsername: "Please enter username",
         emptyPassword: "Please enter password",
-        emptyPassword2: "Please retype your password",
+        emptyPassword2: "Please re-enter your password",
         badEmail: "Please enter proper e-mail address",
         passwordsDoNotMatch: "Passwords do not match",
     };
