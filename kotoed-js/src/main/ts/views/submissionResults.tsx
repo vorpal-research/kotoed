@@ -137,33 +137,62 @@ namespace Statistics {
 
     export function transformer(result: any): any[] {
         let data = result.body.data;
-        let res = new Map();
 
-        for (let datum of data) {
+        let packageMap = new Map<string, { taskName: string, tag: string, status: boolean }[]>();
+        let processedPackageMap = new Map<string, Map<string, { solved: number, total: number }>>();
+
+        data.forEach((datum: any) => {
             let packageName = datum.packageName.substr(
                 0, datum.packageName.lastIndexOf("."));
-            let tag = datum.tags[0];
+            let taskName = `${packageName}.${datum.methodName}`;
 
-            let tagMap = res.get(packageName) || new Map();
-            if (datum.results.every((r: TestData) => "SUCCESSFUL" == r.status)) {
-                tagMap[tag] = (tagMap[tag] || 0 ) + 1;
-            } else {
-                tagMap[tag] = (tagMap[tag] || 0 );
-            }
+            let tag = datum.tags[0] || "None";
 
-            let totalMap = tagMap.get("Total") || new Map();
-            totalMap[tag] = (totalMap[tag] || 0 ) + 1;
-            tagMap.set("Total", totalMap);
+            let status = !!datum.results.every((r: TestData) => "SUCCESSFUL" == r.status);
 
-            res.set(packageName, tagMap);
-        }
+            packageMap.set(packageName, (packageMap.get(packageName) || []).concat([{
+                taskName: taskName,
+                tag: tag,
+                status: status
+            }]));
+        });
 
-        return [...res.entries()].map(([key, value]) => {
-            let totals = value.get("Total");
-            return {
-                packageName: key,
-                ..._.mapValues(value, (v, k) => `${v} / ${totals[k]}`)
-            };
+        packageMap.forEach((packageData, packageName) => {
+            let taskMap = new Map<string, { tag: string, status: boolean }[]>();
+            let processedTaskMap = new Map<string, { tag: string, status: boolean }>();
+            let tagMap = new Map<string, { solved: number, total: number }>();
+
+            packageData.forEach(({taskName, tag, status}) => {
+                taskMap.set(taskName, (taskMap.get(taskName) || []).concat([{
+                    tag: tag,
+                    status: status
+                }]));
+            });
+
+            taskMap.forEach((taskData, taskName) => {
+                processedTaskMap.set(taskName, {
+                    tag: taskData[0].tag,
+                    status: taskData.every(({_, status}: any) => status)
+                });
+            });
+
+            processedTaskMap.forEach(({tag, status}, _) => {
+                let oldValue = tagMap.get(tag) || {solved: 0, total: 0};
+                tagMap.set(tag, {
+                    solved: oldValue.solved + (status ? 1 : 0),
+                    total: oldValue.total + 1
+                });
+            });
+
+            processedPackageMap.set(packageName, tagMap);
+        });
+
+        return [...processedPackageMap.entries()].map(([packageName, packageData]) => {
+            let res = {packageName: packageName};
+            packageData.forEach((stats, tag) => {
+                _.set(res, tag, `${stats.solved} / ${stats.total}`);
+            });
+            return res;
         });
     }
 
