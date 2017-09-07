@@ -2,6 +2,8 @@ package org.jetbrains.research.kotoed.web.eventbus.patchers
 
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.removeFields
+import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUpBody
 
 interface BridgeEventPatcher : Loggable {
     suspend fun patch(be: BridgeEvent)
@@ -14,5 +16,5 @@ interface BridgeEventPatcher : Loggable {
 }
 
 fun BridgeEventPatcher.logPatch(be: BridgeEvent) {
-    log.trace("Bridge event ${be.type()} (${be.rawMessage}) is patched by $this")
+    log.trace("Bridge event ${be.type()} (${be.rawMessage.cleanUpBody()}) is patched by $this")
 }

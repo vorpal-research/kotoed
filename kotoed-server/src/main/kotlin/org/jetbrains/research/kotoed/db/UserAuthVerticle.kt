@@ -15,7 +15,7 @@ import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
 
 @AutoDeployable
-@CleanupJsonFields(arrayOf("password"))
+@CleanupJsonFields(arrayOf("password", "initiatorPassword", "newPassword"))
 class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UNSAFE), Loggable {
     val theTable = Tables.DENIZEN_UNSAFE
     // FIXME akhin move to extension
