@@ -3,6 +3,7 @@ import {render} from "react-dom";
 
 import "less/kotoed-bootstrap/bootstrap.less"
 import "less/login.less"
+import "less/util.less"
 
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ChangeEvent, MouseEvent} from "react";
@@ -12,6 +13,7 @@ import UrlPattern = Kotoed.UrlPattern;
 import {ErrorMessages} from "./util";
 import {RedirectToRoot} from "../code/containers/CodeReviewContainer";
 import {Redirect} from "react-router";
+import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
 
 type LocalErrors = {
     emptyUsername: boolean
@@ -42,6 +44,14 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
         illegalCombination: "Your password change request has expired. Please reset your password again"
     };
 
+    // This field does not directly affect rendering
+    private passwordErrors: PasswordErrors = {
+        emptyPassword: false,
+        emptyPassword2: false,
+        passwordsDoNotMatch: false,
+    };
+
+
     constructor(props: RestorePasswordFormProps) {
         super(props);
         this.state = {
@@ -68,24 +78,16 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
         this.unsetError("illegalCombination");
     };
 
-    handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+    handlePasswordChange = (password: string, errors: PasswordErrors) => {
         this.setState({
-            password: event.target.value
+            password
         });
+
+        this.passwordErrors = errors;
 
         this.unsetError("emptyPassword");
-        this.unsetError("passwordsDoNotMatch");
-        this.unsetError("illegalCombination");
-    };
-
-    handlePassword2Change = (event: ChangeEvent<HTMLInputElement>) => {
-        this.setState({
-            password2: event.target.value
-        });
-
         this.unsetError("emptyPassword2");
-        this.unsetError("passwordsDoNotMatch");
-        this.unsetError("illegalCombination");
+        this.unsetError("passwordsDoNotMatch")
     };
 
     handleSignUpClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -98,19 +100,20 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
 
         let passwordOk = true;
 
-        if (this.state.password === "") {
+
+        if (this.passwordErrors.emptyPassword) {
             this.setError("emptyPassword");
             ok = false;
             passwordOk = false;
         }
 
-        if (this.state.password2 === "") {
+        if (this.passwordErrors.emptyPassword2) {
             this.setError("emptyPassword2");
             ok = false;
             passwordOk = false;
         }
 
-        if (passwordOk && this.state.password2 !== this.state.password) {
+        if (passwordOk && this.passwordErrors.passwordsDoNotMatch) {
             this.setError("passwordsDoNotMatch");
             ok = false;
         }
@@ -132,7 +135,7 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
         if(!this.state.done) {
             return <div><form className="form-signin">
                 {this.renderErrors()}
-                <div className={`form-group ${localErrors.emptyUsername && "has-error"}`}>
+                <div className={`form-group ${localErrors.emptyUsername && "has-error" || ""}`}>
                     <label htmlFor="signup-input-login" className="sr-only">
                         Username
                     </label>
@@ -147,36 +150,15 @@ class RestorePasswordForm extends ComponentWithLocalErrors<RestorePasswordFormPr
                         value={this.state.username}
                     />
                 </div>
-                <div className={`form-group  ${(localErrors.emptyPassword || localErrors.passwordsDoNotMatch) && "has-error"}`}>
-                    <label htmlFor="signup-input-password" className="sr-only">
-                        Password
-                    </label>
-                    <input
-                        required
-                        type="password"
-                        id="signup-input-password"
-                        className="form-control input-lg"
-                        name="password"
-                        placeholder="Password"
-                        onChange={this.handlePasswordChange}
-                        value={this.state.password}
-                    />
-                </div>
-                <div className={`form-group  ${(localErrors.emptyPassword2 || localErrors.passwordsDoNotMatch) && "has-error"}`}>
-                    <label htmlFor="signup-input-password2" className="sr-only">
-                        Retype password
-                    </label>
-                    <input
-                        required
-                        type="password"
-                        id="signup-input-password2"
-                        className="form-control input-lg"
-                        name="password2"
-                        placeholder="Retype password"
-                        onChange={this.handlePassword2Change}
-                        value={this.state.password2}
-                    />
-                </div>
+                <PasswordInput
+                    onChange={this.handlePasswordChange}
+                    onEnter={() => {}}
+                    prefix="signup-"
+                    classNames={{
+                        label: "sr-only",
+                        input: "input-lg"
+                    }}
+                />
                 <button className="btn btn-lg btn-primary btn-block"
                         onClick={this.handleSignUpClick}>
                     Change my password!
