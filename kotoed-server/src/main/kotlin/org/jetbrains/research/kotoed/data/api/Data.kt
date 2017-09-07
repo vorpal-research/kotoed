@@ -161,7 +161,7 @@ data class ProfileInfo(
         val id: Int,
         val denizenId: String,
         val email: String?,
-        val oauth: Map<String, Int?>,
+        val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
         val group: String?
@@ -177,7 +177,7 @@ data class ProfileInfoUpdate(
         val id: Int,
         val denizenId: String,
         val email: String?,
-        val oauth: Map<String, Int?>,
+        val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
         val group: String?
