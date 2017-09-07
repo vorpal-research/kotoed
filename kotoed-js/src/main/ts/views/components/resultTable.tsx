@@ -34,6 +34,7 @@ export class ResultTable<ResultT> extends Component<ResultTableProps<ResultT>, a
         return <Griddle
             key="results"
             data={this.props.results}
+            pageProperties={{pageSize: 20}}
             plugins={[plugins.LocalPlugin]}
             components={{
                 // Filter: () => <span/>,
