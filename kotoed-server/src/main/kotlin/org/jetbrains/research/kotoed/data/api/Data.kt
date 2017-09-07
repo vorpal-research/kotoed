@@ -168,8 +168,9 @@ data class ProfileInfo(
 ): Jsonable
 
 data class PasswordChangeRequest(
-        val id: Int,
-        val oldPassword: String,
+        val initiatorDenizenId: String,
+        val initiatorPassword: String,
+        val targetId: Int,
         val newPassword: String
 ): Jsonable
 

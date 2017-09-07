@@ -29,8 +29,8 @@ interface EditableProfileInfo {
 }
 
 interface EditablePasswordInfo {
-    id: number
-    oldPassword?: string
+    targetId: number
+    initiatorPassword?: string
     newPassword?: string
 }
 
@@ -54,8 +54,8 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.state = {
             denizen: this.props.denizen,
             password: {
-                id: this.props.denizen.id,
-                oldPassword: "",
+                targetId: this.props.denizen.id,
+                initiatorPassword: "",
                 newPassword: ""
             },
             disabled: false,
@@ -71,7 +71,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         badEmail: "Incorrect email",
         passwordsDontMatch: "Passwords don't match",
         emptyPassword: "One of your password fields is empty",
-        incorrectPassword: "Your old password is incorrect"
+        incorrectPassword: "Your current password is incorrect"
     };
 
     setError(error: keyof LocalErrors) {
@@ -198,16 +198,18 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                     </div>
                     <PasswordInput
                         setPassword={false}
-                        onChange={this.bindPassword("oldPassword")}
+                        prefix="initiator-"
+                        onChange={this.bindPassword("initiatorPassword")}
                         onEnter={() => {}}
                         classNames={{
                             label: "control-label col-sm-2",
                             inputWrapper: "col-sm-10"
                         }}
-                        label="Old password"
+                        label="Your password"
                         placeholder="not specified"
                     />
                     <PasswordInput
+                        prefix="target-"
                         onChange={this.bindPassword("newPassword")}
                         onEnter={() => {}}
                         classNames={{
