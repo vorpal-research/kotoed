@@ -12,6 +12,7 @@ import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalEr
 import Address = Kotoed.Address;
 import {ErrorMessages} from "../login/util";
 import {fallThroughErrorHandler} from "../eventBus";
+import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -20,17 +21,17 @@ interface EditableProfileInfo {
     id: number
     denizenId?: string
     email?: string
-    oauth?: [string, number | null][]
+    oauth?: [string, string | null][]
     firstName?: string
     lastName?: string
     group?: string
+    powerMode: boolean
 }
 
 interface EditablePasswordInfo {
-    id: number
-    oldPassword?: string
+    targetId: number
+    initiatorPassword?: string
     newPassword?: string
-    newPassword2?: string
 }
 
 interface ProfileComponentProps {
@@ -53,10 +54,9 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.state = {
             denizen: this.props.denizen,
             password: {
-                id: this.props.denizen.id,
-                oldPassword: "",
-                newPassword: "",
-                newPassword2: ""
+                targetId: this.props.denizen.id,
+                initiatorPassword: "",
+                newPassword: ""
             },
             disabled: false,
             success: false,
@@ -71,7 +71,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         badEmail: "Incorrect email",
         passwordsDontMatch: "Passwords don't match",
         emptyPassword: "One of your password fields is empty",
-        incorrectPassword: "Your old password is incorrect"
+        incorrectPassword: "Your current password is incorrect"
     };
 
     setError(error: keyof LocalErrors) {
@@ -92,17 +92,15 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.setState({ success: false, denizen: Object.assign(this.state.denizen, pick) });
     };
 
-    setPassword = <K extends keyof EditablePasswordInfo>(pick: Pick<EditablePasswordInfo,K>) => {
+    setPassword = <K extends keyof EditablePasswordInfo>(pick: Pick<EditablePasswordInfo,K>, errors: PasswordErrors) => {
         this.setState({ success: false, password: Object.assign(this.state.password, pick) },
             () => {
                 this.unsetError("emptyPassword");
                 this.unsetError("passwordsDontMatch");
-                if(this.state.password.newPassword === ""
-                    || this.state.password.newPassword2 === ""
-                    || this.state.password.oldPassword === "") {
+                if(errors.emptyPassword || errors.emptyPassword2) {
                     this.setError("emptyPassword")
                 }
-                if(this.state.password.newPassword != this.state.password.newPassword2) {
+                if(errors.passwordsDoNotMatch) {
                     this.setError("passwordsDontMatch");
                 }
             });
@@ -112,9 +110,11 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.setDenizen({ [key]: e.target.value } as Pick<EditableProfileInfo, K>)
     };
 
-    bindPassword = <K extends keyof EditablePasswordInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
-        this.setPassword({ [key]: e.target.value } as Pick<EditablePasswordInfo, K>)
+    bindPassword = <K extends keyof EditablePasswordInfo>(key: K) => (password:  string, errors: PasswordErrors) => {
+        this.setPassword({ [key]: password } as Pick<EditablePasswordInfo, K>, errors)
     };
+
+
 
     onEmailChanged = (e: ChangeEvent<HTMLInputElement>) => {
         this.unsetError("badEmail");
@@ -156,22 +156,6 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         } else return null;
     };
 
-    mkPasswordInputFor = (label: string, field: keyof EditablePasswordInfo, onChange = this.bindPassword(field)) =>
-        <div className="form-group">
-            <label className="control-label col-sm-2"
-                   htmlFor={`input-${field}`}>{label}</label>
-            <div className="col-sm-10">
-                <input
-                    className={`form-control`}
-                    id={`input-${field}`}
-                    type="password"
-                    value={this.state.password![field] as string}
-                    placeholder="not specified"
-                    onChange={onChange}
-                />
-            </div>
-        </div>;
-
     mkInputFor = (label: string, field: keyof EditableProfileInfo, type = "input", onChange = this.bindInput(field)) =>
         <div className="form-group">
             <label className="control-label col-sm-2"
@@ -212,9 +196,30 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                             <a className="btn btn-default" onClick={this.onSave}>Save</a>
                         </div>
                     </div>
-                    { this.mkPasswordInputFor("Old password", "oldPassword") }
-                    { this.mkPasswordInputFor("New password", "newPassword") }
-                    { this.mkPasswordInputFor("Repeat password", "newPassword2") }
+                    <PasswordInput
+                        setPassword={false}
+                        prefix="initiator-"
+                        onChange={this.bindPassword("initiatorPassword")}
+                        onEnter={() => {}}
+                        classNames={{
+                            label: "control-label col-sm-2",
+                            inputWrapper: "col-sm-10"
+                        }}
+                        label="Your password"
+                        placeholder="not specified"
+                    />
+                    <PasswordInput
+                        prefix="target-"
+                        onChange={this.bindPassword("newPassword")}
+                        onEnter={() => {}}
+                        classNames={{
+                            label: "control-label col-sm-2",
+                            inputWrapper: "col-sm-10"
+                        }}
+                        label="New password"
+                        placeholder="not specified"
+                        placeholderRepeat="not specified"
+                    />
                     <div className="form-group">
                         <div className="col-sm-offset-2 col-sm-10">
                             <a className="btn btn-default" onClick={this.onSavePassword}>Change password</a>

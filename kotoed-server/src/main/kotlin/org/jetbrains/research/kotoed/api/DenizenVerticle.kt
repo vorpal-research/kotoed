@@ -32,7 +32,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
                 ComplexDatabaseQuery(Tables.OAUTH_PROFILE)
                 .join(Tables.OAUTH_PROVIDER)
                 .find(OauthProfileRecord().apply { denizenId = denizen.id })
-        ).map { (it.safeNav("oauth_provider", "name") as String) to (it.getString("oauth_user_id").toIntOrNull()) }
+        ).map { (it.safeNav("oauth_provider", "name") as String) to it.getString("oauth_user_id") }
                 .toMap()
 
         return ProfileInfo(
@@ -72,9 +72,9 @@ class DenizenVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.UpdatePassword)
     suspend fun handlePasswordUpdate(update: PasswordChangeRequest): Unit {
-        val denizen = dbFetchAsync(DenizenRecord().apply{ id = update.id })
-        run<Unit> { sendJsonableAsync(Address.User.Auth.Login, LoginMsg(denizen.denizenId, update.oldPassword)) }
-        run<Unit> { sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(denizen.denizenId, update.newPassword)) }
+        run<Unit> { sendJsonableAsync(Address.User.Auth.Login, LoginMsg(update.initiatorDenizenId, update.initiatorPassword)) }
+        val target = dbFetchAsync(DenizenRecord().apply{ id = update.targetId })
+        run<Unit> { sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(target.denizenId, update.newPassword)) }
     }
 
 }

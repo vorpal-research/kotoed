@@ -7,6 +7,7 @@ import SocialButton from "./SocialButton";
 import "less/util.less"
 import {Kotoed} from "../../util/kotoed-api";
 import UrlPattern = Kotoed.UrlPattern;
+import {PasswordErrors, PasswordInput} from "../../views/components/PasswordInput";
 
 type LocalErrors = {
     emptyUsername: boolean
@@ -29,6 +30,13 @@ export interface SignInFormProps {
 
 export default class SignInForm extends
     ComponentWithLocalErrors<SignInFormProps, SignInFormState, LocalErrors> {
+
+    // This field does not directly affect rendering
+    private passwordErrors: PasswordErrors = {
+        emptyPassword: false,
+        emptyPassword2: false,
+        passwordsDoNotMatch: false,
+    };
 
     localErrorMessages: ErrorMessages<LocalErrors> = {
         emptyUsername: "Please enter username",
@@ -63,11 +71,11 @@ export default class SignInForm extends
         this.unsetError("emptyUsername");
     };
 
-    handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+    handlePasswordChange = (password: string, errors: PasswordErrors) => {
         this.setState({
-            password: event.target.value
+            password
         });
-
+        this.passwordErrors = errors;
         this.unsetError("emptyPassword");
     };
 
@@ -78,7 +86,7 @@ export default class SignInForm extends
             ok = false;
         }
 
-        if (this.state.password === "") {
+        if (this.passwordErrors.emptyPassword) {
             this.setError("emptyPassword");
             ok = false;
         }
@@ -106,7 +114,7 @@ export default class SignInForm extends
         return <div>
             <form className="form-signin">
                 {this.renderErrors()}
-                <div className={`form-group ${this.state.localErrors.emptyUsername && "has-error"}`}>
+                <div className={`form-group ${this.state.localErrors.emptyUsername && "has-error" || ""}`}>
                     <label htmlFor="signin-input-login" className="sr-only">
                         Username
                     </label>
@@ -123,23 +131,16 @@ export default class SignInForm extends
                         onKeyPress={this.handleEnter}
                     />
                 </div>
-                <div className={`form-group  ${this.state.localErrors.emptyPassword && "has-error"}`}>
-                    <label htmlFor="signin-input-password" className="sr-only">
-                        Password
-                    </label>
-                    <input
-                        required
-                        type="password"
-                        id="signin-input-password"
-                        className="form-control input-lg"
-                        name="password"
-                        placeholder="Password"
-                        onChange={this.handlePasswordChange}
-                        value={this.state.password}
-                        disabled={this.props.disabled}
-                        onKeyPress={this.handleEnter}
-                    />
-                </div>
+                <PasswordInput
+                    onChange={this.handlePasswordChange}
+                    onEnter={this.handleSignIn}
+                    setPassword={false}
+                    prefix="signin-"
+                    classNames={{
+                        label: "sr-only",
+                        input: "input-lg"
+                    }}
+                />
             </form>
             <button key="sign-in" className="btn btn-lg btn-primary btn-block"
                     onClick={this.handleSignInClick}
