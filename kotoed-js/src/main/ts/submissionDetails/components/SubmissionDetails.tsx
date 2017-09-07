@@ -154,6 +154,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             suggestions={this.props.availableTags.map(tag => tag.text)}
             handleAddition={this.onTagAdd}
             handleDelete={this.onTagDelete}
+            allowDeleteFromEmptyInput={false}
         />
     };
 
