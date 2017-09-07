@@ -53,7 +53,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
     return PerAddress(
             Address.Api.Denizen.Profile.Read to SelfOrTeacher(),
             Address.Api.Denizen.Profile.Update to SelfOrTeacher(),
-            Address.Api.Denizen.Profile.UpdatePassword to SelfOrTeacher(),
+            Address.Api.Denizen.Profile.UpdatePassword to SelfOrTeacher("target_id"),
 
             Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),
             Address.Api.Course.Read to Permissive,
@@ -136,6 +136,7 @@ class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
 }
 
 fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
+        Address.Api.Denizen.Profile.UpdatePassword to AddUsernamePatcher("initiator_denizen_id"),
         Address.Api.Notification.RenderCurrent to NotificationPatcher,
         Address.Api.Project.Create to ProjectCreatePatcher,
         Address.Api.Project.SearchForCourse to CourseListPatcher(vertx),
