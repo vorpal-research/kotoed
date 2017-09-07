@@ -15,6 +15,7 @@ import org.jooq.conf.ParamType
 import org.jooq.impl.DSL
 
 @AutoDeployable
+@CleanupJsonFields(arrayOf("password"))
 class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UNSAFE), Loggable {
     val theTable = Tables.DENIZEN_UNSAFE
     // FIXME akhin move to extension
@@ -86,11 +87,11 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
         val data = msg.rename("denizenId", "username")
 
         val user =
-            try {
-                vxa<User> { authProvider.authenticate(data, it) }
-            } catch (t: NoStackTraceThrowable) { // yes, vertx throws THIS b-t throwable here
-                throw Forbidden(t.message ?: "Invalid username/password")
-            }
+                try {
+                    vxa<User> { authProvider.authenticate(data, it) }
+                } catch (t: NoStackTraceThrowable) { // yes, vertx throws THIS b-t throwable here
+                    throw Forbidden(t.message ?: "Invalid username/password")
+                }
 
         return user.principal().rename("username", "denizenId")
     }

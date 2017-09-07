@@ -9,8 +9,9 @@ import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Field
 import org.jooq.Record
-import org.jooq.TableField
-import ru.spbstu.ktuples.*
+import ru.spbstu.ktuples.Tuple
+import ru.spbstu.ktuples.Variant
+import ru.spbstu.ktuples.VariantBase
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -59,7 +60,10 @@ inline fun JsonObject.rename(oldName: String, newName: String): JsonObject =
         } else this
 
 inline fun JsonObject.retainFields(vararg fields: String): JsonObject =
-        this.map.keys.retainAll(fields.map{ camelToKey(it)!! }).let { this }
+        this.map.keys.retainAll(fields.map { camelToKey(it)!! }).let { this }
+
+inline fun JsonObject.removeFields(vararg fields: String): JsonObject =
+        this.map.keys.removeAll(fields.map { camelToKey(it)!! }).let { this }
 
 inline operator fun JsonObject.get(fields: List<String>) =
         fields.dropLast(1).fold(this) { obj, key_ ->
@@ -77,7 +81,7 @@ inline fun JsonObject?.safeNav(vararg fields: String) =
 inline operator fun JsonObject.get(vararg fields: String) =
         get(fields.asList())
 
-inline operator fun JsonObject.set(fields: List<String>, value: Any?)  =
+inline operator fun JsonObject.set(fields: List<String>, value: Any?) =
         fields.dropLast(1).fold(this) { obj, key_ ->
             val key = camelToKey(key_)!!
             when {
@@ -250,7 +254,7 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
 
     return try {
         fun ctorCheck(ctor: KFunction<*>) = ctor.parameters.map { it.name }.toSet() == asMap.keys
-        val ctor =  klass.primaryConstructor?.takeIf(::ctorCheck) ?: klass.constructors.find(::ctorCheck)
+        val ctor = klass.primaryConstructor?.takeIf(::ctorCheck) ?: klass.constructors.find(::ctorCheck)
         ctor!!.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
