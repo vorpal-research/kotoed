@@ -132,6 +132,7 @@ export default class SignInForm extends
                     />
                 </div>
                 <PasswordInput
+                    disabled={this.props.disabled}
                     onChange={this.handlePasswordChange}
                     onEnter={this.handleSignIn}
                     setPassword={false}
