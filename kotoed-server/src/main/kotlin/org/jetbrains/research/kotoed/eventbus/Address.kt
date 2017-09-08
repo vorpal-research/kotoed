@@ -162,6 +162,7 @@ object Address {
 
     object DB {
         fun create(entity: String) = "kotoed.db.$entity.create"
+        fun batchCreate(entity: String) = "kotoed.db.$entity.create.batch"
         fun delete(entity: String) = "kotoed.db.$entity.delete"
         fun read(entity: String) = "kotoed.db.$entity.read"
         fun query(entity: String) = "kotoed.db.$entity.query"

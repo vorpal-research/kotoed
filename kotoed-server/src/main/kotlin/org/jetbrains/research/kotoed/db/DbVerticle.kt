@@ -120,6 +120,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 ) : DatabaseVerticle<R>(table, entityName) {
 
     val createAddress = Address.DB.create(entityName)
+    val batchCreateAddress = Address.DB.batchCreate(entityName)
     val updateAddress = Address.DB.update(entityName)
     val readAddress = Address.DB.read(entityName)
     val findAddress = Address.DB.find(entityName)
@@ -227,6 +228,40 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                             .fetch()
                             .into(recordClass)
                             .first()
+                }
+            }
+        }
+    }
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "batchCreateAddress")
+    suspend fun handleBatchCreateWrapper(message: JsonArray) =
+            handleBatchCreate(message.map { (it as JsonObject).toRecord(recordClass) })
+                    .map { it.toJson() }
+                    .tryToJson() as JsonArray
+
+    protected open suspend fun handleBatchCreate(message: List<R>): List<R> {
+        log.trace("Batch create requested in table ${table.name}:\n" +
+                message.map { it.toJson().encodePrettily() }
+                        .joinToString(prefix = "[", postfix = "]")
+        )
+
+        if (message.isEmpty()) return emptyList()
+
+        for (field in table.primaryKey.fieldsArray) {
+            message.map { it.reset(field) }
+        }
+
+        return db {
+            sqlStateAware {
+                withTransaction {
+                    message.drop(1)
+                            .fold(insertInto(table)
+                                    .set(message.first())) { acc, r ->
+                                acc.set(r)
+                            }
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
                 }
             }
         }
