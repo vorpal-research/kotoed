@@ -94,6 +94,13 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         }
     }
 
+    private suspend fun copyTagsFrom(parent: SubmissionRecord, child: SubmissionRecord) {
+        val parentTags = dbFindAsync(
+                SubmissionTagRecord().apply { submissionId = parent.id })
+
+        dbBatchCreateAsync(parentTags.map { it.apply { submissionId = child.id } })
+    }
+
     private suspend fun getVcsInfo(project: ProjectRecord): RepositoryInfo {
         return sendJsonableAsync(
                 Address.Code.Download,
@@ -149,6 +156,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         parentSub?.let {
             recreateCommentsAsync(vcsReq.uid, it, sub)
+
+            copyTagsFrom(it, sub)
         }
 
         val buildInfos = dbFindAsync(BuildRecord().apply { submissionId = sub.id })
