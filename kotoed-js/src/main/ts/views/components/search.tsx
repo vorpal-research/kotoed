@@ -258,9 +258,9 @@ export class SearchTable<DataType, QueryType = {}> extends
     };
 
     onKeyPressedGlobal = _.debounce((e: any) => {
-        if (e.ctrlKey && e.key === "ArrowLeft") {
+        if ((e.metaKey || e.ctrlKey) && e.key === "ArrowLeft") {
             this.onPageChanged(this.state.currentPage - 1)
-        } else if (e.ctrlKey && e.key === "ArrowRight") {
+        } else if ((e.metaKey || e.ctrlKey) && e.key === "ArrowRight") {
             this.onPageChanged(this.state.currentPage + 1)
         }
     }, 40);
