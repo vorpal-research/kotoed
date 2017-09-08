@@ -18,7 +18,8 @@ const initialState: SubmissionDetailsProps = {
     permissions: {
         resubmit: false,
         changeState: false,
-        clean: false
+        clean: false,
+        tags: false
     },
     loading: true,
     submission: {

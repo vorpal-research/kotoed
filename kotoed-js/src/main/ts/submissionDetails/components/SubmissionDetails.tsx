@@ -28,7 +28,8 @@ export interface SubmissionDetailsProps {
     permissions: {
         changeState: boolean,
         resubmit: boolean,
-        clean: boolean
+        clean: boolean,
+        tags: boolean
     },
     comments: CommentAggregate,
     tags: Tag[],
@@ -149,7 +150,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
     };
 
     private renderTagList = () => {
-        return <WithContext
+        return this.props.permissions.tags && <WithContext
             tags={this.props.tags}
             suggestions={this.props.availableTags.map(tag => tag.text)}
             handleAddition={this.onTagAdd}

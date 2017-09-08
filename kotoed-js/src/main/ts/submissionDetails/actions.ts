@@ -102,7 +102,8 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
                 postComment: false,
                 changeStateAllComments: false,
                 editOwnComments: false,
-                clean: false
+                clean: false,
+                tags: false
             }
         }));
         dispatch(commentsTotalFetch.done({
@@ -133,7 +134,7 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
 }
 
 export function initialize(id: number) {
-    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>, getState: () => SubmissionDetailsProps) => {
         dispatch(submissionFetch.started(id));
         let sub = await fetchSubmissionRemote(id);
         dispatch(submissionFetch.done({
@@ -144,15 +145,17 @@ export function initialize(id: number) {
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
-        await fetchTagList(id)(dispatch);
-
-        await fetchAvailableTags()(dispatch);
-
         await pollSubmissionIfNeeded(id, sub)(dispatch);
 
         await fetchCommentsTotal(id)(dispatch);
 
-        fetchPermissions(id)(dispatch);
+        await fetchPermissions(id)(dispatch);
+
+        if (getState().permissions.tags) {
+            await fetchTagList(id)(dispatch);
+            await fetchAvailableTags()(dispatch);
+        }
+
     }
 }
 
