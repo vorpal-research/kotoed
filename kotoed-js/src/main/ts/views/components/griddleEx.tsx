@@ -68,18 +68,18 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                                         {_.toPairs(failure.input).map(([k, v]) => {
                                             return <ListGroupItem
                                                 bsStyle="danger">
-                                                <code>{k} -> {v}</code>
+                                                <code>{k.toString()} -> {v.toString()}</code>
                                             </ListGroupItem>
                                         })}
                                     </ListGroup>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Output:
-                                    <code>{failure.output}</code>
+                                    <code>{failure.output.toString()}</code>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Expected output:
-                                    <code>{failure.expectedOutput}</code>
+                                    <code>{failure.expectedOutput.toString()}</code>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Nested exception:
