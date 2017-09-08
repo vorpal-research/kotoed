@@ -16,6 +16,7 @@ interface FieldClasses {
 }
 
 export interface PasswordInputProps {
+    disabled?: boolean
     prefix?: string,
     setPassword?: boolean
     onChange: (password: string, errors: PasswordErrors) => void
@@ -37,6 +38,7 @@ interface PasswordInputState {
 }
 
 const defaultProps: Partial<PasswordInputProps> = {
+    disabled: false,
     prefix: "",
     setPassword: true,
     classNames: {},
@@ -143,6 +145,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
             </label>
             <div className={this.getClassName("inputWrapper", true)}>
                 <input type="password"
+                       disabled={this.props.disabled}
                        className={`form-control ${this.getClassName("input", true)}`}
                        placeholder={this.getStringProperty("placeholderRepeat")}
                        value={this.state.password2}
@@ -170,6 +173,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
                 <div className={this.getClassName("inputWrapper")}>
                     <div className="has-feedback">
                         <input type={this.getInputType()}
+                               disabled={this.props.disabled}
                                className={`form-control ${this.getClassName("input")}`}
                                placeholder={this.getStringProperty("placeholder")}
                                value={this.state.password}

@@ -184,6 +184,7 @@ export default class SignUpForm extends
                 />
             </div>
             <PasswordInput
+                disabled={this.props.disabled}
                 onChange={this.handlePasswordChange}
                 onEnter={() => {}}
                 prefix="signup-"
