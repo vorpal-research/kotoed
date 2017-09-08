@@ -291,7 +291,8 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             postComment: false,
             changeState: false,
             resubmit: false,
-            clean: false
+            clean: false,
+            tags: false
         }
     },
     loading: true,

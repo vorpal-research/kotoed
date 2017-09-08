@@ -17,7 +17,8 @@ export interface SubmissionPermissions {
     postComment: boolean,
     changeState: boolean,
     resubmit: boolean,
-    clean: boolean
+    clean: boolean,
+    tags: boolean
 }
 
 export interface SubmissionUpdateRequest {
