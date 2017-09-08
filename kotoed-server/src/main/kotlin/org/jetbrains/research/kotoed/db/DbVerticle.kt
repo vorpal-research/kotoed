@@ -257,7 +257,8 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     message.drop(1)
                             .fold(insertInto(table)
                                     .set(message.first())) { acc, r ->
-                                acc.set(r)
+                                acc.newRecord()
+                                        .set(r)
                             }
                             .returning()
                             .fetch()
