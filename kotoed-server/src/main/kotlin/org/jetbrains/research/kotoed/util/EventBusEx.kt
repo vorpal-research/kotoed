@@ -20,10 +20,8 @@ import org.jooq.TableRecord
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
@@ -88,6 +86,26 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
             .toList()
 }
 
+@PublishedApi
+@Deprecated("Do not call directly")
+internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollectAsync(
+        address: String,
+        value: List<Argument>,
+        argClass: KClass<out Argument>,
+        resultClass: KClass<out Result>
+): List<Result> {
+    val toJson = getToJsonConverter(
+            List::class.createType(
+                    listOf(KTypeProjection.invariant(argClass.starProjectedType))))
+    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+    return sendAsync<JsonArray>(address, toJson(value))
+            .body()
+            .asSequence()
+            .filterIsInstance<JsonObject>()
+            .map(fromJson)
+            .map { it.uncheckedCast<Result>() }
+            .toList()
+}
 
 inline suspend fun <
         reified Result : Any,
@@ -321,6 +339,15 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
     protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
+
+    protected suspend fun <R : TableRecord<R>> dbBatchCreateAsync(v: List<R>): List<R> =
+            @Suppress(DEPRECATION)
+            if (v.isEmpty()) emptyList()
+            else {
+                val evidence = v.first()
+                val klass = evidence::class
+                vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, klass, klass)
+            }
 
     protected suspend fun <R : TableRecord<R>> dbDeleteAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)
