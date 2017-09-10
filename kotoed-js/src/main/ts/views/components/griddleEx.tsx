@@ -68,29 +68,30 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                                         {_.toPairs(failure.input).map(([k, v]) => {
                                             return <ListGroupItem
                                                 bsStyle="danger">
-                                                <code>{k.toString()} -> {v.toString()}</code>
+                                                <code>{String(k)} -> {String(v)}</code>
                                             </ListGroupItem>
                                         })}
                                     </ListGroup>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Output:
-                                    <code>{failure.output.toString()}</code>
+                                    <code>{String(failure.output)}</code>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Expected output:
-                                    <code>{failure.expectedOutput.toString()}</code>
+                                    <code>{String(failure.expectedOutput)}</code>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Nested exception:
-                                    {failure.nestedException}
+                                    <code>{JSON.stringify(failure.nestedException)}</code>
                                 </ListGroupItem>
                             </ListGroup>
                         </li>
                     } else if (isUnknownFailureInfo(failure)) {
                         return <li key={`${value.hashCode()}-${idx}`}
                                    className="list-group-item list-group-item-danger">
-                            Failed with:<br/>{failure.nestedException}
+                            Failed with:<br/>
+                            <code>{JSON.stringify(failure.nestedException)}</code>
                         </li>
                     }
                 }
