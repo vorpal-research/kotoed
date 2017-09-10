@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.notification
 
+import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.notification.MessageFormat
@@ -64,7 +65,7 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
 
         log.info("Sending email to $denizen")
 
-        run(Pool) { mailer.sendMail(email) }
+        launch(Pool) { try{ mailer.sendMail(email) } catch(ex: Exception) { log.error("", ex) } }
     }
 
 }
