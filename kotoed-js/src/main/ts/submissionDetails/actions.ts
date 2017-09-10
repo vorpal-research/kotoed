@@ -146,8 +146,10 @@ export function initialize(id: number) {
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
         await pollSubmissionIfNeeded(id, sub)(dispatch);
-
-        await fetchCommentsTotal(id)(dispatch);
+        if (isSubmissionAvalable({...getState().submission.record,
+                verificationData: getState().submission.verificationData})) {
+            await fetchCommentsTotal(id)(dispatch);
+        }
 
         await fetchPermissions(id)(dispatch);
 
