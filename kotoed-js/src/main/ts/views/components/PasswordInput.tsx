@@ -164,7 +164,12 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
     render() {
         return <div>
             {/*Always having a password field with stars to make browser always offer to store password*/}
-            <input style={{display: "none"}} type="password" value={this.state.password}/>
+            <input
+                style={{display: "none"}}
+                type="password"
+                value={this.state.password}
+                name={`${this.getStringProperty("prefix")}shadow-password`}
+            />
             <div className={`form-group ${this.getClassName("formGroup")} ${this.props.error ? "has-error" : ""}`}>
                 <label
                     className={this.getClassName("label")}
