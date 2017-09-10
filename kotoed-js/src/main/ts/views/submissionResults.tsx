@@ -85,11 +85,21 @@ namespace KFirst {
     export let hideExamplesFilter = {
         name: "Hide examples",
         predicate: (row: any): boolean => {
-            return _.some(row.tags, tag => {
-                return "Example" === tag;
-            });
+            return _.some(row.tags, tag =>
+                "Example" === tag
+            );
         },
         isOnByDefault: true
+    };
+
+    export let hidePassedFilter = {
+        name: "Hide passed tests",
+        predicate: (row: any): boolean => {
+            return _.every(row.results, (td: TestData) =>
+                "SUCCESSFUL" === td.status
+            );
+        },
+        isOnByDefault: false
     };
 
     export let rowDefinition: components.RowDefinition =
@@ -223,7 +233,8 @@ render(
                           transformer={KFirst.transformer}
                           filters={[
                               KFirst.hideTodosFilter,
-                              KFirst.hideExamplesFilter
+                              KFirst.hideExamplesFilter,
+                              KFirst.hidePassedFilter
                           ]}
                           rowDefinition={KFirst.rowDefinition}/> as any,
             <ResultHolder name="Statistics"
