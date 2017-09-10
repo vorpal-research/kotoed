@@ -167,6 +167,16 @@ export default class SignUpForm extends
                     disabled={this.props.disabled}
                 />
             </div>
+            <PasswordInput
+                disabled={this.props.disabled}
+                onChange={this.handlePasswordChange}
+                onEnter={() => {}}
+                prefix="signup-"
+                classNames={{
+                    label: "sr-only",
+                    input: "input-lg"
+                }}
+            />
             <div className={`form-group ${localErrors.badEmail && "has-error" || ""}`}>
                 <label htmlFor="signup-input-email" className="sr-only">
                     E-mail
@@ -183,16 +193,6 @@ export default class SignUpForm extends
                     disabled={this.props.disabled}
                 />
             </div>
-            <PasswordInput
-                disabled={this.props.disabled}
-                onChange={this.handlePasswordChange}
-                onEnter={() => {}}
-                prefix="signup-"
-                classNames={{
-                    label: "sr-only",
-                    input: "input-lg"
-                }}
-            />
             <button className="btn btn-lg btn-primary btn-block"
                     onClick={this.handleSignUpClick}
                     disabled={this.props.disabled}>
