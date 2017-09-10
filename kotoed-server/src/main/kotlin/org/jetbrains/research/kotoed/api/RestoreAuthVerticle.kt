@@ -17,6 +17,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 @AutoDeployable
+@CleanupJsonFields(arrayOf("password"))
 class RestoreAuthVerticle : AbstractKotoedVerticle(), Loggable {
 
     val requestCache = CacheBuilder
