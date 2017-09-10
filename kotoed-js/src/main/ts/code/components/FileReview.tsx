@@ -2,10 +2,12 @@ import * as cm from "codemirror"
 import * as React from "react";
 import {render, unmountComponentAtNode} from "react-dom";
 
+import "codemirror/addon/display/rulers"
 import "codemirror/addon/fold/foldcode"
 import "codemirror/addon/fold/foldgutter"
 import "codemirror/addon/fold/brace-fold"
 import "codemirror/addon/fold/comment-fold"
+
 
 import LineMarker from "./LineMarker";
 import {
@@ -229,7 +231,22 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             readOnly: true,
             foldGutter: true,
             gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
-            lineWrapping: true,
+            rulers: [{
+                column: 80,
+                color: "#f80",
+                lineStyle: "dashed",
+            },
+            {
+                column: 100,
+                color: "#f00",
+                lineStyle: "dashed",
+            },
+            {
+                column: 120,
+                color: "#f00",
+                lineStyle: "solid",
+                width: 3
+            }]
         });
 
         this.editor.setSize("100%", this.props.height);
