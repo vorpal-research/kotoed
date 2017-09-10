@@ -34,7 +34,7 @@ export interface PasswordInputProps {
 interface PasswordInputState {
     blindMode: boolean
     password: string,
-    password2: string
+    password2: string,
 }
 
 const defaultProps: Partial<PasswordInputProps> = {
@@ -163,6 +163,8 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
 
     render() {
         return <div>
+            {/*Always having a password field with stars to make browser always offer to store password*/}
+            <input style={{display: "none"}} type="password" value={this.state.password}/>
             <div className={`form-group ${this.getClassName("formGroup")} ${this.props.error ? "has-error" : ""}`}>
                 <label
                     className={this.getClassName("label")}
