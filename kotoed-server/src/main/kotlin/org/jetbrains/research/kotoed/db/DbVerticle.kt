@@ -16,6 +16,7 @@ import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.parseCondition
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.JsonWalker.Companion.defaultObjectCallback
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
@@ -262,6 +263,70 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         return DSL.and(queryFields.map { table.field(it).eq(record[it]) })
     }
 
+    private fun jsonb_build_object(args: List<QueryPart>) =
+            FunctionCall<Any>("jsonb_build_object", Any::class, args).coerce(PostgresDataTypeEx.JSONB)
+    private fun to_jsonb(arg: QueryPart) =
+            FunctionCall<Any>("to_jsonb", arg).coerce(PostgresDataTypeEx.JSONB)
+    private fun array(arg: QueryPart) =
+            FunctionCall<Any>("array", arg)
+
+    private fun DSLContext.queryToObjectCall(message: ComplexDatabaseQuery, alias: String = message.table ?: ""): Field<Any?> = run {
+        fun die(): Nothing = throw IllegalArgumentException("Illegal query")
+
+        val table = Public.PUBLIC.tables.find { it.name == message.table }?.`as`(alias) ?: die()
+
+        jsonb_build_object(
+                table.fields().flatMap { listOf(DSL.`val`(it.name), table.field(it)) } +
+                        message.joins.orEmpty().flatMap {
+                            val query = (it.query ?: ComplexDatabaseQuery()).let { q ->
+                                if(q.table == null) q.copy(table = table.tableReferencedBy(table.field(it.field))?.name)
+                                else q
+                            }
+
+                            listOf(DSL.`val`(it.resultField), queryToObjectCall(query, "$alias.${it.resultField}"))
+                        } +
+                        message.rjoins.orEmpty().flatMap {
+                            listOf(
+                                    DSL.`val`(it.resultField),
+                                    to_jsonb(array(queryToSelect(it.query!!).and(
+                                            (table.field(it.key) ?: table.primaryKeyField).uncheckedCast<Field<Any>>()
+                                                    .eq(tableByName(it.query.table!!)!!.field(it.field))
+
+                                    )))
+                            )
+                        }
+        )
+    }
+
+    private fun DSLContext.queryToSelect(message: ComplexDatabaseQuery) = run {
+        fun die(): Nothing = throw IllegalArgumentException("Illegal query")
+
+        val table = Public.PUBLIC.tables.find { it.name == message.table } ?: die()
+
+        val joins = message.joinSequence().toList()
+        val joinedTables: List<Table<*>> = joins.map { it.v2 }
+        val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
+
+        val select = select(queryToObjectCall(message)).from(table)
+        val join = joins.fold(select) { a, (from, field, to, _, key) ->
+            a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
+        }
+        val condition: Condition = joins.fold(DSL.condition(true)) { a: Condition, (_, _, to, record, _) ->
+            a.and(makeFindCondition(to, record))
+        }
+        val baseCondition = makeFindCondition(table, message.find!!)
+        val parsedCondition = message.filter?.let {
+            parseCondition(it) { tname ->
+                when {
+                    tname.isEmpty() -> tableMap[table.name]
+                    else -> tableMap[table.name + "." + tname]
+                } ?: die()
+            }
+        } ?: DSL.condition(true)
+        val where = join.where(condition).and(baseCondition).and(parsedCondition)
+        where!!
+    }
+
     protected open suspend fun handleQuery(message_: ComplexDatabaseQuery): JsonArray {
         fun die(): Nothing = throw IllegalArgumentException("Illegal query")
         val message = when {
@@ -272,32 +337,8 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Query in table ${table.name}:\n" +
                 message.toJson().encodePrettily())
 
-        val table = Public.PUBLIC.tables.find { it.name == message.table } ?: die()
-
-        val joins = message.joinSequence().toList()
-        val joinedTables: List<Table<*>> = joins.map { it.v2 }
-        val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
-
         return dbWithTransaction {
-            val select = select(
-                    table.fields().asList() + joinedTables.flatMap { it.fields().asList() }
-            ).from(table)
-            val join = joins.fold(select) { a, (from, field, to, _, key) ->
-                a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
-            }
-            val condition: Condition = joins.fold(DSL.condition(true)) { a: Condition, (_, _, to, record, _) ->
-                a.and(makeFindCondition(to, record))
-            }
-            val baseCondition = makeFindCondition(table, message.find!!)
-            val parsedCondition = message.filter?.let {
-                parseCondition(it) { tname ->
-                    when {
-                        tname.isEmpty() -> tableMap[table.name]
-                        else -> tableMap[table.name + "." + tname]
-                    } ?: die()
-                }
-            } ?: DSL.condition(true)
-            val where = join.where(condition).and(baseCondition).and(parsedCondition)
+            val where = queryToSelect(message)
 
             where
                     .let {
@@ -312,13 +353,11 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                         }
                     }
                     .fetch()
-        }.map { record ->
-            val ret = record.into(table).toJson()
-            joinedTables.forEach { table ->
-                ret[table.name.split('.').drop(1)] = record.into(table).toJson()
+        }.map { record -> record[0].walk {
+            onObject {
+                if(it["id"] == null) null else defaultObjectCallback(it)
             }
-            ret
-        }.let(::JsonArray)
+        }}.let(::JsonArray)
     }
 
     data class CountResponse(val count: Int) : Jsonable
