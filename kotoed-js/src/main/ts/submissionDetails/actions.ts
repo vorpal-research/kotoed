@@ -89,47 +89,34 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
         let sub = initial;
 
-        if (isStatusFinal(sub.verificationData.status))
-            return;
-
-        dispatch(permissionsFetch.done({
-            params: id,
-            result: {
-                resubmit: false,
-                changeState: false,
-                editAllComments: false,
-                changeStateOwnComments: false,
-                postComment: false,
-                changeStateAllComments: false,
-                editOwnComments: false,
-                clean: false,
-                tags: false
-            }
-        }));
-        dispatch(commentsTotalFetch.done({
-            params: id,
-            result: {
-                open: 0,
-                closed: 0
-            }
-        }));
-
-
-        function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
-            dispatch(submissionFetch.done({
+        if (!isStatusFinal(sub.verificationData.status)) {
+            dispatch(commentsTotalFetch.done({
                 params: id,
-                result: res
+                result: {
+                    open: 0,
+                    closed: 0
+                }
             }));
-            sub = res;
-        }
 
-        await pollDespairing({
-            action: () => fetchSubmissionRemote(id),
-            isGoodEnough: (sub) => isStatusFinal(sub.verificationData.status),
-            onIntermediate: dispatchDone,
-            onFinal: dispatchDone,
-            onGiveUp: dispatchDone
-        });
+
+            function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
+                dispatch(submissionFetch.done({
+                    params: id,
+                    result: res
+                }));
+                sub = res;
+            }
+
+            await pollDespairing({
+                action: () => fetchSubmissionRemote(id),
+                isGoodEnough: (sub) => isStatusFinal(sub.verificationData.status),
+                onIntermediate: dispatchDone,
+                onFinal: dispatchDone,
+                onGiveUp: dispatchDone
+            });
+        }
+        await fetchPermissions(id)(dispatch);
+
     }
 }
 
@@ -142,16 +129,18 @@ export function initialize(id: number) {
             result: sub
         }));
 
+        await fetchPermissions(id)(dispatch);
+
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
         await pollSubmissionIfNeeded(id, sub)(dispatch);
+
         if (isSubmissionAvalable({...getState().submission.record,
                 verificationData: getState().submission.verificationData})) {
             await fetchCommentsTotal(id)(dispatch);
         }
 
-        await fetchPermissions(id)(dispatch);
 
         if (getState().permissions.tags) {
             await fetchTagList(id)(dispatch);
@@ -170,9 +159,9 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
             result: sub
         }));
 
-        await pollSubmissionIfNeeded(payload.id, sub)(dispatch)
+        await fetchPermissions(payload.id)(dispatch);
 
-        fetchPermissions(payload.id)(dispatch);
+        await pollSubmissionIfNeeded(payload.id, sub)(dispatch);
 
     }
 }
@@ -232,9 +221,8 @@ export function cleanSubmission(id: number) {
             result: sub
         }));
 
+        await fetchPermissions(id)(dispatch);
+
         await pollSubmissionIfNeeded(id, sub)(dispatch);
-
-        fetchPermissions(id)(dispatch);
-
     }
 }
