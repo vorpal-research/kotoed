@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.delay
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
@@ -160,6 +161,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                 } else { // retry
 
                     log.trace("Come again?")
+                    vertx.delayAsync(1000)
                     process(data)
 
                 }
@@ -196,6 +198,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
 
         log.trace("Come again?")
+        vertx.delayAsync(1000)
         clean(data)
     }
 
