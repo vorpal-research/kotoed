@@ -46,10 +46,7 @@ data class VerificationData(
                 else -> when (Pair(status, other.status)) {
                     Pair(VerificationStatus.NotReady, other.status),
                     Pair(status, VerificationStatus.NotReady) -> NotReady
-                    Pair(VerificationStatus.Unknown, other.status),
-                    Pair(status, VerificationStatus.Unknown) -> NotReady
-                    Pair(VerificationStatus.Processed, VerificationStatus.Processed) ->
-                        Processed
+                    Pair(VerificationStatus.Processed, VerificationStatus.Processed) -> Processed
                     else -> Unknown
                 }
             }
