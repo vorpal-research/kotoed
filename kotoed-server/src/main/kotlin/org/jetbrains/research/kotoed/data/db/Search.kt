@@ -32,12 +32,18 @@ data class DatabaseJoin(
     }
 }
 
-data class ManyToOneJoin(
+data class ReverseDatabaseJoin(
         val query: ComplexDatabaseQuery?,
         val field: String?,
         val resultField: String? = query?.table?.let(::defaultReverseResultField),
         val key: String? = null // null means pk
-): Jsonable {}
+): Jsonable {
+    fun fillDefaults(): ReverseDatabaseJoin {
+        val query_ = (query ?: ComplexDatabaseQuery()).fillDefaults()
+        val resultField_ = resultField ?: query?.table?.let(::defaultReverseResultField)
+        return copy(resultField = resultField_, query = query_)
+    }
+}
 
 fun DatabaseJoin(table: String,
                  field: String = defaultField(table),
@@ -45,10 +51,17 @@ fun DatabaseJoin(table: String,
                  key: String? = null) =
         DatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
 
+fun ReverseDatabaseJoin(table: String,
+                 field: String,
+                 resultField: String = defaultReverseResultField(table),
+                 key: String? = null) =
+        ReverseDatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
+
 data class ComplexDatabaseQuery(
         val table: String? = null,
         val find: JsonObject? = JsonObject(),
         val joins: List<DatabaseJoin>? = listOf(),
+        val rjoins: List<ReverseDatabaseJoin>? = listOf(),
         val filter: String? = null,
         val limit: Int? = null,
         val offset: Int? = null
@@ -57,7 +70,7 @@ data class ComplexDatabaseQuery(
              field: String = defaultField(table),
              resultField: String = defaultResultField(field),
              key: String? = null) =
-            copy(joins = (joins ?: listOf()) + DatabaseJoin(table, field, resultField, key))
+            copy(joins = joins.orEmpty() + DatabaseJoin(table, field, resultField, key))
 
     fun<R: Record> join(table: Table<R>,
              field: String = defaultField(table.name),
@@ -69,14 +82,33 @@ data class ComplexDatabaseQuery(
              field: String? = query.table?.let(::defaultField),
              resultField: String? = field?.let(::defaultResultField),
              key: String? = null) =
-            copy(joins = (joins ?: listOf()) + DatabaseJoin(query, field, resultField, key))
+            copy(joins = joins.orEmpty() + DatabaseJoin(query, field, resultField, key))
+
+    fun rjoin(table: String,
+              field: String,
+              resultField: String = defaultReverseResultField(table),
+              key: String? = null) =
+            copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(table, field, resultField, key))
+
+    fun<R: Record> rjoin(table: Table<R>,
+                        field: String,
+                        resultField: String = defaultReverseResultField(table.name),
+                        key: String? = null) = rjoin(table.name, field, resultField, key)
+
+
+    fun rjoin(query: ComplexDatabaseQuery,
+             field: String?,
+             resultField: String? = query.table?.let(::defaultReverseResultField),
+             key: String? = null) =
+            copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(query, field, resultField, key))
 
     fun find(record: Record) = copy(find = record.toJson())
 
     fun fillDefaults(): ComplexDatabaseQuery {
         val find_ = find ?: JsonObject()
-        val joins_ = (joins ?: listOf()).map { it.fillDefaults() }
-        return copy(find = find_, joins = joins_)
+        val joins_ = joins.orEmpty().map { it.fillDefaults() }
+        val rjoins_ = rjoins.orEmpty().map { it.fillDefaults() }
+        return copy(find = find_, joins = joins_, rjoins = rjoins_)
     }
 
     fun filter(filter: String) = copy(filter = filter)

@@ -9,7 +9,6 @@ import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Field
 import org.jooq.Record
-import org.jooq.TableField
 import ru.spbstu.ktuples.*
 import java.time.Instant
 import java.time.LocalDateTime
@@ -27,6 +26,58 @@ val camelToKey
 inline fun JsonObject(entries: List<Pair<String, Any?>>) = JsonObject(entries.toMap().toMutableMap())
 inline fun JsonObject(vararg entries: Pair<String, Any?>) = JsonObject(entries.toList())
 inline fun jsonArrayOf(vararg elements: Any?) = JsonArray(elements.toMutableList())
+
+typealias NullType = Nothing?
+typealias JsonEither = EitherOf6<Boolean, Number, String, JsonArray, JsonObject, NullType>
+
+fun Any?.asJsonEither(): JsonEither =
+        when(this) {
+            is Boolean -> Variant0(this)
+            is Number -> Variant1(this)
+            is String -> Variant2(this)
+            is JsonArray -> Variant3(this)
+            is JsonObject -> Variant4(this)
+            null -> Variant5(null)
+            else -> throw IllegalArgumentException("$this is not a json value")
+        }
+
+data class JsonWalker(
+        var onBooleanCallBack: (JsonWalker.(Boolean) -> Any?) = { it },
+        var onNumberCallBack: (JsonWalker.(Number) -> Any?) = { it },
+        var onStringCallBack: (JsonWalker.(String) -> Any?) = { it },
+        var onArrayCallBack: (JsonWalker.(JsonArray) -> Any?) = { defaultArrayCallback(it) },
+        var onObjectCallBack: (JsonWalker.(JsonObject) -> Any?) = { defaultObjectCallback(it) },
+        var onNullCallBack: (JsonWalker.() -> Any?) = { null }
+) {
+    companion object {
+        fun JsonWalker.defaultObjectCallback(obj: JsonObject) =
+            JsonObject(obj.map { (k, v) -> k to visit(v) })
+
+        fun JsonWalker.defaultArrayCallback(arr: JsonArray) =
+                JsonArray(arr.map { visit(it) })
+    }
+
+    fun onBoolean(callback: JsonWalker.(Boolean) -> Any?){ onBooleanCallBack = callback }
+    fun onNumber(callback: JsonWalker.(Number) -> Any?){ onNumberCallBack = callback }
+    fun onString(callback: JsonWalker.(String) -> Any?){ onStringCallBack = callback }
+    fun onNull(callback: JsonWalker.() -> Any?){ onNullCallBack = callback }
+    fun onObject(callback: JsonWalker.(JsonObject) -> Any?){ onObjectCallBack = callback }
+    fun onArray(callback: JsonWalker.(JsonArray) -> Any?){ onArrayCallBack = callback }
+
+    fun visit(value: Any?): Any? =
+        value.asJsonEither()
+                .map0{ onBooleanCallBack(it) }
+                .map1{ onNumberCallBack(it) }
+                .map2{ onStringCallBack(it) }
+                .map3{ onArrayCallBack(it) }
+                .map4{ onObjectCallBack(it) }
+                .map5{ onNullCallBack() }
+                .converge()
+
+}
+
+fun Any?.walk(f: JsonWalker.() -> Unit) =
+    JsonWalker().apply{ f() }.visit(this)
 
 /******************************************************************************/
 
