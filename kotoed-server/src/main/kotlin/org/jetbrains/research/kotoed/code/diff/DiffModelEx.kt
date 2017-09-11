@@ -43,10 +43,10 @@ fun parseGitDiff(lines: Sequence<String>): List<Diff> {
         // XXX: in unified diff, these filenames may(sic!) be followed by whatever-formatted timestamps
         // making it one hell of a parsing experience if filepaths may contains spaces
         line.startsWith("---") -> {
-            currentDiff().fromFileName = line.removePrefix("---").trim().removePrefix("a")
+            currentDiff().fromFileName = line.removePrefix("---").trim().removePrefix("a/")
         }
         line.startsWith("+++") -> {
-            currentDiff().toFileName = line.removePrefix("+++").trim().removePrefix("b")
+            currentDiff().toFileName = line.removePrefix("+++").trim().removePrefix("b/")
         }
 
         line.startsWith("@@") -> {
