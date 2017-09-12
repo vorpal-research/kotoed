@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.api
 
-import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
@@ -23,32 +22,20 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Project.Create)
     suspend fun handleCreate(project: ProjectRecord): DbRecordWrapper {
-        val eb = vertx.eventBus()
-
         project.name = project.name.truncateAt(1024)
         project.id = null
         expect(project.courseId is Int)
         expect(project.denizenId is Int)
 
         val res: ProjectRecord = dbCreateAsync(project)
-
-        eb.send(Address.DB.process(project.table.name), res.toJson())
-
+        dbProcessAsync(res)
         return DbRecordWrapper(res)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Project.Read)
     suspend fun handleRead(project: ProjectRecord): DbRecordWrapper {
-        val eb = vertx.eventBus()
-
-        val res: ProjectRecord = vxa<Message<JsonObject>> {
-            eb.send(Address.DB.read(project.table.name), project.toJson(), it)
-        }.body().toRecord()
-
-        val status: VerificationData = vxa<Message<JsonObject>> {
-            eb.send(Address.DB.process(project.table.name), res.toJson(), it)
-        }.body().toJsonable()
-
+        val res: ProjectRecord = dbFetchAsync(project)
+        val status: VerificationData = dbProcessAsync(res)
         return DbRecordWrapper(res, status)
     }
 
