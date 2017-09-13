@@ -21,7 +21,7 @@ class JsonLoginHandler(
         } else {
             // TODO is there a better way to deal with null values
             val msg: LoginMsg = try {
-                fromJson(req.bodyAsync().toJsonObject())
+                fromJson(context.bodyAsJson)
             } catch (ex: IllegalArgumentException) {
                 context.fail(HttpResponseStatus.BAD_REQUEST)
                 return

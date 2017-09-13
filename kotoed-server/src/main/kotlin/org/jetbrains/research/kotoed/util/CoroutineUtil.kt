@@ -6,7 +6,8 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.CoroutineExceptionHandler
+import kotlinx.coroutines.experimental.CoroutineName
 import java.lang.Error
 import java.lang.reflect.Method
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
@@ -14,12 +15,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KFunction
-
-/******************************************************************************/
-
-fun Loggable.launch(block: suspend CoroutineScope.() -> Unit) {
-    launch(UnconfinedWithExceptions(this), block = block)
-}
 
 /******************************************************************************/
 
@@ -52,58 +47,33 @@ inline suspend fun <T> vxa(crossinline cb: (Handler<AsyncResult<T>>) -> Unit): T
 
 /******************************************************************************/
 
-object UnconfinedWithExceptions
+class WithExceptionsContext(val handler: (Throwable) -> Unit) :
+        AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
+        CoroutineExceptionHandler,
+        Loggable {
+    override fun handleException(context: CoroutineContext, exception: Throwable) =
+            handler(exception)
+}
 
-inline fun UnconfinedWithExceptions(crossinline handler: (Throwable) -> Unit) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
-                CoroutineExceptionHandler,
-                DelegateLoggable {
-            override val loggingClass = UnconfinedWithExceptions::class.java
+fun Loggable.LogExceptions() = WithExceptionsContext(
+        { log.error("Oops!", it) }
+)
 
-            override fun handleException(context: CoroutineContext, exception: Throwable) =
-                    handleException(handler, exception)
-        } + Unconfined
+fun Loggable.WithExceptions(handler: (Throwable) -> Unit) = WithExceptionsContext(
+        { handler(it) }
+)
 
-inline fun <T> UnconfinedWithExceptions(msg: Message<T>) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
-                CoroutineExceptionHandler,
-                DelegateLoggable {
-            override val loggingClass = UnconfinedWithExceptions::class.java
+fun <U> Loggable.WithExceptions(handler: Handler<AsyncResult<U>>) = WithExceptionsContext(
+        { handleException(handler, it) }
+)
 
-            override fun handleException(context: CoroutineContext, exception: Throwable) =
-                    handleException(msg, exception)
-        } + Unconfined
+fun <U> Loggable.WithExceptions(msg: Message<U>) = WithExceptionsContext(
+        { handleException(msg, it) }
+)
 
-inline fun UnconfinedWithExceptions(ctx: RoutingContext) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
-                CoroutineExceptionHandler,
-                DelegateLoggable {
-            override val loggingClass = UnconfinedWithExceptions::class.java
-
-            override fun handleException(context: CoroutineContext, exception: Throwable) =
-                    handleException(ctx, exception)
-        } + Unconfined
-
-inline fun <T> UnconfinedWithExceptions(har: Handler<AsyncResult<T>>) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
-                CoroutineExceptionHandler,
-                DelegateLoggable {
-            override val loggingClass = UnconfinedWithExceptions::class.java
-
-            override fun handleException(context: CoroutineContext, exception: Throwable) =
-                    handleException(har, exception)
-        } + Unconfined
-
-
-inline fun UnconfinedWithExceptions(loggable: Loggable) =
-        object : AbstractCoroutineContextElement(CoroutineExceptionHandler.Key),
-                CoroutineExceptionHandler,
-                DelegateLoggable {
-            override val loggingClass = loggable::class.java
-
-            override fun handleException(context: CoroutineContext, exception: Throwable) =
-                    loggable.log.error("", exception)
-        } + Unconfined
+fun Loggable.WithExceptions(ctx: RoutingContext) = WithExceptionsContext(
+        { handleException(ctx, it) }
+)
 
 // NOTE: suspendCoroutineOrReturn<> is not recommended by kotlin devs, BUT,
 // however, suspendCoroutine<>, the only alternative, does *not* work correctly if suspend fun has no

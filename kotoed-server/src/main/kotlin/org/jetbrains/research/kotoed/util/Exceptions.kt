@@ -79,6 +79,20 @@ fun <U> Loggable.handleException(msg: Message<U>, t: Throwable) {
     )
 }
 
+fun <T> Loggable.withExceptions(handler: Handler<AsyncResult<T>>, body: () -> T) =
+        try {
+            body()
+        } catch (t: Throwable) {
+            handleException(handler, t)
+        }
+
+fun <T> Loggable.handleException(handler: Handler<AsyncResult<T>>, t: Throwable) {
+    val exception = t.unwrapped
+    log.error("Exception caught while handling async result", exception)
+    log.error("Code: ${codeFor(exception)}")
+    handler.handle(Future.failedFuture(t))
+}
+
 fun <T, U> Loggable.withExceptions(msg: Message<U>, body: () -> T) =
         try {
             body()
@@ -92,14 +106,6 @@ fun Loggable.handleException(ctx: RoutingContext, t: Throwable) {
     log.error("Code: ${codeFor(exception)}")
     ctx.fail(exception)
 }
-
-fun <T> Loggable.handleException(har: Handler<AsyncResult<T>>, t: Throwable) {
-    val exception = t.unwrapped
-    log.error("Exception caught while handling async result", exception)
-    log.error("Code: ${codeFor(exception)}")
-    har.handle(Future.failedFuture(t))
-}
-
 
 fun <T> Loggable.withExceptions(ctx: RoutingContext, body: () -> T) =
         try {

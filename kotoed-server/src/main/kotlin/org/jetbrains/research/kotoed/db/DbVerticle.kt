@@ -421,7 +421,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
             "$readAddress.for.${fk.key.table.name.toLowerCase()}"
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
-        launch(UnconfinedWithExceptions(msg) + CoroutineName(msg.requestUUID())) {
+        launch(WithExceptions(msg) + VertxContext(vertx) + CoroutineName(msg.requestUUID())) {
             val fkField = fk.fields.first().uncheckedCast<Field<Any>>()
 
             val id = msg.body().getValue(fkField.name)
