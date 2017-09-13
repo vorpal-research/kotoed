@@ -5,9 +5,14 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.KOTOED_REQUEST_UUID
+import org.jetbrains.research.kotoed.util.currentCoroutineName
 import org.jetbrains.research.kotoed.util.get
+import org.jetbrains.research.kotoed.util.set
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.filters.*
+import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
+import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher.Companion.all
 import org.jetbrains.research.kotoed.web.eventbus.patchers.PerAddressPatcher
 
 val HarmlessTypes =
@@ -41,7 +46,7 @@ fun CommentOwnerOrTeacher(vertx: Vertx, path: String = "id"): BridgeEventFilter 
 fun SelfOrTeacher(path: String = "id"): BridgeEventFilter =
         ShouldBeSelfForFilter(path) or AuthorityRequired(Authority.Teacher)
 
-object ClientPushFilter: ByAddress() {
+object ClientPushFilter : ByAddress() {
     suspend override fun isAllowed(principal: JsonObject, address: String): Boolean {
         return address == Address.Api.Notification.pushRendered("${principal["id"]}")
     }
@@ -144,4 +149,18 @@ fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Submission.Comment.Create to CommentCreatePatcher
 )
 
-fun kotoedPatcher(vertx: Vertx) = kotoedPerAddressPatcher(vertx)
+object WithRequestUUIDPatcher : BridgeEventPatcher {
+    suspend override fun patch(be: BridgeEvent) {
+        val rawMessage = be.rawMessage ?: return
+
+        rawMessage["headers", KOTOED_REQUEST_UUID] = currentCoroutineName().name
+
+        be.rawMessage = rawMessage
+    }
+
+    override fun toString(): String {
+        return "WithRequestUUIDPatcher"
+    }
+}
+
+fun kotoedPatcher(vertx: Vertx) = all(kotoedPerAddressPatcher(vertx), WithRequestUUIDPatcher)

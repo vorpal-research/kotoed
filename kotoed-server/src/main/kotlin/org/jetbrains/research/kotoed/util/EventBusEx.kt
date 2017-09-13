@@ -7,6 +7,7 @@ import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.DEPRECATION
+import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
@@ -17,6 +18,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
 import org.jooq.Table
 import org.jooq.TableRecord
+import org.kohsuke.randname.RandomNameGenerator
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -24,17 +26,37 @@ import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
-suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any): Message<ReturnType> =
-        vxa { send(address, message, it) }
+/******************************************************************************/
+
+const val KOTOED_REQUEST_UUID = "\$kotoedrequestuuid\$"
+
+val REQUEST_UUID_GEN = RandomNameGenerator()
+
+fun newRequestUUID(): String = REQUEST_UUID_GEN.next()
+
+fun <T> Message<T>.requestUUID() = headers()[KOTOED_REQUEST_UUID] ?: "UNKNOWN"
+
+fun withRequestUUID(uuid: String = newRequestUUID()): DeliveryOptions =
+        DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, uuid)
+
+/******************************************************************************/
+
+suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any, deliveryOptions: DeliveryOptions = DeliveryOptions()): Message<ReturnType> {
+    if (true != deliveryOptions.headers?.contains(KOTOED_REQUEST_UUID)) {
+        deliveryOptions.addHeader(KOTOED_REQUEST_UUID,
+                currentCoroutineName().name)
+    }
+    return vxa { send(address, message, deliveryOptions, it) }
+}
 
 @JvmName("sendJsonAsync")
-suspend fun EventBus.sendAsync(address: String, message: Any): Message<JsonObject> =
-        sendAsync<JsonObject>(address, message)
+suspend fun EventBus.sendAsync(address: String, message: Any, deliveryOptions: DeliveryOptions = DeliveryOptions()): Message<JsonObject> =
+        sendAsync<JsonObject>(address, message, deliveryOptions)
 
 @JvmName("trySendJsonAsync")
-suspend fun EventBus.trySendAsync(address: String, message: Any): Message<JsonObject>? =
+suspend fun EventBus.trySendAsync(address: String, message: Any, deliveryOptions: DeliveryOptions = DeliveryOptions()): Message<JsonObject>? =
         try {
-            sendAsync<JsonObject>(address, message)
+            sendAsync<JsonObject>(address, message, deliveryOptions)
         } catch (ex: ReplyException) {
             null
         }
@@ -264,14 +286,20 @@ private fun AbstractVerticle.registerRawConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))) {
+            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) + CoroutineName(msg.requestUUID())) {
                 function.callAsync(this@registerRawConsumer, msg)
             }
         }
     } else {
         eb.consumer<JsonObject>(address) { msg ->
-            DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
-                function.call(this@registerRawConsumer, msg)
+            val oldName = Thread.currentThread().name
+            try {
+                Thread.currentThread().name = msg.requestUUID()
+                DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
+                    function.call(this@registerRawConsumer, msg)
+                }
+            } finally {
+                Thread.currentThread().name = oldName
             }
         }
     }
@@ -299,7 +327,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))) {
+            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) + CoroutineName(msg.requestUUID())) {
                 val argument = fromJson(msg.body())
                 val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
                 msg.reply(toJson(res))
@@ -307,10 +335,16 @@ private fun AbstractVerticle.registerJsonableConsumer(
         }
     } else {
         eb.consumer<JsonObject>(address) { msg ->
-            DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
-                val argument = fromJson(msg.body())
-                val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
-                msg.reply(toJson(res))
+            val oldName = Thread.currentThread().name
+            try {
+                Thread.currentThread().name = msg.requestUUID()
+                DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
+                    val argument = fromJson(msg.body())
+                    val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
+                    msg.reply(toJson(res))
+                }
+            } finally {
+                Thread.currentThread().name = oldName
             }
         }
     }

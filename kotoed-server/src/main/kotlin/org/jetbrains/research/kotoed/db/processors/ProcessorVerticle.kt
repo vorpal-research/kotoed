@@ -3,7 +3,8 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.CoroutineName
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit
 abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         table: Table<R>,
         entityName: String = table.name.toLowerCase()
-) : DatabaseVerticle<R>(table, entityName) {
+) : DatabaseVerticle<R>(table, entityName), Loggable {
 
     val processAddress = Address.DB.process(entityName)
     val verifyAddress = Address.DB.verify(entityName)
@@ -34,11 +35,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     private val cacheMap: ConcurrentMap<Int, VerificationData>
         get() = cache.asMap()
 
-    @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
-    suspend fun handleProcess(msg: JsonObject): VerificationData {
-        log.trace("Handling process for: $msg")
-        val id: Int by msg.delegate
-        val data = db { selectById(id) }?.toJson()
+    private suspend fun verifyIfNeeded(id: Int, data: JsonObject?) {
         val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
         if (VerificationStatus.Unknown == oldStatus.status) {
             val newStatus = verify(data)
@@ -46,8 +43,18 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
         log.trace("Old status: $oldStatus")
         log.trace("New status: ${cache[id].bang()}")
+    }
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
+    suspend fun handleProcess(msg: JsonObject): VerificationData {
+        log.trace("Handling process for: $msg")
+        val id: Int by msg.delegate
+        val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launch { process(data) }
+            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+                verifyIfNeeded(id, data)
+                process(data)
+            }
         }
     }
 
@@ -56,14 +63,11 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Handling verify for: $msg")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
-        val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
-        if (VerificationStatus.Unknown == oldStatus.status) {
-            val newStatus = verify(data)
-            cacheMap.replace(id, oldStatus, newStatus)
+        return cache[id].bang().also {
+            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+                verifyIfNeeded(id, data)
+            }
         }
-        log.trace("Old status: $oldStatus")
-        log.trace("New status: ${cache[id].bang()}")
-        return cache[id].bang()
     }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "cleanAddress")
@@ -71,15 +75,11 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Handling clean for: $msg")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
-        val oldStatus = cacheMap.putIfAbsent(id, VerificationData.Unknown).bang()
-        if (VerificationStatus.Unknown == oldStatus.status) {
-            val newStatus = verify(data)
-            cacheMap.replace(id, oldStatus, newStatus)
-        }
-        log.trace("Old status: $oldStatus")
-        log.trace("New status: ${cache[id].bang()}")
         return cache[id].bang().also {
-            launch { clean(data) }
+            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+                verifyIfNeeded(id, data)
+                clean(data)
+            }
         }
     }
 
