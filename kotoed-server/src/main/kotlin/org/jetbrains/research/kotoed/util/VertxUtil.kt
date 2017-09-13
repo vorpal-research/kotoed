@@ -148,9 +148,9 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
                                   val time: Long,
                                   private var onTimeoutSusp: suspend () -> Unit = {},
                                   private var onSuccessSusp: suspend () -> Unit = {},
-                                  private var bodySusp: suspend () -> Unit = {}) {
+                                  private var bodySusp: suspend () -> Unit = {}) : Loggable {
 
-    suspend fun execute(timeoutCtx: CoroutineContext = Unconfined) {
+    suspend fun execute(timeoutCtx: CoroutineContext = LogExceptions() + VertxContext(vertx)) {
         var timedOut = false
         val timerId = vertx.setTimer(time) {
             launch(timeoutCtx) {
@@ -182,9 +182,11 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
     }
 }
 
-suspend fun Vertx.timedOut(time: Long,
-                           timeoutCtx: CoroutineContext = Unconfined,
-                           builder: VertxTimeoutProcessing.() -> Unit
+suspend fun Vertx.timedOut(
+        time: Long,
+        timeoutCtx: CoroutineContext =
+            DelegateLoggable(VertxTimeoutProcessing::class.java).LogExceptions() + VertxContext(this),
+        builder: VertxTimeoutProcessing.() -> Unit
 ) {
     val vtop = VertxTimeoutProcessing(this, time)
     vtop.builder()

@@ -1,28 +1,24 @@
 package org.jetbrains.research.kotoed.notification
 
 import io.vertx.core.Future
-import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.notification.*
-import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.UrlPattern
-import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @AutoDeployable
-class SpammerVerticle: AbstractNotificationVerticle() {
+class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
     override fun start(startFuture: Future<Void>) {
         super.start(startFuture)
-        launch(Unconfined) {
+        launch(LogExceptions() + VertxContext(vertx)) {
             setNext()
         }
 
@@ -36,7 +32,7 @@ class SpammerVerticle: AbstractNotificationVerticle() {
                     .withMinute(0)
                     .withSecond(0)
 
-            if(nextEvent < now) nextEvent = nextEvent.plusDays(1)
+            if (nextEvent < now) nextEvent = nextEvent.plusDays(1)
 
             sendJsonableAsync(
                     Address.Schedule,
@@ -60,15 +56,15 @@ class SpammerVerticle: AbstractNotificationVerticle() {
             )
         }
 
-        for(denizen in allDenizens) {
-            if(denizen.email == null) continue
+        for (denizen in allDenizens) {
+            if (denizen.email == null) continue
 
             val notifications: List<RenderedData> = sendJsonableCollectAsync(
                     Address.Api.Notification.RenderCurrent,
                     CurrentNotificationsQuery(denizen.id)
             )
 
-            if(notifications.isNotEmpty()) {
+            if (notifications.isNotEmpty()) {
                 run<Unit> {
                     sendJsonableAsync(
                             Address.Notifications.Email.Send,
@@ -95,7 +91,7 @@ class SpammerVerticle: AbstractNotificationVerticle() {
                                                                 "border-radius:4px"
                                                         ).joinToString(";")
                                                 a(href = makeLink(it.linkTo)) {
-                                                    span{ unsafe { +it.contents } }
+                                                    span { unsafe { +it.contents } }
                                                 }
                                             }
                                         }
