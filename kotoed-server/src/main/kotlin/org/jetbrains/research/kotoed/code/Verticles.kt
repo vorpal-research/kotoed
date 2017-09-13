@@ -28,7 +28,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         File(System.getProperty("user.dir"), Config.VCS.StoragePath)
     }
     private val ee by lazy {
-        newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.${deploymentID()}.dispatcher")
+        newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.dispatcher")
     }
     private val procs by lazy<Cache<String, RepositoryInfo>> {
         CacheBuilder
