@@ -6,10 +6,7 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.CoroutineExceptionHandler
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.Unconfined
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.*
 import java.lang.Error
 import java.lang.reflect.Method
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
@@ -23,6 +20,12 @@ import kotlin.reflect.KFunction
 fun launch(block: suspend CoroutineScope.() -> Unit) {
     launch(Unconfined, block = block)
 }
+
+/******************************************************************************/
+
+suspend fun currentCoroutineName() =
+        suspendCoroutine<CoroutineContext> { c -> c.resume(c.context) }[CoroutineName.Key]
+                ?: CoroutineName(newRequestUUID())
 
 /******************************************************************************/
 

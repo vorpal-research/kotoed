@@ -225,18 +225,18 @@ suspend fun RoutingContext.handleDebugEventBus() {
                         .let(::JsonObject)
             }
 
-    if(publish == "true") {
-        val res = eb.publish(address, body)
+    if (publish == "true") {
+        val res = eb.publish(address, body, withRequestUUID())
         response().end("{}")
     } else {
-        val res = eb.sendAsync<Any>(address, body)
+        val res = eb.sendAsync<Any>(address, body, withRequestUUID())
         response().end("${res.body()}")
     }
 }
 
 internal fun cssClassByPath(path: String) =
         path.split(".").last().let {
-            when(it){
+            when (it) {
                 "java" -> "language-java"
                 "kt" -> "language-kotlin"
                 "xml", "iml" -> "language-xml"
@@ -259,7 +259,7 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
     val path = param2
     val eb = vertx().eventBus()
 
-    if(uid == "byUrl") {
+    if (uid == "byUrl") {
         val url by req
         val message = object : Jsonable {
             val url = url.orEmpty().unquote()
@@ -271,7 +271,7 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
 
         uid = res.getString("uid")
 
-        when(res.getString("status")) {
+        when (res.getString("status")) {
             "pending" -> throw KotoedException(202, "Result not ready yet")
             "failed" -> throw KotoedException(404, "Repository not found")
             else -> {}
@@ -285,7 +285,7 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
     }
 
     val res =
-            when{
+            when {
                 path!!.isEmpty() || path.endsWith("/") -> eb.sendAsync(Address.Code.List, message.toJson()).body()
                 else -> eb.sendAsync(Address.Code.Read, message.toJson()).body()
             }
@@ -312,26 +312,26 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
                     script { src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" }
                     script { src = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" }
                     script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js" }
-                    for(lang in supportedLanguages) {
-                        script{ src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-$lang.min.js" }
+                    for (lang in supportedLanguages) {
+                        script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-$lang.min.js" }
                     }
                 }
                 body {
-                    if(res.containsKey("contents")) {
+                    if (res.containsKey("contents")) {
                         bsContainer {
                             bsListGroup {
                                 if (path.isNotEmpty())
                                     bsListGroupItem(href = "/debug/code/$uid/$revision/$path/..") { +"[up]" }
                             }
-                            pre { code(classes = path.let(::cssClassByPath)) { +res.getValue("contents").toString() }  }
+                            pre { code(classes = path.let(::cssClassByPath)) { +res.getValue("contents").toString() } }
                         }
-                    } else if(res.containsKey("files")) {
+                    } else if (res.containsKey("files")) {
                         val prep = res
                                 .getJsonArray("files")
                                 .map { it.toString() }
                                 .filter { it.startsWith(path) }
                                 .map { it.removePrefix(path).split("/") }
-                                .map { it.first() + if(it.size > 1) "/" else "" }
+                                .map { it.first() + if (it.size > 1) "/" else "" }
                                 .toSet()
 
                         bsContainer {

@@ -23,7 +23,7 @@ suspend fun RoutingContext.handleVcsPing() {
         val url = url.orEmpty().unquote()
     }
 
-    val res = eb.sendAsync(Address.Code.Ping, message.toJson())
+    val res = eb.sendAsync(Address.Code.Ping, message.toJson(), withRequestUUID())
 
     response().end(res.body())
 }
@@ -44,7 +44,7 @@ suspend fun RoutingContext.handleVcsClone() {
         val url = url.orEmpty().unquote()
     }
 
-    val res = eb.sendAsync(Address.Code.Download, message.toJson())
+    val res = eb.sendAsync(Address.Code.Download, message.toJson(), withRequestUUID())
 
     response().end(res.body())
 }
@@ -68,7 +68,7 @@ suspend fun RoutingContext.handleVcsRead() {
         val revision = revision
     }
 
-    val res = eb.sendAsync(Address.Code.Read, message.toJson())
+    val res = eb.sendAsync(Address.Code.Read, message.toJson(), withRequestUUID())
 
     if (res.body().getBoolean("success")) {
         response().end(res.body())
@@ -96,7 +96,7 @@ suspend fun RoutingContext.handleVcsList() {
         val revision = revision
     }
 
-    val res = eb.sendAsync(Address.Code.List, message.toJson())
+    val res = eb.sendAsync(Address.Code.List, message.toJson(), withRequestUUID())
 
     if (res.body().getBoolean("success")) {
         response().end(res.body())
@@ -128,7 +128,7 @@ suspend fun RoutingContext.handleVcsDiff() {
         val to = to
     }
 
-    val res = eb.sendAsync(Address.Code.Diff, message.toJson())
+    val res = eb.sendAsync(Address.Code.Diff, message.toJson(), withRequestUUID())
 
     if (res.body().getBoolean("success")) {
         response().end(res.body())

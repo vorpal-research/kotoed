@@ -4,10 +4,7 @@ import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.run
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.experimental.*
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
@@ -424,7 +421,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
             "$readAddress.for.${fk.key.table.name.toLowerCase()}"
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
-        launch(UnconfinedWithExceptions(msg)) {
+        launch(UnconfinedWithExceptions(msg) + CoroutineName(msg.requestUUID())) {
             val fkField = fk.fields.first().uncheckedCast<Field<Any>>()
 
             val id = msg.body().getValue(fkField.name)
