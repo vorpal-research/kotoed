@@ -98,7 +98,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         val parentTags = dbFindAsync(
                 SubmissionTagRecord().apply { submissionId = parent.id })
 
-        dbBatchCreateAsync(parentTags.map { it.apply { submissionId = child.id } })
+        try {
+            dbBatchCreateAsync(parentTags.map { it.apply { submissionId = child.id } })
+        } catch (ex: Exception) {
+            // FIXME: Do nothing?
+        }
     }
 
     private suspend fun getVcsInfo(project: ProjectRecord): RepositoryInfo {
