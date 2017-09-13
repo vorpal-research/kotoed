@@ -6,6 +6,7 @@ import com.google.common.cache.RemovalNotification
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
@@ -47,7 +48,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     fun onCacheRemove(removalNotification: RemovalNotification<String, RepositoryInfo>) =
-            launch {
+            launch(LogExceptions() + VertxContext(vertx)) {
                 if (removalNotification.value.status == CloneStatus.pending) return@launch
 
                 vertx.goToEventLoop()
@@ -58,21 +59,21 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 log.info("The entry for repository $uid expired, deleting the files...")
                 if (cat.exists()) fs.deleteRecursiveAsync(cat.absolutePath)
                 log.info("Repository $uid deleted")
-            }
+            }.ignore()
 
-    override fun start(startFuture: Future<Void>) = launch {
+    override fun start(startFuture: Future<Void>) = launch(LogExceptions() + VertxContext(vertx)) {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
         super.start(startFuture)
-    }
+    }.ignore()
 
-    override fun stop(stopFuture: Future<Void>) = launch {
+    override fun stop(stopFuture: Future<Void>) = launch(LogExceptions() + VertxContext(vertx)) {
         procs.cleanUp()
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         super.stop(stopFuture)
-    }
+    }.ignore()
 
     private val <T> VcsResult<T>.result
         get() = when (this) {
@@ -221,7 +222,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             randomName.mkdirs()
         }
 
-        vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = UnconfinedWithExceptions(mes)) {
+        vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
             run {
                 var resp = pendingResp
                 try {

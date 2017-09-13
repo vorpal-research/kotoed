@@ -15,7 +15,7 @@ import java.util.*
 @ForHttpMethod(HttpMethod.POST)
 @JsonResponse
 suspend fun resetPasswordEndpointHandler(context: RoutingContext) {
-    val body: DenizenRecord = context.request().bodyAsync().toJsonObject().toRecord()
+    val body: DenizenRecord = context.bodyAsJson.toRecord()
 
     val search: List<DenizenRecord> =
             context.vertx().eventBus().sendJsonableCollectAsync(
@@ -50,7 +50,7 @@ suspend fun restorePasswordPageHandler(context: RoutingContext) {
 @JsonResponse
 suspend fun restorePasswordEndpointHandler(context: RoutingContext) {
     val uid by context.request()
-    val body: JsonObject = context.request().bodyAsync().toJsonObject()
+    val body = context.bodyAsJson
     body.retainFields("denizenId", "password")
     body["secret"] = uid
 

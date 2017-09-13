@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.util.routing
 import io.vertx.core.Handler
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.util.*
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
@@ -21,9 +22,9 @@ private inline fun <T> unwrapITE(body: () -> T) {
 
 private fun funToHandler(method: Method, chain: Boolean = false): Handler<RoutingContext> {
     return when {
-    // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
+        // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
         method.isKotlinSuspend -> Handler {
-            kotlinx.coroutines.experimental.launch(UnconfinedWithExceptions(it)) {
+            launch(DelegateLoggable(method.declaringClass).WithExceptions(it) + VertxContext(it.vertx())) {
                 unwrapITE {
                     method.invokeAsync(null, it)
                     if (chain)
@@ -174,7 +175,7 @@ private val LoginRequiringAnnotations = listOf(
 
 private fun AnnotatedElement.shouldChainHandler(): Boolean =
         getAnnotation(ChainedByHandler::class.java) == null &&
-                ChainingAnnotations.any { getAnnotation(it) != null}
+                ChainingAnnotations.any { getAnnotation(it) != null }
 
 private fun AnnotatedElement.shouldEnableSessions(): Boolean =
         EnablingSessionsAnnotations.any { getAnnotation(it) != null }
@@ -187,7 +188,7 @@ private fun AnnotatedElement.shouldRequireLogin(): Boolean =
 fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
     val log = LoggerFactory.getLogger("org.jetbrains.research.kotoed.AutoRegisterHandlers")
 
-    fun <T : AnnotatedElement>processAnnotated(
+    fun <T : AnnotatedElement> processAnnotated(
             annoEl: T,
             createHandler: (routingConfig: RoutingConfig,
                             el: T,

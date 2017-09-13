@@ -13,9 +13,8 @@ import org.jetbrains.research.kotoed.web.data.Auth
 
 class SignUpHandler(private val authProvider: AuthProvider) : AsyncRoutingContextHandler() {
     override suspend fun doHandleAsync(context: RoutingContext) {
-        val req = context.request()
         val msg: SignUpMsg = try {
-            fromJson(req.bodyAsync().toJsonObject())
+            fromJson(context.bodyAsJson)
         } catch (ex: IllegalArgumentException) {
             context.fail(HttpResponseStatus.BAD_REQUEST)
             return

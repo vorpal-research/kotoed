@@ -101,7 +101,9 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
         val ret = DbRecordWrapper(res, VerificationData.Processed)
 
-        launch(UnconfinedWithExceptions(this)) { notifyCreated(res) }
+        launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            notifyCreated(res)
+        }
 
         return ret
     }
@@ -151,7 +153,9 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val res = DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
 
         if(comment.state != existing.state) {
-            launch(UnconfinedWithExceptions(this)) { notifyStateChanged(existing, comment) }
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+                notifyStateChanged(existing, comment)
+            }
         }
 
         return res

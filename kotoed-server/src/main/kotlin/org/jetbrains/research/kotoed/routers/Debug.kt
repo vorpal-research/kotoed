@@ -217,7 +217,7 @@ suspend fun RoutingContext.handleDebugEventBus() {
 
     val body =
             if (req.method() == HttpMethod.POST) {
-                req.bodyAsync().toJsonObject()
+                this.bodyAsJson
             } else {
                 req.params()
                         .filterNot { (k, _) -> k == "address" }

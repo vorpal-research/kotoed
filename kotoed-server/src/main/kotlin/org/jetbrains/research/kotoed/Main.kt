@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed
 import io.netty.channel.DefaultChannelId
 import io.vertx.core.*
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
@@ -62,6 +63,8 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val router = Router.router(vertx)
 
         log.info("Alive and standing")
+
+        router.route().handler(BodyHandler.create())
 
         router.initRoutes()
 

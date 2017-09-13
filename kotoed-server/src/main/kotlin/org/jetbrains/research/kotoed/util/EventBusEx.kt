@@ -286,7 +286,9 @@ private fun AbstractVerticle.registerRawConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) + CoroutineName(msg.requestUUID())) {
+            launch(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
+                    + VertxContext(vertx)
+                    + CoroutineName(msg.requestUUID())) {
                 function.callAsync(this@registerRawConsumer, msg)
             }
         }
@@ -327,7 +329,9 @@ private fun AbstractVerticle.registerJsonableConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launch(UnconfinedWithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) + CoroutineName(msg.requestUUID())) {
+            launch(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
+                    + VertxContext(vertx)
+                    + CoroutineName(msg.requestUUID())) {
                 val argument = fromJson(msg.body())
                 val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
                 msg.reply(toJson(res))

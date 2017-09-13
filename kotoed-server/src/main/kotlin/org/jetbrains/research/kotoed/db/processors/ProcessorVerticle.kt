@@ -51,7 +51,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
                 process(data)
             }
@@ -64,7 +64,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
             }
         }
@@ -76,7 +76,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launch(UnconfinedWithExceptions(this) + currentCoroutineName()) {
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
                 clean(data)
             }

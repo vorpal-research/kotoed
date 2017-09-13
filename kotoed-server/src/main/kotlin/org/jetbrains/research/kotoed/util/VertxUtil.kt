@@ -44,9 +44,6 @@ val <T> HttpResponse<T>.errorDetails: String
 
 /******************************************************************************/
 
-suspend fun HttpServerRequest.bodyAsync(): Buffer =
-        vxt { bodyHandler(it) }
-
 fun HttpServerRequest.getRootUrl() =
         URI(absoluteURI()).run {
             "${URI(scheme, userInfo, host, port, "/", null, null)}"

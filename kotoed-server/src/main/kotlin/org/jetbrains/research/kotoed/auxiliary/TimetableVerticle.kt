@@ -19,7 +19,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
         vertx.setPeriodic(1000L * 60L){ handleTick() }
     }
 
-    private fun handleTick() = launch(UnconfinedWithExceptions(this as Loggable)) {
+    private fun handleTick() = launch(LogExceptions() + VertxContext(vertx)) {
         val now = LocalDateTime.now(Clock.systemUTC())
         while(que.isNotEmpty()) {
             val current = que.peek()

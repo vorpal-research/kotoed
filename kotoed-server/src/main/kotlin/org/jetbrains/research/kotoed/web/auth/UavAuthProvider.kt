@@ -1,27 +1,22 @@
 package org.jetbrains.research.kotoed.web.auth
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import io.vertx.core.AsyncResult
-import io.vertx.core.Future
-import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.db.InfoMsg
 import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
-class UavAuthProvider(private val vertx: Vertx) : AsyncAuthProvider() {
+class UavAuthProvider(vertx: Vertx) : AsyncAuthProvider(vertx) {
     override suspend fun doAuthenticateAsync(authInfo: JsonObject): User {
         val patchedAI = authInfo.rename("username", "denizenId")
 
         val userLoginReply: JsonObject = try {
             vertx.eventBus().sendJsonableAsync(Address.User.Auth.Login, patchedAI)
-        } catch(e: ReplyException) {
+        } catch (e: ReplyException) {
             if (e.failureCode() == HttpResponseStatus.FORBIDDEN.code()) {
                 throw Unauthorized(e.message ?: "Unauthorized")
             } else {
