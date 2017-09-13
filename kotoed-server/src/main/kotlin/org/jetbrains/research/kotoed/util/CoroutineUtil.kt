@@ -17,8 +17,8 @@ import kotlin.reflect.KFunction
 
 /******************************************************************************/
 
-fun launch(block: suspend CoroutineScope.() -> Unit) {
-    launch(Unconfined, block = block)
+fun Loggable.launch(block: suspend CoroutineScope.() -> Unit) {
+    launch(UnconfinedWithExceptions(this), block = block)
 }
 
 /******************************************************************************/
