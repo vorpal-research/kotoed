@@ -83,6 +83,30 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         }
     }
 
+    private inline suspend fun withNotReady(id: Int,
+                                            oldData: VerificationData,
+                                            body: () -> VerificationData): Boolean {
+        when(oldData.status) {
+            VerificationStatus.NotReady -> return true
+            else -> {}
+        }
+
+        val notReady = oldData.copy(status = VerificationStatus.NotReady)
+
+        val ok = cacheMap.replace(id, oldData, notReady)
+        var newData: VerificationData = oldData
+
+        try {
+            if (ok) {
+                newData = body()
+                return true
+            }
+            return false
+        } finally {
+            cacheMap.replace(id, notReady, newData)
+        }
+    }
+
     suspend fun process(data: JsonObject?) {
         data ?: throw IllegalArgumentException("Cannot process null submission")
 
@@ -95,76 +119,66 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Processing: $data")
         log.trace("Old data: $oldData")
 
-        when (oldData.status) {
-            VerificationStatus.Processed, VerificationStatus.NotReady -> {
-                // do nothing
-            }
-            else -> {
+        when(oldData.status) {
+            VerificationStatus.Processed -> return
+            else -> {}
+        }
 
-                val notReady = oldData.copy(status = VerificationStatus.NotReady)
+        withNotReady(id, oldData) {
+            val prereqVerificationData = checkPrereqs(data)
 
-                val ok = cacheMap.replace(id, oldData, notReady)
+            log.trace("Prereqs: $prereqVerificationData")
 
-                if (ok) {
-
-                    val prereqVerificationData = checkPrereqs(data)
-
-                    log.trace("Prereqs: $prereqVerificationData")
-
-                    when {
-
-                        prereqVerificationData.all { (_, data) -> VerificationStatus.Processed == data.status } -> {
-                            log.trace("Going in!")
-                            cacheMap.replace(id, notReady, doProcess(data))
-                        }
-
-                        prereqVerificationData.any { (_, data) -> VerificationStatus.Invalid == data.status } -> {
-                            log.trace("Some prereqs failed!")
-
-                            // FIXME akhin: this stuff is funky
-
-                            val failedData = prereqVerificationData
-                                    .filter { (_, data) -> VerificationStatus.Invalid == data.status }
-
-                            val failedIds = failedData.flatMap { (table, data) ->
-                                data.errors.map { errorId ->
-                                    val errorData = eb.trySendAsync(
-                                            Address.DB.read("${table.name}_status"),
-                                            JsonObject("id" to errorId))
-                                            ?.body()
-                                            ?.getJsonObject("data")
-                                            ?: return@map -1
-
-                                    return@map eb.trySendAsync(
-                                            Address.DB.create("${entityName}_status"),
-                                            JsonObject("${entityName}_id" to id, "data" to errorData))
-                                            ?.body()
-                                            ?.getInteger("id")
-                                            ?: -1
-                                }
-                            }.filter { it < 0 } +
-                                    if (VerificationStatus.Invalid == oldData.status)
-                                        oldData.errors
-                                    else
-                                        emptyList()
-
-                            cacheMap.replace(id, notReady, VerificationData.Invalid(failedIds))
-                        }
-
-                        else -> {
-                            log.trace("Wat???")
-                            cacheMap.replace(id, notReady, VerificationData.Unknown)
-                        }
-
-                    } // when
-
-                } else { // retry
-
-                    log.trace("Come again?")
-                    vertx.delayAsync(1000)
-                    process(data)
-
+            when {
+                prereqVerificationData.all { (_, data) -> VerificationStatus.Processed == data.status } -> {
+                    log.trace("Going in!")
+                    doProcess(data)
                 }
+
+                prereqVerificationData.any { (_, data) -> VerificationStatus.Invalid == data.status } -> {
+                    log.trace("Some prereqs failed!")
+
+                    // FIXME akhin: this stuff is funky
+
+                    val failedData = prereqVerificationData
+                            .filter { (_, data) -> VerificationStatus.Invalid == data.status }
+
+                    val failedIds = failedData.flatMap { (table, data) ->
+                        data.errors.map { errorId ->
+                            val errorData = eb.trySendAsync(
+                                    Address.DB.read("${table.name}_status"),
+                                    JsonObject("id" to errorId))
+                                    ?.body()
+                                    ?.getJsonObject("data")
+                                    ?: return@map -1
+
+                            return@map eb.trySendAsync(
+                                    Address.DB.create("${entityName}_status"),
+                                    JsonObject("${entityName}_id" to id, "data" to errorData))
+                                    ?.body()
+                                    ?.getInteger("id")
+                                    ?: -1
+                        }
+                    }.filter { it < 0 } +
+                            if (VerificationStatus.Invalid == oldData.status)
+                                oldData.errors
+                            else
+                                emptyList()
+
+                    VerificationData.Invalid(failedIds)
+                }
+
+                else -> {
+                    log.trace("Wat???")
+                    VerificationData.Unknown
+                }
+
+            } // when
+        }.let {
+            if(!it) {
+                log.trace("Come again?")
+                vertx.delayAsync(1000)
+                process(data)
             }
         }
     }
@@ -179,23 +193,11 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Cleaning: $data")
         log.trace("Old data: $oldData")
 
-        when (oldData.status) {
-            VerificationStatus.NotReady -> Unit
-            else -> {
-
-                val notReady = oldData.copy(status = VerificationStatus.NotReady)
-
-                val ok = cacheMap.replace(id, oldData, notReady)
-
-                if (ok) {
-
-                    log.trace("Going in!")
-                    cacheMap.replace(id, notReady, doClean(data))
-                    return
-
-                }
-            }
+        val ok = withNotReady(id, oldData) {
+            log.trace("Going in!")
+            doClean(data)
         }
+        if(ok) return
 
         log.trace("Come again?")
         vertx.delayAsync(1000)

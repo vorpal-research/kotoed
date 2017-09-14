@@ -7,7 +7,9 @@ import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.DEPRECATION
+import kotlinx.coroutines.experimental.CoroutineDispatcher
 import kotlinx.coroutines.experimental.CoroutineName
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
@@ -19,6 +21,7 @@ import org.jooq.Record
 import org.jooq.Table
 import org.jooq.TableRecord
 import org.kohsuke.randname.RandomNameGenerator
+import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -73,8 +76,16 @@ suspend fun EventBus.sendAsync(address: String, message: Jsonable): Unit = Unit
 @Suppress("UNUSED_PARAMETER", "EXTENSION_SHADOWED_BY_MEMBER")
 suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 
-fun EventBus.sendJsonable(address: String, message: Jsonable) =
-        send(address, message.toJson())
+@PublishedApi
+@Deprecated("Do not call directly")
+internal fun <Argument : Any> EventBus.sendJsonable(
+        address: String,
+        value: Argument,
+        argClass: KClass<out Argument>
+) {
+    val toJson = getToJsonConverter(argClass.starProjectedType)
+    send(address, toJson(value))
+}
 
 @PublishedApi
 @Deprecated("Do not call directly")
@@ -127,6 +138,13 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
             .map(fromJson)
             .map { it.uncheckedCast<Result>() }
             .toList()
+}
+
+inline fun <
+        reified Argument : Any
+        > EventBus.sendJsonable(address: String, value: Argument) {
+    @Suppress(DEPRECATION)
+    return sendJsonable(address, value, Argument::class)
 }
 
 inline suspend fun <
@@ -362,11 +380,16 @@ object DebugInterceptor : Handler<SendContext<*>>, Loggable {
     }
 }
 
-open class AbstractKotoedVerticle : AbstractVerticle() {
+open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
     override fun start(startFuture: Future<Void>) {
         registerAllConsumers()
         super.start(startFuture)
     }
+
+    suspend fun<R> async(dispatcher: CoroutineContext = VertxContext(vertx), body: suspend () -> R) =
+            kotlinx.coroutines.experimental.async(LogExceptions() + dispatcher + currentCoroutineName()) {
+                body()
+            }
 
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
@@ -432,6 +455,13 @@ open class AbstractKotoedVerticle : AbstractVerticle() {
                     Address.Api.Notification.Create,
                     record.toJson()
             )
+}
+
+inline suspend fun <
+        reified Argument : Any
+        > AbstractKotoedVerticle.sendJsonable(address: String, value: Argument) {
+    @Suppress(DEPRECATION)
+    return vertx.eventBus().sendJsonable(address, value)
 }
 
 inline suspend fun <
