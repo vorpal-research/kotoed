@@ -51,8 +51,6 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 }
             })
         }
-
-
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
@@ -81,17 +79,33 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(res, status)
     }
 
+    private suspend fun notifyUpdated(record: SubmissionRecord) {
+        val parentSubmissionId = record.parentSubmissionId ?: return
+        val jumboSub =
+                dbQueryAsync(ComplexDatabaseQuery(Tables.SUBMISSION).find(SubmissionRecord().apply {
+                    id = record.id
+                }).join(ComplexDatabaseQuery(Tables.PROJECT).join(Tables.DENIZEN))).firstOrNull()
+
+        createNotification(NotificationRecord().apply {
+            denizenId = jumboSub.safeNav("project", "denizen", "id") as? Int
+            type = NotificationType.SUBMISSION_UPDATE.toString()
+            body = jumboSub
+        }) // TODO by whom?
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Update)
     suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper {
         val existing = fetchByIdAsync(Tables.SUBMISSION, submission.id)
+
+        val shouldBeDone = (existing.state == SubmissionState.open || existing.state == SubmissionState.closed) &&
+                submission.state == SubmissionState.open || submission.state == SubmissionState.closed
 
         submission.apply {
             datetime = existing.datetime
             parentSubmissionId = existing.parentSubmissionId
             projectId = existing.projectId
             revision = existing.revision
-            state = if (existing.state != SubmissionState.open && existing.state != SubmissionState.closed ||
-                    state != SubmissionState.open && state != SubmissionState.closed)
+            state = if (!shouldBeDone)
                 existing.state
             else
                 state
@@ -102,7 +116,13 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val vd = dbProcessAsync(updated)
 
-        return DbRecordWrapper(updated, vd)
+        val ret = DbRecordWrapper(updated, vd)
+
+        if (shouldBeDone)
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+                notifyUpdated(updated)
+            }
+        return ret
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord {

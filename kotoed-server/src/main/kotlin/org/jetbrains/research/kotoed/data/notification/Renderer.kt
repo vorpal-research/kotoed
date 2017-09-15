@@ -69,6 +69,16 @@ private fun renderResubmission(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
+private fun renderSubmissionUpdate(id: Int, body: JsonObject): RenderedData {
+    val pastParticiple = if (body.safeNav("state").toString() == "open") "reopened" else "closed"
+    val node = createHTML().div {
+        strong { +"Submission #${body["id"]}" }
+        + " was $pastParticiple"
+    }
+    val link = LinkData("submission", body["id"].toString())
+    return RenderedData(id, node, link)
+}
+
 internal val renderers by lazy {
     mapOf(
             NotificationType.COMMENT_CLOSED to ::renderCommentClosed,
@@ -76,7 +86,8 @@ internal val renderers by lazy {
             NotificationType.NEW_COMMENT to ::renderNewComment,
             NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo,
             NotificationType.NEW_SUBMISSION_RESULTS to ::renderNewSubmissionResults,
-            NotificationType.RESUBMISSION to ::renderResubmission
+            NotificationType.RESUBMISSION to ::renderResubmission,
+            NotificationType.SUBMISSION_UPDATE to ::renderSubmissionUpdate
     )
 }
 
