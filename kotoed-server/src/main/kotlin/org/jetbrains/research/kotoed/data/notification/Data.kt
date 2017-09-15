@@ -21,7 +21,8 @@ enum class NotificationType {
     COMMENT_CLOSED,
     COMMENT_REOPENED,
     NEW_SUBMISSION_RESULTS,
-    RESUBMISSION
+    RESUBMISSION,
+    SUBMISSION_UPDATE
 }
 
 data class LinkData(
