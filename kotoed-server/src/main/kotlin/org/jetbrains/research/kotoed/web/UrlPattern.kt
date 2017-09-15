@@ -50,6 +50,7 @@ object UrlPattern {
     object Submission {
         const val Results = "/views/submission/:id/results"
         const val Index = "/submission/:id"
+        const val NotificationRedirect = "/redirect/submission/:id" // TODO think about it
 
         const val SearchByTags = "/views/submission/searchByTags"
     }

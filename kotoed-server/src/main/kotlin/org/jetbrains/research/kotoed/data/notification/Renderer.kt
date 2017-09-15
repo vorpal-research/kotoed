@@ -59,13 +59,24 @@ private fun renderNewSubmissionResults(id: Int, body: JsonObject): RenderedData 
     return RenderedData(id, node, link)
 }
 
+private fun renderResubmission(id: Int, body: JsonObject): RenderedData {
+    val node = createHTML().div {
+        strong { +"${body.safeNav("author", "denizenId")}" }
+        +" resubmitted his "
+        strong { +"submission #${body["oldSubmissionId"]}" }
+    }
+    val link = LinkData("submission", body.safeNav("submissionId").toString())
+    return RenderedData(id, node, link)
+}
+
 internal val renderers by lazy {
     mapOf(
             NotificationType.COMMENT_CLOSED to ::renderCommentClosed,
             NotificationType.COMMENT_REOPENED to ::renderCommentReopened,
             NotificationType.NEW_COMMENT to ::renderNewComment,
             NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo,
-            NotificationType.NEW_SUBMISSION_RESULTS to ::renderNewSubmissionResults
+            NotificationType.NEW_SUBMISSION_RESULTS to ::renderNewSubmissionResults,
+            NotificationType.RESUBMISSION to ::renderResubmission
     )
 }
 
