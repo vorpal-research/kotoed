@@ -2,8 +2,10 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
@@ -26,6 +28,33 @@ private typealias CommentAggregates = SubmissionComments.CommentAggregates
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
+    private suspend fun notifyCreated(record: SubmissionRecord) {
+        val parentSubmissionId = record.parentSubmissionId ?: return
+        val jumboSub =
+                dbQueryAsync(ComplexDatabaseQuery(Tables.SUBMISSION).find(SubmissionRecord().apply {
+                    id = record.id
+                }).join(ComplexDatabaseQuery(Tables.PROJECT).join(Tables.DENIZEN))).firstOrNull()
+
+        val targets = dbFindAsync(SubmissionCommentRecord().apply {
+            submissionId = parentSubmissionId
+            state = SubmissionCommentState.open
+        }).map{ it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as? Int
+
+        targets.forEach {
+            createNotification(NotificationRecord().apply {
+                denizenId = it
+                type = NotificationType.RESUBMISSION.toString()
+                body = JsonObject().apply {
+                    this["author"] = jumboSub.safeNav("project", "denizen")
+                    this["submissionId"] = record.id
+                    this["oldSubmissionId"] = parentSubmissionId
+                }
+            })
+        }
+
+
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
     suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
@@ -36,7 +65,13 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val res: SubmissionRecord = dbCreateAsync(submission)
         dbProcessAsync(res)
-        return DbRecordWrapper(res)
+        val ret = DbRecordWrapper(res)
+
+        launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            notifyCreated(res)
+        }
+
+        return ret
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Read)
