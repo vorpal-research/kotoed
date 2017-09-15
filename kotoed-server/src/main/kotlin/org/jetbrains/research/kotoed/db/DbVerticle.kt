@@ -366,6 +366,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             message_.table == null -> message_.copy(table = this@CrudDatabaseVerticle.table.name)
             else -> message_
         }.fillDefaults()
+        val table = tableByName(message.table.orEmpty()) ?: this.table
 
         log.trace("Query in table ${table.name}:\n" +
                 message.toJson().encodePrettily())
