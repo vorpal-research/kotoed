@@ -87,13 +87,17 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
                                 Address.Api.Submission.Last,
                                 submission
                         )
-                if(wrappedSuccessor.verificationData.status != VerificationStatus.Processed) {
-                    throw IllegalArgumentException("Applying comment to an incorrect or incomplete submission")
+                if(wrappedSuccessor.verificationData.status == VerificationStatus.Invalid) {
+                    throw IllegalArgumentException("Applying comment to an incorrect submission")
                 }
                 val successor: SubmissionRecord = wrappedSuccessor.record.toRecord()
                 log.trace("Newer submission found: id = ${successor.id}")
                 comment.submissionId = successor.id
                 // recursive message
+                if(wrappedSuccessor.verificationData.status != VerificationStatus.Processed) {
+                    vertx.delayAsync(1000)
+                }
+                // TODO: translate location between revisions
                 return handleCreate(comment)
             }
             else -> throw IllegalArgumentException("Applying comment to an incorrect or incomplete submission")
