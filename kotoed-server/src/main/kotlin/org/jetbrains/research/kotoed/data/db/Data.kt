@@ -1,7 +1,10 @@
 package org.jetbrains.research.kotoed.data.db
 
+import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.database.Public.PUBLIC
 import org.jetbrains.research.kotoed.util.Jsonable
+import org.jooq.Record
+import org.jooq.TableRecord
 
 /* UserAuthVerticle */
 
@@ -25,3 +28,5 @@ data class HasPermReply(
 ) : Jsonable
 
 fun newKotoedRecord(table: String) = PUBLIC.tables.find { it.name == table }?.newRecord()
+
+data class BatchUpdateMsg<out R : Record>(val criteria: R, val patch: R) : Jsonable

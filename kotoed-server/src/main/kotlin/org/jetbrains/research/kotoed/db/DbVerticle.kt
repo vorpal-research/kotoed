@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.*
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
@@ -120,11 +121,21 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     val createAddress = Address.DB.create(entityName)
     val batchCreateAddress = Address.DB.batchCreate(entityName)
     val updateAddress = Address.DB.update(entityName)
+    val batchUpdateAddress = Address.DB.batchUpdate(entityName)
     val readAddress = Address.DB.read(entityName)
     val findAddress = Address.DB.find(entityName)
     val deleteAddress = Address.DB.delete(entityName)
     val queryAddress = Address.DB.query(entityName)
     val queryCountAddress = Address.DB.count(entityName)
+
+    private fun R.toWhere(): List<Condition> {
+        val queryFields = table
+                .fields()
+                .asSequence()
+                .filter { this[it] != null }
+                .map { it.uncheckedCast<Field<Any>>() }
+        return queryFields.map { it.eq(this.get(it)) }.toList()
+    }
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "deleteAddress")
     suspend fun handleDeleteWrapper(message: JsonObject) =
@@ -164,15 +175,9 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
-        val queryFields = table
-                .fields()
-                .asSequence()
-                .filter { message[it] != null }
-                .map { it.uncheckedCast<Field<Any>>() }
-        val wherePart = queryFields.map { it.eq(query.get(it)) }.toList()
         val resp = dbWithTransaction {
             selectFrom(table)
-                    .where(wherePart)
+                    .where(message.toWhere())
                     .fetch()
                     .into(JsonObject::class.java)
                     .let(::JsonArray)
@@ -204,6 +209,32 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             }
         }
     }
+
+    @JsonableEventBusConsumerForDynamic(addressProperty = "batchUpdateAddress")
+    suspend fun handleBatchUpdateWrapper(message: JsonObject) =
+            handleBatchUpdate(
+                    BatchUpdateMsg(
+                            message.getJsonObject("criteria").toRecord(recordClass),
+                            message.getJsonObject("patch").toRecord(recordClass)
+                    )
+            )
+
+    protected open suspend fun handleBatchUpdate(message: BatchUpdateMsg<R>) { // TODO UPDATE RETURNING
+        log.trace("Batch update requested for in table ${table.name}:\n" +
+                message.toJson().encodePrettily())
+        return db {
+            sqlStateAware {
+                withTransaction {
+                    update(table)
+                            .set(message.patch)
+                            .where(message.criteria.toWhere())
+                            .execute()
+                }
+            }
+        }
+    }
+
+
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "createAddress")
     suspend fun handleCreateWrapper(message: JsonObject) =

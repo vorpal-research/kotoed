@@ -43,9 +43,18 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
         }).catch(doNothing).then(doNothing);
     }
 
+    markAllRead = async () => {
+        await sendAsync<{}, {}>(Kotoed.Address.Api.Notification.MarkAllRead, {});
+        this.invalidate();
+    };
+
     render() {
         if(this.state.currentNotifications.length != 0) {
             return <div className="list-group">
+                <div className="pull-right small">
+                    <a onClick={this.markAllRead}>Mark all as read</a>
+                </div>
+                <div className="clearfix"/>
                 {
                     this.state.currentNotifications.map( (obj: any, index) =>
                         <NotificationDisplay data={obj} key={`notification-item-${index}`} />

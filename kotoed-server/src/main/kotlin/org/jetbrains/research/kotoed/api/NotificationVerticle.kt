@@ -33,6 +33,17 @@ class NotificationVerticle : AbstractKotoedVerticle() {
                     }
             )
 
+    @JsonableEventBusConsumerFor(Address.Api.Notification.MarkAllRead)
+    suspend fun handleMarkAllRead(query: NotificationRecord) =
+            dbBatchUpdateAsync(
+                    NotificationRecord().apply {
+                        denizenId = query.denizenId
+                    },
+                    NotificationRecord().apply {
+                        status = NotificationStatus.read
+                    })
+
+
     @JsonableEventBusConsumerFor(Address.Api.Notification.Create)
     suspend fun handleCreate(query: NotificationRecord): NotificationRecord {
         val record = dbCreateAsync(query)
@@ -42,7 +53,7 @@ class NotificationVerticle : AbstractKotoedVerticle() {
                 render(record).toJson()
         )
 
-        return record;
+        return record
     }
 
 

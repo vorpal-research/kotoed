@@ -35,6 +35,7 @@ export namespace Generated {
                 },
                 Create: "kotoed.api.notification.create",
                 Current: "kotoed.api.notification.current",
+                MarkAllRead: "kotoed.api.notification.markRead.all",
                 MarkRead: "kotoed.api.notification.markRead",
                 RenderCurrent: "kotoed.api.notification.current.render",
             },
