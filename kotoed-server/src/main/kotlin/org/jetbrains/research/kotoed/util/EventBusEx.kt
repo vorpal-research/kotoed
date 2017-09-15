@@ -12,6 +12,7 @@ import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -396,6 +397,14 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
     protected suspend fun <R : TableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+
+    protected suspend fun <R : TableRecord<R>> dbBatchUpdateAsync(criteria: R,
+                                                                  patch: R,
+                                                                  klass: KClass<out R> = criteria::class): Unit =
+            @Suppress(DEPRECATION)
+            vertx.eventBus().sendJsonableAsync(
+                    Address.DB.batchUpdate(criteria.table.name),
+                    BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class)
 
     protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)

@@ -55,7 +55,7 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
         else
             q_.filter("document matches %s".formatToQuery(query.text))
 
-        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course"), q)
+        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course_text_search"), q)
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             req.map { json ->
@@ -74,6 +74,6 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
         val q_ = ComplexDatabaseQuery("course_text_search")
         val q = if (query.text.trim() == "") q_ else q_.filter("document matches %s".formatToQuery(query.text))
 
-        return sendJsonableAsync(Address.DB.count("course"), q)
+        return sendJsonableAsync(Address.DB.count("course_text_search"), q)
     }
 }

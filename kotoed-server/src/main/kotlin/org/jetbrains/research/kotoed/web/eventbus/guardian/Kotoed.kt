@@ -67,6 +67,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
 
             Address.Api.Notification.Current to Permissive,
             Address.Api.Notification.MarkRead to ShouldBeNotificationTarget(vertx),
+            Address.Api.Notification.MarkAllRead to Permissive, // patcher covers our asses
             Address.Api.Notification.RenderCurrent to Permissive,
 
             Address.Api.Project.Create to Permissive,
@@ -143,6 +144,7 @@ class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
 fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Denizen.Profile.UpdatePassword to AddUsernamePatcher("initiator_denizen_id"),
         Address.Api.Notification.RenderCurrent to NotificationPatcher,
+        Address.Api.Notification.MarkAllRead to NotificationPatcher,
         Address.Api.Project.Create to ProjectCreatePatcher,
         Address.Api.Project.SearchForCourse to CourseListPatcher(vertx),
         Address.Api.Project.SearchForCourseCount to CourseListPatcher(vertx),

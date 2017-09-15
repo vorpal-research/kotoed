@@ -103,6 +103,7 @@ object Address {
             const val Current = "kotoed.api.notification.current"
             const val RenderCurrent = "kotoed.api.notification.current.render"
             const val MarkRead = "kotoed.api.notification.markRead"
+            const val MarkAllRead = "kotoed.api.notification.markRead.all"
             const val Create = "kotoed.api.notification.create"
 
             fun pushRendered(id: String) = "kotoed.api.notification.push.$id.render"
@@ -171,6 +172,7 @@ object Address {
         fun find(entity: String) = "kotoed.db.$entity.find"
         fun readFor(entity: String, key: String) = "${read(entity)}.for.$key"
         fun update(entity: String) = "kotoed.db.$entity.update"
+        fun batchUpdate(entity: String) = "kotoed.db.$entity.update.batch"
 
         fun searchText(entity: String) = "kotoed.db.$entity.search.text"
 
