@@ -22,7 +22,7 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
         course.name = course.name.truncateAt(1024)
 
         val res: CourseRecord = dbCreateAsync(course)
-        dbProcessAsync(course)
+        dbProcessAsync(res)
         return DbRecordWrapper(res)
     }
 
