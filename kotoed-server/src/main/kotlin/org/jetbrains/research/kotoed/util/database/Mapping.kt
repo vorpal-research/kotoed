@@ -2,10 +2,8 @@ package org.jetbrains.research.kotoed.util.database
 
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.util.JsonEx
-import org.jetbrains.research.kotoed.util.decode
-import org.jetbrains.research.kotoed.util.jsonValue
-import org.jetbrains.research.kotoed.util.uncheckedCast
+import org.jetbrains.research.kotoed.database.Public
+import org.jetbrains.research.kotoed.util.*
 import org.jooq.*
 import org.jooq.impl.DSL
 import org.jooq.impl.DefaultDataType
@@ -106,6 +104,22 @@ class PostgresJSONBinding : PostgresBindingBase {
 class PostgresTSVectorBinding : PostgresBindingBase {
     override fun converter() = NoConverter
     override val typename = "tsvector"
+}
+
+data class WrappedRecord(val table: Table<*>, val record: Record): Record by record, Jsonable {
+    override fun toJson() =
+            record.toJson().apply { this["table"] = table.name }
+
+    companion object: JsonableCompanion<WrappedRecord> {
+        override val dataklass = WrappedRecord::class
+        override fun fromJson(json: JsonObject): WrappedRecord? {
+            val table = Public.PUBLIC.tables.find { it.name == json["table"] }
+            table ?: return null
+            val record = json.toRecord(table.recordType.kotlin)
+            record ?: return null
+            return WrappedRecord(table, record)
+        }
+    }
 }
 
 fun<R: Record> R.toJson(): JsonObject =
