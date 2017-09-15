@@ -2,8 +2,10 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
@@ -26,6 +28,31 @@ private typealias CommentAggregates = SubmissionComments.CommentAggregates
 @AutoDeployable
 class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
+    private suspend fun notifyCreated(record: SubmissionRecord) {
+        val parentSubmissionId = record.parentSubmissionId ?: return
+        val jumboSub =
+                dbQueryAsync(ComplexDatabaseQuery(Tables.SUBMISSION).find(SubmissionRecord().apply {
+                    id = record.id
+                }).join(ComplexDatabaseQuery(Tables.PROJECT).join(Tables.DENIZEN))).firstOrNull()
+
+        val targets = dbFindAsync(SubmissionCommentRecord().apply {
+            submissionId = parentSubmissionId
+            state = SubmissionCommentState.open
+        }).map{ it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as? Int
+
+        targets.forEach {
+            createNotification(NotificationRecord().apply {
+                denizenId = it
+                type = NotificationType.RESUBMISSION.toString()
+                body = JsonObject().apply {
+                    this["author"] = jumboSub.safeNav("project", "denizen")
+                    this["submissionId"] = record.id
+                    this["oldSubmissionId"] = parentSubmissionId
+                }
+            })
+        }
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
     suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
         val eb = vertx.eventBus()
@@ -36,7 +63,13 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val res: SubmissionRecord = dbCreateAsync(submission)
         dbProcessAsync(res)
-        return DbRecordWrapper(res)
+        val ret = DbRecordWrapper(res)
+
+        launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            notifyCreated(res)
+        }
+
+        return ret
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Read)
@@ -46,17 +79,33 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(res, status)
     }
 
+    private suspend fun notifyUpdated(record: SubmissionRecord) {
+        val parentSubmissionId = record.parentSubmissionId ?: return
+        val jumboSub =
+                dbQueryAsync(ComplexDatabaseQuery(Tables.SUBMISSION).find(SubmissionRecord().apply {
+                    id = record.id
+                }).join(ComplexDatabaseQuery(Tables.PROJECT).join(Tables.DENIZEN))).firstOrNull()
+
+        createNotification(NotificationRecord().apply {
+            denizenId = jumboSub.safeNav("project", "denizen", "id") as? Int
+            type = NotificationType.SUBMISSION_UPDATE.toString()
+            body = jumboSub
+        }) // TODO by whom?
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Update)
     suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper {
         val existing = fetchByIdAsync(Tables.SUBMISSION, submission.id)
+
+        val shouldBeDone = (existing.state == SubmissionState.open || existing.state == SubmissionState.closed) &&
+                submission.state == SubmissionState.open || submission.state == SubmissionState.closed
 
         submission.apply {
             datetime = existing.datetime
             parentSubmissionId = existing.parentSubmissionId
             projectId = existing.projectId
             revision = existing.revision
-            state = if (existing.state != SubmissionState.open && existing.state != SubmissionState.closed ||
-                    state != SubmissionState.open && state != SubmissionState.closed)
+            state = if (!shouldBeDone)
                 existing.state
             else
                 state
@@ -67,7 +116,13 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val vd = dbProcessAsync(updated)
 
-        return DbRecordWrapper(updated, vd)
+        val ret = DbRecordWrapper(updated, vd)
+
+        if (shouldBeDone)
+            launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+                notifyUpdated(updated)
+            }
+        return ret
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord {

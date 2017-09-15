@@ -12,6 +12,19 @@ import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 
+@HandlerFor(UrlPattern.Submission.NotificationRedirect)
+@LoginRequired
+suspend fun handleSubmissionById(context: RoutingContext) {
+    val id by context.request()
+
+    id ?: throw NotFound("id is null")
+
+    context.response().redirect(UrlPattern.reverse(
+            UrlPattern.Submission.Index,
+            mapOf("id" to id)
+    ))
+}
+
 @HandlerFor(UrlPattern.SubmissionResults.ById)
 @LoginRequired
 suspend fun handleSubmissionResultsById(context: RoutingContext) {
