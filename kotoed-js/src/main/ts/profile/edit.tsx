@@ -13,6 +13,8 @@ import Address = Kotoed.Address;
 import {ErrorMessages} from "../login/util";
 import {fallThroughErrorHandler} from "../eventBus";
 import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
+import {pick, typedKeys} from "../util/common";
+import * as _ from "lodash";
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -65,7 +67,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
     }
 
     // not the react way, but whatever
-    shadowErrors = {...noErrors};
+    shadowErrors: LocalErrors = {...noErrors};
 
     localErrorMessages: ErrorMessages<LocalErrors> = {
         badEmail: "Incorrect email",
@@ -83,9 +85,11 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         super.unsetError(error);
     }
 
-    commitErrorsAsync = async () => {
-        await setStateAsync(this, { localErrors: this.shadowErrors });
-        this.shadowErrors = {...noErrors};
+    commitErrorsAsync = async (...picker: (keyof LocalErrors)[]) => {
+        picker = picker || typedKeys(this.shadowErrors);
+        let newErrors = { ...this.state.localErrors, ...pick(this.shadowErrors, picker) };
+        await setStateAsync(this, { localErrors: newErrors });
+        this.shadowErrors = {...this.shadowErrors, ...pick(noErrors, picker)};
     };
 
     setDenizen = <K extends keyof EditableProfileInfo>(pick: Pick<EditableProfileInfo,K>) => {
@@ -124,7 +128,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
 
     onSave = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
-        await this.commitErrorsAsync();
+        await this.commitErrorsAsync("badEmail");
         if(this.hasErrors()) return;
 
         await setStateAsync(this, { disabled: true, success: false });
@@ -135,7 +139,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
     onSavePassword = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         this.unsetError("incorrectPassword");
-        await this.commitErrorsAsync();
+        await this.commitErrorsAsync("emptyPassword", "incorrectPassword", "passwordsDontMatch");
         if(this.hasErrors()) return;
 
         await setStateAsync(this, { disabled: true, success: false });
@@ -145,7 +149,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
             await setStateAsync(this, { disabled: false, success: true })
         } catch(_) {
             this.setError("incorrectPassword");
-            await this.commitErrorsAsync();
+            await this.commitErrorsAsync("emptyPassword", "incorrectPassword", "passwordsDontMatch");
             await setStateAsync(this, { disabled: false, success: false });
         }
     };
