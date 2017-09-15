@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
 import org.jetbrains.research.kotoed.buildbot.verticles.BuildRequestPollerVerticle
 import org.jetbrains.research.kotoed.code.Filename
@@ -318,6 +319,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
     suspend override fun doClean(data: JsonObject): VerificationData {
         val sub: SubmissionRecord = data.toRecord()
+
+        async {
+            val project = dbFetchAsync(ProjectRecord().apply { id = sub.projectId })
+            sendJsonable(Address.Code.PurgeCache, RemoteRequest(vcs = null, url = project.repoUrl))
+        }
 
         dbWithTransactionAsync {
             deleteFrom(SUBMISSION_STATUS)

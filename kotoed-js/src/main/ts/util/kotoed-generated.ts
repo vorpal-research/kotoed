@@ -107,7 +107,6 @@ export namespace Generated {
     export const UrlPattern = {
         EventBus: "/eventbus/*",
         Index: "/",
-        NotImplemented: "/notImplemented",
         Star: "/*",
         Static: "/static/*",
         Auth: {
@@ -151,6 +150,7 @@ export namespace Generated {
         },
         Submission: {
             Index: "/submission/:id",
+            NotificationRedirect: "/redirect/submission/:id",
             Results: "/views/submission/:id/results",
             SearchByTags: "/views/submission/searchByTags",
         },
