@@ -6,6 +6,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
+import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
@@ -370,7 +371,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_tag")
                 .join(projectQ)
                 .join("tag")
-                .filter("tag.name == %s and submission.state != \"obsolete\"".formatToQuery(query.text))
+                .filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -393,7 +394,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_tag")
                 .join(projectQ)
                 .join("tag")
-                .filter("tag.name == %s and submission.state != \"obsolete\"".formatToQuery(query.text))
+                .filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
 
         return sendJsonableAsync(Address.DB.count("submission_tag"), q)
     }

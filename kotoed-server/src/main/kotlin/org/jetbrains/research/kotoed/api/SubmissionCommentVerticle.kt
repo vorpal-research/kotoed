@@ -171,7 +171,8 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val currentPage = query.currentPage ?: 0
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
-                .filter("document matches %s".formatToQuery(query.text))
+                .join("submission")
+                .filter("document matches %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -188,7 +189,8 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleSearchCount(query: SearchQuery): JsonObject {
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
-                .filter("document matches %s".formatToQuery(query.text))
+                .join("submission")
+                .filter("document matches %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
 
         return sendJsonableAsync(Address.DB.count("submission_comment_text_search"), q)
     }
