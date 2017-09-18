@@ -13,7 +13,7 @@ export interface Submission {
     revision: string
 }
 
-export interface SubmissionToRead extends Submission, WithId {}
+export interface SubmissionToRead extends Submission, WithId, WithSubmissionTags {}
 
 export interface BloatSubmission extends SubmissionToRead, WithProject {}
 
@@ -28,7 +28,19 @@ export interface CreateRequest {
     parentSubmissionId: number | null
 }
 
-export interface Tag {
+export interface TagRTI {
     id: number,
     text: string
+}
+
+export interface Tag {
+    name: string
+}
+
+export interface SubmissionTag {
+    tag: Tag
+}
+
+export interface WithSubmissionTags {
+    submissionTags?: Array<SubmissionTag>
 }
