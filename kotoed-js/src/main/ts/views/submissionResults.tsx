@@ -145,6 +145,59 @@ namespace Statistics {
         return KFirst.selector(result)
     }
 
+    function getLessonPoints(packageData: Map<string, { solved: number, total: number }>): number {
+        let res = 0;
+
+        let tags = _.concat(
+            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => "Impossible"),
+            _.times((packageData.get("Hard") || {solved: 0}).solved, () => "Hard"),
+            _.times((packageData.get("Normal") || {solved: 0}).solved, () => "Normal"),
+            _.times((packageData.get("Easy") || {solved: 0}).solved, () => "Easy"),
+            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => "Trivial"),
+        );
+
+        let [first, second, third] = tags;
+
+        switch (first) {
+            case "Impossible":
+                res += 8;
+                break;
+            case "Hard":
+                res += 5;
+                break;
+            case "Normal":
+                res += 2;
+                break;
+            case "Easy":
+            case "Trivial":
+                res += 1;
+                break;
+        }
+
+        switch (second) {
+            case "Impossible":
+                res += 3;
+                break;
+            case "Hard":
+                res += 2;
+                break;
+            case "Normal":
+            case "Easy":
+                res += 1;
+                break;
+        }
+
+        switch (third) {
+            case "Impossible":
+            case "Hard":
+            case "Normal":
+                res += 1;
+                break;
+        }
+
+        return res;
+    }
+
     export function transformer(result: any): any[] {
         let data = result.body.data;
 
@@ -153,7 +206,7 @@ namespace Statistics {
 
         data.forEach((datum: any) => {
             let packageName = datum.packageName.substr(
-                0, datum.packageName.lastIndexOf("."));
+                0, datum.packageName.indexOf("."));
             let taskName = `${packageName}.${datum.methodName}`;
 
             let tag = datum.tags[0] || "None";
@@ -202,6 +255,7 @@ namespace Statistics {
             packageData.forEach((stats, tag) => {
                 _.set(res, tag, `${stats.solved} / ${stats.total}`);
             });
+            _.set(res, "Points", getLessonPoints(packageData));
             return res;
         });
     }
@@ -220,6 +274,8 @@ namespace Statistics {
                               title="Hard"/>
             <ColumnDefinition id="Impossible"
                               title="Impossible"/>
+            <ColumnDefinition id="Points"
+                              title="Points"/>
         </RowDefinition> as any
 
 } // namespace Statistics
