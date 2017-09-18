@@ -143,6 +143,18 @@ inline operator fun JsonObject.set(fields: List<String>, value: Any?) =
 inline operator fun JsonObject.set(vararg fields: String, value: Any?) =
         set(fields.asList(), value)
 
+fun JsonObject.snakeKeys(): JsonObject {
+    fun recurse(value: Any?): Any? = when(value) {
+        is JsonObject -> value.snakeKeys()
+        is JsonArray -> value.map{ recurse(it) }.let(::JsonArray)
+        else -> value
+    }
+    return JsonObject(this.asSequence().map {
+        (k, v) -> camelToKey(k) to recurse(v)
+    }.toMap())
+}
+
+
 /******************************************************************************/
 
 interface Jsonable {
