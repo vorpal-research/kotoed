@@ -1,7 +1,7 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {DbRecordWrapper, isStatusFinal} from "../data/verification";
-import {SubmissionToRead, Tag} from "../data/submission";
+import {SubmissionToRead, TagRTI as Tag} from "../data/submission";
 import {
     addSubmissionTag as addSubmissionTagRemote,
     deleteSubmissionTag as deleteSubmissionTagRemote,

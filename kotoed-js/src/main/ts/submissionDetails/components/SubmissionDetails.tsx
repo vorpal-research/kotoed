@@ -4,7 +4,7 @@ import * as Spinner from "react-spinkit"
 import {ReactTagsProps, WithContext} from 'react-tag-input';
 
 import SubmissionHistory from "./SubmissionHistory";
-import {SubmissionToRead, Tag} from "../../data/submission";
+import {SubmissionToRead, TagRTI as Tag} from "../../data/submission";
 import {Kotoed} from "../../util/kotoed-api";
 import {CommentAggregate} from "../../code/remote/comments";
 import moment = require("moment");

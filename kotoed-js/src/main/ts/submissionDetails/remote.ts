@@ -3,7 +3,7 @@ import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 import {DbRecordWrapper} from "../data/verification";
-import {SubmissionState, SubmissionToRead, Tag} from "../data/submission";
+import {SubmissionState, SubmissionToRead, TagRTI as Tag} from "../data/submission";
 import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
 import {CourseToRead} from "../data/course";

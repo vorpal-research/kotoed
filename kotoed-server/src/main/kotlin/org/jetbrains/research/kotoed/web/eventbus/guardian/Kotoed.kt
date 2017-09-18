@@ -146,9 +146,10 @@ fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Notification.RenderCurrent to NotificationPatcher,
         Address.Api.Notification.MarkAllRead to NotificationPatcher,
         Address.Api.Project.Create to ProjectCreatePatcher,
-        Address.Api.Project.SearchForCourse to CourseListPatcher(vertx),
+        Address.Api.Project.SearchForCourse to all(CourseListPatcher(vertx), WithTagsPatcher),
         Address.Api.Project.SearchForCourseCount to CourseListPatcher(vertx),
-        Address.Api.Submission.Comment.Create to CommentCreatePatcher
+        Address.Api.Submission.Comment.Create to CommentCreatePatcher,
+        Address.Api.Submission.List to WithTagsPatcher
 )
 
 object WithRequestUUIDPatcher : BridgeEventPatcher {
