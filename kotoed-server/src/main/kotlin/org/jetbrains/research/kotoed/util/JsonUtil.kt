@@ -92,9 +92,6 @@ inline operator fun JsonObject.get(key: String): Any? = this.getValue(camelToKey
 inline operator fun JsonObject.set(key: String, value: Any?) = this.put(camelToKey(key), value)
 inline operator fun JsonObject.contains(key: String) = this.containsKey(camelToKey(key))
 
-inline fun <T> JsonArray.getT(index: Int): T? = this[index].uncheckedCastOrNull()
-inline fun <T> JsonObject.getT(key: String): T? = this[key].uncheckedCastOrNull()
-
 
 /******************************************************************************/
 

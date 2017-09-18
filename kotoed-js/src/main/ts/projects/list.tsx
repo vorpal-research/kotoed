@@ -43,9 +43,24 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <span className={"grayed-out"}>{text}</span>
     };
 
-    profileLink = (denizen: Denizen): JSX.Element => {
-        return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: denizen.id})}>
-            {truncateString(this.props.denizen.denizenId, 30)}
+    makeRealName = (): string => {
+        if (!this.props.denizen.profiles || this.props.denizen.profiles.length == 0)
+            return "";
+
+        const {firstName, lastName, groupId} = this.props.denizen.profiles[0];
+
+        if (!firstName && !lastName && !groupId)
+            return "";
+
+        const groupId_ = groupId ? ", groupId" : "";
+
+        // TODO truncation
+        return `(${firstName} ${lastName}${groupId_})`
+    };
+
+    profileLink = (): JSX.Element => {
+        return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: this.props.denizen.id})}>
+            {truncateString(this.props.denizen.denizenId, 16)}{" "}{this.makeRealName()}
             </a>
     };
 
@@ -100,7 +115,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
             <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
-            <td>{this.profileLink(this.props.denizen)}</td>
+            <td>{this.profileLink()}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>
         </tr>
@@ -167,11 +182,11 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
             <Table striped bordered condensed hover responsive>
                 <thead>
                     <tr>
-                        <th>Id</th>
-                        <th>Name</th>
-                        <th>Author</th>
-                        <th>Repo</th>
-                        <th>Open submissions</th>
+                        <th className="col-md-1">Id</th>
+                        <th className="col-md-2">Name</th>
+                        <th className="col-md-3">Author</th>
+                        <th className="col-md-1">Repo</th>
+                        <th className="col-md-5">Open submissions</th>
                     </tr>
                 </thead>
                 <tbody>

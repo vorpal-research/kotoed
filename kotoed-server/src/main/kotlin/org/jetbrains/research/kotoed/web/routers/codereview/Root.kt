@@ -24,7 +24,7 @@ suspend fun handleCode(context: RoutingContext) {
         return
     }
 
-    val (course, author, project, submission) =
+    val (course, author, authorProfile, project, submission) =
             SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
                 context.fail(HttpResponseStatus.NOT_FOUND)
                 return
@@ -36,6 +36,6 @@ suspend fun handleCode(context: RoutingContext) {
     }
 
     context.put(Context.NavBar, kotoedNavBar(context.user()))
-    context.put(Context.BreadCrumb, SubmissionReviewBreadCrumb(course, author, project, submission))
+    context.put(Context.BreadCrumb, SubmissionReviewBreadCrumb(course, author, authorProfile, project, submission))
     context.put(Context.Title, "Submission #${submission.id} Review")
 }

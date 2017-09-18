@@ -16,11 +16,8 @@ import org.jetbrains.research.kotoed.database.Tables.SUBMISSION
 import org.jetbrains.research.kotoed.database.tables.SubmissionComment
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
-import org.jetbrains.research.kotoed.util.fromJson
-
-import org.jetbrains.research.kotoed.util.sendJsonableAsync
-import org.jetbrains.research.kotoed.util.sendJsonableCollectAsync
 
 suspend fun EventBus.commentByIdOrNull(id: Int): SubmissionCommentRecord? {
     val comment: SubmissionCommentRecord
@@ -111,12 +108,16 @@ suspend fun EventBus.notificationByIdOrNull(id: Int): NotificationRecord? {
 // Complex stuff
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-data class ProjectWithRelated(val course: CourseRecord, val author: DenizenRecord, val project: ProjectRecord) {
+data class ProjectWithRelated(
+        val course: CourseRecord,
+        val author: DenizenRecord,
+        val authorProfile: ProfileRecord?,
+        val project: ProjectRecord) {
     companion object {
 
         fun makeQuery(find: ProjectRecord? = null): ComplexDatabaseQuery {
             val q = ComplexDatabaseQuery(PROJECT.name)
-                    .join(DENIZEN.name, resultField = "author")
+                    .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE), resultField = "author")
                     .join(COURSE.name)
 
             return find?.let {
@@ -134,15 +135,21 @@ data class ProjectWithRelated(val course: CourseRecord, val author: DenizenRecor
 
         fun fromJson(obj: JsonObject): ProjectWithRelated =
                 ProjectWithRelated(
-                        obj.getJsonObject("course").toRecord<CourseRecord>(),
-                        obj.getJsonObject("author").toRecord<DenizenRecord>(),
-                        obj.toRecord<ProjectRecord>()
+                        obj.getJsonObject("course").toRecord(),
+                        obj.getJsonObject("author").toRecord(),
+                        obj.getJsonObject("author")
+                                ?.getJsonArray("profiles")
+                                ?.firstOrNull()
+                                .uncheckedCastOrNull<JsonObject>()
+                                ?.toRecord(),
+                        obj.toRecord()
                 )
     }
 }
 
 data class SubmissionWithRelated(val course: CourseRecord,
                                  val author: DenizenRecord,
+                                 val authorProfile: ProfileRecord?,
                                  val project: ProjectRecord,
                                  val submission: SubmissionRecord) {
     companion object {
@@ -159,7 +166,12 @@ data class SubmissionWithRelated(val course: CourseRecord,
 
         private fun fromJson(obj: JsonObject): SubmissionWithRelated {
             val pwr = ProjectWithRelated.fromJson(obj.getJsonObject("project"))
-            return SubmissionWithRelated(pwr.course, pwr.author, pwr.project, obj.toRecord<SubmissionRecord>())
+            return SubmissionWithRelated(
+                    pwr.course,
+                    pwr.author,
+                    pwr.authorProfile,
+                    pwr.project,
+                    obj.toRecord())
         }
     }
 }
