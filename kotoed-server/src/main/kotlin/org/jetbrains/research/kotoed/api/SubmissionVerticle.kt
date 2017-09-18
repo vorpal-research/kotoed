@@ -370,7 +370,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_tag")
                 .join(projectQ)
                 .join("tag")
-                .filter("tag.name == %s".formatToQuery(query.text))
+                .filter("tag.name == %s and submission.state != \"obsolete\"".formatToQuery(query.text))
                 .limit(pageSize)
                 .offset(currentPage * pageSize)
 
@@ -393,7 +393,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_tag")
                 .join(projectQ)
                 .join("tag")
-                .filter("tag.name == %s".formatToQuery(query.text))
+                .filter("tag.name == %s and submission.state != \"obsolete\"".formatToQuery(query.text))
 
         return sendJsonableAsync(Address.DB.count("submission_tag"), q)
     }
