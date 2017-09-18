@@ -99,10 +99,10 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
                 .find(SubmissionRecord().apply {
                     state = SubmissionState.open
-                }).rjoin(Tables.SUBMISSION_TAG, "submission_id")
+                }).rjoin(Tables.SUBMISSION_TAG)
 
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
-                .join(Tables.DENIZEN.name)
+                .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
                 .rjoin(subQ, "project_id", "openSubmissions")
                 .find(ProjectRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
@@ -125,6 +125,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
             projects.map { json ->
                 val record: ProjectRecord = json.toRecord()
                 val vd = dbProcessAsync(record)
+
                 json["verificationData"] = vd.toJson()
                 json["openSubmissions"] = json.getJsonArray("openSubmissions")
                         ?.map {

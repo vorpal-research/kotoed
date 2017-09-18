@@ -1,6 +1,6 @@
 
 import {WithId} from "./common";
-import {WithDenizen} from "./denizen";
+import {WithBloatDenizen, WithDenizen} from "./denizen";
 import {WithCourse} from "./course";
 
 export type RepoType = "mercurial" | "git"
@@ -15,7 +15,7 @@ export interface Project {
 
 export interface ProjectToRead extends Project, WithId {}
 
-export interface BloatProject extends ProjectToRead, WithDenizen, WithCourse {}
+export interface BloatProject extends ProjectToRead, WithBloatDenizen, WithCourse {}
 
 export interface WithProject {
     project: Project

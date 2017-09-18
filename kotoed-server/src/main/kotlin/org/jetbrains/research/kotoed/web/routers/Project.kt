@@ -29,7 +29,7 @@ suspend fun handleProjectIndex(context: RoutingContext) {
         return
     }
 
-    val (course, author, project) =
+    val (course, author, authorProfile, project) =
             ProjectWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
                 context.fail(HttpResponseStatus.NOT_FOUND)
                 return
@@ -40,7 +40,7 @@ suspend fun handleProjectIndex(context: RoutingContext) {
         return
     }
 
-    context.put(Context.BreadCrumb, ProjectBreadCrumb(course, author, project))
+    context.put(Context.BreadCrumb, ProjectBreadCrumb(course, author, authorProfile, project))
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.Title, "${project.name} by ${author.denizenId}")
 }

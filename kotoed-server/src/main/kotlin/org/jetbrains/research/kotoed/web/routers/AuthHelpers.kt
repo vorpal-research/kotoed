@@ -108,7 +108,7 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
         return
     }
 
-    val (course, author, project, submission) =
+    val (_, author, _, _, submission) =
         SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
             context.fail(HttpResponseStatus.NOT_FOUND)
             return

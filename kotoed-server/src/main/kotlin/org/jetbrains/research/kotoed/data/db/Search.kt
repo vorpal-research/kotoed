@@ -52,7 +52,7 @@ fun DatabaseJoin(table: String,
         DatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
 
 fun ReverseDatabaseJoin(table: String,
-                 field: String,
+                 field: String?,
                  resultField: String = defaultReverseResultField(table),
                  key: String? = null) =
         ReverseDatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
@@ -85,21 +85,21 @@ data class ComplexDatabaseQuery(
             copy(joins = joins.orEmpty() + DatabaseJoin(query, field, resultField, key))
 
     fun rjoin(table: String,
-              field: String,
+              field: String? = this.table?.let(::defaultField),
               resultField: String = defaultReverseResultField(table),
               key: String? = null) =
             copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(table, field, resultField, key))
 
     fun<R: Record> rjoin(table: Table<R>,
-                        field: String,
+                        field: String? = this.table?.let(::defaultField),
                         resultField: String = defaultReverseResultField(table.name),
                         key: String? = null) = rjoin(table.name, field, resultField, key)
 
 
     fun rjoin(query: ComplexDatabaseQuery,
-             field: String?,
-             resultField: String? = query.table?.let(::defaultReverseResultField),
-             key: String? = null) =
+              field: String? = this.table?.let(::defaultField),
+              resultField: String? = query.table?.let(::defaultReverseResultField),
+              key: String? = null) =
             copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(query, field, resultField, key))
 
     fun find(record: Record) = copy(find = record.toJson())

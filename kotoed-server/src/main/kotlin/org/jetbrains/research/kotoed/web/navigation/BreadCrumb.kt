@@ -1,9 +1,6 @@
 package org.jetbrains.research.kotoed.web.navigation
 
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
-import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 
 
@@ -33,9 +30,14 @@ fun CourseBreadCrumbElement(active: Boolean, course: CourseRecord): BreadCrumbEl
 
 fun ProjectBreadCrumbElement(active: Boolean,
                              author: DenizenRecord,
+                             authorProfile: ProfileRecord?,
                              project: ProjectRecord): BreadCrumbElement {
+
+    val group = authorProfile?.groupId?.let {", $it"} ?: ""
+    val realName = authorProfile?.let {" (${authorProfile.firstName} ${authorProfile.lastName}$group)"} ?: ""
+
     return BreadCrumbElement(
-            text = "${project.name} by ${author.denizenId}",
+            text = "${project.name} by ${author.denizenId}$realName",
             active = active,
             href = UrlPattern.reverse(UrlPattern.Project.Index, mapOf("id" to project.id)))
 }
@@ -80,30 +82,45 @@ val RootBreadCrumb = BreadCrumb(RootBreadCrumbElement(true))
 fun CourseBreadCrumb(course: CourseRecord) = RootBreadCrumbElement(false) + CourseBreadCrumbElement(true, course)
 
 
-fun ProjectBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord) =
+fun ProjectBreadCrumb(course: CourseRecord,
+                      author: DenizenRecord,
+                      authorProfile: ProfileRecord?,
+                      project: ProjectRecord) =
         RootBreadCrumbElement(false) +
                 CourseBreadCrumbElement(false, course) +
-                ProjectBreadCrumbElement(true, author, project)
+                ProjectBreadCrumbElement(true, author, authorProfile, project)
 
-fun SubmissionBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord): BreadCrumb {
+fun SubmissionBreadCrumb(course: CourseRecord,
+                         author: DenizenRecord,
+                         authorProfile: ProfileRecord?,
+                         project: ProjectRecord,
+                         submission: SubmissionRecord): BreadCrumb {
     return RootBreadCrumbElement(false) +
             CourseBreadCrumbElement(false, course) +
-            ProjectBreadCrumbElement(false, author, project) +
+            ProjectBreadCrumbElement(false, author, authorProfile, project) +
             SubmissionBreadCrumbElement(true, submission)
 }
 
-fun SubmissionResultBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
+fun SubmissionResultBreadCrumb(course: CourseRecord,
+                               author: DenizenRecord,
+                               authorProfile: ProfileRecord?,
+                               project: ProjectRecord,
+                               submission: SubmissionRecord) =
         RootBreadCrumbElement(false) +
                 CourseBreadCrumbElement(false, course) +
-                ProjectBreadCrumbElement(false, author, project) +
+                ProjectBreadCrumbElement(false, author, authorProfile, project) +
                 SubmissionBreadCrumbElement(false, submission) +
                 SubmissionResultBreadCrumbElement(true, submission)
 
 
-fun SubmissionReviewBreadCrumb(course: CourseRecord, author: DenizenRecord, project: ProjectRecord, submission: SubmissionRecord) =
+fun SubmissionReviewBreadCrumb(course: CourseRecord,
+                               author: DenizenRecord,
+                               authorProfile: ProfileRecord?,
+                               project: ProjectRecord,
+                               submission: SubmissionRecord) =
         RootBreadCrumbElement(false) +
                 CourseBreadCrumbElement(false, course) +
-                ProjectBreadCrumbElement(false, author, project) +
+                ProjectBreadCrumbElement(false, author, authorProfile, project) +
                 SubmissionBreadCrumbElement(false, submission) +
                 SubmissionReviewBreadCrumbElement(true, submission)
 
