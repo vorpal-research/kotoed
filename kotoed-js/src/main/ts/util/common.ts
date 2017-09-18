@@ -19,3 +19,7 @@ export function typedKeys<T>(obj: T) {
 export function pick<T extends {}, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
     return _.pick(obj, keys)
 }
+
+export function intersperse<T>(arr: Array<T>, inter: T) {
+    return _.flatten(arr.map((a, i) => i != 0 ? [inter, a] : [a]))
+}

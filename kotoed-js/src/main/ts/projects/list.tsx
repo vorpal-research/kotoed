@@ -25,7 +25,7 @@ import {fetchCourse} from "../courses/remote";
 import {ChoosyByVerDataSearchTable, ChoosySearchTable} from "../views/components/search";
 import {
     linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
-    renderSubmissionIcon
+    renderSubmissionIcon, renderSubmissionTags
 } from "../submissions/util";
 import {Denizen} from "../data/denizen";
 
@@ -52,7 +52,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         if (!firstName && !lastName && !groupId)
             return "";
 
-        const groupId_ = groupId ? ", groupId" : "";
+        const groupId_ = groupId ? `, ${groupId}`: "";
 
         // TODO truncation
         return `(${firstName} ${lastName}${groupId_})`
@@ -87,6 +87,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td>{linkToSubmissionResults(sub)}</td>
                         <td>{linkToSubmissionReview(sub)}</td>
                         <td>{renderSubmissionIcon(sub)}</td>
+                        <td>{renderSubmissionTags(sub)}</td>
                     </tr>)}
                 </tbody>
             </table>
