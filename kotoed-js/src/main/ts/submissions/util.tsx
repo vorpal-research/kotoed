@@ -1,14 +1,15 @@
 import * as React from "react";
 import * as Spinner from "react-spinkit"
-import {OverlayTrigger, Glyphicon, Tooltip} from "react-bootstrap"
+import {OverlayTrigger, Glyphicon, Tooltip, Label} from "react-bootstrap"
 
-import {Submission} from "../data/submission";
+import {Submission, SubmissionToRead} from "../data/submission";
 import {SubmissionWithVer} from "./SubmissionComponent";
 
 import "less/util.less"
 import {isStatusFinal} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
+import {intersperse} from "../util/common";
 
 export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): boolean {
     let {status} = sub.verificationData;
@@ -104,4 +105,15 @@ export function linkToSubmissionReview(submission: SubmissionWithVer,
         return <a href={makeSubmissionReviewUrl(submission.id)}>Review</a>;
     else
         return <span className={"grayed-out"}>Review</span>
-};
+}
+
+export function renderSubmissionTags(submission: SubmissionToRead): JSX.Element {
+    const tags = (submission.submissionTags || []).map(st => st.tag.name);
+
+    return <span>
+        {intersperse<JSX.Element | string>(
+            tags.map((t, ix) => <Label key={`tag-${ix}`} bsStyle="default">{t}</Label>),
+            " ")
+        }
+    </span>
+}

@@ -9,11 +9,11 @@ export function renderSubmissionTable(children: Array<JSX.Element>): JSX.Element
         <Table striped bordered condensed hover responsive>
             <thead>
             <tr>
-                <th>Id</th>
-                <th>Created at</th>
-                <th>Revision</th>
-                <th>Results</th>
-                <th>Review</th>
+                <th className="col-md-1">Id</th>
+                <th className="col-md-4">Created at</th>
+                <th className="col-md-3">Revision</th>
+                <th className="col-md-2">Results</th>
+                <th className="col-md-2">Review</th>
             </tr>
             </thead>
             <tbody>
