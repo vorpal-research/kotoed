@@ -4,6 +4,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SearchQuery
+import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
@@ -92,18 +93,23 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     // TODO maybe we should have only one universal search for project?
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourse)
-    suspend fun handleSearchForCourse(query: SearchQuery): JsonArray {
+    suspend fun handleSearchForCourse(query: SearchQueryWithTags): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
 
         val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
                 .find(SubmissionRecord().apply {
                     state = SubmissionState.open
-                }).rjoin(Tables.SUBMISSION_TAG)
+                })
+
+        val subQTags =
+                if (query.withTags ?: false)
+                    subQ.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
+                else subQ
 
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
-                .rjoin(subQ, "project_id", "openSubmissions")
+                .rjoin(subQTags, "project_id", "openSubmissions")
                 .find(ProjectRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
@@ -142,7 +148,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
-    suspend fun handleSearchForCourseCount(query: SearchQuery): JsonObject {
+    suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): JsonObject {
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
                 .join(Tables.DENIZEN.name)
                 .find(ProjectRecord().apply {
