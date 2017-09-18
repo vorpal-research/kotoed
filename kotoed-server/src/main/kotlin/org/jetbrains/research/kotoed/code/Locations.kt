@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.code
 
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.wickedsource.diffparser.api.model.Diff
+import org.wickedsource.diffparser.api.model.Line
 
 enum class FileLocType { NORMAL, NON_EXISTENT, UNKNOWN }
 
@@ -21,20 +22,28 @@ private fun String.asFilename() =
         }
 
 fun Location.applyDiffs(diffs: List<Diff>): Location {
-    val relevant = diffs.find { it.fromFileName == filename.path }
-    relevant ?: return this
+    val diff = diffs.find { it.fromFileName == filename.path }
+    diff ?: return this
+    val hunk = diff.hunks.find {
+        val fromLoc = it.fromFileRange
+        line in (fromLoc.lineStart .. (fromLoc.lineStart + fromLoc.lineCount))
+    }
+    hunk ?: return this
 
-    var adj: Int = 0
-    for(hunk in relevant.hunks) {
-        val curLine = hunk.fromFileRange.lineStart + hunk.fromFileRange.lineCount
+    var curFrom = hunk.fromFileRange.lineStart
+    var curTo = hunk.toFileRange.lineStart
 
-        if(curLine > line) {
-            return Location(relevant.toFileName.asFilename(), line + adj, col)
+    for(line in hunk.lines) {
+        when(line.lineType) {
+            null -> throw IllegalArgumentException("Hunk line should not be null")
+            Line.LineType.NEUTRAL -> { ++curFrom; ++curTo }
+            Line.LineType.TO -> { ++curTo }
+            Line.LineType.FROM -> { ++curFrom }
         }
 
-        adj += (hunk.toFileRange.lineCount - hunk.fromFileRange.lineCount)
+        if(curFrom == this.line) break
     }
 
-    return Location(relevant.toFileName.asFilename(), line + adj, col)
+    return Location(diff.toFileName.asFilename(), curTo, col)
 
 }
