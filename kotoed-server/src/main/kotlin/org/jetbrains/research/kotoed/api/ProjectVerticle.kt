@@ -95,8 +95,15 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleSearchForCourse(query: SearchQuery): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
+
+        val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
+                .find(SubmissionRecord().apply {
+                    state = SubmissionState.open
+                }).rjoin(Tables.SUBMISSION_TAG, "submission_id")
+
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
                 .join(Tables.DENIZEN.name)
+                .rjoin(subQ, "project_id", "openSubmissions")
                 .find(ProjectRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
@@ -114,35 +121,18 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                         Address.DB.query(Tables.PROJECT_TEXT_SEARCH.name),
                         qWithSearch)
 
-        val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
-                .find(SubmissionRecord().apply {
-                    state = SubmissionState.open
-                })
-                .filter("${Tables.SUBMISSION.PROJECT_ID.name} in %s"
-                        .formatToQuery(projects.map { it.getInteger("id") }))
-
-        val submissionsJson: List<JsonObject> =
-                sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), subQ)
-        // TODO verification data for submissions
-        val submissionsByProject = submissionsJson
-                .map { it.toRecord<SubmissionRecord>() }
-                .groupBy { it.projectId }
-                .mapValues { (_, v) -> v.sortedBy { it.datetime } }
-
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             projects.map { json ->
                 val record: ProjectRecord = json.toRecord()
                 val vd = dbProcessAsync(record)
                 json["verificationData"] = vd.toJson()
-                json["openSubmissions"] = submissionsByProject[record.id]
+                json["openSubmissions"] = json.getJsonArray("openSubmissions")
                         ?.map {
-                            val vdSub = dbProcessAsync(it)
-                            val subJson = it.toJson()
-                            subJson["verificationData"] = vdSub.toJson()
-                            subJson
-                        }
-                        ?.let(::JsonArray)
-                        ?: JsonArray()
+                            val sub: SubmissionRecord = (it as JsonObject).toRecord()
+                            val vdSub = dbProcessAsync(sub)
+                            it["verificationData"] = vdSub.toJson()
+                            it
+                        }?: JsonArray()
                 json
             }
         } else projects
