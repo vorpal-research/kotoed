@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.UrlPattern
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -25,25 +26,35 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
     }
 
     suspend fun setNext() {
-        run<Unit> {
-            val now = LocalDateTime.now(ZoneOffset.UTC)
-            var nextEvent = now
-                    .withHour(14)
-                    .withMinute(0)
-                    .withSecond(0)
+        val now = LocalDateTime.now(ZoneOffset.UTC)
+        var nextEvent = now
+                .withHour(14)
+                .withMinute(0)
+                .withSecond(0)
 
-            if (nextEvent < now) nextEvent = nextEvent.plusDays(1)
+        if (nextEvent < now) nextEvent = nextEvent.plusDays(1)
 
-            sendJsonableAsync(
+        log.info("Scheduling next spam session at $nextEvent")
+
+        var tryOut: Unit? = null
+        while(tryOut == null) {
+            log.info("Trying to send message to timetable")
+            tryOut = trySendJsonableAsync(
                     Address.Schedule,
                     TimetableMessage(JsonObject(), nextEvent, Address.Notifications.Email.TriggerSpam)
             )
+            if(tryOut != null) break
+
+            log.info("Scheduler not available, retrying in 5 minutes")
+            vertx.delayAsync(Duration.ofMinutes(5).toMillis())
         }
 
     }
 
     @JsonableEventBusConsumerFor(Address.Notifications.Email.TriggerSpam)
     suspend fun handleTrigger(unit: Unit) {
+        log.info("Sending spam in 3..2..1..")
+
         use(unit)
         setNext()
 
