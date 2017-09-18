@@ -30,6 +30,7 @@ private fun Number.toQuery() = "$this"
 fun String.formatToQuery(vararg params: Any) = this.format(*(params.map {
     when(it) {
         is String -> it.toQuery()
+        is Enum<*> -> it.toString().toQuery()
         is Number -> it.toQuery()
         is Iterable<*> -> it.toQuery()
         else -> it.toQuery()
