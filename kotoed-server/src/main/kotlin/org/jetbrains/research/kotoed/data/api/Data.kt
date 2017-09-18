@@ -150,6 +150,15 @@ data class SearchQuery(
         val pageSize: Int?,
         val withVerificationData: Boolean?) : Jsonable
 
+data class SearchQueryWithTags(
+        val text: String,
+        val find: JsonObject?,
+        val currentPage: Int?,
+        val pageSize: Int?,
+        val withVerificationData: Boolean?,
+        val withTags: Boolean?) : Jsonable
+
+
 data class RestorePasswordSecret(
         val denizenId: String, val secret: String, val password: String
 ) : Jsonable

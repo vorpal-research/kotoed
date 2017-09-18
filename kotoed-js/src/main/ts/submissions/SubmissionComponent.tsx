@@ -12,7 +12,7 @@ import {Kotoed} from "../util/kotoed-api";
 import * as moment from "moment";
 import {
     isSubmissionAvalable, linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
-    renderSubmissionIcon
+    renderSubmissionIcon, renderSubmissionTags
 } from "./util";
 
 export type SubmissionWithVer = SubmissionToRead & WithVerificationData
@@ -39,7 +39,7 @@ export class SubmissionComponent extends React.PureComponent<SubmissionComponent
     render() {
         return <tr>
             <td>{this.linkToSubDetails(this.props.id.toString())}{" "}{renderSubmissionIcon(this.props, this.props.pendingIsAvailable)}</td>
-            <td>{this.linkToSubDetails(moment(this.props.datetime).format('LLLL'))}</td>
+            <td>{this.linkToSubDetails(moment(this.props.datetime).format('LLLL'))}{" "}{renderSubmissionTags(this.props)}</td>
             <td>{this.props.revision}</td>
             <td>{this.linkToResults()}</td>
             <td>{this.linkToReview()}</td>

@@ -264,7 +264,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             )
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
-    suspend fun handleList(query: SearchQuery): JsonArray {
+    suspend fun handleList(query: SearchQueryWithTags): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
 
         val currentPage = query.currentPage ?: 0
@@ -279,7 +279,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val qFiltered = stateIn?.let { q.filter("state in %s".formatToQuery(it)) } ?: q
 
-        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), qFiltered)
+        val qTags =
+                if (query.withTags ?: false)
+                    qFiltered.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
+                else qFiltered
+
+        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), qTags)
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             resp.map { json ->
@@ -294,7 +299,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.ListCount)
-    suspend fun handleListCount(query: SearchQuery): JsonObject {
+    suspend fun handleListCount(query: SearchQueryWithTags): JsonObject {
         val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
