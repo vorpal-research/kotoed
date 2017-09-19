@@ -150,7 +150,7 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
                                   private var onSuccessSusp: suspend () -> Unit = {},
                                   private var bodySusp: suspend () -> Unit = {}) : Loggable {
 
-    suspend fun execute(timeoutCtx: CoroutineContext = LogExceptions() + VertxContext(vertx)) {
+    suspend fun execute(timeoutCtx: CoroutineContext = LogExceptions() + VertxContext(vertx) + CoroutineName("timeout")) {
         var timedOut = false
         val timerId = vertx.setTimer(time) {
             launch(timeoutCtx) {
