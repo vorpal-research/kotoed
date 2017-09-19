@@ -23,6 +23,8 @@ export namespace Generated {
             Denizen: {
                 Create: "kotoed.api.denizen.create",
                 Read: "kotoed.api.denizen.read",
+                Search: "kotoed.api.denizen.search",
+                SearchCount: "kotoed.api.denizen.search.count",
                 Profile: {
                     Read: "kotoed.api.denizen.profile.read",
                     Update: "kotoed.api.denizen.profile.update",
@@ -137,6 +139,9 @@ export namespace Generated {
         },
         Course: {
             Index: "/course/:id",
+        },
+        Denizen: {
+            Search: "/search/denizen",
         },
         Profile: {
             Edit: "/profile/edit/:id",

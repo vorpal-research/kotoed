@@ -60,6 +60,10 @@ object UrlPattern {
         const val Edit = "/profile/edit/:id"
     }
 
+    object Denizen {
+        const val Search = "/search/denizen"
+    }
+
     object SubmissionResults {
         const val ById = "/redirect/submissionResults/:id"
     }

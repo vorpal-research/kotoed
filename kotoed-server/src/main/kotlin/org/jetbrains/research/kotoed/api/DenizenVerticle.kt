@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.LoginMsg
@@ -7,6 +9,7 @@ import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProfileRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 
@@ -78,4 +81,31 @@ class DenizenVerticle: AbstractKotoedVerticle() {
         run<Unit> { sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(target.denizenId, update.newPassword)) }
     }
 
+
+    @JsonableEventBusConsumerFor(Address.Api.Denizen.Search)
+    suspend fun handleSearch(query: SearchQuery): JsonArray {
+        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val currentPage = query.currentPage ?: 0
+        val q_ = ComplexDatabaseQuery(Tables.DENIZEN_TEXT_SEARCH)
+                .limit(pageSize)
+                .offset(currentPage * pageSize)
+                .rjoin(Tables.PROFILE, field = Tables.PROFILE.DENIZEN_ID.name)
+
+        val q = if (query.text.trim() == "")
+            q_
+        else
+            q_.filter("document matches %s".formatToQuery(query.text))
+
+        val req: List<JsonObject> = dbQueryAsync(q)
+
+        return JsonArray(req)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Denizen.SearchCount)
+    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
+        val q_ = ComplexDatabaseQuery(Tables.DENIZEN_TEXT_SEARCH.name)
+        val q = if (query.text.trim() == "") q_ else q_.filter("document matches %s".formatToQuery(query.text))
+
+        return dbCountAsync(q)
+    }
 }
