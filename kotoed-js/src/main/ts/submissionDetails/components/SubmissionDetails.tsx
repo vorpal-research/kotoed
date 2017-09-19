@@ -160,6 +160,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             handleAddition={this.onTagAdd}
             handleDelete={this.onTagDelete}
             allowDeleteFromEmptyInput={false}
+            autocomplete={1}
         />
     };
 
