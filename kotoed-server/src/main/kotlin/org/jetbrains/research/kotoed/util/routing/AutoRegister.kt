@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.util.routing
 import io.vertx.core.Handler
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.util.*
 import org.reflections.Reflections
@@ -22,9 +23,13 @@ private inline fun <T> unwrapITE(body: () -> T) {
 
 private fun funToHandler(method: Method, chain: Boolean = false): Handler<RoutingContext> {
     return when {
-        // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
+    // method.kotlinFunction.isSuspend does not work due to a bug in Kotlin =)
         method.isKotlinSuspend -> Handler {
-            launch(DelegateLoggable(method.declaringClass).WithExceptions(it) + VertxContext(it.vertx())) {
+            val coroname = newRequestUUID()
+            DelegateLoggable(method.declaringClass).log.trace("Assigning $coroname to $method")
+            launch(DelegateLoggable(method.declaringClass).WithExceptions(it) +
+                    VertxContext(it.vertx()) +
+                    CoroutineName(coroname)) {
                 unwrapITE {
                     method.invokeAsync(null, it)
                     if (chain)

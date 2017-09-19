@@ -6,6 +6,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
+import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.buildbot.util.*
 import org.jetbrains.research.kotoed.config.Config
@@ -68,7 +69,9 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
     ) where
             ResponseT : Any,
             ResponseT : Sequence<ValueT> {
-        launch(WithExceptions { log.error("Error when crawling", it) } + VertxContext(vertx)) {
+        launch(WithExceptions { log.error("Error when crawling", it) } +
+                VertxContext(vertx) +
+                CoroutineName(msg.requestUUID())) {
             val eb = vertx.eventBus()
 
             val wc = WebClient.create(vertx)

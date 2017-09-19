@@ -84,8 +84,9 @@ internal fun <Argument : Any> EventBus.sendJsonable(
         value: Argument,
         argClass: KClass<out Argument>
 ) {
+
     val toJson = getToJsonConverter(argClass.starProjectedType)
-    send(address, toJson(value))
+    send(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, newRequestUUID()))
 }
 
 @PublishedApi
@@ -391,6 +392,17 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
             kotlinx.coroutines.experimental.async(LogExceptions() + dispatcher + currentCoroutineName()) {
                 body()
             }
+
+    fun<R> spawn(dispatcher: CoroutineContext = VertxContext(vertx), body: suspend () -> R) {
+        var context = dispatcher
+        if(context[CoroutineName.Key] == null) {
+            val name = newRequestUUID()
+            log.trace("Assigning $name to spawned call of $body")
+            context += CoroutineName(name)
+        }
+
+        launch(LogExceptions() + context) { body() }
+    }
 
     // all this debauchery is here due to a kotlin compiler bug:
     // https://youtrack.jetbrains.com/issue/KT-17640
