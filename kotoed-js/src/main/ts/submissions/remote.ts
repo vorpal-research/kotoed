@@ -9,6 +9,7 @@ import {WithId} from "../data/common";
 
 interface ProjectPermissions {
     createSubmission: boolean
+    deleteProject: boolean
 }
 
 export async function fetchPermissions(id: number): Promise<ProjectPermissions> {

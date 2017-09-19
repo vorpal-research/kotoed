@@ -76,6 +76,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Project.SearchCount to AuthorityRequired(Authority.Teacher),
             Address.Api.Project.SearchForCourse to Permissive, // filtering is done server-side + patcher covers our asses
             Address.Api.Project.SearchForCourseCount to Permissive, // same as above
+            Address.Api.Project.Delete to AuthorityRequired(Authority.Teacher),
 
             Address.Api.Submission.Code.List to
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),

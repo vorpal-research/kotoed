@@ -44,6 +44,7 @@ export namespace Generated {
             },
             Project: {
                 Create: "kotoed.api.project.create",
+                Delete: "kotoed.api.project.delete",
                 Error: "kotoed.api.project.remoteError",
                 Read: "kotoed.api.project.read",
                 Search: "kotoed.api.project.search",

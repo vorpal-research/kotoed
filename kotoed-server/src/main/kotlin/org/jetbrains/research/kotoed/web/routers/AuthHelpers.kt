@@ -71,6 +71,8 @@ suspend fun handleProjectPerms(context: RoutingContext) {
     val id by context.request()
     val intId = id?.toInt()
 
+    val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
+
     if (intId == null) {
         context.fail(HttpResponseStatus.BAD_REQUEST)
         return
@@ -87,7 +89,8 @@ suspend fun handleProjectPerms(context: RoutingContext) {
 
     context.response().end(Permissions.Project(
             createSubmission = projectWrapper.verificationData.status == VerificationStatus.Processed &&
-                    user?.principal()?.get("id") == project.denizenId
+                    user?.principal()?.get("id") == project.denizenId,
+            deleteProject = isTeacher
     ))
 }
 
