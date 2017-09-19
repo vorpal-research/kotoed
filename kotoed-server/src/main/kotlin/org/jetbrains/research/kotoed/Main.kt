@@ -9,6 +9,7 @@ import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
+import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory
 fun main(args: Array<String>) {
     DefaultChannelId.newInstance() // warm-up slow DNS
 
-    launch(Unconfined) { startApplication() }
+    launch(Unconfined + CoroutineName("main function")) { startApplication() }
 }
 
 val rootLog = LoggerFactory.getLogger(RootVerticle::class.java)

@@ -19,7 +19,7 @@ import java.time.ZoneOffset
 class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
     override fun start(startFuture: Future<Void>) {
         super.start(startFuture)
-        launch(LogExceptions() + VertxContext(vertx)) {
+        spawn {
             setNext()
         }
 
