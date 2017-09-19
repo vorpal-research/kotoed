@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.RoutingContext
@@ -117,6 +118,7 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
             val user = try {
                 authProvider.authenticateJsonableAsync(OAuthLoginMsg(provider.name, oAuthUserId))
             } catch (ex: KotoedException) {
+                // Making user introduce himself
                 if (ex.code == HttpResponseStatus.UNAUTHORIZED.code()) {
                     val url = UrlPattern.Auth.Index
                     val query = mapOf(
@@ -155,15 +157,30 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
                 }
             }
 
-            // TODO check one_OAuth_per_provider_per_user (or drop this constraint)
+            val res: OauthProfileRecord = try {
+                context.vertx().eventBus().sendJsonableAsync(Address.User.OAuth.SignUp,
+                        OAuthSignUpMsg(
+                                denizenId = context.user().principal().getString("denizenId"),
+                                oauthProvider = provider.name,
+                                oauthUser = oAuthUserId
+                        )
+                )
+            } catch (ex: ReplyException) {
+                // TODO Generally this can happen not only for login page.
+                // TODO think about session error processor
+                if (ex.failureCode() == HttpResponseStatus.CONFLICT.code()) {
+                    context.session().destroy() // TODO this is fucked up
+                    val url = UrlPattern.Auth.Index
+                    val query = mapOf(
+                            "conflict" to provider.name
+                    ).makeUriQuery()
+                    context.response().redirect(url + query)
+                    return
+                } else {
+                    throw ex
+                }
+            }
 
-            val res: OauthProfileRecord = context.vertx().eventBus().sendJsonableAsync(Address.User.OAuth.SignUp,
-                    OAuthSignUpMsg(
-                            denizenId = context.user().principal().getString("denizenId"),
-                            oauthProvider = provider.name,
-                            oauthUser = oAuthUserId
-                    )
-            )
             use(res)
             context.response().redirect(UrlPattern.Auth.LoginDone)
         }

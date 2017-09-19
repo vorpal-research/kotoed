@@ -12,7 +12,8 @@ export interface SignInOrUpProps {
     signUpErrors: Array<string>
     disabled: boolean
     oAuthProviders: Array<string>
-    oAuthAttempted?: string
+    oAuthAttempted?: string,
+    oAuthConflict?: string
 }
 
 export interface SignInOrUpCallbacks {
@@ -37,10 +38,21 @@ export default class SignInOrUp extends React.Component<RouteComponentProps<{}> 
             </div>
     }
 
+    renderOAuthConflictMessage() {
+        return this.props.oAuthConflict &&
+            <div className="alert alert-danger">
+                It seems like you have another{" "}
+                <b>{this.props.oAuthConflict}</b>{" "}
+                account connected to your Kotoed account.
+                Isn't it enough for you?
+            </div>
+    }
+
     render() {
         return (
             <div>
                 {this.renderOAuthMessage()}
+                {this.renderOAuthConflictMessage()}
                 <Tabs
                     defaultIndex={0}
                     onSelect={index => this.props.onTabSelect(index)}
