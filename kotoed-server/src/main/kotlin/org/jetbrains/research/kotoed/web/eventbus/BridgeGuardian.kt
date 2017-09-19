@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.web.eventbus
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
+import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.util.LogExceptions
@@ -18,7 +19,8 @@ class BridgeGuardian(val vertx: Vertx,
         Handler<BridgeEvent>, Loggable {
     override fun handle(be: BridgeEvent) {
         val uuid = newRequestUUID()
-        log.trace("Assigning $uuid to ${be.rawMessage}")
+        if (BridgeEventType.SOCKET_PING != be.type()) // Preventing log spamming with SOCKET_PINGs
+            log.trace("Assigning $uuid to ${be.rawMessage}")
         launch(LogExceptions() + VertxContext(vertx) + CoroutineName(uuid)) coro@ {
             if (!filter.isAllowed(be)) {
                 be.complete(false)
