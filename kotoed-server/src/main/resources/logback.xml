@@ -17,7 +17,7 @@
         </encoder>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/tmp/kotoed.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>/var/tmp/kotoed.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
@@ -30,6 +30,8 @@
     <logger name="io.vertx.ext.web.handler" level="DEBUG">
         <appender-ref ref="stdout"/>
     </logger>
+
+    <logger name="io.netty.handler.codec.http.websocketx" level="DEBUG" />
 
     <root level="TRACE">
         <appender-ref ref="logfile"/>
