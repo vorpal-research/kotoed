@@ -179,8 +179,8 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
     }
 };
 
-export const CODE_ROUTE_PATH = "/codereview/:submissionId(\\d+)/code/:path*";
-export const LOST_FOUND_ROUTE_PATH = "/codereview/:submissionId(\\d+)/lost+found";
+export const CODE_ROUTE_PATH = "/submission/:submissionId(\\d+)/review/code/:path*";
+export const LOST_FOUND_ROUTE_PATH = "/submission/:submissionId(\\d+)/review/lost+found";
 
 export class RedirectToRoot extends React.Component<RouteComponentProps<CodeReviewUrl>> {
     render() {

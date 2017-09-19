@@ -39,7 +39,7 @@ render(
     <Provider store={store}>
         <ConnectedRouter history={history} >
             <Switch>
-                <Route exact path="/codereview/:submissionId(\\d+)/" component={RedirectToRoot}/>
+                <Route exact path="/submission/:submissionId(\\d+)/review" component={RedirectToRoot}/>
                 <Route exact path={CODE_ROUTE_PATH} component={CodeReviewContainer}/>
                 <Route exact path={LOST_FOUND_ROUTE_PATH} component={CodeReviewContainer}/>
             </Switch>
