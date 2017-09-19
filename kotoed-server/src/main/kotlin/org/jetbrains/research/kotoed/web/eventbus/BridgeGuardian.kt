@@ -17,9 +17,14 @@ class BridgeGuardian(val vertx: Vertx,
                      val patcher: BridgeEventPatcher = BridgeEventPatcher.noop()) :
         Handler<BridgeEvent>, Loggable {
     override fun handle(be: BridgeEvent) {
-        val uuid = newRequestUUID()
-        log.trace("Assigning $uuid to ${be.rawMessage}")
-        launch(LogExceptions() + VertxContext(vertx) + CoroutineName(uuid)) coro@ {
+        var context = LogExceptions() + VertxContext(vertx)
+        if(be.rawMessage != null) {
+            val uuid = newRequestUUID()
+            log.trace("Assigning $uuid to ${be.rawMessage}")
+            context += CoroutineName(uuid)
+        }
+
+        launch(context) coro@ {
             if (!filter.isAllowed(be)) {
                 be.complete(false)
                 return@coro
