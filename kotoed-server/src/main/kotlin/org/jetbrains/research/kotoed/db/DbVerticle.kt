@@ -568,3 +568,6 @@ class TagVerticle : CrudDatabaseVerticleWithReferences<TagRecord>(Tables.TAG)
 @AutoDeployable
 class ProfileVerticle : CrudDatabaseVerticleWithReferences<ProfileRecord>(Tables.PROFILE)
 
+@AutoDeployable
+class DenizenTextSearchVerticle : CrudDatabaseVerticleWithReferences<DenizenTextSearchRecord>(Tables.DENIZEN_TEXT_SEARCH)
+

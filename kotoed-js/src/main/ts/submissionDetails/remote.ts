@@ -3,7 +3,7 @@ import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 import {DbRecordWrapper} from "../data/verification";
-import {SubmissionState, SubmissionToRead, TagRTI as Tag} from "../data/submission";
+import {BloatSubmission, SubmissionState, SubmissionToRead, TagRTI as Tag} from "../data/submission";
 import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
 import {CourseToRead} from "../data/course";
@@ -31,15 +31,15 @@ export interface SubmissionTagRequest {
     submissionId: number
 }
 
-export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<SubmissionToRead>> {
-    return eventBus.send<WithId, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Read, {
+export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<BloatSubmission>> {
+    return eventBus.send<WithId, DbRecordWrapper<BloatSubmission>>(Kotoed.Address.Api.Submission.Read, {
         id: submissionId
     })
 }
 
 export async function updateSubmission(submissionId: number,
-                                       state: SubmissionState): Promise<DbRecordWrapper<SubmissionToRead>> {
-    return eventBus.send<SubmissionUpdateRequest, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Update, {
+                                       state: SubmissionState): Promise<DbRecordWrapper<BloatSubmission>> {
+    return eventBus.send<SubmissionUpdateRequest, DbRecordWrapper<BloatSubmission>>(Kotoed.Address.Api.Submission.Update, {
         id: submissionId,
         state: state
     })

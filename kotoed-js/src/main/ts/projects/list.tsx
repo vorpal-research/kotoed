@@ -28,6 +28,7 @@ import {
     renderSubmissionIcon, renderSubmissionTags
 } from "../submissions/util";
 import {Denizen} from "../data/denizen";
+import {makeProfileLink} from "../util/denizen";
 
 type ProjectWithVer = JumboProject & WithVerificationData
 
@@ -43,26 +44,6 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             return <span className={"grayed-out"}>{text}</span>
     };
 
-    makeRealName = (): string => {
-        if (!this.props.denizen.profiles || this.props.denizen.profiles.length == 0)
-            return "";
-
-        const {firstName, lastName, groupId} = this.props.denizen.profiles[0];
-
-        if (!firstName && !lastName && !groupId)
-            return "";
-
-        const groupId_ = groupId ? `, ${groupId}`: "";
-
-        // TODO truncation
-        return `(${firstName} ${lastName}${groupId_})`
-    };
-
-    profileLink = (): JSX.Element => {
-        return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: this.props.denizen.id})}>
-            {truncateString(this.props.denizen.denizenId, 16)}{" "}{this.makeRealName()}
-            </a>
-    };
 
     private readonly invalidTooltip = <Tooltip id="tooltip">This project is invalid</Tooltip>;
 
@@ -116,7 +97,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
             <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
-            <td>{this.profileLink()}</td>
+            <td>{makeProfileLink(this.props.denizen)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>
         </tr>
