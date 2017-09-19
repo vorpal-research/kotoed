@@ -159,6 +159,8 @@ object WithRequestUUIDPatcher : BridgeEventPatcher {
     suspend override fun patch(be: BridgeEvent) {
         val rawMessage = be.rawMessage ?: return
 
+        if (BridgeEventType.SOCKET_PING == be.type()) return
+
         rawMessage["headers", KOTOED_REQUEST_UUID] = currentCoroutineName().name
 
         be.rawMessage = rawMessage
