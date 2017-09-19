@@ -10,32 +10,32 @@ object UrlPattern {
     }
 
     object CodeReview {
-        const val Index = "/codereview/:id/*"
+        const val Index = "/submission/:id/review/*"
     }
 
     object Auth {
-        const val Index = "/login"
-        const val DoLogin = "/login/doLogin"
-        const val DoSignUp = "/login/doSignUp"
-        const val LoginDone = "/login/done"
-        const val Logout = "/logout"
-        const val OAuthStart = "/login/oauth/start/:providerName"
-        const val OAuthCallback = "/login/oauth/callback/:providerName"
-        const val ResetPassword = "/resetPassword"
-        const val RestorePassword = "/restorePassword/:uid"
+        const val Index = "/auth/login"
+        const val DoLogin = "/auth/login/doLogin"
+        const val DoSignUp = "/auth/login/doSignUp"
+        const val LoginDone = "/auth/login/done"
+        const val Logout = "/auth/logout"
+        const val OAuthStart = "/auth/oauth/start/:providerName"
+        const val OAuthCallback = "/auth/oauth/callback/:providerName"
+        const val ResetPassword = "/auth/resetPassword"
+        const val RestorePassword = "/auth/restorePassword/:uid"
     }
 
     object AuthHelpers {
-        const val WhoAmI = "/whoAmI"
-        const val RootPerms = "/perms/root"
-        const val CoursePerms = "/perms/course/:id"
-        const val ProjectPerms = "/perms/project/:id"
-        const val SubmissionPerms = "/perms/submission/:id"
+        const val WhoAmI = "/auth/whoAmI"
+        const val RootPerms = "/auth/perms/root"
+        const val CoursePerms = "/auth/perms/course/:id"
+        const val ProjectPerms = "/auth/perms/project/:id"
+        const val SubmissionPerms = "/auth/perms/submission/:id"
     }
 
     object Comment {
         const val ById = "/redirect/comment/:id"
-        const val Search = "/views/comment/search"
+        const val Search = "/search/comment"
     }
 
     object Course {
@@ -44,20 +44,20 @@ object UrlPattern {
 
     object Project {
         const val Index = "/project/:id"
-        const val Search = "/views/project/search"
+        const val Search = "/search/project"
     }
 
     object Submission {
-        const val Results = "/views/submission/:id/results"
+        const val Results = "/submission/:id/results"
         const val Index = "/submission/:id"
         const val NotificationRedirect = "/redirect/submission/:id" // TODO think about it
 
-        const val SearchByTags = "/views/submission/searchByTags"
+        const val SearchByTags = "/search/byTags"
     }
 
     object Profile {
-        const val Index = "/profile/:id"
-        const val Edit = "/profile/edit/:id"
+        const val Index = "/auth/profile/:id"
+        const val Edit = "/auth/profile/edit/:id"
     }
 
     object Denizen {
