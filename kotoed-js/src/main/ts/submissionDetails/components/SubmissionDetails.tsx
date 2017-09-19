@@ -4,7 +4,7 @@ import * as Spinner from "react-spinkit"
 import {ReactTagsProps, WithContext} from 'react-tag-input';
 
 import SubmissionHistory from "./SubmissionHistory";
-import {SubmissionToRead, TagRTI as Tag} from "../../data/submission";
+import {BloatSubmission, SubmissionToRead, TagRTI as Tag} from "../../data/submission";
 import {Kotoed} from "../../util/kotoed-api";
 import {CommentAggregate} from "../../code/remote/comments";
 import moment = require("moment");
@@ -20,9 +20,10 @@ import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../../util/url"
 import {WithId} from "../../data/common";
 import SpinnerWithVeil, {SpinnerWithBigVeil} from "../../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
+import {makeProfileLink} from "../../util/denizen";
 
 export interface SubmissionDetailsProps {
-    submission: DbRecordWrapper<SubmissionToRead>,
+    submission: DbRecordWrapper<BloatSubmission>,
     loading: boolean,
     history: Array<SubmissionToRead>,
     permissions: {
@@ -61,7 +62,10 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
 
     private renderReviewList = (): JSX.Element => {
-        if (isSubmissionAvalable({...this.props.submission.record, verificationData: this.props.submission.verificationData}))
+        if (isSubmissionAvalable({
+                ...this.props.submission.record as SubmissionToRead,
+                verificationData: this.props.submission.verificationData
+        }))
             return <a href={makeSubmissionReviewUrl(this.props.submission.record.id)}>Link</a>;
         else
             return <span className={"grayed-out"}>N/A</span>
@@ -206,6 +210,14 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                             <tr>
                                 <td className="col-md-3">State</td>
                                 <td className="col-md-9">{this.props.submission.record.state}</td>
+                            </tr>
+                            <tr>
+                                <td className="col-md-3">Repo</td>
+                                <td className="col-md-9"><a href={this.props.submission.record.project.repoUrl}>Link</a></td>
+                            </tr>
+                            <tr>
+                                <td className="col-md-3">Author</td>
+                                <td className="col-md-9">{makeProfileLink(this.props.submission.record.project.denizen)}</td>
                             </tr>
                             <tr>
                                 <td className="col-md-3">Project</td>

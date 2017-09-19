@@ -28,7 +28,20 @@ const initialState: SubmissionDetailsProps = {
             state: "invalid",
             datetime: 0,
             projectId: 0,
-            revision: ""
+            revision: "",
+            project: {
+                denizenId: 0,
+                courseId: 0,
+                repoType: "git",
+                repoUrl: "",
+                id: 0,
+                name: "",
+                denizen: {
+                    id: 0,
+                    denizenId: "",
+                    email: ""
+                }
+            }
         },
         verificationData: {
             status: "Invalid"

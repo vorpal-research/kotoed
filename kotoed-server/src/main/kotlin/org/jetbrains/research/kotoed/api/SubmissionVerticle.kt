@@ -75,9 +75,16 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Read)
     suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper {
-        val res: SubmissionRecord = dbFetchAsync(submission)
-        val status: VerificationData = dbProcessAsync(res)
-        return DbRecordWrapper(res, status)
+        val everything = dbQueryAsync(
+                ComplexDatabaseQuery(Tables.SUBMISSION)
+                        .find(SubmissionRecord().apply { id = submission.id })
+                        .join(ComplexDatabaseQuery(Tables.PROJECT)
+                                .join(ComplexDatabaseQuery(Tables.DENIZEN)
+                                        .rjoin(Tables.PROFILE)))).firstOrNull()
+                ?: throw NotFound("Submission #${submission.id} not found")
+        val sub: SubmissionRecord = everything.toRecord()
+        val status: VerificationData = dbProcessAsync(sub)
+        return DbRecordWrapper(everything, status)
     }
 
     private suspend fun notifyUpdated(record: SubmissionRecord) {
@@ -115,15 +122,11 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val updated = dbUpdateAsync(submission)
 
-        val vd = dbProcessAsync(updated)
-
-        val ret = DbRecordWrapper(updated, vd)
-
         if (shouldBeDone)
             launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
                 notifyUpdated(updated)
             }
-        return ret
+        return handleRead(updated)
     }
 
     private suspend fun findSuccessorAsync(submission: SubmissionRecord): SubmissionRecord {
