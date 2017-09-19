@@ -6,7 +6,6 @@ import com.google.common.cache.RemovalNotification
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
@@ -21,7 +20,6 @@ import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.experimental.suspendCoroutine
 
 @AutoDeployable
 class CodeVerticle : AbstractKotoedVerticle(), Loggable {
@@ -48,8 +46,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     fun onCacheRemove(removalNotification: RemovalNotification<String, RepositoryInfo>) =
-            launch(LogExceptions() + VertxContext(vertx)) {
-                if (removalNotification.value.status == CloneStatus.pending) return@launch
+            spawn {
+                if (removalNotification.value.status == CloneStatus.pending) return@spawn
 
                 vertx.goToEventLoop()
                 val fs = vertx.fileSystem()
@@ -59,21 +57,21 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 log.info("The entry for repository $uid expired, deleting the files...")
                 if (cat.exists()) fs.deleteRecursiveAsync(cat.absolutePath)
                 log.info("Repository $uid deleted")
-            }.ignore()
+            }
 
-    override fun start(startFuture: Future<Void>) = launch(LogExceptions() + VertxContext(vertx)) {
+    override fun start(startFuture: Future<Void>) = spawn {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
         super.start(startFuture)
-    }.ignore()
+    }
 
-    override fun stop(stopFuture: Future<Void>) = launch(LogExceptions() + VertxContext(vertx)) {
+    override fun stop(stopFuture: Future<Void>) = spawn {
         procs.cleanUp()
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         super.stop(stopFuture)
-    }.ignore()
+    }
 
     private val <T> VcsResult<T>.result
         get() = when (this) {

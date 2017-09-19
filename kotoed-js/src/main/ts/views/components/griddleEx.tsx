@@ -44,6 +44,10 @@ export interface TestData {
     failure: FailureInfo
 }
 
+function prettyPrint(v: any) {
+    return String(JSON.stringify(v, null, 2));
+}
+
 export const TestDataColumn = ({value}: { value: List<TestData> }) =>
     <ul className="list-group">{
         (value.toJS() as TestData[]).map((td, idx) => {
@@ -68,22 +72,22 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                                         {_.toPairs(failure.input).map(([k, v]) => {
                                             return <ListGroupItem
                                                 bsStyle="danger">
-                                                <pre><code>{String(k)} -> {String(v)}</code></pre>
+                                                <pre><code>{prettyPrint(k)} -> {prettyPrint(v)}</code></pre>
                                             </ListGroupItem>
                                         })}
                                     </ListGroup>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Output:
-                                    <pre><code>{String(failure.output)}</code></pre>
+                                    <pre><code>{prettyPrint(failure.output)}</code></pre>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Expected output:
-                                    <pre><code>{String(failure.expectedOutput)}</code></pre>
+                                    <pre><code>{prettyPrint(failure.expectedOutput)}</code></pre>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
                                     Nested exception:
-                                    <pre><code>{String(failure.nestedException)}</code></pre>
+                                    <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
                                 </ListGroupItem>
                             </ListGroup>
                         </li>
@@ -91,7 +95,7 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                         return <li key={`${value.hashCode()}-${idx}`}
                                    className="list-group-item list-group-item-danger">
                             Failed with:<br/>
-                            <pre><code>{String(failure.nestedException)}</code></pre>
+                            <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
                         </li>
                     }
                 }

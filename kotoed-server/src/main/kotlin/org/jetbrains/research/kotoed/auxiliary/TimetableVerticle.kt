@@ -19,7 +19,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
         vertx.setPeriodic(1000L * 60L){ handleTick() }
     }
 
-    private fun handleTick() = launch(LogExceptions() + VertxContext(vertx)) {
+    private fun handleTick() = spawn {
         val now = LocalDateTime.now(Clock.systemUTC())
         while(que.isNotEmpty()) {
             val current = que.peek()
@@ -36,7 +36,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
             null -> eb.send(current.sendTo, current.message)
             else -> {
                 val resp = eb.sendAsync(current.sendTo, current.message)
-                eb.send(current.replyTo, resp.body())
+                eb.sendJsonable(current.replyTo, resp.body())
             }
         }
     }
