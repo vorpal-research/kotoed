@@ -32,6 +32,7 @@ suspend private fun User?.getUtilities() =
         when {
             this == null -> listOf()
             isAuthorisedAsync(Authority.Teacher) -> listOf(
+                    NavBarLink("User search", UrlPattern.Denizen.Search),
                     NavBarLink("Comment search", UrlPattern.Comment.Search),
                     NavBarLink("Project search", UrlPattern.Project.Search),
                     NavBarLink("Tag search", UrlPattern.Submission.SearchByTags))
