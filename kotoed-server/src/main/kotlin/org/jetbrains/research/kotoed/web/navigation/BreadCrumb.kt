@@ -73,6 +73,10 @@ fun ProjectSearchBreadCrumbElement(active: Boolean) =
 fun SubmissionByTagsSearchBreadCrumbElement(active: Boolean) =
         BreadCrumbElement(text = "Tag search", active = active, href = UrlPattern.Submission.SearchByTags)
 
+fun DenizenSearchBreadCrumbElement(active: Boolean) =
+        BreadCrumbElement(text = "User search", active = active, href = UrlPattern.Denizen.Search)
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Crumbs
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,3 +143,8 @@ val SubmissionByTagsSearchBreadCrumb =
         RootBreadCrumbElement(false) +
                 UtilitiesBreadCrumbElement(true) +
                 SubmissionByTagsSearchBreadCrumbElement(true)
+
+val DenizenSearchBreadCrumb =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(true) +
+                DenizenSearchBreadCrumbElement(true)

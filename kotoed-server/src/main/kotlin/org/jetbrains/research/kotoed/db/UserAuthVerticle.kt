@@ -112,25 +112,27 @@ class UserAuthVerticle : DatabaseVerticle<DenizenUnsafeRecord>(Tables.DENIZEN_UN
     @JsonableEventBusConsumerFor(Address.User.OAuth.SignUp)
     suspend fun consumeOAuthSignUp(oauthSignUpMsg: OAuthSignUpMsg): OauthProfileRecord {
         return db {
-            with(Tables.OAUTH_PROFILE) {
-                insertInto(
-                        this,
-                        DENIZEN_ID,
-                        OAUTH_PROVIDER_ID,
-                        OAUTH_USER_ID
-                )
-                        .select(
-                                select(
-                                        theTable.ID,
-                                        Tables.OAUTH_PROVIDER.ID,
-                                        DSL.`val`(oauthSignUpMsg.oauthUser)
-                                )
-                                        .from(theTable, Tables.OAUTH_PROVIDER)
-                                        .where(theTable.DENIZEN_ID.eq(oauthSignUpMsg.denizenId))
-                                        .and(Tables.OAUTH_PROVIDER.NAME.eq(oauthSignUpMsg.oauthProvider))
-                        )
-                        .returning()
-                        .fetchOne()
+            sqlStateAware {
+                with(Tables.OAUTH_PROFILE) {
+                    insertInto(
+                            this,
+                            DENIZEN_ID,
+                            OAUTH_PROVIDER_ID,
+                            OAUTH_USER_ID
+                    )
+                            .select(
+                                    select(
+                                            theTable.ID,
+                                            Tables.OAUTH_PROVIDER.ID,
+                                            DSL.`val`(oauthSignUpMsg.oauthUser)
+                                    )
+                                            .from(theTable, Tables.OAUTH_PROVIDER)
+                                            .where(theTable.DENIZEN_ID.eq(oauthSignUpMsg.denizenId))
+                                            .and(Tables.OAUTH_PROVIDER.NAME.eq(oauthSignUpMsg.oauthProvider))
+                            )
+                            .returning()
+                            .fetchOne()
+                }
             }
         } ?: throw IllegalStateException("Database remoteError")
     }

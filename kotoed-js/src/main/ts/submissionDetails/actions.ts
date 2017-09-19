@@ -1,7 +1,7 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {DbRecordWrapper, isStatusFinal} from "../data/verification";
-import {SubmissionToRead, TagRTI as Tag} from "../data/submission";
+import {BloatSubmission, SubmissionToRead, TagRTI as Tag} from "../data/submission";
 import {
     addSubmissionTag as addSubmissionTagRemote,
     deleteSubmissionTag as deleteSubmissionTagRemote,
@@ -25,7 +25,7 @@ import {pollDespairing} from "../util/poll";
 const actionCreator = actionCreatorFactory();
 
 
-export const submissionFetch = actionCreator.async<number, DbRecordWrapper<SubmissionToRead>, {}>('SUB_FETCH');
+export const submissionFetch = actionCreator.async<number, DbRecordWrapper<BloatSubmission>, {}>('SUB_FETCH');
 export const permissionsFetch = actionCreator.async<number, SubmissionPermissions, {}>('PERM_FETCH');
 export const historyFetch = actionCreator.async<{ start: number, limit: number }, Array<SubmissionToRead>, {}>('HIST_FETCH');
 export const commentsTotalFetch = actionCreator.async<number, CommentAggregate, {}>('COMMENTS_TOTAL_FETCH');
@@ -99,7 +99,7 @@ function pollSubmissionIfNeeded(id: number, initial: DbRecordWrapper<SubmissionT
             }));
 
 
-            function dispatchDone(res: DbRecordWrapper<SubmissionToRead>) {
+            function dispatchDone(res: DbRecordWrapper<BloatSubmission>) {
                 dispatch(submissionFetch.done({
                     params: id,
                     result: res
@@ -136,7 +136,7 @@ export function initialize(id: number) {
 
         await pollSubmissionIfNeeded(id, sub)(dispatch);
 
-        if (isSubmissionAvalable({...getState().submission.record,
+        if (isSubmissionAvalable({...getState().submission.record as SubmissionToRead,
                 verificationData: getState().submission.verificationData})) {
             await fetchCommentsTotal(id)(dispatch);
         }

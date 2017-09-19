@@ -1,7 +1,8 @@
 
 import {WithId} from "./common";
-import {BloatProject, WithProject} from "./project";
+import {BloatProject, ProjectToRead, WithProject} from "./project";
 import {WithVerificationData} from "./verification";
+import {WithBloatDenizen} from "./denizen";
 
 export type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
 
@@ -15,7 +16,9 @@ export interface Submission {
 
 export interface SubmissionToRead extends Submission, WithId, WithSubmissionTags {}
 
-export interface BloatSubmission extends SubmissionToRead, WithProject {}
+export interface BloatSubmission extends SubmissionToRead {
+    project: ProjectToRead & WithBloatDenizen
+}
 
 // This is here because of possible problems with cyclic imports
 export interface JumboProject extends BloatProject {

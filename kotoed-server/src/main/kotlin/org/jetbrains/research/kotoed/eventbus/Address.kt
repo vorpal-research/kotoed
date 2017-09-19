@@ -92,6 +92,8 @@ object Address {
         object Denizen {
             const val Create = "kotoed.api.denizen.create"
             const val Read = "kotoed.api.denizen.read"
+            const val Search = "kotoed.api.denizen.search"
+            const val SearchCount = "kotoed.api.denizen.search.count"
 
             object Profile {
                 const val Read = "kotoed.api.denizen.profile.read"
