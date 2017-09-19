@@ -92,11 +92,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             case "NotReady":
                 return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
             case "Invalid":
-                return <Label bsStyle="danger">Invalid</Label>;
+                return <Label bsStyle="default">Invalid</Label>;
             case "Processed":
                 switch (this.props.submission.record.state) {
                     case "closed":
-                        return <Label bsStyle="default">Closed</Label>;
+                        return <Label bsStyle="danger">Closed</Label>;
                     case "invalid":
                         return <Label bsStyle="danger">Invalid</Label>;
                     case "obsolete":
@@ -200,8 +200,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                         {`Submission #${this.props.submission.record.id}`}
                         {" "}
                         {this.renderLabel()}
-                        {this.renderTagList()}
                     </h3>
+                    {this.props.permissions.tags && <h3>
+                        <input style={{display: "none"}}/> {/* Preventing browser from focusing*/}
+                        {this.renderTagList()}
+                        </h3>}
                     <Table className="submission-details">
                         <tbody>
                             <tr>
