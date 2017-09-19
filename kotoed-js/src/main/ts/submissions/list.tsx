@@ -62,7 +62,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
 
     deleteProject = async () => {
         if(this.state.project) {
-            await sendAsync(Address.Api.Project.Delete, { id: this.state.project.record.id })
+            await sendAsync(Address.Api.Project.Delete, { id: this.state.project.record.id });
             window.location.href = Kotoed.UrlPattern.reverse(
                 Kotoed.UrlPattern.Course.Index,
                 { id: this.state.project.record.courseId }
@@ -89,12 +89,13 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                             <strong>Are you sure?</strong>
                             <br />
                             <Button bsStyle="danger"
+                                    block
                                     onClick={this.deleteProject}>
                                 Delete
                             </Button>
                         </Popover>
                     }>
-                        <Button bsStyle="link">
+                        <Button bsStyle="danger">
                             Delete this project
                         </Button>
                     </OverlayTrigger>
