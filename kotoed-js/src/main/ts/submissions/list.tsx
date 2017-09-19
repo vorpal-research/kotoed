@@ -95,8 +95,8 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                             </Button>
                         </Popover>
                     }>
-                        <Button bsStyle="danger">
-                            Delete this project
+                        <Button bsStyle="link">
+                            <span className={"text-danger"}>Delete this project</span>
                         </Button>
                     </OverlayTrigger>
                 }
