@@ -73,7 +73,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
 
     private renderParentLink = () => {
-        if (this.props.submission.record.parentSubmissionId === undefined)
+        if (!this.props.submission.record.parentSubmissionId)
             return <span>&mdash;</span>;
         return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {
             id: this.props.submission.record.parentSubmissionId
