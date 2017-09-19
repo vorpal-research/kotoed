@@ -40,6 +40,12 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(res, status)
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Project.Delete)
+    suspend fun handleDelete(project: ProjectRecord): Unit {
+        log.info("Deleting project ${project.id}!")
+        run { dbUpdateAsync(ProjectRecord().apply { id = project.id; deleted = true }) }
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Project.Error)
     suspend fun handleError(verificationData: VerificationData): List<ProjectStatusRecord> =
             verificationData.errors
@@ -54,6 +60,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
         val projQ = ComplexDatabaseQuery("project_text_search")
+                .find(ProjectRecord().apply{ deleted = false })
                 .join("denizen", field = "denizen_id")
                 .join("course", field = "course_id")
 
@@ -79,6 +86,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchCount)
     suspend fun handleSearchCount(query: SearchQuery): JsonObject {
         val projQ = ComplexDatabaseQuery("project_text_search")
+                .find(ProjectRecord().apply{ deleted = false })
                 .join("denizen", field = "denizen_id")
                 .join("course", field = "course_id")
 
@@ -108,6 +116,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                 else subQ
 
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+                .find(ProjectRecord().apply{ deleted = false })
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
                 .rjoin(subQTags, "project_id", "openSubmissions")
                 .find(ProjectRecord().apply {
@@ -150,6 +159,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
     suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): JsonObject {
         val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+                .find(ProjectRecord().apply{ deleted = false })
                 .join(Tables.DENIZEN.name)
                 .find(ProjectRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)

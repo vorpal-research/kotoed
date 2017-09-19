@@ -20,6 +20,7 @@ object Address {
         object Project {
             const val Create = "kotoed.api.project.create"
             const val Read = "kotoed.api.project.read"
+            const val Delete = "kotoed.api.project.delete"
             const val Error = "kotoed.api.project.remoteError"
             const val Search = "kotoed.api.project.search"
             const val SearchCount = "kotoed.api.project.search.count"

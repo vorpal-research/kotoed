@@ -16,9 +16,13 @@ import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {ProjectToRead} from "../data/project";
 import {pollDespairing} from "../util/poll";
 import {ChoosyByVerDataSearchTable} from "../views/components/search";
+import {sendAsync} from "../views/components/common";
+import Address = Kotoed.Address;
+import * as Popover from "react-bootstrap/lib/Popover";
 
 interface SubmissionListState {
     canCreateSubmission: boolean
+    canDeleteProject: boolean
     project?: DbRecordWrapper<ProjectToRead>
 }
 
@@ -29,6 +33,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
         super(props);
         this.state = {
             canCreateSubmission: false,
+            canDeleteProject: false
         };
     }
 
@@ -50,9 +55,21 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
         }).then((perms) =>
             this.setState({
                 canCreateSubmission: perms.createSubmission,
+                canDeleteProject: perms.deleteProject
             })
         )
     }
+
+    deleteProject = async () => {
+        if(this.state.project) {
+            await sendAsync(Address.Api.Project.Delete, { id: this.state.project.record.id })
+            window.location.href = Kotoed.UrlPattern.reverse(
+                Kotoed.UrlPattern.Course.Index,
+                { id: this.state.project.record.courseId }
+            )
+        }
+
+    };
 
     toolbarComponent = () => {
         return <ButtonToolbar>
@@ -64,6 +81,24 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                         Go to repo
                     </Button>
                 </OverlayTrigger>}
+            {
+                this.state.project &&
+                this.state.canDeleteProject &&
+                    <OverlayTrigger trigger="click" placement="bottom" overlay={
+                        <Popover id="can-delete-popover">
+                            <strong>Are you sure?</strong>
+                            <br />
+                            <Button bsStyle="danger"
+                                    onClick={this.deleteProject}>
+                                Delete
+                            </Button>
+                        </Popover>
+                    }>
+                        <Button bsStyle="link">
+                            Delete this project
+                        </Button>
+                    </OverlayTrigger>
+                }
             {this.state.canCreateSubmission && <SubmissionCreate onCreate={(newId) =>
                 window.location.href =
                     Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Submission.Index, {id: newId})

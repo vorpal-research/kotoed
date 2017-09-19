@@ -102,7 +102,13 @@ data class ComplexDatabaseQuery(
               key: String? = null) =
             copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(query, field, resultField, key))
 
-    fun find(record: Record) = copy(find = record.toJson())
+    fun find(record: Record): ComplexDatabaseQuery {
+        val newFind = record.toJson()
+        if(find != null) {
+            newFind.mergeIn(find)
+        }
+        return copy(find = newFind)
+    }
 
     fun fillDefaults(): ComplexDatabaseQuery {
         val find_ = find ?: JsonObject()
