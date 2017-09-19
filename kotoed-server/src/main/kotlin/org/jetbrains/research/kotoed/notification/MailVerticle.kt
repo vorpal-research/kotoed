@@ -65,7 +65,7 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
 
         log.info("Sending email to $denizen")
 
-        launch(Pool) { try{ mailer.sendMail(email) } catch(ex: Exception) { log.error("", ex) } }
+        spawn(Pool) { try{ mailer.sendMail(email) } catch(ex: Exception) { log.error("", ex) } }
     }
 
 }
