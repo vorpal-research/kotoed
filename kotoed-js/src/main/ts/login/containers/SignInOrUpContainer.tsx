@@ -9,19 +9,25 @@ import {RouteComponentProps} from "react-router";
 
 const mapStateToProps = function(store: SignInOrUpState,
                                  ownProps: RouteComponentProps<{}>): SignInOrUpProps {
-    let provider = queryString.parse(ownProps.location.search).andThenOAuthWith || undefined;
+    let qs = queryString.parse(ownProps.location.search);
+    let provider = qs.andThenOAuthWith || undefined;
+    let conflict = qs.conflict || undefined;
+
     return {
         signInErrors: store.signInErrors,
         signUpErrors: store.signUpErrors,
         disabled: store.disabled,
         oAuthProviders: store.oAuthProviders,
-        oAuthAttempted: provider
+        oAuthAttempted: provider,
+        oAuthConflict: conflict
     };
 };
 
 const mapDispatchToProps = function(dispatch: Dispatch<SignInOrUpState>,
                                     ownProps: RouteComponentProps<{}>): SignInOrUpCallbacks {
-    let provider = queryString.parse(ownProps.location.search).andThenOAuthWith || undefined;
+    let qs = queryString.parse(ownProps.location.search);
+    let provider = qs.andThenOAuthWith || undefined;
+    let conflict = qs.conflict || undefined;
     return {
         onSignIn: (username, password) => {
             dispatch(resetErrors({}));
