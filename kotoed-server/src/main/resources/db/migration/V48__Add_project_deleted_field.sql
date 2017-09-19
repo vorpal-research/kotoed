@@ -1,6 +1,6 @@
-ALTER TABLE project ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE project ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
 
-DROP VIEW project_text_search;
+DROP VIEW IF EXISTS project_text_search;
 
 CREATE VIEW project_text_search AS
   SELECT
@@ -17,5 +17,5 @@ CREATE VIEW project_text_search AS
     setweight(to_tsvector('russian', coalesce(course.name, '')), 'B') as document
   FROM project
     JOIN denizen_unsafe owner ON project.denizen_id = owner.id
-    LEFT JOIN profile profile ON profile.denizen_id = owner.id
+    LEFT OUTER JOIN profile profile ON profile.denizen_id = owner.id
     JOIN course course ON project.course_id = course.id;
