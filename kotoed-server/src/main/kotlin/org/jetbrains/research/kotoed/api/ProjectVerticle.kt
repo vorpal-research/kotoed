@@ -115,7 +115,12 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                     subQ.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
                 else subQ
 
-        val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+        val tableName =
+                if(query.withTags == true)
+                    Tables.PROJECT_TEXT_SEARCH.name
+                else Tables.PROJECT_RESTRICTED_TEXT_SEARCH.name
+
+        val q = ComplexDatabaseQuery(tableName)
                 .find(ProjectRecord().apply{ deleted = false })
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
                 .rjoin(subQTags, "project_id", "openSubmissions")
