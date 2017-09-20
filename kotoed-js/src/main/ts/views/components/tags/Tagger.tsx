@@ -44,7 +44,12 @@ export class Tagger extends React.Component<TaggerProps> {
         return <div className={this.getClassName("wrapper")}>
             <div className={this.getClassName("tagsWrapper")}>
                 {this.props.currentTags.map((tag, ix) =>
-                    <Tag key={`tag-${ix}`} tag={tag} removable={true} onRemove={this.props.onTagRemove}/>)}
+                    <Tag key={`tag-${ix}`}
+                         tag={tag}
+                         removable={true}
+                         onRemove={this.props.onTagRemove}
+                         disabled={this.props.disabled}
+                    />)}
             </div>
             <div className={this.getClassName("inputWrapper")}>
                 <SimpleAutoSuggest
