@@ -3,6 +3,7 @@ import {Component} from "react";
 import {ListGroup, ListGroupItem} from "react-bootstrap";
 import {List} from "immutable";
 import * as _ from "lodash";
+import {isArray, isObject} from "util";
 
 
 export const ArrayColumn = ({value}: { value: List<any> }) =>
@@ -46,6 +47,20 @@ export interface TestData {
 
 function prettyPrint(v: any) {
     return String(JSON.stringify(v, null, 2));
+}
+
+export function deepRenameKey(js: any, from: string, to: string): any {
+    if (isArray(js)) {
+        return js.map(e => deepRenameKey(e, from, to))
+    } else if (isObject(js)) {
+        return _.mapValues(
+            _.mapKeys(
+                js,
+                (_, key: string) => from === key ? to : key
+            ),
+            value => deepRenameKey(value, from, to)
+        );
+    } else return js
 }
 
 export const TestDataColumn = ({value}: { value: List<TestData> }) =>
