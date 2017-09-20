@@ -492,10 +492,10 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
                     JsonObject("id" to id),
                     JsonObject::class, klass)
 
-    protected fun createNotification(record: NotificationRecord) =
-            vertx.eventBus().send(
+    protected suspend fun createNotification(record: NotificationRecord) =
+            sendJsonable(
                     Address.Api.Notification.Create,
-                    record.toJson()
+                    record
             )
 }
 
