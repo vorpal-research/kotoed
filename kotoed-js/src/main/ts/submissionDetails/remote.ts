@@ -72,13 +72,9 @@ export async function fetchCommentsTotal(submissionId: number): Promise<CommentA
     })
 }
 
-interface TagRemote {
-    id: number
-    name: string
-}
 
 export async function fetchTagList(submissionId: number): Promise<Tag[]> {
-    return eventBus.send<WithId, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Read, {
+    return eventBus.send<WithId, Tag[]>(Kotoed.Address.Api.Submission.Tags.Read, {
         id: submissionId
     }).then(tags => {
         return tags
@@ -86,20 +82,20 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
 }
 
 export async function fetchAvailableTags(): Promise<Tag[]> {
-    return eventBus.send<{}, TagRemote[]>(Kotoed.Address.Api.Tag.List, {})
+    return eventBus.send<{}, Tag[]>(Kotoed.Address.Api.Tag.List, {})
         .then(tags => {
             return tags
         });
 }
 
 export async function addSubmissionTag(tagId: number, submissionId: number): Promise<any> {
-    return eventBus.send<SubmissionTagRequest, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Create, {
+    return eventBus.send<SubmissionTagRequest, Tag[]>(Kotoed.Address.Api.Submission.Tags.Create, {
         tagId, submissionId
     });
 }
 
 export async function deleteSubmissionTag(tagId: number, submissionId: number): Promise<any> {
-    return eventBus.send<SubmissionTagRequest, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Delete, {
+    return eventBus.send<SubmissionTagRequest, Tag[]>(Kotoed.Address.Api.Submission.Tags.Delete, {
         tagId, submissionId
     });
 }

@@ -3,6 +3,7 @@ import {WithId} from "./common";
 import {BloatProject, ProjectToRead, WithProject} from "./project";
 import {WithVerificationData} from "./verification";
 import {WithBloatDenizen} from "./denizen";
+import {CSSProperties} from "react";
 
 export type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
 
@@ -34,6 +35,7 @@ export interface CreateRequest {
 export interface Tag {
     id: number
     name: string
+    style: CSSProperties
 }
 
 export interface SubmissionTag {
