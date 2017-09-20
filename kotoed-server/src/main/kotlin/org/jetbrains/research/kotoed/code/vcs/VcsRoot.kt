@@ -56,7 +56,7 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
-        val res = CommandLine(git, "clone", remote, local).execute(File(local)).complete()
+        val res = CommandLine(git, "clone", "-n", remote, local).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
@@ -129,7 +129,7 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
-        val res = CommandLine(mercurial, "clone", remote, local).execute(File(local)).complete()
+        val res = CommandLine(mercurial, "clone", "-U", remote, local).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
