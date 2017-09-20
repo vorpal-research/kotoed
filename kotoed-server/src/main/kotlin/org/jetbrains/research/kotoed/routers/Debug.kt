@@ -233,7 +233,7 @@ suspend fun RoutingContext.handleDebugEventBus() {
             "body = ${body.encodePrettily()}")
 
     if (publish == "true") {
-        val res = eb.publish(address, body, withRequestUUID(uuid))
+        eb.publish(address, body, withRequestUUID(uuid))
         response().end("{}")
     } else {
         val res = eb.sendAsync<Any>(address, body, withRequestUUID(uuid))

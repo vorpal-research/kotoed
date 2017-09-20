@@ -5,6 +5,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.use
 
 @AutoDeployable
 class TagVerticle : AbstractKotoedVerticle() {
@@ -18,5 +19,7 @@ class TagVerticle : AbstractKotoedVerticle() {
     suspend fun handleDelete(tag: TagRecord) = dbDeleteAsync(tag)
 
     @JsonableEventBusConsumerFor(Address.Api.Tag.List)
-    suspend fun handleList(whatever: Unit) = dbFindAsync(TagRecord())
+    suspend fun handleList(message: Unit) = dbFindAsync(TagRecord()).also {
+        use(message)
+    }
 }

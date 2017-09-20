@@ -2,19 +2,13 @@ package org.jetbrains.research.kotoed.web.routers.views
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
-import org.jetbrains.research.kotoed.data.api.SubmissionComments
-import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.SubmissionResult
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
-import org.jetbrains.research.kotoed.util.isAuthorisedAsync
-import org.jetbrains.research.kotoed.util.redirect
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.auth.isProjectOwnerOrTeacher
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
-import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.Submission.Results)
@@ -35,7 +29,7 @@ suspend fun handleSubmissionResults(context: RoutingContext) {
                 return
             }
 
-    if (!context.user().isProjectOwnerOrTeacher(context.vertx(), project)) {
+    if (!context.user().isProjectOwnerOrTeacher(project)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return
     }
