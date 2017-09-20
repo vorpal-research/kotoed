@@ -1,4 +1,6 @@
 import * as React from "react";
+import * as _ from "lodash";
+
 import {Tag as TagData} from "../../../data/submission";
 import {SimpleAutoSuggest} from "./SimpleAutosuggest";
 import {Tag} from "./Tag";
@@ -44,7 +46,7 @@ export class Tagger extends React.Component<TaggerProps> {
             </div>
             <div className={this.getClassName("inputWrapper")}>
                 <SimpleAutoSuggest
-                    values={this.props.availableTags}
+                    values={_.differenceBy(this.props.availableTags, this.props.currentTags, t => t.id)}
                     onSelect={this.handleAdd}
                     valueToString={(v: TagData) => v.name}
                     renderSuggestion={(v: TagData) => <Tag tag={v} removable={false}/>}
