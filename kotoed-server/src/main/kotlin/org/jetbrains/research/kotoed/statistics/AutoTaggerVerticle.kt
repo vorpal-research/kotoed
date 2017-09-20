@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.statistics
 
+import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
@@ -42,6 +43,11 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
     suspend fun getBuildOk(): Int =
             buildOkId_ ?: dbFindAsync(TagRecord().apply { name = "build ok" }).first().id
 
+    var emptySubId_: Int? = null
+    suspend fun getEmptySub(): Int =
+            emptySubId_ ?: dbFindAsync(TagRecord().apply { name = "empty" }).first().id
+
+
     suspend fun setTag(submissionId: Int, tagId: Int): Unit =
             sendJsonableAsync(Address.Api.Submission.Tags.Create,
                     SubmissionTagRecord().apply { this.submissionId = submissionId; this.tagId = tagId })
@@ -58,10 +64,15 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
                 .firstOrNull() ?: throw IllegalStateException(
                 "Build request ${logContent.buildRequestId()} not found")
 
-        removeTag(build.submissionId, getBuildFailed())
-        removeTag(build.submissionId, getTestsFailed())
-        removeTag(build.submissionId, getBuildOk())
-        //removeTag(build.submissionId, getBadStyle())
+        try {
+            removeTag(build.submissionId, getBuildFailed())
+            removeTag(build.submissionId, getTestsFailed())
+            removeTag(build.submissionId, getBuildOk())
+            removeTag(build.submissionId, getEmptySub())
+            //removeTag(build.submissionId, getBadStyle())
+        } catch(ex: ReplyException) {
+            log.warn("Could not delete tags")
+        }
 
         if(0 != logContent.results()) {
             // build error
@@ -78,7 +89,13 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             } }) {
                 setTag(build.submissionId, getTestsFailed())
             } else {
-                setTag(build.submissionId, getBuildOk())
+                if(content.data.all {
+                    it.results.any { it.status != "SUCCESSFUL" } || "Example" in it.tags
+                }) {
+                    setTag(build.submissionId, getEmptySub())
+                } else {
+                    setTag(build.submissionId, getBuildOk())
+                }
             }
 
         }
