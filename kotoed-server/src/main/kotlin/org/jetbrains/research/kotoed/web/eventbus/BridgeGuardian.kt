@@ -20,7 +20,7 @@ class BridgeGuardian(val vertx: Vertx,
         var context = LogExceptions() + VertxContext(vertx)
         if (be.rawMessage != null) {
             val uuid = newRequestUUID()
-            log.trace("Assigning $uuid to ${be.rawMessage} from principal ${be.socket().webUser().principal()}")
+            log.trace("Assigning $uuid to ${be.rawMessage} from principal ${be.socket()?.webUser()?.principal()}")
             context += CoroutineName(uuid)
         }
 
