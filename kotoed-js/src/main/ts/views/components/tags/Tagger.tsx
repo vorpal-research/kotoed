@@ -4,6 +4,7 @@ import * as _ from "lodash";
 import {Tag as TagData} from "../../../data/submission";
 import {SimpleAutoSuggest} from "./SimpleAutosuggest";
 import {Tag} from "./Tag";
+import {intersperse} from "../../../util/common";
 
 interface TaggerClassNames {
     wrapper?: string
@@ -17,6 +18,7 @@ interface TaggerProps {
     currentTags: Array<TagData>
     availableTags: Array<TagData>
     classNames?: TaggerClassNames
+    disabled?: boolean
 
 }
 
@@ -50,6 +52,7 @@ export class Tagger extends React.Component<TaggerProps> {
                     onSelect={this.handleAdd}
                     valueToString={(v: TagData) => v.name}
                     renderSuggestion={(v: TagData) => <Tag tag={v} removable={false}/>}
+                    disabled={this.props.disabled}
                 />
             </div>
         </div>

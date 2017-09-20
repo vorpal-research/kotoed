@@ -7,6 +7,7 @@ interface SimpleAutoSuggestProps<T> {
     onSelect: (selected: T) => void
     valueToString?: (v: T) => string
     renderSuggestion?: (v: T) => JSX.Element
+    disabled?: boolean
 }
 
 interface SimpleAutosuggestState<T> {
@@ -23,32 +24,41 @@ export class SimpleAutoSuggest<T> extends React.Component<SimpleAutoSuggestProps
         }
     }
 
-    filterValues = ({value: search}: {value: string}) => {
+    private isDisabled = () => {
+        if (this.props.disabled === undefined)
+            return false;
+
+        return this.props.disabled
+    };
+
+    private filterValues = ({value: search}: {value: string}) => {
         this.setState({
             currentValues: this.props.values
                 .filter(v => this.valueToString(v).toLowerCase().startsWith(search.toLowerCase()))
         })
     };
 
-    valueToString = (v: T) => {
+    private valueToString = (v: T) => {
         return this.props.valueToString ? this.props.valueToString(v) : v.toString()
     };
 
-    renderSuggestion = (v: T) => {
+    private renderSuggestion = (v: T) => {
         return this.props.renderSuggestion ? this.props.renderSuggestion(v) : <span>{this.valueToString(v)}</span>
     };
 
     render() {
         return <Autosuggest
-            suggestions={this.state.currentValues}
+            suggestions={this.isDisabled() ? [] : this.state.currentValues}
             onSuggestionsFetchRequested={this.filterValues}
             onSuggestionsClearRequested={() => this.setState({currentValues: []})}
             getSuggestionValue={() => ""}
             renderSuggestion={this.renderSuggestion}
             focusInputOnSuggestionClick={false}
+            highlightFirstSuggestion={true}
             inputProps={{
                 value: this.state.search,
-                onChange: (evt: {}, params: {newValue: string}) => {this.setState({search: params.newValue})}
+                onChange: (evt: {}, params: {newValue: string}) => {this.setState({search: params.newValue})},
+                disabled: this.isDisabled()
             }}
             onSuggestionSelected={(ev: {}, {suggestion: v}: {suggestion: T}) => {
                 this.props.onSelect(v);
