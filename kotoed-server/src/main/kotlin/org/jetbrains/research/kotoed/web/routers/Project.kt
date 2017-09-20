@@ -11,9 +11,6 @@ import org.jetbrains.research.kotoed.util.routing.Templatize
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.isProjectOwnerOrTeacher
 import org.jetbrains.research.kotoed.web.eventbus.ProjectWithRelated
-import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
-import org.jetbrains.research.kotoed.web.eventbus.courseByIdOrNull
-import org.jetbrains.research.kotoed.web.eventbus.projectByIdOrNull
 import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.Project.Index)
@@ -35,7 +32,7 @@ suspend fun handleProjectIndex(context: RoutingContext) {
                 return
             }
 
-    if (!context.user().isProjectOwnerOrTeacher(context.vertx(), project)) {
+    if (!context.user().isProjectOwnerOrTeacher(project)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return
     }

@@ -42,7 +42,6 @@ suspend fun handleRootPerms(context: RoutingContext) {
 @JsonResponse
 @LoginRequired
 suspend fun handleCoursePerms(context: RoutingContext) {
-    val user = context.user()
     val id by context.request()
     val intId = id?.toInt()
 

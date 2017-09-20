@@ -437,7 +437,9 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(
                     Address.DB.batchUpdate(criteria.table.name),
-                    BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class)
+                    BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class).also {
+                use(klass)
+            }
 
     protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
             @Suppress(DEPRECATION)
