@@ -10,6 +10,7 @@ import {isStatusFinal} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 import {intersperse} from "../util/common";
+import {Tag} from "../views/components/tags/Tag";
 
 export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): boolean {
     let {status} = sub.verificationData;
@@ -108,11 +109,11 @@ export function linkToSubmissionReview(submission: SubmissionWithVer,
 }
 
 export function renderSubmissionTags(submission: SubmissionToRead): JSX.Element {
-    const tags = (submission.submissionTags || []).map(st => st.tag.name);
+    const tags = (submission.submissionTags || []).map(st => st.tag);
 
     return <span>
         {intersperse<JSX.Element | string>(
-            tags.map((t, ix) => <Label key={`tag-${ix}`} bsStyle="default">{t}</Label>),
+            tags.map((t, ix) => <Tag key={`tag-${ix}`} tag={t} removable={false}/>),
             " ")
         }
     </span>

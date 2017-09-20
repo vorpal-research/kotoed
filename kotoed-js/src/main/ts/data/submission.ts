@@ -31,12 +31,8 @@ export interface CreateRequest {
     parentSubmissionId: number | null
 }
 
-export interface TagRTI {
-    id: number,
-    text: string
-}
-
 export interface Tag {
+    id: number
     name: string
 }
 
