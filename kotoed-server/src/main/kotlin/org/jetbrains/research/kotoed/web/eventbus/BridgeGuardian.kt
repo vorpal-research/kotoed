@@ -18,9 +18,9 @@ class BridgeGuardian(val vertx: Vertx,
         Handler<BridgeEvent>, Loggable {
     override fun handle(be: BridgeEvent) {
         var context = LogExceptions() + VertxContext(vertx)
-        if(be.rawMessage != null) {
+        if (be.rawMessage != null) {
             val uuid = newRequestUUID()
-            log.trace("Assigning $uuid to ${be.rawMessage}")
+            log.trace("Assigning $uuid to ${be.rawMessage} from principal ${be.socket().webUser().principal()}")
             context += CoroutineName(uuid)
         }
 
