@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.publishJsonable
 
 @AutoDeployable
 class NotificationVerticle : AbstractKotoedVerticle() {
@@ -48,9 +49,9 @@ class NotificationVerticle : AbstractKotoedVerticle() {
     suspend fun handleCreate(query: NotificationRecord): NotificationRecord {
         val record = dbCreateAsync(query)
 
-        vertx.eventBus().publish(
+        publishJsonable(
                 Address.Api.Notification.pushRendered(record.denizenId.toString()),
-                render(record).toJson()
+                render(record)
         )
 
         return record
