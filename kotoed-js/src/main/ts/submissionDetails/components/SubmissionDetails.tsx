@@ -37,6 +37,7 @@ export interface SubmissionDetailsProps {
     comments: CommentAggregate,
     tags: Tag[],
     availableTags: Tag[]
+    tagsDisabled: boolean
 }
 
 export interface SubmissionDetailsCallbacks {
@@ -153,6 +154,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             onTagRemove={tag => this.onTagDelete(tag.id)}
             currentTags={this.props.tags}
             availableTags={this.props.availableTags}
+            disabled={this.props.tagsDisabled}
             classNames={{
                 inputWrapper: "col-md-3",
                 tagsWrapper: "col-md-9 tags-container",
