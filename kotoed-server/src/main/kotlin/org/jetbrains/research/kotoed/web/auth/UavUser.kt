@@ -4,6 +4,7 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
+import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.AuthProvider
@@ -18,9 +19,12 @@ class UavUser(val vertx: Vertx,
               val id: Int) : User, Loggable {
 
     override fun isAuthorised(authority: String, handler: Handler<AsyncResult<Boolean>>): User = apply {
+        val uuid = newRequestUUID()
+        log.trace("Assigning $uuid to authority request for $authority")
         vertx.eventBus().send(
                 Address.User.Auth.HasPerm,
-                HasPermMsg(denizenId = denizenId,perm = authority).tryToJson(),
+                HasPermMsg(denizenId = denizenId, perm = authority).toJson(),
+                withRequestUUID(uuid),
                 Handler { ar: AsyncResult<Message<JsonObject>> ->
                     handler.handle(ar.map { fromJson<HasPermReply>(it.body()).result})
                 })

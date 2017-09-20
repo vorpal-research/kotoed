@@ -202,6 +202,8 @@ suspend fun RoutingContext.handleDebugDatabaseClear() {
     response().end(JsonObject("success" to true))
 }
 
+object DebugEventBus : Loggable
+
 @HandlerFor("/debug/eventbus/:address")
 @JsonResponse
 @Order(1)
@@ -225,11 +227,16 @@ suspend fun RoutingContext.handleDebugEventBus() {
                         .let(::JsonObject)
             }
 
+    val uuid = newRequestUUID()
+    DebugEventBus.log.trace("Assigning $uuid to debug eventbus endpoint request: \n" +
+            "address = $address\n" +
+            "body = ${body.encodePrettily()}")
+
     if (publish == "true") {
-        val res = eb.publish(address, body, withRequestUUID())
+        val res = eb.publish(address, body, withRequestUUID(uuid))
         response().end("{}")
     } else {
-        val res = eb.sendAsync<Any>(address, body, withRequestUUID())
+        val res = eb.sendAsync<Any>(address, body, withRequestUUID(uuid))
         response().end("${res.body()}")
     }
 }
@@ -274,7 +281,8 @@ suspend fun RoutingContext.handleDebugCode() = with(response()) {
         when (res.getString("status")) {
             "pending" -> throw KotoedException(202, "Result not ready yet")
             "failed" -> throw KotoedException(404, "Repository not found")
-            else -> {}
+            else -> {
+            }
         }
     }
 
