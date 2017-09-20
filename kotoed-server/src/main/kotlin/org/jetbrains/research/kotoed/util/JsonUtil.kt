@@ -118,7 +118,7 @@ inline operator fun JsonObject.get(fields: List<String>) =
         }.get(fields.last())
 
 inline fun JsonObject?.safeNav(fields: List<String>) =
-        fields.dropLast(1).fold(this ?: null) { obj, key_ ->
+        fields.dropLast(1).fold(this) { obj, key_ ->
             obj?.getJsonObject(camelToKey(key_)!!)
         }?.get(fields.last())
 
