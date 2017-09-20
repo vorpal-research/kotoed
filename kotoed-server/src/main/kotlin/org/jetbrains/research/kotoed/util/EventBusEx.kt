@@ -79,14 +79,28 @@ suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 
 @PublishedApi
 @Deprecated("Do not call directly")
-internal fun <Argument : Any> EventBus.sendJsonable(
+internal suspend fun <Argument : Any> EventBus.sendJsonable(
         address: String,
         value: Argument,
         argClass: KClass<out Argument>
 ) {
 
     val toJson = getToJsonConverter(argClass.starProjectedType)
-    send(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, newRequestUUID()))
+    val currentName = currentCoroutineName()
+    send(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
+}
+
+@PublishedApi
+@Deprecated("Do not call directly")
+internal suspend fun <Argument : Any> EventBus.publishJsonable(
+        address: String,
+        value: Argument,
+        argClass: KClass<out Argument>
+) {
+
+    val toJson = getToJsonConverter(argClass.starProjectedType)
+    val currentName = currentCoroutineName()
+    publish(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
 }
 
 @PublishedApi
@@ -142,11 +156,18 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
             .toList()
 }
 
-inline fun <
+inline suspend fun <
         reified Argument : Any
         > EventBus.sendJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
     return sendJsonable(address, value, Argument::class)
+}
+
+inline suspend fun <
+        reified Argument : Any
+        > EventBus.publishJsonable(address: String, value: Argument) {
+    @Suppress(DEPRECATION)
+    return publishJsonable(address, value, Argument::class)
 }
 
 inline suspend fun <
@@ -483,6 +504,13 @@ inline suspend fun <
         > AbstractKotoedVerticle.sendJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
     return vertx.eventBus().sendJsonable(address, value)
+}
+
+inline suspend fun <
+        reified Argument : Any
+        > AbstractKotoedVerticle.publishJsonable(address: String, value: Argument) {
+    @Suppress(DEPRECATION)
+    return vertx.eventBus().publishJsonable(address, value)
 }
 
 inline suspend fun <

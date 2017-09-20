@@ -92,9 +92,9 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
                 for (value in values) {
                     log.trace("New value: $value")
 
-                    eb.publish(
+                    publishJsonable(
                             nextAddress,
-                            nextCrawl(crawl, value).toJson()
+                            nextCrawl(crawl, value)
                     )
                 }
 
