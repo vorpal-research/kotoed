@@ -1,10 +1,9 @@
 import * as React from "react";
 import {Alert, Button, ButtonToolbar, Row, Table, Well, Label} from "react-bootstrap";
 import * as Spinner from "react-spinkit"
-import {ReactTagsProps, WithContext} from 'react-tag-input';
 
 import SubmissionHistory from "./SubmissionHistory";
-import {BloatSubmission, SubmissionToRead, TagRTI as Tag} from "../../data/submission";
+import {BloatSubmission, SubmissionToRead, Tag} from "../../data/submission";
 import {Kotoed} from "../../util/kotoed-api";
 import {CommentAggregate} from "../../code/remote/comments";
 import moment = require("moment");
@@ -21,6 +20,9 @@ import {WithId} from "../../data/common";
 import SpinnerWithVeil, {SpinnerWithBigVeil} from "../../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
 import {makeProfileLink} from "../../util/denizen";
+import * as Autosuggest from "react-autosuggest";
+import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
+import {Tagger} from "../../views/components/tags/Tagger";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<BloatSubmission>,
@@ -137,30 +139,25 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" onClick={this.props.onReopen}>Reopen</Button>;
     };
 
-    private onTagAdd = (tagName: string) => {
-        if (this.props.tags.some(tag => tagName === tag.text)) return;
-
-        let tag = this.props
-            .availableTags
-            .find(tag => tagName === tag.text);
-
-        return tag && this.props.onTagAdd(tag.id);
+    private onTagAdd = (tagId: number) => {
+        this.props.onTagAdd(tagId)
     };
 
-    private onTagDelete = (tagIdx: number) => {
-        let tag = this.props.tags[tagIdx];
-
-        return tag && this.props.onTagDelete(tag.id)
+    private onTagDelete = (tagId: number) => {
+        return this.props.onTagDelete(tagId)
     };
 
     private renderTagList = () => {
-        return this.props.permissions.tags && <WithContext
-            tags={this.props.tags}
-            suggestions={this.props.availableTags.map(tag => tag.text)}
-            handleAddition={this.onTagAdd}
-            handleDelete={this.onTagDelete}
-            allowDeleteFromEmptyInput={false}
-            autocomplete={1}
+        return this.props.permissions.tags && <Tagger
+            onTagAdd={tag => this.onTagAdd(tag.id)}
+            onTagRemove={tag => this.onTagDelete(tag.id)}
+            currentTags={this.props.tags}
+            availableTags={this.props.availableTags}
+            classNames={{
+                inputWrapper: "col-md-3",
+                tagsWrapper: "col-md-9 tags-container",
+                wrapper: "row tagger"
+            }}
         />
     };
 
@@ -201,10 +198,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                         {" "}
                         {this.renderLabel()}
                     </h3>
-                    {this.props.permissions.tags && <h3>
-                        <input style={{display: "none"}}/> {/* Preventing browser from focusing*/}
-                        {this.renderTagList()}
-                        </h3>}
+                    {this.renderTagList()}
                     <Table className="submission-details">
                         <tbody>
                             <tr>

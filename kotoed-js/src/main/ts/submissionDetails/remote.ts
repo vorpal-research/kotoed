@@ -3,7 +3,7 @@ import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 import {DbRecordWrapper} from "../data/verification";
-import {BloatSubmission, SubmissionState, SubmissionToRead, TagRTI as Tag} from "../data/submission";
+import {BloatSubmission, SubmissionState, SubmissionToRead, Tag} from "../data/submission";
 import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
 import {CourseToRead} from "../data/course";
@@ -81,18 +81,14 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
     return eventBus.send<WithId, TagRemote[]>(Kotoed.Address.Api.Submission.Tags.Read, {
         id: submissionId
     }).then(tags => {
-        return tags.map(tag => {
-            return {id: tag.id, text: tag.name}
-        })
+        return tags
     });
 }
 
 export async function fetchAvailableTags(): Promise<Tag[]> {
     return eventBus.send<{}, TagRemote[]>(Kotoed.Address.Api.Tag.List, {})
         .then(tags => {
-            return tags.map(tag => {
-                return {id: tag.id, text: tag.name}
-            })
+            return tags
         });
 }
 

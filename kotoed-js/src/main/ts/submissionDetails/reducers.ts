@@ -82,7 +82,7 @@ export function reducer(state: SubmissionDetailsProps = initialState, action: Ac
         if (isNullOrUndefined(tag))
             return state;
         else
-            return {...state, tags: state.tags.filter(t => tag.text !== t.text)}
+            return {...state, tags: state.tags.filter(t => tag.name !== t.name)}
     }
     return state;
 }
