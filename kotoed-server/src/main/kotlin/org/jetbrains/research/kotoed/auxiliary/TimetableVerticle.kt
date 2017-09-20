@@ -33,7 +33,7 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
     private suspend fun doSend(current: TimetableMessage) {
         val eb = vertx.eventBus()
         when(current.replyTo) {
-            null -> eb.send(current.sendTo, current.message)
+            null -> eb.sendJsonable(current.sendTo, current.message)
             else -> {
                 val resp = eb.sendAsync(current.sendTo, current.message)
                 eb.sendJsonable(current.replyTo, resp.body())
