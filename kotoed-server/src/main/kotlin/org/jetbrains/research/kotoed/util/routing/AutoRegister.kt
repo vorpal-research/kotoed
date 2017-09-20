@@ -202,8 +202,6 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
 
         val routeProto = makeRouteProto(annoEl)
 
-        val logReq = annoEl.getAnnotation(LoginRequired::class.java)
-
         if (annoEl.shouldEnableSessions()) {
             routeProto.enableSessions(routingConfig)
         }

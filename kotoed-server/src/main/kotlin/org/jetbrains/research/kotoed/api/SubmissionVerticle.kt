@@ -56,7 +56,6 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
     suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
-        val eb = vertx.eventBus()
         submission.id = null
         submission.datetime = null
         submission.state = SubmissionState.pending
@@ -88,7 +87,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     private suspend fun notifyUpdated(record: SubmissionRecord) {
-        val parentSubmissionId = record.parentSubmissionId ?: return
+        record.parentSubmissionId ?: return
         val jumboSub =
                 dbQueryAsync(ComplexDatabaseQuery(Tables.SUBMISSION).find(SubmissionRecord().apply {
                     id = record.id

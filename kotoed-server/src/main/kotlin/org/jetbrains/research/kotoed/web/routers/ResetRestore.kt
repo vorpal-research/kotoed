@@ -33,7 +33,9 @@ suspend fun resetPasswordEndpointHandler(context: RoutingContext) {
 @ForHttpMethod(HttpMethod.GET)
 @Templatize("resetPassword.jade")
 @JsBundle("resetPassword")
-suspend fun resetPasswordPageHandler(context: RoutingContext) {}
+suspend fun resetPasswordPageHandler(context: RoutingContext) {
+    use(context)
+}
 
 @HandlerFor(UrlPattern.Auth.RestorePassword)
 @ForHttpMethod(HttpMethod.GET)
