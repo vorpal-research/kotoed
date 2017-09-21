@@ -3,6 +3,7 @@ import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase, keysToSnakeCase} from "../util/stringCase";
 import {eventBus} from "../eventBus";
 import UrlPattern = Kotoed.UrlPattern;
+import {setTimeout} from "timers";
 
 export interface SignInResponse {
     succeeded: boolean
@@ -72,10 +73,22 @@ export async function changePassword(secret: string, username: string, password:
         throw new Error(logResp.error || "Unknown remoteError")
 }
 
-export async function myDatabaseId() {
-    let resp = await axios.get(Kotoed.UrlPattern.AuthHelpers.WhoAmI);
-    return keysToCamelCase(resp.data).id
+function asyncCached<T>(body: () => Promise<T>): () => Promise<T> {
+    let cache: T | undefined;
+    return async function () {
+        if(!cache) {
+            cache = await body()
+        }
+        return cache
+    };
 }
+
+export let myDatabaseId = asyncCached(
+    async function () {
+        let resp = await axios.get(Kotoed.UrlPattern.AuthHelpers.WhoAmI);
+        return keysToCamelCase(resp.data).id as string;
+    }
+);
 
 export async function fetchOAuthProviders(): Promise<OAuthProvidersResponse> {
     return await
