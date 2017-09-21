@@ -55,8 +55,6 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
             return
         }
 
-        val eb = vertx.eventBus()
-
         val wc = WebClient.create(vertx)
 
         val buildRequestLocator = DimensionLocator.from("buildrequests", buildRequestId) /

@@ -2,7 +2,6 @@ package org.jetbrains.research.kotoed.web.routers.codereview
 
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
-import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.routing.*
@@ -30,7 +29,7 @@ suspend fun handleCode(context: RoutingContext) {
                 return
             }
 
-    if (!context.user().isProjectOwnerOrTeacher(context.vertx(), project)) {
+    if (!context.user().isProjectOwnerOrTeacher(project)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return
     }
