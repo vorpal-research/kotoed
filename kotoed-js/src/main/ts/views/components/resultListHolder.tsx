@@ -19,6 +19,7 @@ import {ResultTable} from "./resultTable";
 
 import {sleep} from "../../util/common";
 import {Kotoed} from "../../util/kotoed-api";
+import {deepRenameKey} from "./griddleEx";
 
 export interface ResultListHolderProps<ResultT> {
     id: number
@@ -146,7 +147,7 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
             tabs.push([
                 resultHolder,
                 resultHolder.props.name,
-                resultList,
+                deepRenameKey(resultList, "length", "_length"),
                 resultHolder.props.filters,
                 resultHolder.props.rowDefinition
             ]);

@@ -9,14 +9,15 @@ interface TagProps {
     tag: TagData,
     removable: boolean
     onRemove?: (tag: TagData) => void
+    disabled?: boolean
 }
 
 export class Tag extends React.Component<TagProps> {
-    handleRemove = () => {
-        this.props.onRemove && this.props.onRemove(this.props.tag);
+    private handleRemove = () => {
+        !this.isDisabled() && this.props.onRemove && this.props.onRemove(this.props.tag);
     };
 
-    getColor = (): string | undefined => {
+    private getColor = (): string | undefined => {
         let {tag} = this.props;
 
         if (tag.style.color)
@@ -34,13 +35,20 @@ export class Tag extends React.Component<TagProps> {
         }
     };
 
-    getXColor = (color: string) => {
+    private getXColor = (color: string) => {
         let tc = tinycolor(color);
         if (tc.isDark()) {
             return tc.lighten(20);
         } else {
             return tc.darken(20);
         }
+    };
+
+    private isDisabled = () => {
+        if (this.props.disabled === undefined)
+            return false;
+
+        return this.props.disabled
     };
 
     render() {

@@ -131,6 +131,11 @@ export function initialize(id: number) {
 
         await fetchPermissions(id)(dispatch);
 
+        if (getState().permissions.tags) {
+            await fetchTagList(id)(dispatch);
+            await fetchAvailableTags()(dispatch);
+        }
+
         if (sub.record.parentSubmissionId)
             await fetchHistory(sub.record.parentSubmissionId, 5)(dispatch);
 
@@ -139,12 +144,6 @@ export function initialize(id: number) {
         if (isSubmissionAvalable({...getState().submission.record as SubmissionToRead,
                 verificationData: getState().submission.verificationData})) {
             await fetchCommentsTotal(id)(dispatch);
-        }
-
-
-        if (getState().permissions.tags) {
-            await fetchTagList(id)(dispatch);
-            await fetchAvailableTags()(dispatch);
         }
 
     }

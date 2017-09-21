@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
+import kotlinx.Warnings.DEPRECATION
 import org.jparsec.Parsers
 import org.jparsec.Scanners
 import kotlinx.Warnings.NOTHING_TO_INLINE
@@ -42,8 +43,8 @@ fun <T> operators(body: OperatorTable<T>.() -> Unit) = OperatorTable<T>().let{ i
 
 fun <T, U> Parser<T>.map(f: (T) -> U): Parser<U> = Parser(impl.map(f))
 fun <T, U> Parser<T>.followedBy(rhv: Parser<U>) = Parser(impl.followedBy(rhv.impl))
-fun <T, U> Parser<T>.precededBy(rhv: Parser<U>) = Parser(Parsers.sequence(rhv.impl, impl) { lhv, rhv -> rhv })
-fun <T, U> Parser<T>.zip(rhv: Parser<U>) = Parser(Parsers.sequence(this.impl, rhv.impl) { lhv, rhv -> Pair(lhv, rhv) })
+fun <T, U> Parser<T>.precededBy(rhv: Parser<U>) = Parser(Parsers.sequence(rhv.impl, impl) { _, rhv_ -> rhv_ })
+fun <T, U> Parser<T>.zip(rhv: Parser<U>) = Parser(Parsers.sequence(this.impl, rhv.impl) { lhv, rhv_ -> Pair(lhv, rhv_) })
 fun <T, U, R> Parser<T>.zip(rhv: Parser<U>, f: (T, U) -> R) = Parser(Parsers.sequence(this.impl, rhv.impl, f))
 
 @JvmName("unitFollowedByUnit")
@@ -60,15 +61,15 @@ operator fun <T> Parser<Unit>.plus(rhv: Parser<T>): Parser<T> = rhv.precededBy(t
 
 @JvmName("listPlusList")
 operator fun <T> Parser<List<T>>.plus(rhv: Parser<List<T>>): Parser<List<T>> =
-        zip(rhv) { lhv, rhv -> lhv + rhv }
+        zip(rhv) { lhv, rhv_ -> lhv + rhv_ }
 
 @JvmName("elemPlusList")
 operator fun <T> Parser<T>.plus(rhv: Parser<List<T>>): Parser<List<T>> =
-        zip(rhv) { lhv, rhv -> listOf(lhv) + rhv }
+        zip(rhv) { lhv, rhv_ -> listOf(lhv) + rhv_ }
 
 @JvmName("listPlusElem")
 operator fun <T> Parser<List<T>>.plus(rhv: Parser<T>): Parser<List<T>> =
-        zip(rhv) { lhv, rhv -> lhv + rhv }
+        zip(rhv) { lhv, rhv_ -> lhv + rhv_ }
 
 fun <T> Parser<T>.ignore(): Parser<Unit> = this.map { Unit }
 operator fun <T> Parser<T>.unaryMinus() = ignore()
