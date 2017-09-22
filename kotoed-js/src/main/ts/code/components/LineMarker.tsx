@@ -66,6 +66,12 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     private doExpand = () => {
+        this.widget = this.props.editor.addLineWidget(this.props.lineNumber - 1, this.container, {
+            coverGutter: true,
+            noHScroll: false,
+            above: false,
+            showIfHidden: false
+        });
         render(
             <LineComments
                 canPostComment={this.props.canPostComment}
@@ -81,12 +87,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 whoAmI={this.props.whoAmI}
             />,
             this.container);
-        this.widget = this.props.editor.addLineWidget(this.props.lineNumber - 1, this.container, {
-            coverGutter: true,
-            noHScroll: false,
-            above: false,
-            showIfHidden: false
-        });
+        this.widget.changed();
     };
 
     private doCollapse = () => {
