@@ -100,6 +100,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
         let badge: HTMLDivElement = document.createElement("div");
         this.markerDivs.set(cmLine, badge);
+        this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
         render(<LineMarker
                 canPostComment={this.props.canPostComment}
                 comments={comments}
@@ -118,7 +119,6 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
                 makeOriginalCommentLink={this.props.makeOriginalCommentLink}
             />,
             badge);
-        this.editor.setGutterMarker(cmLine, REVIEW_GUTTER, badge);
     };
 
     private renderMarkers = () => {
