@@ -59,30 +59,19 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
 
     override fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
-        val res = CommandLine(git, "clone", "-n", remote, local).execute(File(local)).complete()
+        val res = CommandLine(git, "clone", "--bare", remote, local).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
     override fun update(): VcsResult<Unit> {
+        val res = CommandLine(git, "fetch", "origin", "*:*", "--force").execute(File(local)).complete()
+
         val die = { res: CommandLine.Output ->
             VcsResult.Failure(res.cerr)
                     .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $res") }
         }
 
-        var res = CommandLine(git, "reset", "--hard").execute(File(local)).complete()
-        if (res.rcode.get() != 0) return die(res)
-
-        res = CommandLine(git, "fetch").execute(File(local)).complete()
-        if (res.rcode.get() != 0) return die(res)
-
-        res = CommandLine(git, "merge", "--ff-only").execute(File(local)).complete()
-        if (res.rcode.get() != 0) return die(res)
-
-        res = CommandLine(git, "ls-files").execute(File(local)).complete()
-        if (res.rcode.get() != 0) return die(res)
-
-        res = CommandLine("xargs", "rm", "-f").execute(File(local), input = res.cout).complete()
         if (res.rcode.get() != 0) return die(res)
 
         return VcsResult.Success(Unit)
