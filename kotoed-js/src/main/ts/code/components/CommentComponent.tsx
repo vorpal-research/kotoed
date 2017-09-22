@@ -26,6 +26,8 @@ interface CommentComponentState {
 }
 
 export default class CommentComponent extends React.Component<CommentProps, CommentComponentState> {
+    private textArea: HTMLTextAreaElement;
+
     constructor(props: CommentProps) {
         super(props);
         this.state = {
@@ -246,6 +248,10 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     componentDidUpdate(prevProps: CommentProps, prevState: CommentComponentState) {
         if (this.state.editState != prevState.editState)
             this.props.notifyEditorAboutChange();
+        if (this.state.editState == "edit")
+            this.textArea.focus();
+        else
+            this.textArea.blur();
     }
 
     getTextAreaStyle = () => {
@@ -265,6 +271,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
             {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
             <textarea
                 className="form-control"
+                ref={ref => this.textArea = ref!}
                 rows={5}
                 id="comment"
                 value={this.state.editText}

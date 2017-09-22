@@ -129,11 +129,11 @@ private fun <T> T.cleanupJsonFields(cleanupJsonFields: Array<String>): T {
                         .removeFields(*cleanupJsonFields)
                         .map
                         .mapValues { it.value.cleanupJsonFields(cleanupJsonFields) }
-        ) as T
+        ).uncheckedCast()
         is JsonArray -> JsonArray(
                 this.copy()
                         .map { it.cleanupJsonFields(cleanupJsonFields) }
-        ) as T
+        ).uncheckedCast()
         else -> this
     }
 }

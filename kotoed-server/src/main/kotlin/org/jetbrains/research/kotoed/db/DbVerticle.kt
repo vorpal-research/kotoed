@@ -334,13 +334,21 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
     private fun array(arg: QueryPart) =
             FunctionCall<Any>("array", arg)
 
+    private fun convertField(field: Field<*>): Field<*> {
+        if(field.dataType.isDateTime) {
+            //language=SQL
+            return DSL.field("((EXTRACT(EPOCH FROM ({0}::TIMESTAMP WITH TIME ZONE)) * 1000)::bigint)", Long::class.java, field).uncheckedCast()
+        }
+        return field
+    }
+
     private fun DSLContext.queryToObjectCall(message: ComplexDatabaseQuery, alias: String = message.table ?: ""): Field<Any?> = run {
         fun die(): Nothing = throw IllegalArgumentException("Illegal query")
 
         val table = Public.PUBLIC.tables.find { it.name == message.table }?.`as`(alias) ?: die()
 
         jsonb_build_object(
-                table.fields().flatMap { listOf(DSL.`val`(it.name), table.field(it)) } +
+                table.fields().flatMap { listOf(DSL.`val`(it.name), convertField(table.field(it))) } +
                         message.joins.orEmpty().flatMap {
                             val query = (it.query ?: ComplexDatabaseQuery()).let { q ->
                                 if(q.table == null) q.copy(table = table.tableReferencedBy(table.field(it.field))?.name)

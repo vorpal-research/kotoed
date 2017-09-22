@@ -314,7 +314,6 @@ const defaultSubmissionState: SubmissionState = {
 
 export const submissionReducer = (state: SubmissionState = defaultSubmissionState, action: Action): SubmissionState => {
     if (isType(action, submissionFetch.done)) {
-        console.log(action.payload.result);
         return {...state, submission: action.payload.result}
     }
     return state;

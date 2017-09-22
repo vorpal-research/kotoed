@@ -1,30 +1,29 @@
 package org.jetbrains.research.kotoed.code.diff
 
-import org.jetbrains.kotlin.utils.sure
 import org.jetbrains.research.kotoed.util.*
 import org.wickedsource.diffparser.api.model.Diff
 import org.wickedsource.diffparser.api.model.Hunk
 import org.wickedsource.diffparser.api.model.Line
 import org.wickedsource.diffparser.api.model.Range
 
-fun Line.toJson() = JsonObject("vcs" to "$lineType", "contents" to content)
+data class LineJsonable(val type: Line.LineType, val contents: String): Jsonable
+fun Line.asJsonable() = LineJsonable(lineType, content)
 
-fun Range.toJson() = JsonObject("start" to lineStart, "count" to lineCount)
+data class RangeJsonable(val start: Int, val count: Int): Jsonable
+fun Range.asJsonable() = RangeJsonable(lineStart, lineCount)
 
-fun Hunk.toJson() = JsonObject(
-        "from" to fromFileRange?.toJson(),
-        "to" to toFileRange?.toJson(),
-        "lines" to lines.map { it?.toJson() }
+data class HunkJsonable(val from: RangeJsonable, val to: RangeJsonable, val lines: List<LineJsonable>): Jsonable
+fun Hunk.asJsonable() = HunkJsonable(
+        fromFileRange.asJsonable(),
+        toFileRange.asJsonable(),
+        lines.orEmpty().map { it.asJsonable() }
 )
 
-fun Diff.toJson() = JsonObject(
-        "fromFile" to fromFileName.split('\t', limit = 2).let {
-            JsonObject("name" to it[0], "str" to "$it")
-        },
-        "toFile" to toFileName.split('\t', limit = 2).let {
-            JsonObject("name" to it[0], "str" to "$it")
-        },
-        "changes" to hunks.map { it?.toJson() }
+data class DiffJsonable(val fromFile: String, val toFile: String, val changes: List<HunkJsonable>): Jsonable
+fun Diff.asJsonable() = DiffJsonable(
+        fromFileName.split('\t', limit = 2).let { it[0] },
+        toFileName.split('\t', limit = 2).let { it[0] },
+        hunks.map { it.asJsonable() }
 )
 
 // a very sloppy git diff format parser implementation, do not repeat this at home

@@ -7,11 +7,13 @@ import org.jetbrains.research.kotoed.oauth.KnownOAuthProviders
 import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.use
 
 @AutoDeployable
 class OAuthProviderVerticle : AbstractKotoedVerticle()  {
     @JsonableEventBusConsumerFor(Address.Api.OAuthProvider.List)
     suspend fun handleOAuthProviderList(message: Unit): JsonArray {
+        use(message)
         // We should know credentials
         val fromDb = dbFindAsync(OauthProviderRecord()).map { it.name }.toSet()
 
