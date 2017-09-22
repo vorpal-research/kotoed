@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.util
 
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
-import org.jetbrains.research.kotoed.code.diff.toJson
 import org.junit.Test
 
 class GitDiffParserTest {

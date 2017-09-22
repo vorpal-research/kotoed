@@ -36,7 +36,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
             let me = await myDatabaseId();
             await eb;
             eventBus.registerHandler(
-                Kotoed.Address.Api.Notification.pushRendered(me),
+                Kotoed.Address.Api.Notification.pushRendered(me.toString()),
                 {},
                 async (_, message) => this.invalidate()
             );

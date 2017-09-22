@@ -20,6 +20,7 @@ interface SubmissionCreateState {
     suggestedParent: number | null,
     remoteError?: string
     revision: string
+    disabled: boolean
 }
 
 
@@ -30,7 +31,8 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
             showRevisionModal: false,
             showAreYouSureModal: false,
             revision: "",
-            suggestedParent: null
+            suggestedParent: null,
+            disabled: false
         }
     }
 
@@ -119,10 +121,16 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
             });
             this.hideRevisionModal();
             this.hideAreYouSureModal();
+            this.setState({
+                disabled: true
+            });
             this.dismissState();
             this.props.onCreate(newSub.record.id);
         } catch (error) {
             this.dismissState();
+            this.setState({
+                disabled: false
+            });
             if (!(error instanceof SoftError)) {
                 this.hideRevisionModal();
                 this.hideAreYouSureModal();
@@ -138,10 +146,12 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
 
 
 
-    handleEnter = (event: KeyboardEvent<FormControl>) => event.key === "Enter" && this.checkExistingOrTryCreate(this.state.revision);
+    handleEnter = (event: KeyboardEvent<FormControl>) =>
+        event.key === "Enter" && !this.state.disabled && this.checkExistingOrTryCreate(this.state.revision);
 
     render() {
         return <SplitButton
+                    disabled={this.state.disabled}
                     bsStyle="success"
                     title={this.props.parentSubmission === undefined ? "Submit" : "Resubmit"}
                     onClick={() => this.checkExistingOrTryCreate()} id="submit-dropdown">
@@ -173,7 +183,9 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
                         </Form>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button bsStyle="success" onClick={() => this.checkExistingOrTryCreate(this.state.revision)}>Create</Button>
+                        <Button disabled={this.state.disabled}
+                                bsStyle="success"
+                                onClick={() => this.checkExistingOrTryCreate(this.state.revision)}>Create</Button>
                     </Modal.Footer>
                 </Modal>
             <Modal show={this.state.showAreYouSureModal} onHide={() => {
@@ -191,10 +203,10 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
                 </Modal.Body>
                 <Modal.Footer>
                     {this.state.suggestedParent &&
-                    <Button bsStyle="success" onClick={() => this.tryCreate(this.state.revision, this.state.suggestedParent)}>
+                    <Button disabled={this.state.disabled} bsStyle="success" onClick={() => this.tryCreate(this.state.revision, this.state.suggestedParent)}>
                         {`Resubmit to #${this.state.suggestedParent}`}
                     </Button>}
-                    <Button bsStyle="danger" onClick={() => this.tryCreate(this.state.revision)}>
+                    <Button disabled={this.state.disabled} bsStyle="danger" onClick={() => this.tryCreate(this.state.revision)}>
                         Submit anyway
                     </Button>
                     <Button onClick={() => {

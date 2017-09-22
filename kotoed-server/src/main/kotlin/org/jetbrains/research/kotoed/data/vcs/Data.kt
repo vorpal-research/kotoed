@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.data.vcs
 
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.code.Location
+import org.jetbrains.research.kotoed.code.diff.DiffJsonable
 import org.jetbrains.research.kotoed.util.Jsonable
 
 data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
@@ -38,7 +39,7 @@ data class DiffRequest(
         val to: String? = null, // null means "tip"
         val path: String? = null // null means the whole repository
 ) : Jsonable
-data class DiffResponse(val contents: List<JsonObject>) : Jsonable
+data class DiffResponse(val contents: List<DiffJsonable>) : Jsonable
 
 data class LocationRequest(
         val uid: String,

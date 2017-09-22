@@ -72,7 +72,6 @@ class BuildCrawlerVerticle : AbstractKotoedVerticle(), Loggable {
         launch(WithExceptions { log.error("Error when crawling", it) } +
                 VertxContext(vertx) +
                 CoroutineName(msg.requestUUID())) {
-            val eb = vertx.eventBus()
 
             val wc = WebClient.create(vertx)
 

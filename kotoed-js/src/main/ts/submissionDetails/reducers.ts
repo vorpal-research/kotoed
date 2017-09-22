@@ -52,7 +52,8 @@ const initialState: SubmissionDetailsProps = {
         closed: 0
     },
     tags: [],
-    availableTags: []
+    availableTags: [],
+    tagsDisabled: false
 };
 
 export function reducer(state: SubmissionDetailsProps = initialState, action: Action): SubmissionDetailsProps {
@@ -65,24 +66,30 @@ export function reducer(state: SubmissionDetailsProps = initialState, action: Ac
         return {...state, history: newHistory}
     } else if (isType(action, commentsTotalFetch.done)) {
         return {...state, comments: action.payload.result}
+    } else if (isType(action, tagListFetch.started) ||
+            isType(action, availableTagsFetch.started) ||
+            isType(action, submissionTagAdd.started) ||
+            isType(action, submissionTagDelete.started)
+    ) {
+        return {...state, tagsDisabled: true}
     } else if (isType(action, tagListFetch.done)) {
-        return {...state, tags: action.payload.result}
+        return {...state, tags: action.payload.result, tagsDisabled: false}
     } else if (isType(action, availableTagsFetch.done)) {
-        return {...state, availableTags: action.payload.result}
+        return {...state, availableTags: action.payload.result, tagsDisabled: false}
     } else if (isType(action, submissionTagAdd.done)) {
         const tag = state.availableTags
             .find(tag => action.payload.result === tag.id);
         if (isNullOrUndefined(tag))
             return state;
         else
-            return {...state, tags: state.tags.concat([tag])}
+            return {...state, tags: state.tags.concat([tag]), tagsDisabled: false}
     } else if (isType(action, submissionTagDelete.done)) {
         const tag = state.availableTags
             .find(tag => action.payload.result === tag.id);
         if (isNullOrUndefined(tag))
             return state;
         else
-            return {...state, tags: state.tags.filter(t => tag.name !== t.name)}
+            return {...state, tags: state.tags.filter(t => tag.name !== t.name), tagsDisabled: false}
     }
     return state;
 }
