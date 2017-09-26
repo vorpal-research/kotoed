@@ -19,6 +19,7 @@ import {List} from "immutable";
 import {ScrollTo} from "../state/index";
 import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
 import {BaseCommentToRead} from "../../data/comment";
+import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/forms";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
@@ -28,6 +29,7 @@ interface FileReviewBaseProps {
     filePath: string,
     whoAmI: string
     scrollTo: ScrollTo
+    forms: FileForms
 }
 
 interface FileReviewCallbacks {
@@ -117,6 +119,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
                 onCommentEdit={(line, id, newText) => this.props.onCommentEdit(this.props.filePath, line, id, newText)}
                 whoAmI={this.props.whoAmI}
                 makeOriginalCommentLink={this.props.makeOriginalCommentLink}
+                formState={this.props.forms.get(reviewLine) || {processing: false, text: ""}}
             />,
             badge);
     };
@@ -133,14 +136,17 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
-    private incrementallyRenderMarkers = (oldFileComments: FileComments) => {
+    private incrementallyRenderMarkers = (oldProps: FileReviewProps) => {
+        let oldFileComments = oldProps.comments;
         let scrollInfo = this.editor.getScrollInfo();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
             let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
             let oldComments = oldFileComments.get(reviewLine, LineComments());
-            if (comments !== oldComments)
+            let formState: FormState = this.props.forms.get(reviewLine) || DEFAULT_FORM_STATE;
+            let oldFormState: FormState = oldProps.forms.get(reviewLine) || DEFAULT_FORM_STATE;
+            if (comments !== oldComments || formState !== oldFormState)
                 this.renderMarker(cmLine, comments);
         }
         this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
@@ -290,8 +296,9 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         }
 
 
-        if (this.props.filePath === oldProps.filePath && this.props.comments !== oldProps.comments) {
-            this.incrementallyRenderMarkers(oldProps.comments);
+        if (this.props.filePath === oldProps.filePath &&
+                (this.props.comments !== oldProps.comments || this.props.forms !== oldProps.forms)) {
+            this.incrementallyRenderMarkers(oldProps);
         }
         if (oldProps.scrollTo.line !== this.props.scrollTo.line || oldProps.scrollTo.commentId !== this.props.scrollTo.commentId)
             this.scrollToLine();

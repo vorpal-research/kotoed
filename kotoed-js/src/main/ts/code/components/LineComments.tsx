@@ -7,9 +7,11 @@ import CommentForm from "./CommentForm";
 import CollapsedComments from "./CollapsedComments";
 import {CommentList} from "./CommentList";
 import {BaseCommentToRead} from "../../data/comment";
+import {FormState} from "../state/forms";
 
 interface LineCommentsProps {
     canPostComment: boolean
+    formState?: FormState
     comments: LineCommentsState
     arrowOffset: number
     onSubmit: (text: string) => void
@@ -35,6 +37,7 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
                             onSubmit={this.props.onSubmit}
                             notifyEditorAboutChange={this.props.notifyEditorAboutChange}
                             whoAmI={this.props.whoAmI}
+                            formState={this.props.formState || {processing: false}}
                         />
                     }
                 </div>

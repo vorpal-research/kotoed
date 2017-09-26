@@ -9,7 +9,6 @@ import {FileNode} from "../state/filetree";
 import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate} from "../remote/comments";
-import {makeAggregatesLabel} from "../util/filetree";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 import {ScrollTo} from "../state/index";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
@@ -17,6 +16,8 @@ import {BaseCommentToRead} from "../../data/comment";
 import {DbRecordWrapper} from "../../data/verification";
 import {SubmissionToRead} from "../../data/submission";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
+import AggregatesLabel from "../../views/AggregatesLabel";
+import {FileForms, ReviewForms} from "../state/forms";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -44,6 +45,10 @@ export interface CodeReviewProps {
     capabilities: {
         canPostComment: boolean
         whoAmI: string
+    }
+
+    forms: {
+        forms: ReviewForms
     }
 }
 
@@ -76,7 +81,6 @@ export interface CodeReviewCallbacks {
 
     lostFound: {
         onSelect: () => void
-
     }
 }
 
@@ -121,6 +125,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        scrollTo={this.props.scrollTo}
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
+                                       forms={this.props.forms.forms.get(this.props.editor.file) || FileForms()}
                     />;
                 else
                     return <div className="no-file-chosen"><div>Please choose file</div></div>
@@ -150,9 +155,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                     <div className="lost-found-button-container">
                         <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
                             Lost + Found {" "}
-                            {makeAggregatesLabel(
-                                this.props.lostFound.aggregate
-                            )}
+                            <AggregatesLabel {...this.props.lostFound.aggregate}/>
                         </Button>
                     </div>
                 </div>
