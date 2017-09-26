@@ -4,6 +4,8 @@ import ReactMarkdown = require("react-markdown");
 import CmrmCodeBlock from "./CmrmCodeBlock";
 import {Button, Panel, Label} from "react-bootstrap";
 
+import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
+
 interface CommentFormProps {
     onSubmit: (text: string) => void
     notifyEditorAboutChange: () => void
@@ -124,8 +126,15 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         </p>;
     };
 
+    private mousetrap: MousetrapInstance | undefined;
+    componentWillUnmount() {
+        this.mousetrap && this.mousetrap.unbind("mod+enter")
+    }
+
     componentDidMount() {
         this.textArea.focus();
+        this.mousetrap = new Mousetrap(this.textArea);
+        this.mousetrap.bind("mod+enter", () => this.props.onSubmit(this.state.editText))
     }
 
     componentDidUpdate(prevProps: CommentFormProps, prevState: CommentFormState) {
