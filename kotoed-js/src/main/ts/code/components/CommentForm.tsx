@@ -3,11 +3,13 @@ import {CommentButton} from "./CommentButton";
 import ReactMarkdown = require("react-markdown");
 import CmrmCodeBlock from "./CmrmCodeBlock";
 import {Button, Panel, Label} from "react-bootstrap";
+import {FormState} from "../state/forms";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
     notifyEditorAboutChange: () => void
     whoAmI: string
+    formState: FormState
 }
 
 interface CommentFormState {
@@ -118,7 +120,8 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     renderPanelFooter = () => {
         return <p>
             <Button bsStyle="success"
-                    onClick={() => this.props.onSubmit(this.state.editText)}>
+                    onClick={() => this.props.onSubmit(this.state.editText)}
+                    disabled={this.props.formState.processing}>
                 Send
             </Button>
         </p>;
@@ -153,6 +156,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         return <div style={this.getTextAreaStyle()}>
             {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
             <textarea
+                disabled={this.props.formState.processing}
                 className="form-control"
                 ref={ref => this.textArea = ref!}
                 rows={5}

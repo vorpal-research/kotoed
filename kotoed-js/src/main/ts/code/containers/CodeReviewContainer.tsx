@@ -54,6 +54,9 @@ const mapStateToProps = function(store: CodeReviewState,
         capabilities: {
             canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
             whoAmI: store.capabilitiesState.capabilities.principal.denizenId,
+        },
+        forms: {
+            forms: store.formState
         }
     }
 };

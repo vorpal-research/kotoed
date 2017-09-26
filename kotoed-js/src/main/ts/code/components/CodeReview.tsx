@@ -17,6 +17,7 @@ import {DbRecordWrapper} from "../../data/verification";
 import {SubmissionToRead} from "../../data/submission";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
 import AggregatesLabel from "../../views/AggregatesLabel";
+import {FileForms, ReviewForms} from "../state/forms";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -44,6 +45,10 @@ export interface CodeReviewProps {
     capabilities: {
         canPostComment: boolean
         whoAmI: string
+    }
+
+    forms: {
+        forms: ReviewForms
     }
 }
 
@@ -76,7 +81,6 @@ export interface CodeReviewCallbacks {
 
     lostFound: {
         onSelect: () => void
-
     }
 }
 
@@ -121,6 +125,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        scrollTo={this.props.scrollTo}
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
+                                       forms={this.props.forms.forms.get(this.props.editor.file) || FileForms()}
                     />;
                 else
                     return <div className="no-file-chosen"><div>Please choose file</div></div>

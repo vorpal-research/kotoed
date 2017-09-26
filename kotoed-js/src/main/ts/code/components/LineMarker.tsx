@@ -10,6 +10,7 @@ import {LineWidget} from "codemirror";
 import {BaseCommentToRead} from "../../data/comment";
 import {CommentAggregate} from "../remote/comments";
 import AggregatesLabel from "../../views/AggregatesLabel";
+import {FormState} from "../state/forms";
 
 interface LineMarkerProps {
     canPostComment: boolean
@@ -27,6 +28,7 @@ interface LineMarkerProps {
     onCommentEdit: (line: number, id: number, newText: string) => void
     makeOriginalCommentLink?: (comment: BaseCommentToRead) => string | undefined
     whoAmI: string
+    formState: FormState
 }
 
 interface LineMarkerState {
@@ -85,6 +87,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 onEdit={(id, newText) => this.props.onCommentEdit(this.props.lineNumber, id, newText)}
                 makeOriginalLink={this.props.makeOriginalCommentLink}
                 whoAmI={this.props.whoAmI}
+                formState={this.props.formState}
             />,
             this.container);
         this.widget.changed();

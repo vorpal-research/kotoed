@@ -105,6 +105,11 @@ interface GoToLastSeenPayload {
     id: number
 }
 
+interface FormLockUnlockPayload {
+    sourcefile: string
+    sourceline: number
+}
+
 // Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
@@ -137,6 +142,7 @@ export const commentEdit = actionCreator.async<CommentEditPayload, CommentEditPa
 
 // Capabilities
 export const capabilitiesFetch = actionCreator.async<{}, Capabilities, {}>('CAPABILITIES_FETCH');
+
 
 export function pollSubmissionIfNeeded(payload: SubmissionPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState): Promise<void> => {
@@ -347,8 +353,7 @@ export function fetchCommentAggregatesIfNeeded(payload: SubmissionPayload) {
 
 export function postComment(payload: PostCommentPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        dispatch(commentPost.started(payload));  // Not used yet
-
+        dispatch(commentPost.started(payload));
         let result = await doPostComment(payload.submissionId, payload.sourcefile, payload.sourceline, payload.text);
 
         dispatch(commentPost.done({
