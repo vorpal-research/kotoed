@@ -86,6 +86,7 @@ object Address {
 
             object Result {
                 const val Read = "kotoed.api.submission.result.read"
+                const val BatchRead = "kotoed.api.submission.result.read.batch"
             }
         }
 
