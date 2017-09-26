@@ -22,6 +22,7 @@ import {List} from "immutable";
 import {DbRecordWrapper} from "../data/verification";
 import {SubmissionToRead} from "../data/submission";
 import {SubmissionState} from "./state/submission";
+import {DEFAULT_FORM_STATE, FileForms, ReviewForms} from "./state/forms";
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -317,4 +318,41 @@ export const submissionReducer = (state: SubmissionState = defaultSubmissionStat
         return {...state, submission: action.payload.result}
     }
     return state;
+};
+
+
+export const defaultFormState: ReviewForms = ReviewForms();
+
+export const formReducer = (state: ReviewForms = defaultFormState, action: Action) => {
+    // Smart casting
+    if (!isType(action, commentPost.started) && !isType(action, commentPost.done))
+        return state;
+
+    let {sourcefile, sourceline} = isType(action, commentPost.started) ? action.payload : action.payload.params;
+    let processing;
+
+    if (isType(action, commentPost.started)) {
+        processing = true
+    } else if (isType(action, commentPost.done)) {
+        processing = false;
+    }
+
+
+    // Cleaning up
+    if (processing === false) {
+        let forFile = state.get(sourcefile);
+
+        if (forFile === undefined)
+            return state;
+
+        forFile = forFile.remove(sourceline);
+
+        if (forFile.isEmpty()) {
+            return state.remove(sourcefile);
+        } else {
+            return state.set(sourcefile, forFile);
+        }
+    } else {
+        return state.setIn([sourcefile, sourceline], {processing});
+    }
 };
