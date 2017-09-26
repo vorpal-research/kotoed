@@ -11,6 +11,7 @@ import "less/util.less";
 import {identity} from "../../util/common";
 import {isStatusFinal, WithVerificationData} from "../../data/verification";
 import {pollDespairing} from "../../util/poll";
+import Mousetrap from "../../util/mousetrap"
 
 export interface SearchBarProps {
     initialText: string
@@ -257,16 +258,20 @@ export class SearchTable<DataType, QueryType = {}> extends
         });
     };
 
-    onKeyPressedGlobal = _.debounce((e: any) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === "ArrowLeft") {
-            this.onPageChanged(this.state.currentPage - 1)
-        } else if ((e.metaKey || e.ctrlKey) && e.key === "ArrowRight") {
-            this.onPageChanged(this.state.currentPage + 1)
-        }
-    }, 40);
-
     componentWillMount() {
-        document.addEventListener("keydown", this.onKeyPressedGlobal);
+        Mousetrap.bindGlobal('mod+left',  _.debounce(() => {
+            this.onPageChanged(this.state.currentPage - 1)
+        }, 40));
+        Mousetrap.bindGlobal('mod+right',  _.debounce(() => {
+            this.onPageChanged(this.state.currentPage + 1)
+        }, 40));
+        //document.addEventListener("keydown", this.onKeyPressedGlobal);
+    }
+
+    componentWillUnmount() {
+        Mousetrap.unbind('mod+left');
+        Mousetrap.unbind('mod+right');
+        //document.removeEventListener("keydown", this.onKeyPressedGlobal);
     }
 
     componentDidMount() {
@@ -275,9 +280,7 @@ export class SearchTable<DataType, QueryType = {}> extends
         }
     }
 
-    componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressedGlobal);
-    }
+
 
     renderPagination = () => {
         if (this.state.pageCount > 1 || this.props.forcePagination)
