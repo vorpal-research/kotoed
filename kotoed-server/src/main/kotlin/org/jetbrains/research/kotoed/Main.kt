@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed
 
 import io.netty.channel.DefaultChannelId
 import io.vertx.core.*
+import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.LoggerFormat
@@ -20,6 +21,7 @@ import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {
@@ -28,7 +30,7 @@ fun main(args: Array<String>) {
     launch(Unconfined + CoroutineName("main function")) { startApplication() }
 }
 
-val rootLog = LoggerFactory.getLogger(RootVerticle::class.java)
+val rootLog: Logger = LoggerFactory.getLogger(RootVerticle::class.java)
 
 suspend fun startApplication(): Vertx {
     Thread.currentThread().contextClassLoader.getResourceAsStream(
@@ -69,7 +71,12 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
         router.initRoutes()
 
-        vertx.createHttpServer()
+        vertx.createHttpServer(
+                HttpServerOptions().apply {
+                    isCompressionSupported = true
+                    isDecompressionSupported = true
+                }
+        )
                 .requestHandler({ router.accept(it) })
                 .listen(Config.Root.Port)
 

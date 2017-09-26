@@ -2,19 +2,24 @@ package org.jetbrains.research.kotoed.data.db
 
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.NOTHING_TO_INLINE
+import org.jetbrains.research.kotoed.data.api.PageableQuery
+import org.jetbrains.research.kotoed.data.api.SearchQuery
+import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
 import org.jooq.Table
 import org.jooq.TableRecord
-import kotlin.coroutines.experimental.buildSequence
 
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultField(query: ComplexDatabaseQuery) = defaultField(query.table!!)
+
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultField(table: String) = "${table}_id"
+
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultResultField(field: String) = field.replace("_id", "")
+
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultReverseResultField(table: String) = table + "s"
 
@@ -23,7 +28,7 @@ data class DatabaseJoin(
         val field: String? = query?.table?.let(::defaultField),
         val resultField: String? = field?.let(::defaultResultField),
         val key: String? = null // null means pk
-): Jsonable {
+) : Jsonable {
     fun fillDefaults(): DatabaseJoin {
         val query_ = (query ?: ComplexDatabaseQuery()).fillDefaults()
         val field_ = field ?: query_.table?.let(::defaultField)
@@ -37,7 +42,7 @@ data class ReverseDatabaseJoin(
         val field: String?,
         val resultField: String? = query?.table?.let(::defaultReverseResultField),
         val key: String? = null // null means pk
-): Jsonable {
+) : Jsonable {
     fun fillDefaults(): ReverseDatabaseJoin {
         val query_ = (query ?: ComplexDatabaseQuery()).fillDefaults()
         val resultField_ = resultField ?: query?.table?.let(::defaultReverseResultField)
@@ -52,9 +57,9 @@ fun DatabaseJoin(table: String,
         DatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
 
 fun ReverseDatabaseJoin(table: String,
-                 field: String?,
-                 resultField: String = defaultReverseResultField(table),
-                 key: String? = null) =
+                        field: String?,
+                        resultField: String = defaultReverseResultField(table),
+                        key: String? = null) =
         ReverseDatabaseJoin(ComplexDatabaseQuery(table), field, resultField, key)
 
 data class ComplexDatabaseQuery(
@@ -65,17 +70,17 @@ data class ComplexDatabaseQuery(
         val filter: String? = null,
         val limit: Int? = null,
         val offset: Int? = null
-): Jsonable {
+) : Jsonable {
     fun join(table: String,
              field: String = defaultField(table),
              resultField: String = defaultResultField(field),
              key: String? = null) =
             copy(joins = joins.orEmpty() + DatabaseJoin(table, field, resultField, key))
 
-    fun<R: Record> join(table: Table<R>,
-             field: String = defaultField(table.name),
-             resultField: String = defaultResultField(field),
-             key: String? = null) = join(table.name, field, resultField, key)
+    fun <R : Record> join(table: Table<R>,
+                          field: String = defaultField(table.name),
+                          resultField: String = defaultResultField(field),
+                          key: String? = null) = join(table.name, field, resultField, key)
 
 
     fun join(query: ComplexDatabaseQuery,
@@ -90,10 +95,10 @@ data class ComplexDatabaseQuery(
               key: String? = null) =
             copy(rjoins = rjoins.orEmpty() + ReverseDatabaseJoin(table, field, resultField, key))
 
-    fun<R: Record> rjoin(table: Table<R>,
-                        field: String? = this.table?.let(::defaultField),
-                        resultField: String = defaultReverseResultField(table.name),
-                        key: String? = null) = rjoin(table.name, field, resultField, key)
+    fun <R : Record> rjoin(table: Table<R>,
+                           field: String? = this.table?.let(::defaultField),
+                           resultField: String = defaultReverseResultField(table.name),
+                           key: String? = null) = rjoin(table.name, field, resultField, key)
 
 
     fun rjoin(query: ComplexDatabaseQuery,
@@ -104,7 +109,7 @@ data class ComplexDatabaseQuery(
 
     fun find(record: Record): ComplexDatabaseQuery {
         val newFind = record.toJson()
-        if(find != null) {
+        if (find != null) {
             newFind.mergeIn(find)
         }
         return copy(find = newFind)
@@ -124,11 +129,18 @@ data class ComplexDatabaseQuery(
 
 }
 
-fun <R: TableRecord<R>> ComplexDatabaseQuery(find: R) =
+fun <R : TableRecord<R>> ComplexDatabaseQuery(find: R) =
         ComplexDatabaseQuery(table = find.table.name, find = find.toJson())
 
-fun <R: Record> ComplexDatabaseQuery(table: Table<R>) =
+fun <R : Record> ComplexDatabaseQuery(table: Table<R>) =
         ComplexDatabaseQuery(table = table.name)
 
-data class TextSearchRequest(val text: String): Jsonable
+fun ComplexDatabaseQuery.setPageForQuery(query: PageableQuery): ComplexDatabaseQuery {
+    val pageSize = query.pageSize ?: Int.MAX_VALUE
+    val currentPage = query.currentPage ?: 0
+    return this
+            .limit(pageSize)
+            .offset(currentPage * pageSize)
+}
 
+data class TextSearchRequest(val text: String) : Jsonable
