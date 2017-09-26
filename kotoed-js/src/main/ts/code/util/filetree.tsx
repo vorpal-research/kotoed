@@ -1,11 +1,12 @@
 import * as React from "react"
 import {Button, Panel, Label, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {File} from "../remote/code";
-import {Spinner} from "@blueprintjs/core";
+import {IconClasses, Intent, Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
 import {FileNode, FileNodeProps, FileTreeProps, LoadingNode} from "../state/filetree";
 import {NodePath} from "../state/blueprintTree";
 import {FileNotFoundError} from "../errors";
+import {ICON} from "@blueprintjs/core/dist/common/classes";
 import AggregatesLabel from "../../views/AggregatesLabel";
 
 export function makeLoadingNode(idGen: (() => number)): LoadingNode {
@@ -22,13 +23,17 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
     let id = 0;
     let idGenF = idGen ? idGen : () => {return ++id;};
 
+    let iconType = (file.changed) ? "changed " : "";
+    let nodeClass = (file.changed) ? "pt-tree-node-changed" : "";
+
     let bpNode: FileNodeProps = {
         id: idGenF(),
         isExpanded: false,
         isSelected: false,
         label: file.name,
         hasCaret: file.type === "directory",
-        iconName: file.type == "file" ? "pt-icon-document" : "pt-icon-folder-close",
+        className: nodeClass,
+        iconName: iconType + (file.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE),
         childNodes: [],
         data: {
             kind: "file",

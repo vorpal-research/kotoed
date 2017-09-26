@@ -80,7 +80,11 @@ object SubmissionCode {
     data class ListRequest(val submissionId: Int) : Jsonable
 
     enum class FileType { directory, file } // directory < file, used in comparisons
-    data class FileRecord(val type: FileType, val name: String, val children: List<FileRecord>? = null) : Jsonable {
+    data class FileRecord(
+            val type: FileType,
+            val name: String,
+            val children: List<FileRecord>? = null,
+            val changed: Boolean = false) : Jsonable {
         fun toFileSeq(): Sequence<String> =
                 when (type) {
                     FileType.directory ->
