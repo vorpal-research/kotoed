@@ -91,7 +91,8 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
     }
 
     override fun diffAll(from: Revision, to: Revision): VcsResult<Sequence<String>> {
-        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "${from.rep}..${to.rep}").execute(File(local)).complete()
+        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "--text",
+                "${from.rep}..${to.rep}").execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
