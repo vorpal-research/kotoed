@@ -9,7 +9,6 @@ import {FileNode} from "../state/filetree";
 import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate} from "../remote/comments";
-import {makeAggregatesLabel} from "../util/filetree";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
 import {ScrollTo} from "../state/index";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
@@ -17,6 +16,7 @@ import {BaseCommentToRead} from "../../data/comment";
 import {DbRecordWrapper} from "../../data/verification";
 import {SubmissionToRead} from "../../data/submission";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
+import AggregatesLabel from "../../views/AggregatesLabel";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -150,9 +150,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                     <div className="lost-found-button-container">
                         <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
                             Lost + Found {" "}
-                            {makeAggregatesLabel(
-                                this.props.lostFound.aggregate
-                            )}
+                            <AggregatesLabel {...this.props.lostFound.aggregate}/>
                         </Button>
                     </div>
                 </div>

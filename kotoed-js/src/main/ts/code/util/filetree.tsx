@@ -6,6 +6,7 @@ import {CommentAggregate, CommentAggregates} from "../remote/comments";
 import {FileNode, FileNodeProps, FileTreeProps, LoadingNode} from "../state/filetree";
 import {NodePath} from "../state/blueprintTree";
 import {FileNotFoundError} from "../errors";
+import AggregatesLabel from "../../views/AggregatesLabel";
 
 export function makeLoadingNode(idGen: (() => number)): LoadingNode {
     return {
@@ -51,23 +52,6 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
 export function makeFileNode(file: File) {
     return FileNode(makeFileTreeProps(file));
 }
-
-export function makeAggregatesLabel(aggregate: CommentAggregate) {
-    if (aggregate.open == 0 && aggregate.closed == 0)
-        return undefined; // TODO maybe null?
-
-    let labelClass = aggregate.open === 0 ? "default" : "danger";
-
-    let tooltipText = `Unresolved comments: ${aggregate.open} Resolved comments: ${aggregate.closed}`;
-
-    return (
-        <OverlayTrigger placement="right" overlay={<Tooltip id="comment-aggregates-tooltip">{tooltipText}</Tooltip>}>
-            <Label className="comments-counter" bsStyle={labelClass}>
-                {aggregate.open + aggregate.closed}
-            </Label>
-        </OverlayTrigger>)
-}
-
 
 export function getFilePath(root: FileNode, numPath: NodePath): string {
     let path: Array<string> = [];
@@ -150,7 +134,7 @@ export function addAggregates(root: FileNode, aggregates: CommentAggregates): Fi
             node.patchAt(nodePath, (patchedNode: FileNode) => {
                 let data = patchedNode.getDataCopy();
                 data.aggregate = updateAggregate(data.aggregate, fileAgg.aggregate);
-                let secondaryLabel = makeAggregatesLabel(data.aggregate);
+                let secondaryLabel = <AggregatesLabel {...data.aggregate}/>;
                 return {
                     data,
                     secondaryLabel
@@ -168,7 +152,7 @@ export function updateAggregates(root: FileNode, path: string, delta: CommentAgg
     return root.patchTowards(nodePath, (node: FileNode) => {
         let data = node.getDataCopy();
         data.aggregate = updateAggregate(data.aggregate, delta);
-        let secondaryLabel = makeAggregatesLabel(data.aggregate);
+        let secondaryLabel = <AggregatesLabel {...data.aggregate}/>;
         return {
             data,
             secondaryLabel
