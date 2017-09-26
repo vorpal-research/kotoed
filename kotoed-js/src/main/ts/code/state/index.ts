@@ -5,6 +5,7 @@ import {CapabilitiesState} from "./capabilities";
 import {DbRecordWrapper} from "../../data/verification";
 import {SubmissionToRead} from "../../data/submission";
 import {SubmissionState} from "./submission";
+import {ReviewForms} from "./forms";
 
 export interface CodeReviewState {
     fileTreeState: FileTreeState
@@ -12,6 +13,7 @@ export interface CodeReviewState {
     commentsState: CommentsState
     capabilitiesState: CapabilitiesState
     submissionState: SubmissionState
+    formState: ReviewForms
 }
 
 export interface ScrollTo {
