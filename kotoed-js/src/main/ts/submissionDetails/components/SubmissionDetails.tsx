@@ -11,7 +11,6 @@ import moment = require("moment");
 import "less/submissionDetails.less"
 import "less/util.less"
 
-import {makeAggregatesLabel} from "../../code/util/filetree";
 import {SubmissionCreate} from "../../submissions/create";
 import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../../data/verification";
 import {isSubmissionAvalable} from "../../submissions/util";
@@ -23,6 +22,7 @@ import {makeProfileLink} from "../../util/denizen";
 import * as Autosuggest from "react-autosuggest";
 import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
 import {Tagger} from "../../views/components/tags/Tagger";
+import AggregatesLabel from "../../views/AggregatesLabel";
 
 export interface SubmissionDetailsProps {
     submission: DbRecordWrapper<BloatSubmission>,
@@ -237,7 +237,11 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                             </tr>
                             <tr>
                                 <td className="col-md-3">Review</td>
-                                <td className="col-md-9">{this.renderReviewList()}{" "}{makeAggregatesLabel(this.props.comments)}</td>
+                                <td className="col-md-9">
+                                    {this.renderReviewList()}
+                                    {" "}
+                                    <AggregatesLabel {...this.props.comments}/>
+                                </td>
                             </tr>
                         </tbody>
                     </Table>

@@ -9,7 +9,7 @@ import {Comment} from "../state/comments";
 import {LineWidget} from "codemirror";
 import {BaseCommentToRead} from "../../data/comment";
 import {CommentAggregate} from "../remote/comments";
-import {makeAggregatesLabel} from "../util/filetree";
+import AggregatesLabel from "../../views/AggregatesLabel";
 
 interface LineMarkerProps {
     canPostComment: boolean
@@ -125,10 +125,9 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             open: this.props.comments.filter((c: Comment) => c.state === "open").count(),
             closed: this.props.comments.filter((c: Comment) => c.state === "closed").count()
         };
-        let label =  makeAggregatesLabel(agg) || null;
         return (
             <div className="comments-counter-wrapper" onClick={this.onClick}>
-                {label}
+                <AggregatesLabel {...agg}/>
             </div>
         );
     }
