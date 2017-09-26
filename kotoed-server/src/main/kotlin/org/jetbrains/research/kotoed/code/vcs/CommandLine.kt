@@ -17,6 +17,11 @@ data class CommandLine(val args: List<String>) : Loggable {
             val exitCode = rcode.get()
             return Output(futureDone(exitCode), memoOut, memoErr)
         }
+
+        override fun toString(): String {
+            return "Output(rcode=$rcode, cout=${cout.toList()}, cerr=${cerr.toList()})"
+        }
+
     }
 
     fun execute(wd: File = File(System.getProperty("user.dir")),
@@ -34,7 +39,7 @@ data class CommandLine(val args: List<String>) : Loggable {
 
         val cout = pb.inputStream.bufferedReader().allLines()
         val cerr = pb.errorStream.bufferedReader().allLines()
-        
+
         return Output(pb.futureExitCode, cout, cerr)
     }
 

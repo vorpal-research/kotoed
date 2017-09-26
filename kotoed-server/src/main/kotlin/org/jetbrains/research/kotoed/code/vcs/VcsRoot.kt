@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.code.vcs
 
+import org.jetbrains.research.kotoed.rootLog
+import org.jetbrains.research.kotoed.util.DelegateLoggable
 import java.io.File
 
 sealed class VcsResult<out T> {
@@ -48,23 +50,31 @@ abstract class VcsRoot(val remote: String, val local: String) {
 class Git(remote: String, local: String) : VcsRoot(remote, local) {
     private val git = "git"
 
-    private val Revision.rep get() =
-    when (this) {
-        is Revision.Trunk -> "HEAD"
-        is Revision.Id -> rep
-    }
+    private val Revision.rep
+        get() =
+            when (this) {
+                is Revision.Trunk -> "HEAD"
+                is Revision.Id -> rep
+            }
 
     override fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
-        val res = CommandLine(git, "clone", "-n", remote, local).execute(File(local)).complete()
+        val res = CommandLine(git, "clone", "--bare", remote, local).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
     override fun update(): VcsResult<Unit> {
-        val res = CommandLine(git, "pull").execute(File(local)).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
-        else return VcsResult.Failure(res.cerr)
+        val res = CommandLine(git, "fetch", "origin", "*:*", "--force").execute(File(local)).complete()
+
+        val die = { res: CommandLine.Output ->
+            VcsResult.Failure(res.cerr)
+                    .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $res") }
+        }
+
+        if (res.rcode.get() != 0) return die(res)
+
+        return VcsResult.Success(Unit)
     }
 
     override fun cat(path: String, revision: Revision): VcsResult<Sequence<String>> {
@@ -74,13 +84,15 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
     }
 
     override fun diff(path: String, from: Revision, to: Revision): VcsResult<Sequence<String>> {
-        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "${from.rep}..${to.rep}", path).execute(File(local)).complete()
+        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "--text",
+                "${from.rep}..${to.rep}", path).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override fun diffAll(from: Revision, to: Revision): VcsResult<Sequence<String>> {
-        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "${from.rep}..${to.rep}").execute(File(local)).complete()
+        val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol", "--text",
+                "${from.rep}..${to.rep}").execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
@@ -121,11 +133,12 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
 class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
     private val mercurial = "hg"
 
-    private val Revision.rep get() =
-    when (this) {
-        is Revision.Trunk -> "tip"
-        is Revision.Id -> rep
-    }
+    private val Revision.rep
+        get() =
+            when (this) {
+                is Revision.Trunk -> "tip"
+                is Revision.Id -> rep
+            }
 
     override fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
