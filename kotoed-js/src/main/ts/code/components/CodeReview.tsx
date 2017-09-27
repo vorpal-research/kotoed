@@ -18,10 +18,13 @@ import {SubmissionToRead} from "../../data/submission";
 import VerificationDataAlert from "../../views/components/VerificationDataAlert";
 import AggregatesLabel from "../../views/AggregatesLabel";
 import {FileForms, ReviewForms} from "../state/forms";
+import {ReviewAnnotations} from "../state/annotations";
 
 export interface CodeReviewProps {
     submissionId: number
     submission: DbRecordWrapper<SubmissionToRead> | null
+
+    annotations: ReviewAnnotations
 
     editor: {
         loading: boolean
@@ -126,6 +129,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
                                        forms={this.props.forms.forms.get(this.props.editor.file) || FileForms()}
+                                       codeAnnotations={this.props.annotations.get(this.props.editor.file) || []}
                     />;
                 else
                     return <div className="no-file-chosen"><div>Please choose file</div></div>

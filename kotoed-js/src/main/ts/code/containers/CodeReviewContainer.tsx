@@ -35,6 +35,7 @@ const mapStateToProps = function(store: CodeReviewState,
     return {
         submissionId: parseInt(ownProps.match.params.submissionId),
         submission: store.submissionState.submission,
+        annotations: store.codeAnnotationsState.annotations,
         editor: {
             loading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
             value: store.editorState.value,
