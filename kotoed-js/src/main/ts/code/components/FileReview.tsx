@@ -3,6 +3,8 @@ import * as React from "react";
 import {render, unmountComponentAtNode} from "react-dom";
 
 import "codemirror/addon/display/rulers"
+import "codemirror/addon/lint/lint.css"
+import "codemirror/addon/lint/lint"
 import "codemirror/addon/fold/foldcode"
 import "codemirror/addon/fold/foldgutter"
 import "codemirror/addon/fold/brace-fold"
@@ -11,7 +13,7 @@ import "codemirror/addon/fold/comment-fold"
 
 import LineMarker from "./LineMarker";
 import {
-    editorModeParam, FOLD_GUTTER, fromCmLine, guessCmModeForFile, LINE_NUMBER_GUTTER, requireCmMode,
+    editorModeParam, FOLD_GUTTER, fromCmLine, guessCmModeForFile, LINE_NUMBER_GUTTER, LINT_GUTTER, requireCmMode,
     toCmLine
 } from "../util/codemirror";
 import {Comment, FileComments, LineComments} from "../state/comments";
@@ -20,12 +22,14 @@ import {ScrollTo} from "../state/index";
 import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
 import {BaseCommentToRead} from "../../data/comment";
 import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/forms";
+import {CodeAnnotation} from "../state/annotations";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
     value: string,
     height: number | string,
     comments: FileComments,
+    codeAnnotations?: CodeAnnotation[],
     filePath: string,
     whoAmI: string
     scrollTo: ScrollTo
@@ -223,6 +227,23 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
     };
 
+    getAnnotations = (value: string, options: any, editor: cm.Editor) => {
+        let annotations = this.props.codeAnnotations || [];
+        return annotations.map(annotation => {
+                let message = annotation.message;
+                let severity = annotation.severity;
+                let {line, col} = annotation.position;
+                let {start, end} = editor.getTokenAt(cm.Pos(line - 1, col));
+                return {
+                    message: message,
+                    severity: severity,
+                    from: cm.Pos(line - 1, start),
+                    to: cm.Pos(line - 1, end)
+                }
+            }
+        );
+    };
+
     componentWillMount() {
         this.resetExpanded(this.props)
     }
@@ -236,7 +257,12 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             mode: editorModeParam(newMode),
             readOnly: true,
             foldGutter: true,
-            gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER],
+            gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER, LINT_GUTTER],
+            lint: {
+                async: false,
+                hasGutters: true,
+                getAnnotations: this.getAnnotations,
+            },
             rulers: [{
                 column: 80,
                 color: "#f80",

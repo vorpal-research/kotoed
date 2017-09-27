@@ -29,6 +29,8 @@ import {DbRecordWrapper, isStatusFinal} from "../data/verification";
 import {SubmissionToRead} from "../data/submission";
 import {pollDespairing} from "../util/poll";
 import {fetchSubmission} from "../submissionDetails/remote";
+import {fetchAnnotations} from "./remote/annotations";
+import {ReviewAnnotations} from "./state/annotations";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -131,6 +133,9 @@ export const submissionFetch = actionCreator.async<SubmissionPayload, DbRecordWr
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
 
+// Annotation fetch actions
+export const annotationsFetch = actionCreator.async<number, ReviewAnnotations, {}>('ANNOTATION_FETCH');
+
 // Comment fetch actions
 export const commentsFetch = actionCreator.async<SubmissionPayload, CommentsState, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
@@ -177,6 +182,7 @@ export function loadCode(payload: SubmissionPayload & FilePathPayload) {
         await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
+        await fetchAnnotationsIfNeeded(payload.submissionId)(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
     }
@@ -191,6 +197,7 @@ export function loadLostFound(payload: SubmissionPayload) {
         await fetchCapabilitiesIfNeeded(payload)(dispatch, getState);
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
+        await fetchAnnotationsIfNeeded(payload.submissionId)(dispatch, getState);
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
         dispatch(fileUnselect({}));
     }
@@ -304,6 +311,22 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
             }));
         });
 
+    }
+}
+
+export function fetchAnnotationsIfNeeded(payload: number) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        if(!getState().codeAnnotationsState.loading)
+            return;
+
+        dispatch(annotationsFetch.started(payload));  // Not used yet
+
+        let result = await fetchAnnotations(payload);
+
+        dispatch(annotationsFetch.done({
+            params: payload,
+            result: result
+        }));
     }
 }
 

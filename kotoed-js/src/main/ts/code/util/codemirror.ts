@@ -51,3 +51,4 @@ export function editorModeParam(mode: CmMode): string {
 // Standard gutters
 export const FOLD_GUTTER = "CodeMirror-foldgutter";
 export const LINE_NUMBER_GUTTER = "CodeMirror-linenumbers";
+export const LINT_GUTTER = "CodeMirror-lint-markers";

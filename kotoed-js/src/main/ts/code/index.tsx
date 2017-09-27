@@ -12,6 +12,7 @@ import CodeReviewContainer, {
     RedirectToRoot
 } from "./containers/CodeReviewContainer";
 import {
+    annotationsReducer,
     capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer, formReducer,
     submissionReducer
 } from "./reducers";
@@ -30,6 +31,7 @@ export const store = createStore(
         fileTreeState: fileTreeReducer,
         editorState: editorReducer,
         commentsState: commentsReducer,
+        codeAnnotationsState: annotationsReducer,
         capabilitiesState: capabilitiesReducer,
         submissionState: submissionReducer,
         formState: formReducer,
