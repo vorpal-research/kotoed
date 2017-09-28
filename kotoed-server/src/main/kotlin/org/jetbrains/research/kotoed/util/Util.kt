@@ -177,9 +177,33 @@ fun String.truncateAt(index: Int) =
         if(index < length) take(index - 3) + "..."
         else this
 
-inline operator fun MatchGroupCollection.component1() = get(0)
-inline operator fun MatchGroupCollection.component2() = get(1)
-inline operator fun MatchGroupCollection.component3() = get(2)
-inline operator fun MatchGroupCollection.component4() = get(3)
-inline operator fun MatchGroupCollection.component5() = get(4)
-inline operator fun MatchGroupCollection.component6() = get(5)
+inline operator fun MatchGroupCollection?.component1() = this?.get(0)
+inline operator fun MatchGroupCollection?.component2() = this?.get(1)
+inline operator fun MatchGroupCollection?.component3() = this?.get(2)
+inline operator fun MatchGroupCollection?.component4() = this?.get(3)
+inline operator fun MatchGroupCollection?.component5() = this?.get(4)
+inline operator fun MatchGroupCollection?.component6() = this?.get(5)
+inline operator fun MatchGroupCollection?.component7() = this?.get(6)
+inline operator fun MatchGroupCollection?.component8() = this?.get(7)
+inline operator fun MatchGroupCollection?.component9() = this?.get(8)
+inline operator fun MatchGroupCollection?.component10() = this?.get(9)
+
+inline operator fun<T> List<T>.component6() = this[5]
+inline operator fun<T> List<T>.component7() = this[6]
+inline operator fun<T> List<T>.component8() = this[7]
+inline operator fun<T> List<T>.component9() = this[8]
+inline operator fun<T> List<T>.component10() = this[9]
+
+fun <T: Comparable<T>> Pair<T, T>.sorted() = if(first <= second) this else Pair(second, first)
+fun <T: Comparable<T>> Triple<T, T, T>.sorted() =
+        when {
+            first <= second ->
+                    when {
+                        second <= third -> this
+                        first <= third -> Triple(first, third, second)
+                        else -> Triple(third, first, second)
+                    }
+            first <= third -> Triple(second, first, third)
+            second <= third -> Triple(second, third, first)
+            else -> Triple(third, second, first)
+        }

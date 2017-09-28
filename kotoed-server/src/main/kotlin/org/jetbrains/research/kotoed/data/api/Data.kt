@@ -193,3 +193,16 @@ data class ProfileInfoUpdate(
         val lastName: String?,
         val group: String?
 ): Jsonable
+
+enum class SubmissionCodeAnnotationSeverity{ error, warning }
+data class SubmissionCodeAnnotationPosition(
+    val line: Int, val col: Int
+): Jsonable
+data class SubmissionCodeAnnotation(
+        val severity: SubmissionCodeAnnotationSeverity,
+        val message: String,
+        val position: SubmissionCodeAnnotationPosition
+): Jsonable
+data class SubmissionCodeAnnotationResponse(
+        val map: Map<String, Set<SubmissionCodeAnnotation>>
+): Jsonable

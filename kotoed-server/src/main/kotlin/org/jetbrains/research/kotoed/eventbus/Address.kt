@@ -47,6 +47,7 @@ object Address {
             const val Create = "kotoed.api.submission.create"
             const val Update = "kotoed.api.submission.update"
             const val Comments = "kotoed.api.submission.comments"
+            const val Annotations = "kotoed.api.submission.annotations"
             const val CommentAggregates = "kotoed.api.submission.commentAggregates"
             const val CommentsTotal = "kotoed.api.submission.commentsTotal"
             const val Error = "kotoed.api.submission.remoteError"

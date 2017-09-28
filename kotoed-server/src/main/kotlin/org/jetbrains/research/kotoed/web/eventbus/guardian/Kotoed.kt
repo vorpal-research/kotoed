@@ -93,6 +93,9 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.Comment.Search to AuthorityRequired(Authority.Teacher),
             Address.Api.Submission.Comment.SearchCount to AuthorityRequired(Authority.Teacher),
 
+            Address.Api.Submission.Annotations to
+                    (SubmissionOwnerOrTeacher(vertx, "id") and SubmissionReady(vertx, "id")),
+
             Address.Api.Submission.CommentAggregates to
                     (SubmissionOwnerOrTeacher(vertx, "id") and SubmissionReady(vertx, "id")),
             Address.Api.Submission.Comments to
