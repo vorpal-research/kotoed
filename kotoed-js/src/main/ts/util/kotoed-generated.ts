@@ -58,6 +58,7 @@ export namespace Generated {
                 },
             },
             Submission: {
+                Annotations: "kotoed.api.submission.annotations",
                 CommentAggregates: "kotoed.api.submission.commentAggregates",
                 Comments: "kotoed.api.submission.comments",
                 CommentsTotal: "kotoed.api.submission.commentsTotal",

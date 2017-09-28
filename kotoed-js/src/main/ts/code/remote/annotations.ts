@@ -1,6 +1,19 @@
-import {ReviewAnnotations} from "../state/annotations";
+import {CodeAnnotation, ReviewAnnotations} from "../state/annotations";
 import {Map} from "immutable";
+import {sendAsync} from "../../views/components/common";
+import {Kotoed} from "../../util/kotoed-api";
+import Address = Kotoed.Address;
+
+interface AnnotationResponse {
+    map: {
+        [key: string]: CodeAnnotation[]
+    }
+}
 
 export async function fetchAnnotations(submissionId: number): Promise<ReviewAnnotations> {
-    return Map()
+
+    let annotations =
+        await sendAsync(Address.Api.Submission.Annotations, {id: submissionId}) as AnnotationResponse;
+
+    return Map(annotations.map)
 }

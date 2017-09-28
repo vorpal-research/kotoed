@@ -6,7 +6,6 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
-import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
@@ -20,6 +19,7 @@ import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.plus
+import java.util.*
 
 private typealias CommentsResponse = SubmissionComments.CommentsResponse
 private typealias CommentAggregate = SubmissionComments.CommentAggregate
@@ -362,6 +362,42 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val dbSubmissionTags = dbFindAsync(submissionTag)
         dbSubmissionTags.forEach { dbDeleteAsync(it) }
         return dbSubmissionTags
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Annotations)
+    suspend fun handleAnnotations(request: SubmissionRecord): SubmissionCodeAnnotationResponse {
+
+        val errorMessageRe = """(([\\/][^\\/:]+)+):\s*[(\[]([0-9]+),\s*([0-9]+)[)\]]\s*(.*)$""".toRegex()
+
+        val compilerErrors = dbFindAsync(SubmissionResultRecord().apply { submissionId = request.id })
+                .filter { it.type.startsWith("Failed build") }
+                .flatMap {
+                    val objectBody = it.body as? JsonObject
+                    val log = objectBody?.getString("log")
+                    when {
+                        log == null -> listOf()
+                        else -> log.lines().filter { it.startsWith("[ERROR]") }
+                    }
+                }
+                .map {
+                    val (_, fileG, _, lineG, colG, messageG) =
+                            errorMessageRe.find(it)?.groupValues ?: return@map null
+                    val file = fileG.replaceBefore("/build/", "").removePrefix("/build/")
+                    val line = lineG.toIntOrNull() ?: return@map null
+                    val col = colG.toIntOrNull() ?: return@map null
+                    val message = messageG.trim()
+                    file to SubmissionCodeAnnotation(
+                            SubmissionCodeAnnotationSeverity.error,
+                            "Compiler error: $message",
+                            SubmissionCodeAnnotationPosition(line, col)
+                    )
+                }
+                .filterNotNull()
+                .groupBy(
+                        keySelector = { it.first },
+                        valueTransform = { it.second }
+                )
+        return SubmissionCodeAnnotationResponse(compilerErrors.mapValues { it.value.toSet() })
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Search)
