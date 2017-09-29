@@ -135,17 +135,18 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     }
 
     componentDidMount() {
-        this.textArea.focus();
         this.mousetrap = new Mousetrap(this.textArea);
         this.mousetrap.bind("mod+enter", () =>
-            this.props.formState.processing || this.props.onSubmit(this.state.editText))
+            this.props.formState.processing || this.props.onSubmit(this.state.editText));
+        if (!this.props.formState.processing)
+            this.textArea.focus();
     }
 
     componentDidUpdate(prevProps: CommentFormProps, prevState: CommentFormState) {
         if (this.state.editState != prevState.editState)
             this.props.notifyEditorAboutChange();
 
-        if (this.state.editState == "edit")
+        if (this.state.editState == "edit" && !this.props.formState.processing)
             this.textArea.focus();
         else
             this.textArea.blur();

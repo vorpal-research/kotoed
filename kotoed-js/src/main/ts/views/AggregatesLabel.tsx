@@ -13,6 +13,16 @@ export default class AggregatesLabel extends React.PureComponent<CommentAggregat
         return `Unresolved comments: ${this.props.open} Resolved comments: ${this.props.closed}`;
     }
 
+    private get number() {
+        if (this.props.open == 0)
+            return "✔";
+        else if (this.props.open >= 100)
+            return "∞";
+        else
+            return `${this.props.open}`
+    }
+
+
     render() {
         if (this.props.open == 0 && this.props.closed == 0)
             return null;
@@ -21,7 +31,7 @@ export default class AggregatesLabel extends React.PureComponent<CommentAggregat
             <OverlayTrigger placement="right"
                             overlay={<Tooltip id="comment-aggregates-tooltip">{this.tooltipText}</Tooltip>}>
                 <Label className="comments-counter" bsStyle={this.labelClass}>
-                    {this.props.open + this.props.closed}
+                    {this.number}
                 </Label>
             </OverlayTrigger>
         )
