@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import java.sql.Timestamp
 import java.time.Instant
+import java.time.OffsetDateTime
 
 @AutoDeployable
 class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
@@ -31,7 +32,7 @@ class JUnitStatisticsVerticle : AbstractKotoedVerticle(), Loggable {
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
-            time = Timestamp.from(Instant.now())
+            time = OffsetDateTime.from(Instant.now())
             type = logContent.logName()
                     .splitToSequence('/')
                     .last()
@@ -61,7 +62,7 @@ class KFirstRunnerVerticle : AbstractKotoedVerticle(), Loggable {
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
-            time = Timestamp.from(Instant.now())
+            time = OffsetDateTime.from(Instant.now())
             type = logContent.logName()
                     .splitToSequence('/')
                     .last()
@@ -101,7 +102,7 @@ class BuildLogVerticle : AbstractKotoedVerticle(), Loggable {
 
         val result: SubmissionResultRecord = SubmissionResultRecord().apply {
             submissionId = build.submissionId
-            time = Timestamp.from(Instant.now())
+            time = OffsetDateTime.from(Instant.now())
             type = "Failed build log for ${logContent.stepName()}/${logContent.logName()}"
             body = json
         }
