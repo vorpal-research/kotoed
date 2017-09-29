@@ -12,6 +12,7 @@ import org.jooq.Record
 import ru.spbstu.ktuples.*
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
 import kotlin.reflect.*
@@ -189,6 +190,7 @@ internal fun Any?.tryToJson(): Any? =
             is Date -> time
             is Instant -> this.toEpochMilli()
             is LocalDateTime -> this.toInstant(ZoneOffset.UTC).toEpochMilli()
+            is OffsetDateTime -> this.toInstant().toEpochMilli()
             else -> throw IllegalArgumentException("Cannot convert $this to json")
         }
 
@@ -295,6 +297,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                 Instant::class -> Instant.ofEpochMilli(toLong())
                 Date::class -> Date.from(Instant.ofEpochMilli(toLong()))
                 LocalDateTime::class -> LocalDateTime.ofInstant(Instant.ofEpochMilli(toLong()), ZoneOffset.UTC)
+                OffsetDateTime::class -> OffsetDateTime.ofInstant(Instant.ofEpochMilli(toLong()), ZoneOffset.UTC)
 
                 else -> die()
             }
