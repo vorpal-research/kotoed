@@ -145,7 +145,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val id = message.getValue(pk.name)
         log.trace("Delete requested for id = $id in table ${table.name}")
 
-        return dbWithTransaction {
+        return db {
             delete(table)
                     .where(pk.eq(id))
                     .returning()
@@ -175,7 +175,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Find requested in table ${table.name}:\n" +
                 query.toJson().encodePrettily())
 
-        val resp = dbWithTransaction {
+        val resp = db {
             selectFrom(table)
                     .where(message.toWhere())
                     .fetch()
@@ -196,16 +196,14 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 message.toJson().encodePrettily())
         return db {
             sqlStateAware {
-                withTransaction {
-                    update(table)
-                            .set(message)
-                            .where(pk.eq(id))
-                            .returning()
-                            .fetch()
-                            .into(recordClass)
-                            .firstOrNull()
-                            ?: throw NotFound("Cannot find ${table.name} entry for id $id")
-                }
+                update(table)
+                        .set(message)
+                        .where(pk.eq(id))
+                        .returning()
+                        .fetch()
+                        .into(recordClass)
+                        .firstOrNull()
+                        ?: throw NotFound("Cannot find ${table.name} entry for id $id")
             }
         }
     }
@@ -224,16 +222,13 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 message.toJson().encodePrettily())
         return db {
             sqlStateAware {
-                withTransaction {
-                    update(table)
-                            .set(message.patch)
-                            .where(message.criteria.toWhere())
-                            .execute()
-                }
+                update(table)
+                        .set(message.patch)
+                        .where(message.criteria.toWhere())
+                        .execute()
             }
         }
     }
-
 
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "createAddress")
@@ -250,14 +245,12 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
         return db {
             sqlStateAware {
-                withTransaction {
-                    insertInto(table)
-                            .set(message)
-                            .returning()
-                            .fetch()
-                            .into(recordClass)
-                            .first()
-                }
+                insertInto(table)
+                        .set(message)
+                        .returning()
+                        .fetch()
+                        .into(recordClass)
+                        .first()
             }
         }
     }
@@ -329,15 +322,17 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     private fun jsonb_build_object(args: List<QueryPart>) =
             FunctionCall<Any>("jsonb_build_object", Any::class, args).coerce(PostgresDataTypeEx.JSONB)
+
     private fun to_jsonb(arg: QueryPart) =
             FunctionCall<Any>("to_jsonb", arg).coerce(PostgresDataTypeEx.JSONB)
+
     private fun array(arg: QueryPart) =
             FunctionCall<Any>("array", arg)
 
     private fun convertField(field: Field<*>): Field<*> {
-        if(field.dataType.isDateTime) {
+        if (field.dataType.isDateTime) {
             //language=SQL
-            return DSL.field("((EXTRACT(EPOCH FROM ({0}::TIMESTAMP WITH TIME ZONE)) * 1000)::bigint)", Long::class.java, field).uncheckedCast()
+            return DSL.field("((EXTRACT(EPOCH FROM ({0}::TIMESTAMP WITH TIME ZONE)) * 1000)::BIGINT)", Long::class.java, field).uncheckedCast()
         }
         return field
     }
@@ -351,7 +346,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 table.fields().flatMap { listOf(DSL.`val`(it.name), convertField(table.field(it))) } +
                         message.joins.orEmpty().flatMap {
                             val query = (it.query ?: ComplexDatabaseQuery()).let { q ->
-                                if(q.table == null) q.copy(table = table.tableReferencedBy(table.field(it.field))?.name)
+                                if (q.table == null) q.copy(table = table.tableReferencedBy(table.field(it.field))?.name)
                                 else q
                             }
 
@@ -410,7 +405,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         log.trace("Query in table ${table.name}:\n" +
                 message.toJson().encodePrettily())
 
-        return dbWithTransaction {
+        return db {
             val where = queryToSelect(message)
 
             where
@@ -426,11 +421,13 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                         }
                     }
                     .fetch()
-        }.map { record -> record[0].walk {
-            onObject {
-                if("id" in it && it["id"] == null) null else defaultObjectCallback(it) // XXX this is generally fucked up
+        }.map { (res) ->
+            res.walk {
+                onObject {
+                    if ("id" in it && it["id"] == null) null else defaultObjectCallback(it) // XXX this is generally fucked up
+                }
             }
-        }}.let(::JsonArray)
+        }.let(::JsonArray)
     }
 
     data class CountResponse(val count: Int) : Jsonable
@@ -456,7 +453,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val joinedTables: List<Table<*>> = joins.map { it.v2 }
         val tableMap = mapOf(table.name to table) + joinedTables.map { it.name to it }.toMap()
 
-        return dbWithTransaction {
+        return db {
             val select = select(DSL.count()).from(table)
             val join = joins.fold(select) { a, (from, field, to, _, key) ->
                 a.leftJoin(to).on(from.field(field).uncheckedCast<Field<Any>>().eq(key?.let { to.field(it) } ?: to.primaryKeyField))
@@ -513,7 +510,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
                         select(*table.fields())
                                 .from(table.join(fk.key.table).onKey(fk))
                                 .where(fkField.eq(id))
-                                .fetchKAsync()
+                                .fetch()
                                 .into(JsonObject::class.java)
                                 .let(::JsonArray)
 
