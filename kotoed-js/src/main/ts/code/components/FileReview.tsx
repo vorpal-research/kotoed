@@ -128,12 +128,26 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             badge);
     };
 
+    private processComments = () => {
+        let totalLines = this.editor.getDoc().lineCount();
+        return this.props.comments.withMutations(mut => {
+            mut.keySeq().filter(n => n != undefined && toCmLine(n) >= totalLines).forEach(
+                n => n && mut.update(
+                    fromCmLine(totalLines - 1),
+                    LineComments(),
+                    oldValue => oldValue.concat(mut.get(n)) as LineComments
+                )
+            )
+        });
+    };
+
     private renderMarkers = () => {
         let scrollInfo = this.editor.getScrollInfo();
+        let newComments = this.processComments();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
-            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
+            let comments: LineComments = newComments.get(reviewLine, LineComments());
 
             this.renderMarker(cmLine, comments);
         }
@@ -143,10 +157,11 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private incrementallyRenderMarkers = (oldProps: FileReviewProps) => {
         let oldFileComments = oldProps.comments;
         let scrollInfo = this.editor.getScrollInfo();
+        let newComments = this.processComments();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
-            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
+            let comments: LineComments = newComments.get(reviewLine, LineComments());
             let oldComments = oldFileComments.get(reviewLine, LineComments());
             let formState: FormState = this.props.forms.get(reviewLine) || DEFAULT_FORM_STATE;
             let oldFormState: FormState = oldProps.forms.get(reviewLine) || DEFAULT_FORM_STATE;
