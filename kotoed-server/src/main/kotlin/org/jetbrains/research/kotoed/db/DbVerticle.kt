@@ -565,6 +565,9 @@ class SubmissionCommentTextSearchVerticle : CrudDatabaseVerticleWithReferences<S
 class ProjectTextSearchVerticle : CrudDatabaseVerticleWithReferences<ProjectTextSearchRecord>(Tables.PROJECT_TEXT_SEARCH)
 
 @AutoDeployable
+class ProjectRestrictedTextSearchVerticle : CrudDatabaseVerticleWithReferences<ProjectRestrictedTextSearchRecord>(Tables.PROJECT_RESTRICTED_TEXT_SEARCH)
+
+@AutoDeployable
 class CourseTextSearchVerticle : CrudDatabaseVerticleWithReferences<CourseTextSearchRecord>(Tables.COURSE_TEXT_SEARCH)
 
 @AutoDeployable

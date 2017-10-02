@@ -138,7 +138,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
         val projects: List<JsonObject> =
                 sendJsonableCollectAsync(
-                        Address.DB.query(Tables.PROJECT_TEXT_SEARCH.name),
+                        Address.DB.query(tableName),
                         qWithSearch)
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
@@ -163,7 +163,13 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
     suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): JsonObject {
-        val q = ComplexDatabaseQuery(Tables.PROJECT_TEXT_SEARCH.name)
+        val tableName =
+                if(query.withTags == true)
+                    Tables.PROJECT_TEXT_SEARCH.name
+                else Tables.PROJECT_RESTRICTED_TEXT_SEARCH.name
+
+
+        val q = ComplexDatabaseQuery(tableName)
                 .find(ProjectRecord().apply{ deleted = false })
                 .join(Tables.DENIZEN.name)
                 .find(ProjectRecord().apply {
@@ -173,6 +179,6 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
         val qWithSearch = if (query.text == "") q else q.filter("document matches %s".formatToQuery(query.text))
 
-        return sendJsonableAsync(Address.DB.count(Tables.PROJECT_TEXT_SEARCH.name), qWithSearch)
+        return sendJsonableAsync(Address.DB.count(tableName), qWithSearch)
     }
 }
