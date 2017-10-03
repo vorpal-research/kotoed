@@ -19,6 +19,7 @@ val HarmlessTypes =
         ByTypes(BridgeEventType.RECEIVE,
                 BridgeEventType.SOCKET_IDLE,
                 BridgeEventType.SOCKET_PING,
+                BridgeEventType.SOCKET_CLOSED,
                 BridgeEventType.SOCKET_CREATED)
 
 val Send = ByType(BridgeEventType.SEND)
