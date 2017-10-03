@@ -177,6 +177,11 @@ fun String.truncateAt(index: Int) =
         if(index < length) take(index - 3) + "..."
         else this
 
+fun String.escapeCommonSymbols() =
+        replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replace("\"", "\\\"")
+
 inline operator fun MatchGroupCollection?.component1() = this?.get(0)
 inline operator fun MatchGroupCollection?.component2() = this?.get(1)
 inline operator fun MatchGroupCollection?.component3() = this?.get(2)

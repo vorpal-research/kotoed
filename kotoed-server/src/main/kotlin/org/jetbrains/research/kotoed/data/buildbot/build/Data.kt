@@ -1,6 +1,8 @@
 package org.jetbrains.research.kotoed.data.buildbot.build
 
 import org.jetbrains.research.kotoed.data.EventBusDatum
+import org.jetbrains.research.kotoed.util.escapeCommonSymbols
+import org.jetbrains.research.kotoed.util.truncateAt
 
 data class TriggerBuild(
         val schedulerId: String,
@@ -55,4 +57,6 @@ data class LogContent(
 
     fun logName() = logCrawl.logName
     fun logType() = logCrawl.logType
+
+    override fun toString() = "LogContent($logCrawl, \"${content.truncateAt(3000)}\")"
 }

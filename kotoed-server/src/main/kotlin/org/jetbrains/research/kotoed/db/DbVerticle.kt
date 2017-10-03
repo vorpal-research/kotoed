@@ -172,8 +172,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     protected open suspend fun handleFind(message: R): JsonArray {
         val query = message
-        log.trace("Find requested in table ${table.name}:\n" +
-                query.toJson().encodePrettily())
+        log.trace("Find requested in table ${table.name}:\n$query")
 
         val resp = db {
             selectFrom(table)
@@ -192,8 +191,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     protected open suspend fun handleUpdate(message: R): R {
         val id = message[pk]
-        log.trace("Update requested for id = $id in table ${table.name}:\n" +
-                message.toJson().encodePrettily())
+        log.trace("Update requested for id = $id in table ${table.name}:\n$message")
         return db {
             sqlStateAware {
                 update(table)
@@ -218,8 +216,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             )
 
     protected open suspend fun handleBatchUpdate(message: BatchUpdateMsg<R>) { // TODO UPDATE RETURNING
-        log.trace("Batch update requested for in table ${table.name}:\n" +
-                message.toJson().encodePrettily())
+        log.trace("Batch update requested for in table ${table.name}:\n$message")
         return db {
             sqlStateAware {
                 update(table)
@@ -236,8 +233,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             handleCreate(message.toRecord(recordClass)).toJson()
 
     protected open suspend fun handleCreate(message: R): R {
-        log.trace("Create requested in table ${table.name}:\n" +
-                message.toJson().encodePrettily())
+        log.trace("Create requested in table ${table.name}:\n$message")
 
         for (field in table.primaryKey.fieldsArray) {
             message.reset(field)
@@ -263,8 +259,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     protected open suspend fun handleBatchCreate(message: List<R>): List<R> {
         log.trace("Batch create requested in table ${table.name}:\n" +
-                message.map { it.toJson().encodePrettily() }
-                        .joinToString(prefix = "[", postfix = "]")
+                message.joinToString(separator = "\n")
         )
 
         if (message.isEmpty()) return emptyList()
@@ -331,7 +326,6 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     private fun convertField(field: Field<*>): Field<*> {
         if (field.dataType.isDateTime) {
-            //language=SQL
             return DSL.field("((EXTRACT(EPOCH FROM ({0}::TIMESTAMP WITH TIME ZONE)) * 1000)::BIGINT)", Long::class.java, field).uncheckedCast()
         }
         return field
