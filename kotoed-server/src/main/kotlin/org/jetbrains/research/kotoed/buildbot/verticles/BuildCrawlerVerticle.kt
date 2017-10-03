@@ -51,7 +51,9 @@ data class LogChunksResponse(
 data class LogChunk(
         val logid: Int,
         val content: String
-) : Jsonable
+) : Jsonable {
+    override fun toString() = "LogChunk($logid, \"${content.truncateAt(3000)}\")"
+}
 
 
 @AutoDeployable

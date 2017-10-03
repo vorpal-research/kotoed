@@ -5,11 +5,9 @@ import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
-import org.jetbrains.research.kotoed.util.LogExceptions
-import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.VertxContext
-import org.jetbrains.research.kotoed.util.newRequestUUID
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
+import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUpBody
 import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
 
 class BridgeGuardian(val vertx: Vertx,
@@ -20,7 +18,8 @@ class BridgeGuardian(val vertx: Vertx,
         var context = LogExceptions() + VertxContext(vertx)
         if (be.rawMessage != null) {
             val uuid = newRequestUUID()
-            log.trace("Assigning $uuid to ${be.rawMessage} from principal ${be.socket()?.webUser()?.principal()}")
+            log.trace("Assigning $uuid to ${be.rawMessage.cleanUpBody().toString().truncateAt(500)}\n" +
+                    "from principal ${be.socket()?.webUser()?.principal()}")
             context += CoroutineName(uuid)
         }
 
