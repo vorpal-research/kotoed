@@ -11,8 +11,8 @@ import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.util.routing.Templatize
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
-import org.jetbrains.research.kotoed.web.navigation.Context
-import org.jetbrains.research.kotoed.web.navigation.kotoedNavBar
+import org.jetbrains.research.kotoed.web.eventbus.DenizenWithProfile
+import org.jetbrains.research.kotoed.web.navigation.*
 
 @HandlerFor(UrlPattern.Profile.Index)
 @Templatize("profile.jade")
@@ -27,13 +27,31 @@ suspend fun handleProfileIndex(context: RoutingContext) {
         return
     }
 
+    val myId = context.user().principal()?.getInteger("id")
+
     if (!(context.user().isAuthorisedAsync(Authority.Teacher)
-            || context.user().principal()?.getInteger("id") == intId)) {
+            || myId == intId)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return
     }
 
+    val denWithProf = DenizenWithProfile.fetchByIdOrNull(context.vertx().eventBus(), intId)
+
+    denWithProf?.denizen ?: run {
+        context.fail(HttpResponseStatus.NOT_FOUND)
+        return
+    }
+
+    // Probably not the best way but who cares
+    if (myId == intId)
+        context.put(Context.BreadCrumb, MyProfileBreadCrumb(denWithProf.denizen))
+    else
+        context.put(Context.BreadCrumb, ProfileBreadCrumb(denWithProf.denizen, denWithProf.profile))
+
+
     context.put(Context.NavBar, kotoedNavBar(context.user()))
+
+
 }
 
 @HandlerFor(UrlPattern.Profile.Edit)
@@ -49,11 +67,27 @@ suspend fun handleProfileEdit(context: RoutingContext) {
         return
     }
 
+    val myId = context.user().principal()?.getInteger("id")
+
     if (!(context.user().isAuthorisedAsync(Authority.Teacher)
-            || context.user().principal()?.getInteger("id") == intId)) {
+            || myId == intId)) {
         context.fail(HttpResponseStatus.FORBIDDEN)
         return
     }
+
+    val denWithProf = DenizenWithProfile.fetchByIdOrNull(context.vertx().eventBus(), intId)
+
+    denWithProf?.denizen ?: run {
+        context.fail(HttpResponseStatus.NOT_FOUND)
+        return
+    }
+    
+    // Probably not the best way but who cares
+    if (myId == intId)
+        context.put(Context.BreadCrumb, MyProfileEditBreadCrumb(denWithProf.denizen))
+    else
+        context.put(Context.BreadCrumb, ProfileEditBreadCrumb(denWithProf.denizen, denWithProf.profile))
+
 
     context.put(Context.NavBar, kotoedNavBar(context.user()))
 }
