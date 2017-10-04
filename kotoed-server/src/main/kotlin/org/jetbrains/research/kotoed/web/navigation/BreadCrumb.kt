@@ -76,6 +76,38 @@ fun SubmissionByTagsSearchBreadCrumbElement(active: Boolean) =
 fun DenizenSearchBreadCrumbElement(active: Boolean) =
         BreadCrumbElement(text = "User search", active = active, href = UrlPattern.Denizen.Search)
 
+fun ProfileBreadCrumbElemement(active: Boolean,
+                               denizen: DenizenRecord,
+                               profile: ProfileRecord?): BreadCrumbElement {
+
+    val realName = (profile?.run {
+        listOf(profile.firstName, profile.lastName, profile.groupId).filterNotNull()
+    } ?: listOf()).run {
+        if (isEmpty())
+            ""
+        else
+            joinToString(separator = " ", prefix = " (", postfix = ")")
+    }
+    return BreadCrumbElement(
+            text = "${denizen.denizenId}$realName",
+            active = active,
+            href = UrlPattern.reverse(UrlPattern.Profile.Index, mapOf("id" to denizen.id))
+    )
+}
+
+fun ProfileEditBreadCrumbElement(active: Boolean,
+                                 denizen: DenizenRecord) = BreadCrumbElement(
+        text = "Edit",
+        active = active,
+        href = UrlPattern.reverse(UrlPattern.Profile.Edit, mapOf("id" to denizen.id))
+)
+
+fun MyProfileBreadCrumbElemement(active: Boolean,
+                                 denizen: DenizenRecord) = BreadCrumbElement(
+        text = "My profile",
+        active = active,
+        href = UrlPattern.reverse(UrlPattern.Profile.Index, mapOf("id" to denizen.id))
+)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Crumbs
@@ -131,20 +163,44 @@ fun SubmissionReviewBreadCrumb(course: CourseRecord,
 
 val CommentSearchBreadCrumb =
         RootBreadCrumbElement(false) +
-                UtilitiesBreadCrumbElement(true) +
+                UtilitiesBreadCrumbElement(false) +
                 CommentSearchBreadCrumbElement(true)
 
 val ProjectSearchBreadCrumb =
         RootBreadCrumbElement(false) +
-                UtilitiesBreadCrumbElement(true) +
+                UtilitiesBreadCrumbElement(false) +
                 ProjectSearchBreadCrumbElement(true)
 
 val SubmissionByTagsSearchBreadCrumb =
         RootBreadCrumbElement(false) +
-                UtilitiesBreadCrumbElement(true) +
+                UtilitiesBreadCrumbElement(false) +
                 SubmissionByTagsSearchBreadCrumbElement(true)
 
 val DenizenSearchBreadCrumb =
         RootBreadCrumbElement(false) +
-                UtilitiesBreadCrumbElement(true) +
+                UtilitiesBreadCrumbElement(false) +
                 DenizenSearchBreadCrumbElement(true)
+
+fun ProfileBreadCrumb(denizen: DenizenRecord,
+                      profile: ProfileRecord?) =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(false) +
+                DenizenSearchBreadCrumbElement(false) +
+                ProfileBreadCrumbElemement(true, denizen, profile)
+
+fun ProfileEditBreadCrumb(denizen: DenizenRecord, profile: ProfileRecord?) =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(false) +
+                DenizenSearchBreadCrumbElement(false) +
+                ProfileBreadCrumbElemement(false, denizen, profile) +
+                ProfileEditBreadCrumbElement(true, denizen)
+
+fun MyProfileBreadCrumb(denizen: DenizenRecord) =
+        RootBreadCrumbElement(false) +
+                MyProfileBreadCrumbElemement(true, denizen)
+
+fun MyProfileEditBreadCrumb(denizen: DenizenRecord) =
+        RootBreadCrumbElement(false) +
+                UtilitiesBreadCrumbElement(false) +
+                MyProfileBreadCrumbElemement(false, denizen) +
+                ProfileEditBreadCrumbElement(true, denizen)

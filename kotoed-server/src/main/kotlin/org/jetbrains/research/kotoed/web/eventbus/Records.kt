@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.data.db.DatabaseJoin
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.COURSE
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
+import org.jetbrains.research.kotoed.database.Tables.PROFILE
 import org.jetbrains.research.kotoed.database.Tables.PROJECT
 import org.jetbrains.research.kotoed.database.Tables.SUBMISSION
 import org.jetbrains.research.kotoed.database.tables.SubmissionComment
@@ -176,3 +177,27 @@ data class SubmissionWithRelated(val course: CourseRecord,
     }
 }
 
+data class DenizenWithProfile(val denizen: DenizenRecord,
+                              val profile: ProfileRecord?) {
+    companion object {
+        suspend fun fetchByIdOrNull(eventBus: EventBus, id: Int): DenizenWithProfile? {
+            val query = ComplexDatabaseQuery(
+                    DENIZEN.name)
+                    .find(ProjectRecord().apply { this.id = id })
+                    .rjoin(PROFILE.name)
+
+            val res: List<JsonObject> = eventBus.sendJsonableCollectAsync(Address.DB.query(PROJECT.name), query)
+
+            return res.firstOrNull()?.run { Companion.fromJson(this) }
+        }
+
+        private fun fromJson(obj: JsonObject): DenizenWithProfile {
+            return DenizenWithProfile(
+                    denizen = obj.toRecord(),
+                    profile = obj.getJsonArray("profiles")
+                            ?.firstOrNull()
+                            ?.uncheckedCastOrNull<JsonObject>()
+                            ?.toRecord())
+        }
+    }
+}
