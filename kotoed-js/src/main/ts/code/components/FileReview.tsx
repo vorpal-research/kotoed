@@ -128,26 +128,81 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             badge);
     };
 
-    private processComments = () => {
-        let totalLines = this.editor.getDoc().lineCount();
-        return this.props.comments.withMutations(mut => {
-            mut.keySeq().filter(n => n != undefined && toCmLine(n) >= totalLines).forEach(
-                n => n && mut.update(
-                    fromCmLine(totalLines - 1),
-                    LineComments(),
-                    oldValue => oldValue.concat(mut.get(n)) as LineComments
-                )
-            )
-        });
+    private get lastCommentLocation() {
+        return this.props.comments.keySeq().toList().max();
+    }
+
+    private get lineCount() {
+        return this.props.value.split("\n").length;
+    }
+
+    private get fakeLinesCount() {
+        let lastLine = toCmLine(this.lastCommentLocation);
+        let lineCount = this.lineCount;
+        return Math.max(lastLine - lineCount + 1, 0)
+    }
+
+    private get processedValue() {
+        return this.props.value +
+            "\n ".repeat(this.fakeLinesCount)  // Note: space is intended here. CM cannot .markText() an empty line
+                                               // (or at least I don't know how to do it)
     };
+
+
+    private unGrayOutFakeLines() {
+        for (let i = this.lineCount; i <= toCmLine(this.lastCommentLocation); i++) {
+            this.editor.removeLineClass(i, "text", "cm-fake-line");
+            this.editor.removeLineClass(i, "wrap", "cm-fake-line");
+            // No need to unmark text here (text is marked for document)
+        }
+    }
+
+    private grayOutFakeLines() {
+        for (let i = this.lineCount; i <= toCmLine(this.lastCommentLocation); i++) {
+            this.editor.addLineClass(i, "text", "cm-fake-line");
+            this.editor.addLineClass(i, "wrap", "cm-fake-line");
+            if (this.props.comments.get(fromCmLine(i), LineComments()).isEmpty()) {
+                this.editor.getDoc().markText(
+                    {
+                        line: i,
+                        ch: 0
+                    },
+                    {
+                        line: i,
+                        ch: Infinity
+                    },
+                    {
+                        inclusiveRight: true,
+                        inclusiveLeft: true,
+                        collapsed: true
+                    });
+            } else {
+                this.editor.getDoc().markText(
+                    {
+                        line: i,
+                        ch: 0
+                    },
+                    {
+                        line: i,
+                        ch: Infinity
+                    },
+                    {
+                        inclusiveRight: true,
+                        inclusiveLeft: true,
+                        readOnly: true,
+                        atomic: true
+                    });
+            }
+        }
+    }
+
 
     private renderMarkers = () => {
         let scrollInfo = this.editor.getScrollInfo();
-        let newComments = this.processComments();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
-            let comments: LineComments = newComments.get(reviewLine, LineComments());
+            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
 
             this.renderMarker(cmLine, comments);
         }
@@ -157,11 +212,10 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     private incrementallyRenderMarkers = (oldProps: FileReviewProps) => {
         let oldFileComments = oldProps.comments;
         let scrollInfo = this.editor.getScrollInfo();
-        let newComments = this.processComments();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
             let reviewLine = fromCmLine(cmLine);
-            let comments: LineComments = newComments.get(reviewLine, LineComments());
+            let comments: LineComments = this.props.comments.get(reviewLine, LineComments());
             let oldComments = oldFileComments.get(reviewLine, LineComments());
             let formState: FormState = this.props.forms.get(reviewLine) || DEFAULT_FORM_STATE;
             let oldFormState: FormState = oldProps.forms.get(reviewLine) || DEFAULT_FORM_STATE;
@@ -298,6 +352,9 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
         this.editor.setSize("100%", this.props.height);
 
+        this.editor.setValue(this.processedValue);
+        this.grayOutFakeLines();
+
         this.updateArrowOffset();
 
         this.renderMarkers();
@@ -318,11 +375,15 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (this.shouldResetExpanded(this.props, props)) {
             this.resetExpanded(props)
         }
+
+        if (this.props.filePath !== props.filePath) {
+            this.unGrayOutFakeLines()
+        }
     }
 
     componentDidUpdate(oldProps: FileReviewProps) {
         if (oldProps.value !== this.props.value) {
-            this.editor.setValue(this.props.value);
+            this.editor.setValue(this.processedValue);
             this.updateArrowOffset();
         }
 
@@ -330,6 +391,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             let newMode = guessCmModeForFile(this.props.filePath);
             requireCmMode(newMode);
             this.editor.setOption("mode", editorModeParam(newMode));
+            this.grayOutFakeLines();
         }
 
         if (this.shouldResetExpanded(oldProps, this.props)) {
