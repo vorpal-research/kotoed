@@ -39,6 +39,7 @@ fun parseGitDiff(lines: Sequence<String>): List<Diff> {
 
     for(line in lines) when {
         line.startsWith("diff") -> newDiff()
+        line.startsWith("Binary") && diffs.isNotEmpty() -> diffs.remove(currentDiff())
         // XXX: in unified diff, these filenames may(sic!) be followed by whatever-formatted timestamps
         // making it one hell of a parsing experience if filepaths may contains spaces
         line.startsWith("---") -> {
