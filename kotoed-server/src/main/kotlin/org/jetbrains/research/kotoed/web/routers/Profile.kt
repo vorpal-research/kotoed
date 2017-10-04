@@ -81,7 +81,7 @@ suspend fun handleProfileEdit(context: RoutingContext) {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
-    
+
     // Probably not the best way but who cares
     if (myId == intId)
         context.put(Context.BreadCrumb, MyProfileEditBreadCrumb(denWithProf.denizen))
