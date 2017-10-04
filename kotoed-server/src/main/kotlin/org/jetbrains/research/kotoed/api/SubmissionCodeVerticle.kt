@@ -126,7 +126,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             var current = mutableCodeTree
             for (crumb in path) {
                 current.changed = true
-                current = current.computeIfAbsent(crumb) { MutableCodeTree() }
+                current = current[crumb] ?: break // do not mark removed files or "/dev/null"
                 current.changed = true
             }
         }
@@ -198,7 +198,10 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         }
 
         return ListResponse(
-                root = buildCodeTree(innerResp.files, diff.contents.flatMap { listOf(it.fromFile, it.toFile) }),
+                root = buildCodeTree(
+                        innerResp.files,
+                        diff.contents.flatMap { listOf(it.fromFile, it.toFile) }
+                ),
                 status = repoInfo.cloneStatus
         )
     }
