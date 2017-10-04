@@ -151,16 +151,16 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
     private unGrayOutFakeLines() {
         for (let i = this.lineCount; i <= toCmLine(this.lastCommentLocation); i++) {
-            this.editor.removeLineClass(i, "text", "cm-fake-line");
-            this.editor.removeLineClass(i, "wrap", "cm-fake-line");
+            this.editor.removeLineClass(i, "wrap", "cm-fake-line-wrap");
+            this.editor.removeLineClass(i, "gutter", "cm-fake-line-gutter")
             // No need to unmark text here (text is marked for document)
         }
     }
 
     private grayOutFakeLines() {
         for (let i = this.lineCount; i <= toCmLine(this.lastCommentLocation); i++) {
-            this.editor.addLineClass(i, "text", "cm-fake-line");
-            this.editor.addLineClass(i, "wrap", "cm-fake-line");
+            this.editor.addLineClass(i, "wrap", "cm-fake-line-wrap");
+            this.editor.addLineClass(i, "gutter", "cm-fake-line-gutter");
             if (this.props.comments.get(fromCmLine(i), LineComments()).isEmpty()) {
                 this.editor.getDoc().markText(
                     {
