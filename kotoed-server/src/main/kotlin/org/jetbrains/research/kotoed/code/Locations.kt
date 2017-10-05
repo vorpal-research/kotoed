@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.code
 
 import org.jetbrains.research.kotoed.util.GlobalLogging.log
 import org.jetbrains.research.kotoed.util.Jsonable
+import org.jetbrains.research.kotoed.util.chunksBy
 import org.wickedsource.diffparser.api.model.Diff
 import org.wickedsource.diffparser.api.model.Hunk
 import org.wickedsource.diffparser.api.model.Line
@@ -43,19 +44,19 @@ fun Location.applyDiffs(diffs: List<Diff>): Location {
 
         preHunk ?: return this
 
-        log.info("preHunk.lineShift = ${preHunk.lineShift}")
-        log.info("line = ${line}")
-
         return Location(diff.toFileName.asFilename(), line + preHunk.lineShift, col)
     }
 
     var curFrom = hunk.fromFileRange.lineStart
     var curTo = hunk.toFileRange.lineStart
 
-    var lastNeutralFrom = curFrom;
-    var lastNeutralTo = curTo;
+    var lastNeutralFrom = curFrom
+    var lastNeutralTo = curTo
+    var nextNeutralTo = curTo
 
-    for(line in hunk.lines) {
+    val hunkIter = hunk.lines.iterator()
+
+    for(line in hunkIter) {
         when(line.lineType) {
             null -> throw IllegalArgumentException("Hunk line should not be null")
             Line.LineType.NEUTRAL -> {
@@ -67,10 +68,22 @@ fun Location.applyDiffs(diffs: List<Diff>): Location {
             Line.LineType.FROM -> { ++curFrom }
         }
 
-        if(curFrom == this.line) break
+        if(curFrom == this.line) {
+            break
+        }
     }
-    curTo = (curFrom - lastNeutralFrom) + lastNeutralTo
+    val resultTo = (curFrom - lastNeutralFrom) + lastNeutralTo
 
-    return Location(diff.toFileName.asFilename(), curTo, col)
+    // second for on an iterator visits only elements not visited first time, which is pretty nifty
+    loop@ for(line in hunkIter) {
+        when(line.lineType) {
+            null -> throw IllegalArgumentException("Hunk line should not be null")
+            Line.LineType.NEUTRAL -> break@loop
+            Line.LineType.TO -> { ++curTo }
+            Line.LineType.FROM -> {}
+        }
+    }
+
+    return Location(diff.toFileName.asFilename(), minOf(resultTo, curTo), col)
 
 }
