@@ -212,3 +212,31 @@ fun <T: Comparable<T>> Triple<T, T, T>.sorted() =
             second <= third -> Triple(second, third, first)
             else -> Triple(third, second, first)
         }
+
+private class MutableAsImmutableList<E>(private val inner: MutableList<E>): List<E> by inner {
+    override fun hashCode() = inner.hashCode()
+    override fun equals(other: Any?) = inner.equals(other)
+    override fun toString() = inner.toString()
+}
+
+fun <T> MutableList<T>.asList(): List<T> = MutableAsImmutableList(this)
+
+inline fun <T, S> List<T>.chunksBy(classifier: (T) -> S): List<Pair<S, List<T>>> {
+    if (isEmpty()) return emptyList()
+
+    var lastIndex = 0
+    var lastClass: S = classifier(this.first())
+    val result = mutableListOf<Pair<S, List<T>>>()
+
+    for ((index, e) in asSequence().withIndex().drop(1)) {
+        val cls = classifier(e)
+        if (cls != lastClass) {
+            result += lastClass to subList(lastIndex, index)
+            lastClass = cls
+            lastIndex = index
+        }
+    }
+
+    result += lastClass to subList(lastIndex, size)
+    return result.asList()
+}
