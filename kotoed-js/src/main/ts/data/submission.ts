@@ -5,7 +5,7 @@ import {WithVerificationData} from "./verification";
 import {WithBloatDenizen} from "./denizen";
 import {CSSProperties} from "react";
 
-export type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed"
+export type SubmissionState = "pending" | "invalid" | "open" | "obsolete" | "closed" | "deleted"
 
 export interface Submission {
     datetime: number

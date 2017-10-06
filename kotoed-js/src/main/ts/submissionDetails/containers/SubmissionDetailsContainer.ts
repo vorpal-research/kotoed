@@ -4,7 +4,7 @@ import SubmissionDetails, {SubmissionDetailsCallbacks, SubmissionDetailsProps} f
 import {Dispatch} from "redux";
 import {WithId} from "../../data/common";
 import {
-    addSubmissionTag, cleanSubmission,
+    addSubmissionTag, cleanSubmission, deleteSubmission,
     deleteSubmissionTag,
     fetchHistory,
     initialize,
@@ -47,6 +47,9 @@ const mapDispatchToProps = function (dispatch: Dispatch<SubmissionDetailsProps>,
         },
         onMount: () => {
             dispatch(initialize(ownProps.id))
+        },
+        onDelete: () => {
+            dispatch(deleteSubmission())
         }
     }
 };

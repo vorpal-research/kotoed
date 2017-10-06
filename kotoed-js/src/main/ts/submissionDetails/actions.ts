@@ -1,7 +1,7 @@
 import actionCreatorFactory from 'typescript-fsa';
 import {Dispatch} from "react-redux";
 import {DbRecordWrapper, isStatusFinal} from "../data/verification";
-import {BloatSubmission, SubmissionToRead, Tag} from "../data/submission";
+import {BloatSubmission, Submission, SubmissionToRead, Tag} from "../data/submission";
 import {
     addSubmissionTag as addSubmissionTagRemote,
     deleteSubmissionTag as deleteSubmissionTagRemote,
@@ -21,6 +21,8 @@ import {SubmissionDetailsProps} from "./components/SubmissionDetails";
 import {isSubmissionAvalable} from "../submissions/util";
 import {CommentAggregate} from "../code/remote/comments";
 import {pollDespairing} from "../util/poll";
+import {WithId} from "../data/common";
+import {RequestWithId} from "../code/remote/common";
 
 const actionCreator = actionCreatorFactory();
 
@@ -162,6 +164,16 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
 
         await pollSubmissionIfNeeded(payload.id, sub)(dispatch);
 
+    }
+}
+
+export function deleteSubmission() {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>, getState: () => SubmissionDetailsProps) => {
+        let sub = getState().submission.record;
+        await updateSubmissionRemote(sub.id, "deleted");
+        window.location.href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Project.Index, {
+            id: sub.projectId
+        });
     }
 }
 

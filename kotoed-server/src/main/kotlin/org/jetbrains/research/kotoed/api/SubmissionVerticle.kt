@@ -17,6 +17,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.web.UrlPattern
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.plus
 import java.util.*
@@ -100,19 +101,26 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         }) // TODO by whom?
     }
 
+    private val validStateTransitions: Set<Pair<SubmissionState, SubmissionState>> = setOf(
+            Pair(SubmissionState.open, SubmissionState.closed),
+            Pair(SubmissionState.closed, SubmissionState.open),
+            Pair(SubmissionState.open, SubmissionState.deleted),
+            Pair(SubmissionState.closed, SubmissionState.deleted),
+            Pair(SubmissionState.invalid, SubmissionState.deleted)
+    )
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Update)
     suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper {
         val existing = fetchByIdAsync(Tables.SUBMISSION, submission.id)
 
-        val shouldBeDone = (existing.state == SubmissionState.open || existing.state == SubmissionState.closed) &&
-                submission.state == SubmissionState.open || submission.state == SubmissionState.closed
+        val transitionIsValid = Pair(existing.state, submission.state) in validStateTransitions
 
         submission.apply {
             datetime = existing.datetime
             parentSubmissionId = existing.parentSubmissionId
             projectId = existing.projectId
             revision = existing.revision
-            state = if (!shouldBeDone)
+            state = if (!transitionIsValid)
                 existing.state
             else
                 state
@@ -121,7 +129,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
         val updated = dbUpdateAsync(submission)
 
-        if (shouldBeDone)
+        if (transitionIsValid)
             launch(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
                 notifyUpdated(updated)
             }
