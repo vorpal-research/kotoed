@@ -1,0 +1,1 @@
+ALTER TYPE submission_state ADD VALUE 'deleted';

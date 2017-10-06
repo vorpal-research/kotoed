@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Alert, Button, ButtonToolbar, Row, Table, Well, Label} from "react-bootstrap";
+import {Alert, Button, ButtonToolbar, OverlayTrigger, Popover, Row, Table, Well, Label} from "react-bootstrap";
 import * as Spinner from "react-spinkit"
 
 import SubmissionHistory from "./SubmissionHistory";
@@ -49,6 +49,7 @@ export interface SubmissionDetailsCallbacks {
     onReopen: () => void
     onClean: () => void
     onMount: () => void
+    onDelete: () => void
     onTagAdd: (tagId: number) => void
     onTagDelete: (tagId: number) => void
 }
@@ -140,6 +141,31 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             return <Button bsStyle="success" onClick={this.props.onReopen}>Reopen</Button>;
     };
 
+    private renderDelete = () => {
+        if (!this.props.permissions.changeState)  // Separate permission would be nice, but I am too lazy
+            return null;
+        else if (this.props.submission.record.state != "open" &&
+                this.props.submission.record.state != "closed" &&
+                this.props.submission.record.state != "invalid")
+            return null;
+        else
+            return <OverlayTrigger trigger="click" placement="bottom" overlay={
+                <Popover id="can-delete-popover">
+                    <strong>Are you sure?</strong>
+                    <br />
+                    <Button bsStyle="danger"
+                            block
+                            onClick={this.props.onDelete}>
+                        Delete
+                    </Button>
+                </Popover>
+            }>
+                <Button bsStyle="link">
+                    <span className={"text-danger"}>Delete this submission</span>
+                </Button>
+            </OverlayTrigger>
+    };
+
     private onTagAdd = (tagId: number) => {
         this.props.onTagAdd(tagId)
     };
@@ -182,6 +208,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
             <Row>
                 <div className="pull-right">
                     <ButtonToolbar>
+                        {this.renderDelete()}
                         {this.renderClean()}
                         {this.renderStateChange()}
                         {this.renderResubmit()}
