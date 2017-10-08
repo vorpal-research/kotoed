@@ -11,7 +11,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import java.time.OffsetDateTime
 
 data class ReportRequest(val date: OffsetDateTime?): Jsonable
-data class ReportReply(val open: List<Pair<String, Int>>, val closed: List<Pair<String, Int>>)
+data class ReportReply(val open: List<Pair<String, Int>>, val closed: List<Pair<String, Int>>): Jsonable
 
 @AutoDeployable
 class ReportVerticle: AbstractKotoedVerticle() {
