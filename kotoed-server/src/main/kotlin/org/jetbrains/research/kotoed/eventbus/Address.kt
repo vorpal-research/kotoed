@@ -5,6 +5,8 @@ object Address {
         fun create(entity: String) = "kotoed.api.$entity.create"
         fun read(entity: String) = "kotoed.api.$entity.read"
 
+        const val Report = "kotoed.api.report"
+
         object Course {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
