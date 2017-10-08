@@ -154,7 +154,7 @@ fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Notification.MarkAllRead to NotificationPatcher,
         Address.Api.Project.Create to ProjectCreatePatcher,
         Address.Api.Project.SearchForCourse to all(CourseListPatcher(vertx), WithTagsPatcher),
-        Address.Api.Project.SearchForCourseCount to CourseListPatcher(vertx),
+        Address.Api.Project.SearchForCourseCount to all(CourseListPatcher(vertx), WithTagsPatcher),
         Address.Api.Submission.Comment.Create to CommentCreatePatcher,
         Address.Api.Submission.List to WithTagsPatcher
 )
