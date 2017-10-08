@@ -75,7 +75,7 @@ class ReportVerticle: AbstractKotoedVerticle() {
     }
 
 
-    suspend fun makeReport(request: ReportRequest, subStatuses: List<String>): List<Pair<String, Int>> {
+    suspend fun makeReport(request: ReportRequest, subStates: List<String>): List<Pair<String, Int>> {
         val date = request.date ?: OffsetDateTime.now()
 
         val q = ComplexDatabaseQuery(Tables.SUBMISSION_RESULT)
@@ -85,7 +85,7 @@ class ReportVerticle: AbstractKotoedVerticle() {
                                         ComplexDatabaseQuery(Tables.PROJECT)
                                                 .join("denizen", "denizen_id")
                                 )
-                ).filter(subStatuses.map{ "submission.status == \"$it\"" }.joinToString(" or "))
+                ).filter(subStates.map{ "submission.state == \"$it\"" }.joinToString(" or "))
 
         val resp = dbQueryAsync(q)
 
