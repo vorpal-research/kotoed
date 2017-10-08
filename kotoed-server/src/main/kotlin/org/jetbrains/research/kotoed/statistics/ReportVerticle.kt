@@ -39,8 +39,9 @@ class ReportVerticle: AbstractKotoedVerticle() {
                 content.data
                 .groupBy { it.packageName.split('.').first() }
                 .mapValues { (_, results) ->
-                    results.filter { it.results.all { it.status == successfulStatus } }
-                            .flatMap { it.tags }
+                    results.groupBy { it.methodName }
+                            .filter { (_, v) -> v.flatMap { it.results }.all { it.status == successfulStatus } }
+                            .map { (_, v) -> v.flatMap { it.tags }.firstOrNull().orEmpty() }
                             .sortedWith(hardness)
                 }
 
