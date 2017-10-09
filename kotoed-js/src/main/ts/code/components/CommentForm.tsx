@@ -106,7 +106,9 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         return <ReactMarkdown
             source={this.state.editText}
             className="comment-markdown"
-            renderers={{CodeBlock: CmrmCodeBlock}}/>;
+            renderers={{CodeBlock: CmrmCodeBlock}}
+            escapeHtml={true}
+        />;
     };
 
     renderPanelBodyContent = () => {
