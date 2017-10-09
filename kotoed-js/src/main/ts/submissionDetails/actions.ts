@@ -161,9 +161,8 @@ export function updateSubmission(payload: SubmissionUpdateRequest) {
         }));
 
         await fetchPermissions(payload.id)(dispatch);
-
         await pollSubmissionIfNeeded(payload.id, sub)(dispatch);
-
+        await fetchPermissions(payload.id)(dispatch);
     }
 }
 
@@ -202,7 +201,7 @@ export function fetchAvailableTags() {
 export function addSubmissionTag(tagId: number, submissionId: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
         dispatch(submissionTagAdd.started({tagId, submissionId}));
-        let res = await addSubmissionTagRemote(tagId, submissionId);
+        await addSubmissionTagRemote(tagId, submissionId);
         dispatch(submissionTagAdd.done({
             params: {tagId, submissionId},
             result: tagId
@@ -213,7 +212,7 @@ export function addSubmissionTag(tagId: number, submissionId: number) {
 export function deleteSubmissionTag(tagId: number, submissionId: number) {
     return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
         dispatch(submissionTagDelete.started({tagId, submissionId}));
-        let res = await deleteSubmissionTagRemote(tagId, submissionId);
+        await deleteSubmissionTagRemote(tagId, submissionId);
         dispatch(submissionTagDelete.done({
             params: {tagId, submissionId},
             result: tagId
@@ -222,7 +221,7 @@ export function deleteSubmissionTag(tagId: number, submissionId: number) {
 }
 
 export function cleanSubmission(id: number) {
-    return async (dispatch: Dispatch<SubmissionDetailsProps>) => {
+    return async (dispatch: Dispatch<SubmissionDetailsProps>, getState: () => SubmissionDetailsProps) => {
         await cleanSubmissionRemote(id);
         dispatch(submissionFetch.started(id));
 
@@ -235,5 +234,10 @@ export function cleanSubmission(id: number) {
         await fetchPermissions(id)(dispatch);
 
         await pollSubmissionIfNeeded(id, sub)(dispatch);
+
+        if (getState().permissions.tags) {
+            await fetchTagList(id)(dispatch);
+            await fetchAvailableTags()(dispatch);
+        }
     }
 }

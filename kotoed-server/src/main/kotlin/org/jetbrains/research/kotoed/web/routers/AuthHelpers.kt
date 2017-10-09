@@ -101,8 +101,7 @@ suspend fun handleProjectPerms(context: RoutingContext) {
 @LoginRequired
 suspend fun handleSubmissionPerms(context: RoutingContext) {
     val user = context.user()
-    val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
-    val id by context.request()
+        val id by context.request()
     val intId = id?.toInt()
 
     if (intId == null) {
@@ -116,16 +115,18 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
             return
         }
 
-
-    val submissionIsOpen = submission.state == SubmissionState.open
+    val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
+    val isOpen = submission.state == SubmissionState.open
+    val isResubmittable = isOpen || submission.state == SubmissionState.invalid
+    val isAuthor = author.id == context.user()?.principal()?.getInteger("id")
 
     context.response().end(Permissions.Submission(
-                    editOwnComments = submissionIsOpen,
-                    editAllComments = isTeacher && submissionIsOpen,
-                    changeStateOwnComments = submissionIsOpen,
-                    changeStateAllComments = isTeacher && submissionIsOpen,
-                    postComment = submissionIsOpen,
-                    resubmit = author.id == context.user()?.principal()?.getInteger("id"),
+                    editOwnComments = isOpen,
+                    editAllComments = isTeacher && isOpen,
+                    changeStateOwnComments = isOpen,
+                    changeStateAllComments = isTeacher && isOpen,
+                    postComment = isOpen,
+                    resubmit = isAuthor && isResubmittable,
                     changeState = isTeacher,
                     clean = isTeacher,
                     tags = isTeacher
