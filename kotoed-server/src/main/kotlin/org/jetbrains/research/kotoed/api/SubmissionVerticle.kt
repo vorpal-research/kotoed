@@ -7,8 +7,7 @@ import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.Tables.DENIZEN
-import org.jetbrains.research.kotoed.database.Tables.SUBMISSION_COMMENT
+import org.jetbrains.research.kotoed.database.Tables.*
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
@@ -61,6 +60,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         submission.datetime = null
         submission.state = SubmissionState.pending
         expect(submission.projectId is Int)
+
+        val parent = submission.parentSubmissionId?.let {
+            fetchByIdAsync(SUBMISSION, it)
+        }
+
+        expect(parent == null || parent.state == SubmissionState.open)
 
         val res: SubmissionRecord = dbCreateAsync(submission)
         dbProcessAsync(res)
