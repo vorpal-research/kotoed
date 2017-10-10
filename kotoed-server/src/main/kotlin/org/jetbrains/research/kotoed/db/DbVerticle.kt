@@ -347,13 +347,15 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                             listOf(DSL.`val`(it.resultField), queryToObjectCall(query, "$alias.${it.resultField}"))
                         } +
                         message.rjoins.orEmpty().flatMap {
+                            val qtable = it.query?.table?.let(::tableByName)!!
+                            val keyField: Field<Any> = (table.field(it.key) ?: table.primaryKeyField).uncheckedCast()
                             listOf(
                                     DSL.`val`(it.resultField),
-                                    to_jsonb(array(queryToSelect(it.query!!).and(
-                                            (table.field(it.key) ?: table.primaryKeyField).uncheckedCast<Field<Any>>()
-                                                    .eq(tableByName(it.query.table!!)!!.field(it.field))
-
-                                    )))
+                                    to_jsonb(array(
+                                            queryToSelect(it.query)
+                                                    .and(keyField.eq(qtable.field(it.field)))
+                                                    .orderBy(qtable.primaryKeyField)
+                                    ))
                             )
                         }
         )
