@@ -43,6 +43,13 @@ object Address {
             const val List = "kotoed.api.tag.list"
         }
 
+        object CommentTemplate {
+            const val Create = "kotoed.api.comment_template.create"
+            const val ReadAll = "kotoed.api.comment_template.read_all"
+            const val Update = "kotoed.api.comment_template.update"
+            const val Delete = "kotoed.api.comment_template.delete"
+        }
+
         object Submission {
             const val Read = "kotoed.api.submission.read"
             const val Last = "kotoed.api.submission.last"

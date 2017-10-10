@@ -125,7 +125,12 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.Tags.Search to AuthorityRequired(Authority.Teacher),
             Address.Api.Submission.Tags.SearchCount to AuthorityRequired(Authority.Teacher),
 
-            Address.Api.Tag.List to Permissive
+            Address.Api.Tag.List to Permissive,
+
+            Address.Api.CommentTemplate.Create to Permissive,
+            Address.Api.CommentTemplate.ReadAll to Permissive,
+            Address.Api.CommentTemplate.Update to Permissive,
+            Address.Api.CommentTemplate.Delete to Permissive
     )
 }
 
@@ -150,13 +155,17 @@ class KotoedFilter(vertx: Vertx) : BridgeEventFilter {
 
 fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.Denizen.Profile.UpdatePassword to AddUsernamePatcher("initiator_denizen_id"),
-        Address.Api.Notification.RenderCurrent to NotificationPatcher,
-        Address.Api.Notification.MarkAllRead to NotificationPatcher,
+        Address.Api.Notification.RenderCurrent to DenizenDatabaseIdPatcher,
+        Address.Api.Notification.MarkAllRead to DenizenDatabaseIdPatcher,
         Address.Api.Project.Create to ProjectCreatePatcher,
         Address.Api.Project.SearchForCourse to all(CourseListPatcher(vertx), WithTagsPatcher),
         Address.Api.Project.SearchForCourseCount to all(CourseListPatcher(vertx), WithTagsPatcher),
         Address.Api.Submission.Comment.Create to CommentCreatePatcher,
-        Address.Api.Submission.List to WithTagsPatcher
+        Address.Api.Submission.List to WithTagsPatcher,
+        Address.Api.CommentTemplate.Create to DenizenDatabaseIdPatcher,
+        Address.Api.CommentTemplate.ReadAll to DenizenDatabaseIdPatcher,
+        Address.Api.CommentTemplate.Update to DenizenDatabaseIdPatcher,
+        Address.Api.CommentTemplate.Delete to DenizenDatabaseIdPatcher
 )
 
 object WithRequestUUIDPatcher : BridgeEventPatcher {
