@@ -9,7 +9,7 @@ import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.notificationByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
 
-object NotificationPatcher : BridgeEventPatcher {
+object DenizenDatabaseIdPatcher : BridgeEventPatcher {
     suspend override fun patch(be: BridgeEvent) {
         val principalId = be.socket().webUser().principal()["id"]
         val rawMessage = be.rawMessage ?: return
@@ -20,7 +20,7 @@ object NotificationPatcher : BridgeEventPatcher {
     }
 
     override fun toString(): String {
-        return "NotificationPatcher"
+        return "DenizenDatabaseIdPatcher"
     }
 }
 

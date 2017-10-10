@@ -575,3 +575,5 @@ class ProfileVerticle : CrudDatabaseVerticleWithReferences<ProfileRecord>(Tables
 @AutoDeployable
 class DenizenTextSearchVerticle : CrudDatabaseVerticleWithReferences<DenizenTextSearchRecord>(Tables.DENIZEN_TEXT_SEARCH)
 
+@AutoDeployable
+class CommentTemplateVerticle : CrudDatabaseVerticleWithReferences<CommentTemplateRecord>(Tables.COMMENT_TEMPLATE)
