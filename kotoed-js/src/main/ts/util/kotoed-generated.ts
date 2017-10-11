@@ -10,6 +10,13 @@ export namespace Generated {
             read: (entity: string) => {
                 return `kotoed.api.${entity}.read`;
             },
+            Report: "kotoed.api.report",
+            CommentTemplate: {
+                Create: "kotoed.api.comment_template.create",
+                Delete: "kotoed.api.comment_template.delete",
+                ReadAll: "kotoed.api.comment_template.read_all",
+                Update: "kotoed.api.comment_template.update",
+            },
             Course: {
                 Create: "kotoed.api.course.create",
                 Error: "kotoed.api.course.remoteError",

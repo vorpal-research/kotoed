@@ -19,12 +19,14 @@ import VerificationDataAlert from "../../views/components/VerificationDataAlert"
 import AggregatesLabel from "../../views/AggregatesLabel";
 import {FileForms, ReviewForms} from "../state/forms";
 import {ReviewAnnotations} from "../state/annotations";
+import {CommentTemplates} from "../remote/templates";
 
 export interface CodeReviewProps {
     submissionId: number
     submission: DbRecordWrapper<SubmissionToRead> | null
 
     annotations: ReviewAnnotations
+    commentTemplates: CommentTemplates
 
     editor: {
         loading: boolean
@@ -125,6 +127,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        onCommentEmphasize={this.props.comments.onCommentEmphasize}
                                        onCommentEdit={this.props.comments.onCommentEdit}
                                        whoAmI={this.props.capabilities.whoAmI}
+                                       commentTemplates={this.props.commentTemplates}
                                        scrollTo={this.props.scrollTo}
                                        loading={this.props.editor.loading}
                                        makeOriginalCommentLink={this.makeOriginalLinkOrUndefined}
