@@ -11,10 +11,12 @@ import {BaseCommentToRead} from "../../data/comment";
 import {CommentAggregate} from "../remote/comments";
 import AggregatesLabel from "../../views/AggregatesLabel";
 import {FormState} from "../state/forms";
+import {CommentTemplates} from "../remote/templates";
 
 interface LineMarkerProps {
     canPostComment: boolean
     comments: List<Comment>,
+    commentTemplates: CommentTemplates,
     lineNumber: number,
     editor: cm.Editor,
     arrowOffset: number,
@@ -78,6 +80,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             <LineComments
                 canPostComment={this.props.canPostComment}
                 comments={this.props.comments}
+                commentTemplates={this.props.commentTemplates}
                 arrowOffset={this.props.arrowOffset}
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
                 onCommentResolve={id => this.props.onCommentResolve(this.props.lineNumber, id)}

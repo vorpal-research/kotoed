@@ -31,6 +31,7 @@ import {pollDespairing} from "../util/poll";
 import {fetchSubmission} from "../submissionDetails/remote";
 import {fetchAnnotations} from "./remote/annotations";
 import {ReviewAnnotations} from "./state/annotations";
+import {CommentTemplates, fetchCommentTemplates} from "./remote/templates";
 const actionCreator = actionCreatorFactory();
 
 interface SubmissionPayload {
@@ -136,6 +137,9 @@ export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload,
 // Annotation fetch actions
 export const annotationsFetch = actionCreator.async<number, ReviewAnnotations, {}>('ANNOTATION_FETCH');
 
+// Template fetch actions
+export const commentTemplateFetch = actionCreator.async<{}, CommentTemplates, {}>('COMMENT_TEMPLATE_FETCH');
+
 // Comment fetch actions
 export const commentsFetch = actionCreator.async<SubmissionPayload, CommentsState, {}>('COMMENT_FETCH');
 export const commentAggregatesFetch =
@@ -183,6 +187,7 @@ export function loadCode(payload: SubmissionPayload & FilePathPayload) {
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await fetchAnnotationsIfNeeded(payload.submissionId)(dispatch, getState);
+        await fetchCommentTemplatesIfNeeded()(dispatch, getState);
         await expandAndLoadIfNeeded(payload)(dispatch, getState);
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
     }
@@ -198,6 +203,7 @@ export function loadLostFound(payload: SubmissionPayload) {
         await fetchRootDirIfNeeded(payload)(dispatch, getState);
         await fetchCommentsIfNeeded(payload)(dispatch, getState);
         await fetchAnnotationsIfNeeded(payload.submissionId)(dispatch, getState);
+        await fetchCommentTemplatesIfNeeded()(dispatch, getState);
         await fetchCommentAggregatesIfNeeded(payload)(dispatch, getState);
         dispatch(fileUnselect({}));
     }
@@ -325,6 +331,22 @@ export function fetchAnnotationsIfNeeded(payload: number) {
 
         dispatch(annotationsFetch.done({
             params: payload,
+            result: result
+        }));
+    }
+}
+
+export function fetchCommentTemplatesIfNeeded() {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        if(!getState().commentTemplateState.loading)
+            return;
+
+        dispatch(commentTemplateFetch.started({}));
+
+        let result = await fetchCommentTemplates();
+
+        dispatch(commentTemplateFetch.done({
+            params: {},
             result: result
         }));
     }

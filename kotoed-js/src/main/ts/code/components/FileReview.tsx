@@ -23,12 +23,14 @@ import ComponentWithLoading, {LoadingProperty} from "../../views/components/Comp
 import {BaseCommentToRead} from "../../data/comment";
 import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/forms";
 import {CodeAnnotation} from "../state/annotations";
+import {CommentTemplates} from "../remote/templates";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
     value: string,
     height: number | string,
     comments: FileComments,
+    commentTemplates: CommentTemplates,
     codeAnnotations?: CodeAnnotation[],
     filePath: string,
     whoAmI: string
@@ -110,6 +112,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         render(<LineMarker
                 canPostComment={this.props.canPostComment}
                 comments={comments}
+                commentTemplates={this.props.commentTemplates}
                 lineNumber={reviewLine}
                 editor={this.editor}
                 arrowOffset={this.arrowOffset}

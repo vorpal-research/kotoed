@@ -9,7 +9,7 @@ import {
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
     expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize,
-    submissionFetch, annotationsFetch
+    submissionFetch, annotationsFetch, commentTemplateFetch
 } from "./actions";
 import {
     ADD_DELTA,
@@ -24,6 +24,8 @@ import {SubmissionToRead} from "../data/submission";
 import {SubmissionState} from "./state/submission";
 import {DEFAULT_FORM_STATE, FileForms, ReviewForms} from "./state/forms";
 import {CodeAnnotationsState, ReviewAnnotations} from "./state/annotations";
+import {CommentTemplateState} from "./state/templates";
+import {CommentTemplates} from "./remote/templates";
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -289,6 +291,18 @@ export const annotationsReducer = (state: CodeAnnotationsState = defaultCodeAnno
         return { loading: false, annotations: action.payload.result };
     }
     return state;
+};
+
+export const defaultCommentTemplateState: CommentTemplateState = {
+    loading: true,
+    templates: CommentTemplates()
+};
+
+export const commentTemplateReducer = (state: CommentTemplateState = defaultCommentTemplateState, action: Action) => {
+    if(isType(action, commentTemplateFetch.done)) {
+        return { loading: false, templates: action.payload.result }
+    }
+    return state
 };
 
 export const defaultCapabilitiesState: CapabilitiesState = {

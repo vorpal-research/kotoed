@@ -13,7 +13,7 @@ import CodeReviewContainer, {
 } from "./containers/CodeReviewContainer";
 import {
     annotationsReducer,
-    capabilitiesReducer, commentsReducer, editorReducer, fileTreeReducer, formReducer,
+    capabilitiesReducer, commentsReducer, commentTemplateReducer, editorReducer, fileTreeReducer, formReducer,
     submissionReducer
 } from "./reducers";
 
@@ -32,6 +32,7 @@ export const store = createStore(
         editorState: editorReducer,
         commentsState: commentsReducer,
         codeAnnotationsState: annotationsReducer,
+        commentTemplateState: commentTemplateReducer,
         capabilitiesState: capabilitiesReducer,
         submissionState: submissionReducer,
         formState: formReducer,

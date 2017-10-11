@@ -2,15 +2,17 @@ import * as React from "react";
 import {CommentButton} from "./CommentButton";
 import ReactMarkdown = require("react-markdown");
 import CmrmCodeBlock from "./CmrmCodeBlock";
-import {Button, Panel, Label} from "react-bootstrap";
+import {Button, Panel, Label, SplitButton, MenuItem, ButtonToolbar} from "react-bootstrap";
 import {FormState} from "../state/forms";
 
 import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
+import {CommentTemplates} from "../remote/templates";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
     notifyEditorAboutChange: () => void
     whoAmI: string
+    commentTemplates: CommentTemplates
     formState: FormState
 }
 
@@ -121,14 +123,35 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
+    insertTemplateText = (value: string) => {
+        this.setState({editText: value})
+    };
+
+    renderCommentTemplatesButton = () =>
+        <SplitButton bsStyle="default" title="Use template" id="template-dropdown"
+                     dropup
+                     disabled={this.props.formState.processing}>
+            {
+                this.props.commentTemplates.map( template =>
+                    <MenuItem eventKey={template.name}
+                              onSelect={() => this.insertTemplateText(template.text)}
+                    >
+                        { template.name }
+                    </MenuItem>
+                )
+            }
+        </SplitButton>
+    ;
+
     renderPanelFooter = () => {
-        return <p>
+        return <ButtonToolbar>
             <Button bsStyle="success"
                     onClick={() => this.props.onSubmit(this.state.editText)}
                     disabled={this.props.formState.processing}>
                 Send
             </Button>
-        </p>;
+            { this.props.commentTemplates.length != 0 && this.renderCommentTemplatesButton() }
+        </ButtonToolbar>
     };
 
     private mousetrap: MousetrapInstance | undefined;
