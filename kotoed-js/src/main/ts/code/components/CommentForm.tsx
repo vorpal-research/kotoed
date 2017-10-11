@@ -129,6 +129,12 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         this.setState({editText: value})
     };
 
+    suggestComment = () => {
+        let text = this.state.editText;
+        let template = this.props.commentTemplates.find(template => template.name.trim() == text.trim());
+        template && this.insertTemplateText(template.text);
+    };
+
     renderCommentTemplatesButton = () =>
         <SplitButton bsStyle="default" title="Use template" id="template-dropdown"
                      disabled={this.props.formState.processing}>
@@ -157,13 +163,16 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
 
     private mousetrap: MousetrapInstance | undefined;
     componentWillUnmount() {
-        this.mousetrap && this.mousetrap.unbind("mod+enter")
+        this.mousetrap && this.mousetrap.unbind("mod+enter");
+        this.mousetrap && this.mousetrap.unbind("mod+space");
     }
 
     componentDidMount() {
         this.mousetrap = new Mousetrap(this.textArea);
         this.mousetrap.bind("mod+enter", () =>
             this.props.formState.processing || this.props.onSubmit(this.state.editText));
+        this.mousetrap.bind("mod+space", () =>
+            this.props.formState.processing || this.suggestComment());
         if (!this.props.formState.processing)
             this.textArea.focus();
     }
