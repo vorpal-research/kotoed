@@ -7,6 +7,8 @@ import {FormState} from "../state/forms";
 
 import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
 import {CommentTemplates} from "../remote/templates";
+import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
+import "less/autosuggest.less"
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
@@ -129,7 +131,6 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
 
     renderCommentTemplatesButton = () =>
         <SplitButton bsStyle="default" title="Use template" id="template-dropdown"
-                     dropup
                      disabled={this.props.formState.processing}>
             {
                 this.props.commentTemplates.map( template =>

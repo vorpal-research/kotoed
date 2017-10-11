@@ -44,7 +44,6 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
                         />
                     }
                 </div>
-                <div className="line-comments-arrow" style={{left: this.props.arrowOffset}}/>
             </div>
         )
     }
