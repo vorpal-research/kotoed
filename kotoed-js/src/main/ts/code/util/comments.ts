@@ -47,7 +47,7 @@ export function commentsResponseToState(fromServer: CommentsResponse, capabiliti
         comments,
         lostFound:
             List<Comment>(fromServer.lost).map((comment: Comment) =>
-                addRenderingProps(comment, capabilities)) as LostFoundComments,
+                addRenderingProps(comment as CommentToRead, capabilities)) as LostFoundComments,
         loading: false
     };
 }

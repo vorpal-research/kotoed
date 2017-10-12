@@ -18,7 +18,8 @@ interface CommentRenderingProps {
     processing: boolean
 }
 
-export type Comment = CommentToRead & CommentRenderingProps
+export type OptionalCommentToRead = { [K in keyof CommentToRead] ?: CommentToRead[K] } & { id: number, text: string  }
+export type Comment = OptionalCommentToRead & CommentRenderingProps
 
 // TODO is there a better way to create aliases for factory functions?
 export type LineComments = List<Comment>
