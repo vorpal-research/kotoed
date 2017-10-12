@@ -45,10 +45,13 @@ class CommentTemplateEditComponent extends React.Component<CommentTemplateState,
                     onEdit={this.onEdit}
                     processing={false}
                     customHeaderComponent={ newState =>
-                        <input value={this.state.name}
-                               onChange={e => this.onNameChange(e.target.value)}
-                               readOnly={newState.editState !== 'edit'}
-                        />
+                        newState.editState === "edit" ?
+                            <input value={this.state.name}
+                                   className="form-control"
+                                   onChange={e => this.onNameChange(e.target.value)}
+                                   readOnly={newState.editState !== 'edit'}
+                            /> :
+                            <span><strong>{this.state.name}</strong></span>
                     }
             />
         )

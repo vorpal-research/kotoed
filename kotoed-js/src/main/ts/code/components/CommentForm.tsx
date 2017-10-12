@@ -180,11 +180,12 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     componentDidUpdate(prevProps: CommentFormProps, prevState: CommentFormState) {
         if (this.state.editState != prevState.editState)
             this.props.notifyEditorAboutChange();
-
-        if (this.state.editState == "edit" && !this.props.formState.processing)
-            this.textArea.focus();
-        else
-            this.textArea.blur();
+        if (this.state.editState !== prevState.editState) {
+            if (this.state.editState == "edit" && !this.props.formState.processing)
+                this.textArea.focus();
+            else
+                this.textArea.blur();
+        }
     }
 
     getTextAreaStyle = () => {

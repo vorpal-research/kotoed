@@ -216,7 +216,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         return <p>
             <Button bsStyle="success"
                     onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
-                Edit
+                Save
             </Button>
             {" "}
             <Button bsStyle="danger"
@@ -242,20 +242,16 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         }
     };
 
-    componentWillReceiveProps(nextProps: CommentProps) {
-        this.setState({
-            editState: "display",
-            editText: ""
-        })
-    };
-
     componentDidUpdate(prevProps: CommentProps, prevState: CommentComponentState) {
         if (this.state.editState != prevState.editState)
             this.props.notifyEditorAboutChange();
-        if (this.state.editState == "edit")
-            this.textArea.focus();
-        else
-            this.textArea.blur();
+
+        if (this.state.editState !== prevState.editState) {
+            if (this.state.editState === "edit")
+                this.textArea.focus();
+            else
+                this.textArea.blur();
+        }
     }
 
     getTextAreaStyle = () => {
