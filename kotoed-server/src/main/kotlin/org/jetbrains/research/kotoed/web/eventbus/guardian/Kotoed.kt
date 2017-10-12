@@ -130,7 +130,10 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.CommentTemplate.Create to Permissive,
             Address.Api.CommentTemplate.ReadAll to Permissive,
             Address.Api.CommentTemplate.Update to Permissive,
-            Address.Api.CommentTemplate.Delete to Permissive
+            Address.Api.CommentTemplate.Delete to Permissive,
+
+            Address.Api.CommentTemplate.Search to Permissive,
+            Address.Api.CommentTemplate.SearchCount to Permissive
     )
 }
 
@@ -165,7 +168,9 @@ fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.CommentTemplate.Create to DenizenDatabaseIdPatcher,
         Address.Api.CommentTemplate.ReadAll to DenizenDatabaseIdPatcher,
         Address.Api.CommentTemplate.Update to DenizenDatabaseIdPatcher,
-        Address.Api.CommentTemplate.Delete to DenizenDatabaseIdPatcher
+        Address.Api.CommentTemplate.Delete to DenizenDatabaseIdPatcher,
+        Address.Api.CommentTemplate.Search to DenizenDatabaseIdPatcher,
+        Address.Api.CommentTemplate.SearchCount to DenizenDatabaseIdPatcher
 )
 
 object WithRequestUUIDPatcher : BridgeEventPatcher {

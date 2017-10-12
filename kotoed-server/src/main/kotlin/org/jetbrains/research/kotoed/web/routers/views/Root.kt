@@ -66,3 +66,11 @@ suspend fun handleSubmissionByTagsSearch(context: RoutingContext) {
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.BreadCrumb, SubmissionByTagsSearchBreadCrumb)
 }
+
+@HandlerFor(UrlPattern.CommentTemplate.Show)
+@Templatize("commentTemplateSearch.jade")
+@LoginRequired
+@JsBundle("commentTemplateSearch")
+suspend fun handleCommentTemplates(context: RoutingContext) {
+    context.put(Context.NavBar, kotoedNavBar(context.user()))
+}
