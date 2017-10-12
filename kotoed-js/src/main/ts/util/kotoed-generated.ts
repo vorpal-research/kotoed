@@ -15,6 +15,8 @@ export namespace Generated {
                 Create: "kotoed.api.comment_template.create",
                 Delete: "kotoed.api.comment_template.delete",
                 ReadAll: "kotoed.api.comment_template.read_all",
+                Search: "kotoed.api.comment_template.search",
+                SearchCount: "kotoed.api.comment_template.search_count",
                 Update: "kotoed.api.comment_template.update",
             },
             Course: {

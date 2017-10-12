@@ -17,7 +17,7 @@ export interface BaseComment {
 // All fields for comment DB entity
 export interface BaseCommentToRead extends BaseComment, WithId {
     authorId: number
-    datetime: number
+    datetime?: number
     state: CommentState
     original?: BaseCommentToRead
 }
