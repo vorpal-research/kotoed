@@ -18,6 +18,7 @@ type CommentProps = Comment & {
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
     makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
+    customHeaderComponent?: (state: CommentComponentState) => JSX.Element
 }
 
 interface CommentComponentState {
@@ -163,8 +164,9 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     renderPanelHeading = () => {
         return <div className="comment-heading clearfix">
             <div className="pull-left">
-                <b>{this.props.denizenId}</b>
-                {` @ ${moment(this.props.datetime).format('LLLL')}`}
+                {this.props.customHeaderComponent && this.props.customHeaderComponent(this.state)}
+                {this.props.denizenId && <b>{this.props.denizenId}</b>}
+                {this.props.datetime && ` @ ${moment(this.props.datetime).format('LLLL')}`}
                 {" "}
                 {this.renderPanelLabels()}
             </div>

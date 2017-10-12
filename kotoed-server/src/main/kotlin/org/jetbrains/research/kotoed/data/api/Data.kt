@@ -152,6 +152,7 @@ data class SearchQuery(
         val find: JsonObject?,
         val currentPage: Int?,
         val pageSize: Int?,
+        val denizenId: Int?,
         val withVerificationData: Boolean?) : Jsonable
 
 data class SearchQueryWithTags(
@@ -159,6 +160,7 @@ data class SearchQueryWithTags(
         val find: JsonObject?,
         val currentPage: Int?,
         val pageSize: Int?,
+        val denizenId: Int?,
         val withVerificationData: Boolean?,
         val withTags: Boolean?) : Jsonable
 

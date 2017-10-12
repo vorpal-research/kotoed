@@ -38,6 +38,10 @@ object UrlPattern {
         const val Search = "/search/comment"
     }
 
+    object CommentTemplate {
+        const val Show = "/commentTemplates"
+    }
+
     object Course {
         const val Index = "/course/:id"
     }

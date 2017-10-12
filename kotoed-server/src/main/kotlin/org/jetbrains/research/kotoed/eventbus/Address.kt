@@ -48,6 +48,9 @@ object Address {
             const val ReadAll = "kotoed.api.comment_template.read_all"
             const val Update = "kotoed.api.comment_template.update"
             const val Delete = "kotoed.api.comment_template.delete"
+
+            const val Search = "kotoed.api.comment_template.search"
+            const val SearchCount = "kotoed.api.comment_template.search_count"
         }
 
         object Submission {
