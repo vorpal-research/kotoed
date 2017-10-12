@@ -72,7 +72,7 @@ class CommentTemplateCreator extends React.Component<CommentTemplateTableState, 
     onEdit = async (id: number, text: string) => {
         await setStateAsync(this,{ text: text });
         let newState = await sendAsync(Kotoed.Address.Api.CommentTemplate.Create,
-            {id: this.state.id, text: this.state.text, name: this.state.name});
+            { text: this.state.text, name: this.state.name });
         await setStateAsync(this, newState);
     };
 
