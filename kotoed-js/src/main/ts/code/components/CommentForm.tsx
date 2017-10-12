@@ -164,14 +164,14 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     private mousetrap: MousetrapInstance | undefined;
     componentWillUnmount() {
         this.mousetrap && this.mousetrap.unbind("mod+enter");
-        this.mousetrap && this.mousetrap.unbind("mod+space");
+        this.mousetrap && this.mousetrap.unbind("ctrl+space");
     }
 
     componentDidMount() {
         this.mousetrap = new Mousetrap(this.textArea);
         this.mousetrap.bind("mod+enter", () =>
             this.props.formState.processing || this.props.onSubmit(this.state.editText));
-        this.mousetrap.bind("mod+space", () =>
+        this.mousetrap.bind("ctrl+space", () =>
             this.props.formState.processing || this.suggestComment());
         if (!this.props.formState.processing)
             this.textArea.focus();
