@@ -10,6 +10,7 @@ import {CommentButton} from "./CommentButton";
 import CmrmCodeBlock from "./CmrmCodeBlock";
 import {BaseCommentToRead} from "../../data/comment";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
+import {setStateAsync} from "../../views/components/common";
 
 
 type CommentProps = Comment & {
@@ -17,8 +18,11 @@ type CommentProps = Comment & {
     onResolve: (id: number) => void
     notifyEditorAboutChange: () => void
     onEdit: (id: number, newText: string) => void
+    onCancelEdit?: (id: number, newText: string) => void
     makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
     customHeaderComponent?: (state: CommentComponentState) => JSX.Element
+    customHeaderButton?: (state: CommentComponentState) => JSX.Element
+    defaultEditState?: "display" | "edit" | "preview"
 }
 
 interface CommentComponentState {
@@ -32,7 +36,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     constructor(props: CommentProps) {
         super(props);
         this.state = {
-            editState: "display",
+            editState: props.defaultEditState || "display",
             editText: ""
         }
     }
@@ -174,6 +178,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                 {this.renderGoToOriginalButton()}
                 {this.renderEditButton()}
                 {this.renderStateButton()}
+                {this.props.customHeaderButton && this.props.customHeaderButton(this.state)}
             </div>
         </div>
     };
@@ -215,16 +220,17 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     renderEditPreviewPanelFooter = () => {
         return <p>
             <Button bsStyle="success"
-                    onClick={() => this.props.onEdit(this.props.id, this.state.editText)}>
+                    onClick={async () => {
+                        await setStateAsync(this, {editState: "display"});
+                        this.props.onEdit(this.props.id, this.state.editText);
+                    }}>
                 Save
             </Button>
             {" "}
             <Button bsStyle="danger"
-                    onClick={() => {
-                        this.setState({
-                            editState: "display",
-                            editText: ""
-                        })
+                    onClick={async () => {
+                        await setStateAsync(this, {editState: "display"});
+                        this.props.onCancelEdit && this.props.onCancelEdit(this.props.id, this.state.editText);
                     }}>
                 Cancel
             </Button>

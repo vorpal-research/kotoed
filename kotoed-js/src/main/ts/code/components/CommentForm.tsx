@@ -140,7 +140,8 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
                      disabled={this.props.formState.processing}>
             {
                 this.props.commentTemplates.map( template =>
-                    <MenuItem eventKey={template.name}
+                    <MenuItem key={`template-key-${template.name}`}
+                              eventKey={template.name}
                               onSelect={() => this.insertTemplateText(template.text)}
                     >
                         { template.name }

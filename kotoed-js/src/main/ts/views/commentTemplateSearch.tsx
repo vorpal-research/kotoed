@@ -7,15 +7,23 @@ import {render} from "react-dom";
 import {CommentTemplates} from "../code/remote/templates";
 import {sendAsync, setStateAsync} from "./components/common";
 import {Button, Modal} from "react-bootstrap";
+import {CommentButton} from "../code/components/CommentButton";
+
+import "less/code.less"
 
 type CommentTemplate = CommentTemplates[number]
 
+type UpdateCallback = {
+    callback: () => void
+}
+
 type CommentTemplateState = CommentTemplate
 
-class CommentTemplateEditComponent extends React.Component<CommentTemplateState, CommentTemplateState> {
-    constructor(props: CommentTemplateState) {
+class CommentTemplateEditComponent extends React.Component<CommentTemplateState & UpdateCallback, CommentTemplateState> {
+    constructor(props: CommentTemplateState & UpdateCallback) {
         super(props);
-        this.state = { ...props };
+        let temp = { ...props } as CommentTemplateState;
+        this.state = temp;
     }
 
     componentWillReceiveProps(nextProps: CommentTemplateState) {
@@ -26,6 +34,12 @@ class CommentTemplateEditComponent extends React.Component<CommentTemplateState,
         await setStateAsync(this,{ text: text });
         await sendAsync(Kotoed.Address.Api.CommentTemplate.Update,
             {id: this.props.id, text: this.state.text, name: this.state.name})
+    };
+
+    onDelete = async () => {
+        await sendAsync(Kotoed.Address.Api.CommentTemplate.Delete,
+            {id: this.props.id});
+        this.props.callback()
     };
 
     onNameChange = (text: string) => this.setState({name: text});
@@ -53,6 +67,9 @@ class CommentTemplateEditComponent extends React.Component<CommentTemplateState,
                             /> :
                             <span><strong>{this.state.name}</strong></span>
                     }
+                    customHeaderButton={ newState =>
+                        <CommentButton title={"Remove"} icon={"remove"} onClick={this.onDelete} />
+                    }
             />
         )
     }
@@ -63,36 +80,42 @@ type CommentTemplateTableState = {
     creating: boolean
 }
 
-class CommentTemplateCreator extends React.Component<CommentTemplateTableState, CommentTemplateTableState & CommentTemplate> {
+class CommentTemplateCreator
+    extends React.Component<CommentTemplateTableState & UpdateCallback,
+                            CommentTemplateTableState & CommentTemplate> {
 
-    constructor(props: CommentTemplateTableState) {
+    constructor(props: CommentTemplateTableState & UpdateCallback) {
         super(props);
-        this.state = {...props, name: "", text: "", id: -1 }
+        let temp = {...props, name: "", text: "", id: -1 };
+        this.state = temp
     }
 
     onNameChange = (text: string) => this.setState({name: text});
 
     onEdit = async (id: number, text: string) => {
-        await setStateAsync(this,{ text: text });
+        await setStateAsync(this,{ text: text, creating: false });
         let newState = await sendAsync(Kotoed.Address.Api.CommentTemplate.Create,
             { text: this.state.text, name: this.state.name });
-        await setStateAsync(this, newState);
+        await setStateAsync(this, { text: "", name: "", creating: false });
+        this.props.callback();
     };
+
+    onCancel = () => this.setState({text: "", name: "", creating: false});
 
     render() {
         return <div>
             <Button bsStyle="success"
                     onClick={() => this.setState({creating: true})}
-            >Create project</Button>
+            >Create new template</Button>
 
-            <Modal show={this.state.creating} onHide={() => this.setState({creating: false})}>
+            <Modal show={this.state.creating} onHide={this.onCancel}>
                 <Modal.Header>
-                    <Modal.Title>Create new project</Modal.Title>
+                    <Modal.Title>Create new template</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <CommentComponent
                         id={-1}
-                        text={""}
+                        text={this.state.text}
                         canStateBeChanged={false}
                         canBeEdited={true}
                         collapsed={false}
@@ -100,12 +123,17 @@ class CommentTemplateCreator extends React.Component<CommentTemplateTableState, 
                         onResolve={doNothing}
                         notifyEditorAboutChange={doNothing}
                         onEdit={this.onEdit}
+                        onCancelEdit={this.onCancel}
                         processing={false}
+                        defaultEditState={'edit'}
                         customHeaderComponent={ newState =>
-                            <input value={this.state.name}
-                                   onChange={e => this.onNameChange(e.target.value)}
-                                   readOnly={newState.editState !== 'edit'}
-                            />
+                            newState.editState === "edit" ?
+                                <input value={this.state.name}
+                                       className="form-control"
+                                       onChange={e => this.onNameChange(e.target.value)}
+                                       readOnly={newState.editState !== 'edit'}
+                                /> :
+                                <span><strong>{this.state.name}</strong></span>
                         }
                     />
                 </Modal.Body>
@@ -129,11 +157,11 @@ class CommentTemplateTable extends React.Component<{}, CommentTemplateTableState
                 shouldPerformInitialSearch={() => true}
                 searchAddress={Kotoed.Address.Api.CommentTemplate.Search}
                 countAddress={Kotoed.Address.Api.CommentTemplate.SearchCount}
-                toolbarComponent={() =>
-                    <CommentTemplateCreator {...this.state} />
+                toolbarComponent={(toggleSearch: () => void) =>
+                    <CommentTemplateCreator {...this.state} callback={toggleSearch} />
                 }
-                elementComponent={(key, c: CommentTemplate) =>
-                    <CommentTemplateEditComponent key={key} {...c} />}
+                elementComponent={(key, c: CommentTemplate, toggleSearch: () => void) =>
+                    <CommentTemplateEditComponent key={key} {...c} callback={toggleSearch} />}
             />
         );
     }
