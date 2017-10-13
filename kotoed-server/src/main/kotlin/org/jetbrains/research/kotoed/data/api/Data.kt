@@ -147,22 +147,27 @@ object Submission {
             val tags: List<TagRecord>) : Jsonable
 }
 
+interface PageableQuery {
+    val currentPage: Int?
+    val pageSize: Int?
+}
+
 data class SearchQuery(
         val text: String,
         val find: JsonObject?,
-        val currentPage: Int?,
-        val pageSize: Int?,
+        override val currentPage: Int?,
+        override val pageSize: Int?,
         val denizenId: Int?,
-        val withVerificationData: Boolean?) : Jsonable
+        val withVerificationData: Boolean?) : Jsonable, PageableQuery
 
 data class SearchQueryWithTags(
         val text: String,
         val find: JsonObject?,
-        val currentPage: Int?,
-        val pageSize: Int?,
+        override val currentPage: Int?,
+        override val pageSize: Int?,
         val denizenId: Int?,
         val withVerificationData: Boolean?,
-        val withTags: Boolean?) : Jsonable
+        val withTags: Boolean?) : Jsonable, PageableQuery
 
 
 data class RestorePasswordSecret(
