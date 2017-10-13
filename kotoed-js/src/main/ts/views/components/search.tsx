@@ -104,7 +104,7 @@ interface GroupProps {
 export interface SearchTableProps<DataType, QueryType = {}> {
     searchAddress: string,
     countAddress: string,
-    elementComponent: (key: string, data: DataType) => JSX.Element
+    elementComponent: (key: string, data: DataType, toggleSearch: () => void) => JSX.Element
     shouldPerformInitialSearch?: ShouldPerformInitialSearch
     makeBaseQuery?: MakeBaseQuery<QueryType>
     forcePagination?: boolean
@@ -319,7 +319,9 @@ export class SearchTable<DataType, QueryType = {}> extends
         if (this.state.currentResults.length === 0)
             return this.renderEmptyString();
         else {
-            let resEls = this.state.currentResults.map((result, index) => this.props.elementComponent("result"+index, result));
+            let resEls = this.state.currentResults.map((result, index) =>
+                this.props.elementComponent("result"+index, result, this.redoSearch)
+            );
             let toWrap: Array<JSX.Element>;
             if (this.props.group) {
                 toWrap = _.chunk(resEls, this.props.group.by).map(this.props.group.using);
