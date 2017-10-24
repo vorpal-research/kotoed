@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -86,7 +85,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
     private inline suspend fun withNotReady(id: Int,
                                             oldData: VerificationData,
                                             body: () -> VerificationData): Boolean {
-        when(oldData.status) {
+        when (oldData.status) {
             VerificationStatus.NotReady -> return true
             else -> {}
         }
@@ -94,7 +93,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val notReady = oldData.copy(status = VerificationStatus.NotReady)
 
         val ok = cacheMap.replace(id, oldData, notReady)
-        var newData: VerificationData = oldData
+        var newData = oldData
 
         try {
             if (ok) {
@@ -103,7 +102,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             }
             return false
         } finally {
-            cacheMap.replace(id, notReady, newData)
+            if (ok) {
+                cacheMap.replace(id, notReady, newData)
+            }
         }
     }
 
@@ -119,7 +120,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         log.trace("Processing: $data")
         log.trace("Old data: $oldData")
 
-        when(oldData.status) {
+        when (oldData.status) {
             VerificationStatus.Processed -> return
             else -> {}
         }
@@ -175,7 +176,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
             } // when
         }.let {
-            if(!it) {
+            if (!it) {
                 log.trace("Come again?")
                 vertx.delayAsync(1000)
                 process(data)
@@ -197,7 +198,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
             log.trace("Going in!")
             doClean(data)
         }
-        if(ok) return
+        if (ok) return
 
         log.trace("Come again?")
         vertx.delayAsync(1000)
