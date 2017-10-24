@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
 import org.jetbrains.research.kotoed.buildbot.verticles.BuildRequestPollerVerticle
 import org.jetbrains.research.kotoed.code.Filename
