@@ -12,6 +12,7 @@ import org.jooq.impl.SQLDataType
 import org.jooq.tools.jdbc.JDBCUtils
 import java.sql.SQLFeatureNotSupportedException
 import java.sql.Types
+import java.util.concurrent.Executor
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -106,11 +107,11 @@ class PostgresTSVectorBinding : PostgresBindingBase {
     override val typename = "tsvector"
 }
 
-data class WrappedRecord(val table: Table<*>, val record: Record): Record by record, Jsonable {
+data class WrappedRecord(val table: Table<*>, val record: Record) : Record by record, Jsonable {
     override fun toJson() =
             record.toJson().apply { this["table"] = table.name }
 
-    companion object: JsonableCompanion<WrappedRecord> {
+    companion object : JsonableCompanion<WrappedRecord> {
         override val dataklass = WrappedRecord::class
         override fun fromJson(json: JsonObject): WrappedRecord? {
             val table = Public.PUBLIC.tables.find { it.name == json["table"] }
@@ -122,7 +123,7 @@ data class WrappedRecord(val table: Table<*>, val record: Record): Record by rec
     }
 }
 
-fun<R: Record> R.toJson(): JsonObject =
+fun <R : Record> R.toJson(): JsonObject =
         JsonObject().apply {
             for (field in fields()) {
                 val fieldVal = field.getValue(this@toJson)
@@ -130,10 +131,10 @@ fun<R: Record> R.toJson(): JsonObject =
             }
         }
 
-fun<R: Record> JsonObject.toRecord(klazz: KClass<R>): R =
+fun <R : Record> JsonObject.toRecord(klazz: KClass<R>): R =
         klazz.createInstance().apply { from(this@toRecord.map) }
 
-inline fun<reified R: Record> JsonObject.toRecord() = toRecord(R::class)
+inline fun <reified R : Record> JsonObject.toRecord() = toRecord(R::class)
 
 val postgresRecordMappers: RecordMapperProvider =
         object : RecordMapperProvider {
@@ -150,5 +151,8 @@ object PostgresDataTypeEx {
             .asConvertedDataType(PostgresJSONBBinding())
 }
 
-fun jooq(ds: KotoedDataSource) =
-        DSL.using(ds, JDBCUtils.dialect(ds.url)).apply { configuration().set(postgresRecordMappers) }
+fun jooq(ds: KotoedDataSource, executor: Executor? = null) =
+        DSL.using(ds, JDBCUtils.dialect(ds.url)).apply {
+            configuration().set(postgresRecordMappers)
+            executor?.let { configuration().set(it) }
+        }

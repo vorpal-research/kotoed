@@ -23,6 +23,9 @@ import org.jooq.impl.DSL
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.Tuple5
 import ru.spbstu.ktuples.plus
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
@@ -34,8 +37,17 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
 ) : AbstractKotoedVerticle(), Loggable {
 
     companion object {
-        val DBPool =
-                newFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
+        private val dbThreadNo = AtomicInteger()
+
+        val DBPool: ExecutorService =
+                Executors.newScheduledThreadPool(Config.Debug.Database.PoolSize) { r ->
+                    object : Thread(r, "dbVerticles.dispatcher-" + dbThreadNo.incrementAndGet()) {
+                        init { isDaemon = true }
+                    }
+                }
+
+        val DBContext: CoroutineDispatcher =
+                DBPool.asCoroutineDispatcher()
     }
 
     val dataSource get() = vertx.getSharedDataSource()
@@ -47,10 +59,10 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
     val recordClass: KClass<R> = table.recordType.kotlin.uncheckedCast()
 
     protected suspend fun <T> db(body: DSLContext.() -> T) =
-            run(DBPool) { jooq(dataSource).use(body) }
+            run(DBContext) { jooq(dataSource, DBPool).use(body) }
 
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            run(DBPool) { jooq(dataSource).use { it.body() } }
+            run(DBContext) { jooq(dataSource, DBPool).use { it.body() } }
 
     protected fun DataAccessException.unwrapRollbackException() =
             (if ("Rollback caused" == message) cause else this) ?: this
@@ -65,15 +77,10 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
 
     protected suspend fun <T> DSLContext.withTransactionAsync(
             body: suspend DSLContext.() -> T): T =
-            suspendCoroutine { cont ->
-                transactionResultAsync { conf -> runBlocking(DBPool) { DSL.using(conf).body() } }
-                        .whenComplete { res, ex ->
-                            when (ex) {
-                                null -> cont.resume(res)
-                                is DataAccessException -> cont.resumeWithException(ex.unwrapRollbackException())
-                                else -> cont.resumeWithException(ex)
-                            }
-                        }
+            try {
+                transactionResultAsync_ { conf -> DSL.using(conf).body() }
+            } catch (ex: DataAccessException) {
+                throw ex.unwrapRollbackException()
             }
 
     protected fun <T> DSLContext.sqlStateAware(body: DSLContext.() -> T): T =
@@ -171,8 +178,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
             handleFind(message.toRecord(recordClass))
 
     protected open suspend fun handleFind(message: R): JsonArray {
-        val query = message
-        log.trace("Find requested in table ${table.name}:\n$query")
+        log.trace("Find requested in table ${table.name}:\n$message")
 
         val resp = db {
             selectFrom(table)
