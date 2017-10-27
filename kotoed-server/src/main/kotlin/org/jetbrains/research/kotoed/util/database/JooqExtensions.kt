@@ -2,12 +2,15 @@ package org.jetbrains.research.kotoed.util.database
 
 import org.jetbrains.research.kotoed.util.expect
 import org.jetbrains.research.kotoed.util.snoc
-import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.*
+import org.jooq.exception.ConfigurationException
 import org.jooq.impl.CustomField
 import org.jooq.impl.DSL
+import org.jooq.impl.ThreadLocalTransactionProvider
+import org.jooq.impl.transactionResult0_
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
+import kotlinx.coroutines.experimental.run as coRun
 
 suspend fun Query.executeKAsync(): Int =
         suspendCoroutine { cont ->
@@ -93,9 +96,9 @@ fun Field<Any>.jsonGet(index: Int): Field<Any> = JsonGetElem(this, index)
 operator fun Field<Any>.get(key: String) = jsonGet(key)
 operator fun Field<Any>.get(index: Int) = jsonGet(index)
 
-class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val arguments: List<QueryPart>)
-        : CustomField<T>(function, DSL.getDataType(klass.java)) {
-    constructor(function: String, klass: KClass<T>, vararg arguments: QueryPart):
+class FunctionCall<T : Any>(val function: String, val klass: KClass<T>, val arguments: List<QueryPart>)
+    : CustomField<T>(function, DSL.getDataType(klass.java)) {
+    constructor(function: String, klass: KClass<T>, vararg arguments: QueryPart) :
             this(function, klass, arguments.asList())
 
     override fun accept(ctx: Context<*>) = with(ctx) {
@@ -110,7 +113,7 @@ class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val argum
     }
 }
 
-inline fun <reified T: Any> FunctionCall(function: String, vararg arguments: QueryPart) =
+inline fun <reified T : Any> FunctionCall(function: String, vararg arguments: QueryPart) =
         FunctionCall(function, T::class, *arguments)
 
 class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)
@@ -157,3 +160,11 @@ infix fun Field<Any>.documentMatchRankPlain(query: String): Field<Double> =
 infix fun Field<Any>.documentMatchRank(query: Field<String>): Field<Double> =
         FunctionCall("ts_rank", this, query)
 
+/******************************************************************************/
+
+suspend fun <T> DSLContext.transactionResultAsync_(transactional: suspend (Configuration) -> T): T {
+    if (configuration().transactionProvider() is ThreadLocalTransactionProvider)
+        throw ConfigurationException("Cannot use TransactionalCallable with ThreadLocalTransactionProvider")
+
+    return transactionResult0_(transactional, configuration())
+}
