@@ -9,7 +9,7 @@ import "codemirror/addon/fold/foldcode"
 import "codemirror/addon/fold/foldgutter"
 import "codemirror/addon/fold/brace-fold"
 import "codemirror/addon/fold/comment-fold"
-
+import "codemirror/addon/edit/matchbrackets"
 
 import LineMarker from "./LineMarker";
 import {
@@ -329,6 +329,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             mode: editorModeParam(newMode),
             readOnly: true,
             foldGutter: true,
+            matchBrackets: true,
             gutters: [LINE_NUMBER_GUTTER, FOLD_GUTTER, REVIEW_GUTTER, LINT_GUTTER],
             lint: {
                 async: false,
