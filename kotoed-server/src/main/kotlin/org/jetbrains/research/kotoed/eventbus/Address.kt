@@ -10,6 +10,7 @@ object Address {
         object Course {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
+            const val Update = "kotoed.api.course.update"
             const val Error = "kotoed.api.course.remoteError"
             const val Search = "kotoed.api.course.search"
             const val SearchCount = "kotoed.api.course.search.count"
