@@ -65,6 +65,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
 
             Address.Api.Course.Create to AuthorityRequired(Authority.Teacher),
             Address.Api.Course.Read to Permissive,
+            Address.Api.Course.Update to AuthorityRequired(Authority.Teacher),
             Address.Api.Course.Search to Permissive,
             Address.Api.Course.SearchCount to Permissive,
 

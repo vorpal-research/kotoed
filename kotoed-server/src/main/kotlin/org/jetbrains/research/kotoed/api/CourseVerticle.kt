@@ -33,6 +33,13 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
         return DbRecordWrapper(res, status)
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Course.Update)
+    suspend fun handleUpdate(course: CourseRecord): DbRecordWrapper {
+        val res: CourseRecord = dbUpdateAsync(course)
+        val status: VerificationData = dbProcessAsync(res)
+        return DbRecordWrapper(res, status)
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Course.Error)
     suspend fun handleError(verificationData: VerificationData): List<CourseStatusRecord> =
             verificationData.errors
