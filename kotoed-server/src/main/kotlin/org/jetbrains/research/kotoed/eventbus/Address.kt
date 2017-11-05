@@ -217,6 +217,12 @@ object Address {
         }
     }
 
+    object Event {
+        object Submission {
+            const val Created = "kotoed.event.submission.created"
+        }
+    }
+
     const val Schedule = "kotoed.schedule"
 
 }
