@@ -25,7 +25,7 @@ export type OAuthProvidersResponse = Array<string>
 
 export async function signIn(username: string, password: string) {
     let resp = await axios.post(Kotoed.UrlPattern.Auth.DoLogin, keysToSnakeCase({
-        denizenId: username,
+        denizenId: username.trim(),
         password: password
     }));
     let logResp = keysToCamelCase(resp.data) as SignInResponse;
@@ -36,7 +36,7 @@ export async function signIn(username: string, password: string) {
 
 export async function signUp(username: string, password: string, email: string|null) {
     let resp = await axios.post(Kotoed.UrlPattern.Auth.DoSignUp, keysToSnakeCase({
-        denizenId: username,
+        denizenId: username.trim(),
         password: password,
         email: email
     }));
