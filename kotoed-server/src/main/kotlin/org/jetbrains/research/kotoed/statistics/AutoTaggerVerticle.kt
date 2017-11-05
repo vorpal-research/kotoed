@@ -4,6 +4,7 @@ import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionTagRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -47,6 +48,9 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
     suspend fun getEmptySub(): Int =
             emptySubId_ ?: dbFindAsync(TagRecord().apply { name = "empty" }).first().id
 
+    var checkMeId_: Int? = null
+    suspend fun getCheckMe(): Int =
+            checkMeId_ ?: dbFindAsync(TagRecord().apply { name = "check me" }).first().id
 
     suspend fun setTag(submissionId: Int, tagId: Int): Unit =
             sendJsonableAsync(Address.Api.Submission.Tags.Create,
@@ -98,6 +102,13 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
                 }
             }
 
+        }
+    }
+
+    @JsonableEventBusConsumerFor(Address.Event.Submission.Created)
+    suspend fun consumeSubmissionCreated(sub: SubmissionRecord) {
+        if (sub.parentSubmissionId == null) {
+            setTag(sub.id, getCheckMe())
         }
     }
 }

@@ -75,6 +75,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             notifyCreated(res)
         }
 
+        publishJsonable(Address.Event.Submission.Created, res)
+
         return ret
     }
 
