@@ -9,7 +9,7 @@ import {sendAsync, setStateAsync} from "./components/common";
 import {Button, Modal} from "react-bootstrap";
 import {CommentButton} from "../code/components/CommentButton";
 
-import "less/code.less"
+import "less/comments.less"
 
 type CommentTemplate = CommentTemplates[number]
 

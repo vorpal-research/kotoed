@@ -1,0 +1,60 @@
+.comment-button {
+  cursor: pointer;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+.comment-markdown {
+  pre,
+  code {
+    text-transform: none;
+    font-family: Consolas, Menlo, Courier, monospace;
+    font-size: smaller;
+  }
+
+  code {
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(16, 22, 26, 0.2);
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 5px;
+    color: #5c7080;
+  }
+  .pt-dark code {
+    box-shadow: inset 0 0 0 1px rgba(16, 22, 26, 0.4);
+    background: rgba(16, 22, 26, 0.3);
+    color: #bfccd6;
+  }
+
+  pre {
+    display: block;
+    margin: 10px 0;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(16, 22, 26, 0.15);
+    background: rgba(255, 255, 255, 0.7);
+    padding: 13px 15px 12px;
+    line-height: 1.4;
+    color: #182026;
+    font-size: 13px;
+    word-break: break-all;
+    word-wrap: break-word;
+  }
+  pre > code {
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+    white-space: pre-wrap;
+    color: inherit;
+    font-size: inherit;
+  }
+  .pt-dark pre {
+    box-shadow: inset 0 0 0 1px rgba(16, 22, 26, 0.4);
+    background: rgba(16, 22, 26, 0.3);
+    color: #f5f8fa;
+  }
+  .pt-dark pre > code {
+    box-shadow: none;
+    background: transparent;
+  }
+
+}
