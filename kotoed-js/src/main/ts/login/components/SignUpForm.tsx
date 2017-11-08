@@ -111,7 +111,7 @@ export default class SignUpForm extends
         this.setState({localErrors: defaultLocalErrors});
 
         let ok = true;
-        if (this.state.username === "") {
+        if (this.state.username.trim() === "") {
             this.setError("emptyUsername");
             ok = false;
         }

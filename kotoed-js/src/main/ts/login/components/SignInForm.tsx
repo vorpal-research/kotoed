@@ -81,7 +81,7 @@ export default class SignInForm extends
 
     handleSignIn = () => {
         let ok = true;
-        if (this.state.username === "") {
+        if (this.state.username.trim() === "") {
             this.setError("emptyUsername");
             ok = false;
         }
