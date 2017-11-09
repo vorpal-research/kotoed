@@ -57,11 +57,11 @@ export class SimpleAutoSuggest<T> extends React.Component<SimpleAutoSuggestProps
             highlightFirstSuggestion={true}
             inputProps={{
                 value: this.state.search,
-                onChange: (evt: {}, params: {newValue: string}) => {this.setState({search: params.newValue})},
+                onChange: (evt, params) => {this.setState({search: params!.newValue})},
                 disabled: this.isDisabled()
             }}
-            onSuggestionSelected={(ev: {}, {suggestion: v}: {suggestion: T}) => {
-                this.props.onSelect(v);
+            onSuggestionSelected={(ev, v) => {
+                this.props.onSelect(v.suggestion);
             }}
             shouldRenderSuggestions={() => true}
             theme={{
