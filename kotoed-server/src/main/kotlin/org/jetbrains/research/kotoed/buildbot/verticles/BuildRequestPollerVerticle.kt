@@ -63,7 +63,7 @@ class BuildRequestPollerVerticle(val buildRequestId: Int) : AbstractKotoedVertic
         spawn(WithExceptions { ex ->
             log.trace("Error when polling build request", ex)
             poll(errorCount + 1, processedBuildIds)
-        }) {
+        } + VertxContext(vertx)) {
             val response = vxa<HttpResponse<Buffer>> {
                 wc.get(Config.Buildbot.Port, Config.Buildbot.Host, BuildbotApi.Root + buildRequestLocator)
                         .putDefaultBBHeaders()
