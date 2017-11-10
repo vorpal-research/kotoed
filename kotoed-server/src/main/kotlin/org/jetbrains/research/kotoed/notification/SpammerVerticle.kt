@@ -31,8 +31,9 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
                 .withHour(14)
                 .withMinute(0)
                 .withSecond(0)
+                .withNano(0)
 
-        if (nextEvent < now) nextEvent = nextEvent.plusDays(1)
+        if (nextEvent <= now) nextEvent = nextEvent.plusDays(1)
 
         log.info("Scheduling next spam session at $nextEvent")
 
