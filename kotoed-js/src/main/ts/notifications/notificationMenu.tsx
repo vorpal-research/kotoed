@@ -50,16 +50,18 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
 
     render() {
         if(this.state.currentNotifications.length != 0) {
-            return <div className="list-group">
+            return <div>
                 <div className="pull-right small">
                     <a onClick={this.markAllRead}>Mark all as read</a>
                 </div>
                 <div className="clearfix"/>
+                <div className="list-group notification-list-group">
                 {
                     this.state.currentNotifications.map( (obj: any, index) =>
                         <NotificationDisplay data={obj} key={`notification-item-${index}`} />
                     )
                 }
+                </div>
             </div>
         } else {
             return <div>No current notifications found</div>
