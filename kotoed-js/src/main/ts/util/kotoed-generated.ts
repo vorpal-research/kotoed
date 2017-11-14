@@ -25,6 +25,7 @@ export namespace Generated {
                 Read: "kotoed.api.course.read",
                 Search: "kotoed.api.course.search",
                 SearchCount: "kotoed.api.course.search.count",
+                Update: "kotoed.api.course.update",
                 Verification: {
                     Data: "kotoed.api.course.verification.data",
                 },
@@ -48,6 +49,7 @@ export namespace Generated {
                 Current: "kotoed.api.notification.current",
                 MarkAllRead: "kotoed.api.notification.markRead.all",
                 MarkRead: "kotoed.api.notification.markRead",
+                PushRenderedBroadcast: "kotoed.api.notification.push.broadcast.render",
                 RenderCurrent: "kotoed.api.notification.current.render",
             },
             OAuthProvider: {
@@ -93,6 +95,7 @@ export namespace Generated {
                     Update: "kotoed.api.submission.comment.update",
                 },
                 Result: {
+                    BatchRead: "kotoed.api.submission.result.read.batch",
                     Read: "kotoed.api.submission.result.read",
                 },
                 Tags: {
@@ -147,6 +150,9 @@ export namespace Generated {
         Comment: {
             ById: "/redirect/comment/:id",
             Search: "/search/comment",
+        },
+        CommentTemplate: {
+            Show: "/commentTemplates",
         },
         Course: {
             Index: "/course/:id",

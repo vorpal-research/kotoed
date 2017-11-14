@@ -15,11 +15,11 @@ class KotoedNotificationSystem extends React.PureComponent {
 
     _notificationSystem: NotificationSystem.System | null = null;
 
-    onNewNotification = async (message: EventbusMessage<NotificationData>) => {
+    onNewNotification = async (message: EventbusMessage<NotificationData>, autoDismiss: number = 10) => {
         this._notificationSystem!.addNotification({
             level: "info",
             position: "tr",
-            autoDismiss: 10,
+            autoDismiss,
             uid: message.body.id,
             children: <div>
                 <div className="vspace-10" />
@@ -39,11 +39,19 @@ class KotoedNotificationSystem extends React.PureComponent {
                 {},
                 async (_, message) => this.onNewNotification(message)
             );
+            eventBus.registerHandler(
+                Kotoed.Address.Api.Notification.PushRenderedBroadcast,
+                {},
+                async (_, message) => this.onNewNotification(message, 0)
+            );
+
         }).catch(doNothing).then(doNothing);
     }
 
     render() {
-        return <NotificationSystem ref={(ns: NotificationSystem.System) => { this._notificationSystem = ns }} />
+        return <NotificationSystem
+            ref={(ns: NotificationSystem.System) => { this._notificationSystem = ns }}
+        />
     }
 }
 
