@@ -125,6 +125,8 @@ object Address {
             const val Create = "kotoed.api.notification.create"
 
             fun pushRendered(id: String) = "kotoed.api.notification.push.$id.render"
+
+            const val PushRenderedBroadcast = "kotoed.api.notification.push.broadcast.render"
         }
 
         object OAuthProvider {
