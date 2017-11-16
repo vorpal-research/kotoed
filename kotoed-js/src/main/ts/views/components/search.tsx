@@ -121,6 +121,7 @@ export interface SearchTableState<DataType> extends SearchBarState {
     currentResults: Array<DataType>
     touched: boolean
     inProgress: boolean
+    total: number
 }
 
 interface SearchQuery {
@@ -176,7 +177,8 @@ export class SearchTable<DataType, QueryType = {}> extends
             pageCount: 0,
             currentResults: [],
             touched: false,
-            inProgress: this.shouldPerformInitialSearch(text, currentPage)
+            inProgress: this.shouldPerformInitialSearch(text, currentPage),
+            total: 0
         };
     }
 
@@ -205,7 +207,10 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     protected queryCount = async () => {
         let resp = await this.doQueryCount();
-        this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)});
+        this.setState({
+            pageCount: Math.ceil(resp.count / PAGESIZE),
+            total: resp.count
+        });
     };
 
     protected doQueryData = async () => {
@@ -333,6 +338,20 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     };
 
+    renderTotal() {
+        if (this.state.currentResults.length === 0)
+            return null;
+        let start = this.state.currentPage * this.pageSize + 1;
+        let end = this.state.currentPage * this.pageSize +
+            Math.min(this.pageSize, this.state.total - this.state.currentPage * this.pageSize)
+        ;
+        let {total} = this.state;
+        return <div>
+            <div className="pull-right small grayed-out">{`Showing ${start} `} &mdash; {`${end} of ${total}`}</div>
+            <div className="clearfix"/>
+        </div>
+    }
+
     render() {
         return (
             <div>
@@ -343,6 +362,7 @@ export class SearchTable<DataType, QueryType = {}> extends
                 />}
                 {this.renderPagination()}
                 {this.renderResults()}
+                {this.renderTotal()}
                 {this.renderPagination()}
             </div>
         );
