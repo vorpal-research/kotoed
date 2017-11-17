@@ -204,3 +204,21 @@
 .CodeMirror-linewidget {
   overflow: visible!important;
 }
+
+.CodeMirror-overlayscroll-vertical {
+  width: 10px
+}
+
+.CodeMirror-overlayscroll-horizontal {
+  height: 10px
+}
+
+.CodeMirror-overlayscroll-vertical:not(:hover):not(.scrolling) > div {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.CodeMirror-overlayscroll-horizontal:not(:hover):not(.scrolling) > div {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}

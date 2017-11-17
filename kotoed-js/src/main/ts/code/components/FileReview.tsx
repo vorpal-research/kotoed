@@ -12,6 +12,11 @@ import "codemirror/addon/fold/comment-fold"
 import "codemirror/addon/edit/matchbrackets"
 import "codemirror/addon/search/search"
 import "codemirror/addon/search/searchcursor"
+import "codemirror/addon/search/matchesonscrollbar"
+import "codemirror/addon/search/matchesonscrollbar.css"
+import "codemirror/addon/scroll/annotatescrollbar"
+import "codemirror/addon/scroll/simplescrollbars"
+import "codemirror/addon/scroll/simplescrollbars.css"
 import "codemirror/addon/search/jump-to-line"
 import "codemirror/addon/dialog/dialog"
 import "codemirror/addon/dialog/dialog.css"
@@ -34,7 +39,7 @@ import {BaseCommentToRead} from "../../data/comment";
 import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/forms";
 import {CodeAnnotation} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
-import {doNothing} from "../../util/common";
+import {doNothing, sleep} from "../../util/common";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
@@ -375,10 +380,21 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
                 "Cmd-Alf-F": doNothing,
                 "Shift-Ctrl-R": doNothing,
                 "Shift-Cmd-Alf-F": doNothing,
-                "Alf-G": doNothing,
-            }
+                "Alt-G": doNothing,
+            },
+            scrollbarStyle: "overlay"
         });
         this.editor.setSize("100%", this.props.height);
+        this.editor.on("scroll", async () => {
+            $(".CodeMirror-overlayscroll-vertical").addClass("scrolling");
+            $(".CodeMirror-overlayscroll-horizontal").addClass("scrolling");
+
+            await sleep(1000);
+
+            $(".CodeMirror-overlayscroll-vertical").removeClass("scrolling");
+            $(".CodeMirror-overlayscroll-horizontal").removeClass("scrolling");
+
+        });
 
         this.editor.setValue(this.processedValue);
         this.grayOutFakeLines();
