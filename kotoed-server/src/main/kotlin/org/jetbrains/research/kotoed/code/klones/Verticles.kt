@@ -24,27 +24,37 @@ import ru.spbstu.ktuples.placeholders.bind
 @AutoDeployable
 class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
-    val RESULT_TYPE = "klonecheck"
+    private val RESULT_TYPE = "klonecheck"
 
-    var tree = SuffixTree<Token>()
-    val submitted = mutableSetOf<Int>()
-    val ee by lazy { newSingleThreadContext("KloneVerticle.executor") }
+    private val ee by lazy { newSingleThreadContext("kloneVerticle.executor") }
 
     @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
     suspend fun handleCheck(course: CourseRecord) {
         val allProjects = dbFindAsync(ProjectRecord().apply { courseId = course.id })
 
-        val allSubmissions = allProjects.map {
-            dbFindAsync(SubmissionRecord().apply { projectId = it.id; state = SubmissionState.open }).firstOrNull()
-        }.filterNotNull()
+        val allSubmissions = allProjects.mapNotNull {
+            dbFindAsync(SubmissionRecord().apply {
+                projectId = it.id
+                state = SubmissionState.open
+            }).firstOrNull()
+        }
 
-        for(sub in allSubmissions) handleCheck(sub)
+        val tree = SuffixTree<Token>()
+        val ids = mutableMapOf<Long, PsiElement>()
+
+        for (sub in allSubmissions) handleCheck(tree, ids, sub)
+
+        handleReport(tree, ids)
     }
 
-    suspend fun handleCheck(sub_: SubmissionRecord) {
-        val submission = when(sub_.state) {
-            null -> dbFetchAsync(sub_)
-            else -> sub_
+    suspend fun handleCheck(
+            tree: SuffixTree<Token>,
+            ids: MutableMap<Long, PsiElement>,
+            sub: SubmissionRecord) {
+
+        val submission = when (sub.state) {
+            null -> dbFetchAsync(sub)
+            else -> sub
         }
 
         val files: SubmissionCode.ListResponse = sendJsonableAsync(
@@ -56,7 +66,6 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             log.trace("Repository not cloned yet")
             return
         }
-        if (submission.id in submitted) return;
 
         val compilerEnv = run(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
 
@@ -69,16 +78,21 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     log.trace("filename = ${filename}")
                     val resp: SubmissionCode.ReadResponse =
                             sendJsonableAsync(Address.Api.Submission.Code.Read,
-                                    SubmissionCode.ReadRequest(submissionId = submission.id, path = filename)
-                            )
+                                    SubmissionCode.ReadRequest(
+                                            submissionId = submission.id, path = filename))
                     run(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
                 }
 
-        val ids = mutableMapOf<Long, PsiElement>()
-
-        ktFiles.asSequence().flatMap { file ->
-            file.collectDescendantsOfType<PsiElement>{ it is KtNamedFunction }.asSequence()
-        }
+        ktFiles.asSequence()
+                .flatMap { file ->
+                    file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                }
+                .filter { method ->
+                    method.annotationEntries.all { anno -> "@Test" != anno.text }
+                }
+                .map {
+                    it as PsiElement
+                }
                 .map { method ->
                     method to method.dfs { children.asSequence() }
                             .filter(Token.DefaultFilter)
@@ -86,21 +100,23 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 }
                 .forEach { (method, tokens) ->
                     val lst = tokens.toList()
-                    log.trace("lst = ${lst}")
+                    log.trace("lst = $lst")
                     val id = tree.addSequence(lst)
                     ids.put(id, method)
                 }
 
-        submitted += submission.id
-
         run(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
+    }
+
+    suspend fun handleReport(
+            tree: SuffixTree<Token>,
+            ids: MutableMap<Long, PsiElement>) {
 
         val clones =
                 tree.root.dfs {
                     edges
                             .asSequence()
-                            .map { it.terminal }
-                            .filterNotNull()
+                            .mapNotNull { it.terminal }
                 }.filter { node ->
                     node.edges
                             .asSequence()
@@ -109,32 +125,54 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     0 == node.parentEdges.last().begin
                 }
 
+        log.trace(clones.joinToString("\n"))
+
         val filtered = clones
                 .map(::CloneClass)
                 .filter { cc -> cc.clones.isNotEmpty() }
-                .filter { cc -> cc.clones.map { it.submissionId }.toSet().size != 1}
+                .filter { cc -> cc.clones.map { it.submissionId }.toSet().size != 1 }
                 .toList()
 
         filtered.forEachIndexed { i, cloneClass ->
             val builder = StringBuilder()
             val fname = cloneClass.clones
-                    .take(1) // FIXME
-                    .fold("") { _, c -> c.functionName }
+                    .map { clone -> clone.functionName }
+                    .distinct()
+                    .joinToString()
             builder.appendln("($fname) Clone class $i:")
             cloneClass.clones.forEach { c ->
-                builder.appendln("${c.submissionId}/${c.file.path}:${c.fromLine}:${c.toLine}")
+                builder.appendln("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
             builder.appendln()
             log.trace(builder)
-
-            dbCreateAsync(SubmissionResultRecord().apply {
-                submissionId = submission.id
-                type = RESULT_TYPE
-                body = TODO()
-            })
         }
 
-        log.trace(clones.joinToString("\n"))
+        val clonesBySubmission = filtered
+                .flatMap { cloneClass ->
+                    cloneClass.clones.map { clone -> clone.submissionId to cloneClass }
+                }
+                .groupBy { it.first }
+                .mapValues { it.value.map { it.second } }
+
+        clonesBySubmission.asSequence()
+                .forEach { (submissionId_, cloneClasses) ->
+                    dbCreateAsync(SubmissionResultRecord().apply {
+                        submissionId = submissionId_
+                        type = RESULT_TYPE
+                        // FIXME: akhin Make this stuff Jsonable or what?
+                        body = cloneClasses.map { cloneClass ->
+                            cloneClass.clones.map { clone ->
+                                object : Jsonable {
+                                    val submissionId = clone.submissionId
+                                    val file = clone.file
+                                    val fromLine = clone.fromLine
+                                    val toLine = clone.toLine
+                                    val functionName = clone.functionName
+                                }
+                            }
+                        }
+                    })
+                }
 
     }
 }
