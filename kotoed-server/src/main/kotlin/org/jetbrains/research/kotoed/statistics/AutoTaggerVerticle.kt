@@ -1,14 +1,16 @@
 package org.jetbrains.research.kotoed.statistics
 
-import io.vertx.core.eventbus.ReplyException
+import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
+import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionTagRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import java.time.OffsetDateTime
 
 data class KotoedRunnerFailure(
         val nestedException: String
@@ -28,37 +30,50 @@ data class KotoedRunnerTestRun(val data: List<KotoedRunnerTestMethodRun>): Jsona
 @AutoDeployable
 class AutoTaggerVerticle: AbstractKotoedVerticle() {
 
-    var buildFailedId_: Int? = null
-    suspend fun getBuildFailed(): Int =
-            buildFailedId_ ?: dbFindAsync(TagRecord().apply { name = "build failed" }).first().id
+    override fun start(startFuture: Future<Void>) {
+        vertx.setPeriodic(java.time.Duration.ofHours(2).toMillis()) { handleHeartbeat() }
+        super.start(startFuture)
+    }
 
-    var testsFailedId_: Int? = null
-    suspend fun getTestsFailed(): Int =
-            testsFailedId_ ?: dbFindAsync(TagRecord().apply { name = "tests failed" }).first().id
+    fun byNameLazy(name: String) =
+            coroLazy { dbFindAsync(TagRecord().apply { this.name = name }).first().id!! }
 
-    var badStyleId_: Int? = null
-    suspend fun getBadStyle(): Int =
-            badStyleId_ ?: dbFindAsync(TagRecord().apply { name = "bad style" }).first().id
+    var buildFailedId_ = byNameLazy("build failed")
+    suspend fun getBuildFailed() = buildFailedId_.get()
 
-    var buildOkId_: Int? = null
-    suspend fun getBuildOk(): Int =
-            buildOkId_ ?: dbFindAsync(TagRecord().apply { name = "build ok" }).first().id
+    var testsFailedId_ = byNameLazy("tests failed")
+    suspend fun getTestsFailed() = testsFailedId_.get()
 
-    var emptySubId_: Int? = null
-    suspend fun getEmptySub(): Int =
-            emptySubId_ ?: dbFindAsync(TagRecord().apply { name = "empty" }).first().id
+    var badStyleId_ = byNameLazy("bad style")
+    suspend fun getBadStyle() = badStyleId_.get()
 
-    var checkMeId_: Int? = null
-    suspend fun getCheckMe(): Int =
-            checkMeId_ ?: dbFindAsync(TagRecord().apply { name = "check me" }).first().id
+    var buildOkId_ = byNameLazy("build ok")
+    suspend fun getBuildOk() = buildOkId_.get()
+
+    var emptySubId_ = byNameLazy("empty")
+    suspend fun getEmptySub() = emptySubId_.get()
+
+    var checkMeId_ = byNameLazy("check me")
+    suspend fun getCheckMe() = checkMeId_.get()
+
+    val staleId_ = byNameLazy("stale")
+    suspend fun getStale() = staleId_.get()
 
     suspend fun setTag(submissionId: Int, tagId: Int): Unit =
-            sendJsonableAsync(Address.Api.Submission.Tags.Create,
-                    SubmissionTagRecord().apply { this.submissionId = submissionId; this.tagId = tagId })
+            try {
+                sendJsonableAsync(Address.Api.Submission.Tags.Create,
+                        SubmissionTagRecord().apply { this.submissionId = submissionId; this.tagId = tagId })
+            } catch (ex: Exception) {
+                log.warn("Could not set tag: $tagId on $submissionId")
+            }
 
     suspend fun removeTag(submissionId: Int, tagId: Int): Unit =
-            sendJsonableAsync(Address.Api.Submission.Tags.Delete,
-                    SubmissionTagRecord().apply { this.submissionId = submissionId; this.tagId = tagId })
+            try {
+                sendJsonableAsync(Address.Api.Submission.Tags.Delete,
+                        SubmissionTagRecord().apply { this.submissionId = submissionId; this.tagId = tagId })
+            } catch (ex: Exception) {
+                log.warn("Could not remove tag: $tagId on $submissionId")
+            }
 
     private val successTemplate = "results\\.json".toRegex()
 
@@ -68,15 +83,12 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
                 .firstOrNull() ?: throw IllegalStateException(
                 "Build request ${logContent.buildRequestId()} not found")
 
-        try {
-            removeTag(build.submissionId, getBuildFailed())
-            removeTag(build.submissionId, getTestsFailed())
-            removeTag(build.submissionId, getBuildOk())
-            removeTag(build.submissionId, getEmptySub())
-            //removeTag(build.submissionId, getBadStyle())
-        } catch(ex: ReplyException) {
-            log.warn("Could not delete tags")
-        }
+        removeTag(build.submissionId, getStale())
+        removeTag(build.submissionId, getBuildFailed())
+        removeTag(build.submissionId, getTestsFailed())
+        removeTag(build.submissionId, getBuildOk())
+        removeTag(build.submissionId, getEmptySub())
+        //removeTag(build.submissionId, getBadStyle())
 
         if(0 != logContent.results()) {
             // build error
@@ -111,4 +123,16 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             setTag(sub.id, getCheckMe())
         }
     }
+
+    fun handleHeartbeat() =
+        spawn {
+            val allSubs = dbFindAsync(SubmissionRecord().apply { state = SubmissionState.open })
+            for(sub in allSubs) {
+                if(sub.datetime < OffsetDateTime.now().minusWeeks(2)) {
+                    setTag(sub.id, getStale())
+                } else {
+                    removeTag(sub.id, getStale())
+                }
+            }
+        }
 }
