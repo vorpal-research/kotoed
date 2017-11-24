@@ -73,11 +73,19 @@ inline fun <reified R : Record> DbRecordListWrapper(
         verificationData: VerificationData = VerificationData.Unknown
 ) = DbRecordListWrapper(records.tryToJson() as JsonArray, verificationData)
 
-object SubmissionCode {
-    data class RemoteRequest(val submissionId: Int) : Jsonable
-    data class ReadRequest(val submissionId: Int, val path: String) : Jsonable
-    data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
-    data class ListRequest(val submissionId: Int) : Jsonable
+object Code {
+    object Submission {
+        data class RemoteRequest(val submissionId: Int) : Jsonable
+        data class ReadRequest(val submissionId: Int, val path: String) : Jsonable
+        data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
+        data class ListRequest(val submissionId: Int) : Jsonable
+    }
+
+    object Course {
+        data class ReadRequest(val courseId: Int, val path: String) : Jsonable
+        data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
+        data class ListRequest(val courseId: Int) : Jsonable
+    }
 
     enum class FileType { directory, file } // directory < file, used in comparisons
     data class FileRecord(
@@ -182,14 +190,14 @@ data class ProfileInfo(
         val firstName: String?,
         val lastName: String?,
         val group: String?
-): Jsonable
+) : Jsonable
 
 data class PasswordChangeRequest(
         val initiatorDenizenId: String,
         val initiatorPassword: String,
         val targetId: Int,
         val newPassword: String
-): Jsonable
+) : Jsonable
 
 data class ProfileInfoUpdate(
         val id: Int,
@@ -199,17 +207,20 @@ data class ProfileInfoUpdate(
         val firstName: String?,
         val lastName: String?,
         val group: String?
-): Jsonable
+) : Jsonable
 
-enum class SubmissionCodeAnnotationSeverity{ error, warning }
+enum class SubmissionCodeAnnotationSeverity { error, warning }
+
 data class SubmissionCodeAnnotationPosition(
-    val line: Int, val col: Int
-): Jsonable
+        val line: Int, val col: Int
+) : Jsonable
+
 data class SubmissionCodeAnnotation(
         val severity: SubmissionCodeAnnotationSeverity,
         val message: String,
         val position: SubmissionCodeAnnotationPosition
-): Jsonable
+) : Jsonable
+
 data class SubmissionCodeAnnotationResponse(
         val map: Map<String, Set<SubmissionCodeAnnotation>>
-): Jsonable
+) : Jsonable
