@@ -15,6 +15,15 @@ export const JsonColumn = ({value}: { value: any }) =>
 export const CodeColumn = ({value}: { value: any }) =>
     <pre><code>{value}</code></pre>;
 
+export const KloneColumn = ({value}: { value: any }) =>
+    <ListGroup>
+        {value.toJS().kloneClass.map((klone: any) => {
+            return <ListGroupItem>
+                {`Submission ${klone.submissionId} / ${klone.file.path}:${klone.fromLine}:${klone.toLine}`}
+            </ListGroupItem>;
+        })}
+    </ListGroup>;
+
 
 export interface UnknownFailureInfo {
     nestedException: string
