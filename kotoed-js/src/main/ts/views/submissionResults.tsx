@@ -8,6 +8,7 @@ import {
     ArrayColumn,
     CodeColumn,
     isUnknownFailureInfo,
+    KloneColumn,
     TestData,
     TestDataColumn
 } from "./components/griddleEx"
@@ -280,6 +281,32 @@ namespace Statistics {
 
 } // namespace Statistics
 
+namespace Klones {
+
+    export function selector(result: any): boolean {
+        return result["type"].match(/^klonecheck$/)
+    }
+
+    export function transformer(result: any): any[] {
+        return _.map(result.body, (value: any) => {
+            return {
+                value: {
+                    baseSubmissionId: submissionId,
+                    kloneClass: value
+                }
+            };
+        });
+    }
+
+    export let rowDefinition =
+        <RowDefinition>
+            <ColumnDefinition id="value"
+                              title="Clone class"
+                              customComponent={KloneColumn}/>
+        </RowDefinition> as any
+
+}
+
 render(
     <SubmissionResultTable
         id={submissionId}
@@ -302,7 +329,12 @@ render(
                           selector={BuildLogs.selector}
                           transformer={BuildLogs.transformer}
                           filters={[]}
-                          rowDefinition={BuildLogs.rowDefinition}/> as any
+                          rowDefinition={BuildLogs.rowDefinition}/> as any,
+            <ResultHolder name="Klones"
+                          selector={Klones.selector}
+                          transformer={Klones.transformer}
+                          filters={[]}
+                          rowDefinition={Klones.rowDefinition}/> as any
         ]}/>,
     rootElement
 );
