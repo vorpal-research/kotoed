@@ -18,6 +18,11 @@ object Address {
             object Verification {
                 const val Data = "kotoed.api.course.verification.data"
             }
+
+            object Code {
+                const val Read = "kotoed.api.course.code.read"
+                const val List = "kotoed.api.course.code.list"
+            }
         }
 
         object Project {
