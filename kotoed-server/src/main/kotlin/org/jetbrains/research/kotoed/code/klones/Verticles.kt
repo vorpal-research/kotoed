@@ -168,7 +168,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             .asSequence()
                             .all { it.begin == it.end && it.begin == it.sequence.size - 1 }
                 }.filter { node ->
-                    0 == node.parentEdges.last().begin
+                    0 == node.parentEdges.lastOrNull()?.begin
                 }
 
         log.trace(clones.joinToString("\n"))
