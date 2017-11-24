@@ -30,8 +30,8 @@ export class NotificationDisplay extends React.PureComponent<NotificationDisplay
 
     onClick = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
-        // TODO or maybe we have to await sendAsync result here
-        sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id });
+        // We have to await, otherwise it races with new page loading
+        await sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id });
         window.location.href = this.makeProperLink(this.props.data.linkTo)
     };
 
