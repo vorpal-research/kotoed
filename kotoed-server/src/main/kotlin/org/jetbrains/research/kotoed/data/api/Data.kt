@@ -76,7 +76,11 @@ inline fun <reified R : Record> DbRecordListWrapper(
 object Code {
     object Submission {
         data class RemoteRequest(val submissionId: Int) : Jsonable
-        data class ReadRequest(val submissionId: Int, val path: String) : Jsonable
+        data class ReadRequest(
+                val submissionId: Int,
+                val path: String,
+                val fromLine: Int? = null,
+                val toLine: Int? = null) : Jsonable
         data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
         data class ListRequest(val submissionId: Int) : Jsonable
     }

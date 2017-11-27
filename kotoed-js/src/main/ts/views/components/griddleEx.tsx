@@ -5,6 +5,7 @@ import {List} from "immutable";
 import * as _ from "lodash";
 import {isArray, isObject} from "util";
 
+import {KloneView} from "./kloneView";
 
 export const ArrayColumn = ({value}: { value: List<any> }) =>
     <span>{value.join(", ")}</span>;
@@ -15,14 +16,21 @@ export const JsonColumn = ({value}: { value: any }) =>
 export const CodeColumn = ({value}: { value: any }) =>
     <pre><code>{value}</code></pre>;
 
-export const KloneColumn = ({value}: { value: any }) =>
-    <ListGroup>
-        {value.toJS().kloneClass.map((klone: any) => {
-            return <ListGroupItem>
-                {`Submission ${klone.submissionId} / ${klone.file.path}:${klone.fromLine}:${klone.toLine}`}
-            </ListGroupItem>;
+export const KloneColumn = ({value}: { value: any }) => {
+    let jsValue = value.toJS();
+
+    let baseKlone = jsValue.kloneClass.find((klone: any) => jsValue.baseSubmissionId === klone.submissionId);
+
+    return <ListGroup>
+        {jsValue.kloneClass.map((klone: any) => {
+            return baseKlone !== klone ? <ListGroupItem>
+                <KloneView open={true}
+                           leftKlone={baseKlone}
+                           rightKlone={klone}/>
+            </ListGroupItem> : null;
         })}
     </ListGroup>;
+};
 
 
 export interface UnknownFailureInfo {

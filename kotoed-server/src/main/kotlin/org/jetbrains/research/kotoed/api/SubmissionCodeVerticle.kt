@@ -106,7 +106,16 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         revision = repoInfo.revision
                 )
         )
-        return SubReadResponse(contents = inner.contents, status = CloneStatus.done)
+
+        val from = (message.fromLine ?: 1) - 1
+        val to = (message.toLine ?: inner.contents.lineSequence().count()) - 1
+        val contents = inner.contents
+                .lineSequence()
+                .drop(from)
+                .take(to - from + 1)
+                .joinToString(separator = "\n")
+
+        return SubReadResponse(contents = contents, status = CloneStatus.done)
     }
 
     // Feel da powa of Kotlin!

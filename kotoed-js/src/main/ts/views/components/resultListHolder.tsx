@@ -27,6 +27,7 @@ export interface ResultListHolderProps<ResultT> {
 }
 
 export type ResultListHolderState<ResultT> = {
+    permissions: any | null
     results: ResultT[]
     errors: ErrorDesc[]
     activeTabIndex: number
@@ -46,6 +47,7 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
 
         this.state = _.extend(
             {
+                permissions: null,
                 results: [],
                 errors: [],
                 activeTabIndex: 0
@@ -59,9 +61,18 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
     }
 
     componentWillMount() {
+        this.loadPermissions()
+            .then((perms) => {
+                this.setState({
+                    permissions: perms
+                });
+            });
+
         this.loadResults()
             .then(this.processResults)
     }
+
+    abstract loadPermissions: () => Promise<any>;
 
     abstract loadResults: () => Promise<any>;
 
@@ -128,6 +139,8 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
             //     ]);
             //     continue;
             // }
+
+            if (!resultHolder.props.isVisible(this.state)) continue;
 
             let resultList = [];
             for (let result of this.state.results) {
