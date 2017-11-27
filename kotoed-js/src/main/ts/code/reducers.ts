@@ -320,7 +320,8 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             changeState: false,
             resubmit: false,
             clean: false,
-            tags: false
+            tags: false,
+            klones: false
         }
     },
     loading: true,

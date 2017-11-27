@@ -13,6 +13,7 @@ export interface ResultHolderProps<ResultT> {
     selector: (r: ResultT) => boolean
     transformer: (r: ResultT) => ResultT[]
     filters: ResultFilter<ResultT>[]
+    isVisible: (state: any) => boolean
 }
 
 export class ResultHolder<ResultT> extends Component<ResultHolderProps<ResultT>, any> {

@@ -18,12 +18,15 @@ import {
     ResultListHolderProps
 } from "./components/resultListHolder";
 
+import {fetchPermissions} from "../submissionDetails/remote";
 import {Kotoed} from "../util/kotoed-api";
 
 export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
     constructor(props: ResultListHolderProps<ResultT>, context: undefined) {
         super(props, context);
     }
+
+    loadPermissions = () => fetchPermissions(this.props.id);
 
     loadResults = () => {
         return sendAsync<IdRequest, GenericResponse<ResultT>>
@@ -319,22 +322,26 @@ render(
                               KFirst.hideExamplesFilter,
                               KFirst.hidePassedFilter
                           ]}
-                          rowDefinition={KFirst.rowDefinition}/> as any,
+                          rowDefinition={KFirst.rowDefinition}
+                          isVisible={_ => true}/> as any,
             <ResultHolder name="Statistics"
                           selector={Statistics.selector}
                           transformer={Statistics.transformer}
                           filters={[]}
-                          rowDefinition={Statistics.rowDefinition}/> as any,
+                          rowDefinition={Statistics.rowDefinition}
+                          isVisible={_ => true}/> as any,
             <ResultHolder name="Build logs"
                           selector={BuildLogs.selector}
                           transformer={BuildLogs.transformer}
                           filters={[]}
-                          rowDefinition={BuildLogs.rowDefinition}/> as any,
+                          rowDefinition={BuildLogs.rowDefinition}
+                          isVisible={_ => true}/> as any,
             <ResultHolder name="Klones"
                           selector={Klones.selector}
                           transformer={Klones.transformer}
                           filters={[]}
-                          rowDefinition={Klones.rowDefinition}/> as any
+                          rowDefinition={Klones.rowDefinition}
+                          isVisible={state => state.permissions ? state.permissions.klones : false}/> as any
         ]}/>,
     rootElement
 );
