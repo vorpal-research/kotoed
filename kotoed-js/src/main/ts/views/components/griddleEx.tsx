@@ -24,8 +24,7 @@ export const KloneColumn = ({value}: { value: any }) => {
     return <ListGroup>
         {jsValue.kloneClass.map((klone: any) => {
             return baseKlone !== klone ? <ListGroupItem>
-                <KloneView open={true}
-                           leftKlone={baseKlone}
+                <KloneView leftKlone={baseKlone}
                            rightKlone={klone}/>
             </ListGroupItem> : null;
         })}
