@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Component} from "react";
-import {Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
+import {Button, Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
 
 import {fetchFile} from "../../code/remote/code";
 
@@ -18,12 +18,12 @@ export interface KloneInfo {
 }
 
 export interface KloneViewProps {
-    open: boolean
     leftKlone: KloneInfo
     rightKlone: KloneInfo
 }
 
 export interface KloneViewState {
+    open: boolean
     leftCode: string
     rightCode: string
 }
@@ -33,6 +33,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         super(props, context);
 
         this.state = {
+            open: false,
             leftCode: "Loading...",
             rightCode: "Loading..."
         };
@@ -58,6 +59,14 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         );
     }
 
+    toggleOpen = () => {
+        this.setState(
+            (prevState: KloneViewState) => {
+                return {open: !prevState.open};
+            }
+        );
+    };
+
     render() {
 
         let formatHeader = (klone: KloneInfo) => {
@@ -65,28 +74,32 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         };
 
         return (
-            <Panel collapsible expanded={this.props.open}>
+            <div>
                 <Grid fluid>
-                    <Row className="align-items-center">
-                        <Col xs={6}>
-                            <samp>{formatHeader(this.props.leftKlone)}</samp>
-                        </Col>
-                        <Col xs={6}>
-                            <samp>{formatHeader(this.props.rightKlone)}</samp>
-                        </Col>
-                        <Clearfix/>
-                    </Row>
-                    <Row className="align-items-center">
-                        <Col xs={6}>
-                            <pre><code>{this.state.leftCode}</code></pre>
-                        </Col>
-                        <Col xs={6}>
-                            <pre><code>{this.state.rightCode}</code></pre>
-                        </Col>
-                        <Clearfix/>
-                    </Row>
+                    <Button block onClick={this.toggleOpen}>
+                        <Row className="align-items-center">
+                            <Col xs={6}>
+                                <samp>{formatHeader(this.props.leftKlone)}</samp>
+                            </Col>
+                            <Col xs={6}>
+                                <samp>{formatHeader(this.props.rightKlone)}</samp>
+                            </Col>
+                            <Clearfix/>
+                        </Row>
+                    </Button>
+                    <Panel collapsible expanded={this.state.open}>
+                        <Row className="align-items-center">
+                            <Col xs={6}>
+                                <pre><code>{this.state.leftCode}</code></pre>
+                            </Col>
+                            <Col xs={6}>
+                                <pre><code>{this.state.rightCode}</code></pre>
+                            </Col>
+                            <Clearfix/>
+                        </Row>
+                    </Panel>
                 </Grid>
-            </Panel>
+            </div>
         );
     }
 
