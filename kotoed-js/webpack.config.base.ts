@@ -150,7 +150,11 @@ const config: webpack.Configuration = {
         new webpack.ProvidePlugin({  // TODO this is shit but Bootstrap JS does not work without it
             jQuery: 'jquery',
             $: 'jquery',
-            jquery: 'jquery'
+            jquery: 'jquery',
+            diff_match_patch: 'diff-match-patch',
+            DIFF_DELETE: ['diff-match-patch', 'DIFF_DELETE'],
+            DIFF_INSERT: ['diff-match-patch', 'DIFF_INSERT'],
+            DIFF_EQUAL: ['diff-match-patch', 'DIFF_EQUAL']
         }),
 
         new webpack.optimize.CommonsChunkPlugin({
