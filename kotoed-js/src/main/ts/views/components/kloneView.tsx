@@ -3,8 +3,18 @@ import {Component} from "react";
 import {Button, Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
 
 import {fetchFile} from "../../code/remote/code";
+import {editorModeParam, guessCmModeForFile} from "../../code/util/codemirror";
 
 import "less/kotoed-bootstrap/bootstrap.less";
+
+import * as cm from "codemirror";
+import "codemirror/mode/meta";
+
+import "codemirror/lib/codemirror.css";
+import "codemirror/addon/merge/merge.css";
+
+import "diff-match-patch";
+import "codemirror/addon/merge/merge.js";
 
 export interface FileInfo {
     path: string
@@ -23,6 +33,7 @@ export interface KloneViewProps {
 }
 
 export interface KloneViewState {
+    mergeViewer: cm.MergeView.MergeViewEditor | null
     open: boolean
     leftCode: string
     rightCode: string
@@ -33,10 +44,56 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         super(props, context);
 
         this.state = {
+            mergeViewer: null,
             open: false,
             leftCode: "Loading...",
             rightCode: "Loading..."
         };
+    }
+
+    mergeViewerElement: HTMLDivElement | null = null;
+
+    componentDidUpdate(prevProps: KloneViewProps, prevState: KloneViewState) {
+        if (null != this.state.mergeViewer) {
+            if (prevState.leftCode != this.state.leftCode) {
+                this.state.mergeViewer.editor().setValue(this.state.leftCode);
+                setTimeout(() => this.state.mergeViewer!!.editor().refresh());
+            }
+            if (prevState.rightCode != this.state.rightCode) {
+                this.state.mergeViewer.rightOriginal().setValue(this.state.rightCode);
+                setTimeout(() => this.state.mergeViewer!!.rightOriginal().refresh());
+            }
+            if (!prevState.open && this.state.open) {
+                setTimeout(() => this.state.mergeViewer!!.editor().refresh());
+                setTimeout(() => this.state.mergeViewer!!.rightOriginal().refresh());
+            }
+        }
+    }
+
+    componentDidMount() {
+        if (null != this.mergeViewerElement) {
+            let mode = editorModeParam(guessCmModeForFile(this.props.leftKlone.file.path))
+
+            let mergeViewer = cm.MergeView(this.mergeViewerElement, {
+                value: this.state.leftCode,
+                orig: this.state.leftCode,
+                origRight: this.state.rightCode,
+                mode: mode
+            });
+
+            mergeViewer.editor().setOption("mode", mode);
+            mergeViewer.rightOriginal().setOption("mode", mode);
+
+            this.setState({
+                mergeViewer: mergeViewer
+            });
+        }
+    }
+
+    componentWillUnmount() {
+        if (null != this.state.mergeViewer) {
+            // this.state.mergeViewer.getWrapperElement()
+        }
     }
 
     componentWillMount() {
@@ -88,15 +145,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
                         </Row>
                     </Button>
                     <Panel collapsible expanded={this.state.open}>
-                        <Row className="align-items-center">
-                            <Col xs={6}>
-                                <pre><code>{this.state.leftCode}</code></pre>
-                            </Col>
-                            <Col xs={6}>
-                                <pre><code>{this.state.rightCode}</code></pre>
-                            </Col>
-                            <Clearfix/>
-                        </Row>
+                        <div ref={(me) => this.mergeViewerElement = me}/>
                     </Panel>
                 </Grid>
             </div>
