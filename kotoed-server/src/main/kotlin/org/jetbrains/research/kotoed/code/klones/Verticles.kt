@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.code.klones
 
 import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
+import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.run
 import org.jetbrains.kootstrap.FooBarCompiler
@@ -10,6 +11,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.data.api.Code
+import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
@@ -37,23 +39,30 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
     suspend fun handleSub(course: CourseRecord) {
-        val allProjects = dbFindAsync(ProjectRecord().apply { courseId = course.id })
 
-        val allSubmissions = allProjects.mapNotNull {
-            dbFindAsync(SubmissionRecord().apply {
-                projectId = it.id
-                state = SubmissionState.open
-            }).firstOrNull()
-        }
+        val projQ = ComplexDatabaseQuery("project")
+                .find(ProjectRecord().apply {
+                    courseId = course.id
+                    deleted = false
+                })
+                .join("denizen", field = "denizen_id")
+
+        val q = ComplexDatabaseQuery("submission")
+                .find(SubmissionRecord().apply {
+                    state = SubmissionState.open
+                })
+                .join(projQ, field = "project_id")
+
+        val data: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission"), q)
 
         val tree = SuffixTree<Token>()
         val ids = mutableMapOf<Long, PsiElement>()
 
         handleBase(tree, ids, course)
 
-        for (sub in allSubmissions) handleSub(tree, ids, sub)
+        for (sub in data) handleSub(tree, ids, sub)
 
-        handleReport(tree, ids)
+        handleReport(tree, ids, data)
     }
 
     suspend fun handleBase(
@@ -77,19 +86,14 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleSub(
             tree: SuffixTree<Token>,
             ids: MutableMap<Long, PsiElement>,
-            sub: SubmissionRecord) {
-
-        val submission = when (sub.state) {
-            null -> dbFetchAsync(sub)
-            else -> sub
-        }
+            sub: JsonObject) {
 
         val files: Code.ListResponse = sendJsonableAsync(
                 Address.Api.Submission.Code.List,
-                Code.Submission.ListRequest(submission.id)
+                Code.Submission.ListRequest(sub.getInteger("id"))
         )
 
-        handleFiles(tree, ids, Mode.SUBMISSION, sub.id, files)
+        handleFiles(tree, ids, Mode.SUBMISSION, sub.getInteger("id"), files)
     }
 
     suspend fun handleFiles(
@@ -156,7 +160,10 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     suspend fun handleReport(
             tree: SuffixTree<Token>,
-            ids: MutableMap<Long, PsiElement>) {
+            ids: MutableMap<Long, PsiElement>,
+            data: List<JsonObject>) {
+
+        val dataBySubmissionId = data.map { it.getInteger("id") to it }.toMap()
 
         val clones =
                 tree.root.dfs {
@@ -211,6 +218,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             cloneClass.clones.map { clone ->
                                 object : Jsonable {
                                     val submissionId = clone.submissionId
+                                    val denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id")
+                                    val project = dataBySubmissionId[clone.submissionId].safeNav("project", "name")
                                     val file = clone.file
                                     val fromLine = clone.fromLine
                                     val toLine = clone.toLine

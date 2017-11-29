@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Component} from "react";
-import {Button, Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
+import {Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
 
 import {fetchFile} from "../../code/remote/code";
 import {editorModeParam, guessCmModeForFile} from "../../code/util/codemirror";
@@ -23,6 +23,8 @@ export interface FileInfo {
 
 export interface KloneInfo {
     submissionId: number,
+    denizen: string,
+    project: string,
     file: FileInfo,
     fromLine: number,
     toLine: number
@@ -54,6 +56,25 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
 
     mergeViewerElement: HTMLDivElement | null = null;
 
+    mergeViewerHeight = () => {
+        if (null != this.state.mergeViewer) {
+            return Math.max(
+                this.state.mergeViewer.editor().getScrollInfo().height,
+                this.state.mergeViewer.rightOriginal().getScrollInfo().height,
+            );
+        } else {
+            return null
+        }
+    };
+
+    mergeViewerResize = () => {
+        if (null != this.state.mergeViewer) {
+            let height = this.mergeViewerHeight();
+            this.state.mergeViewer.editor().setSize(null, height);
+            this.state.mergeViewer.rightOriginal().setSize(null, height);
+        }
+    };
+
     componentDidUpdate(prevProps: KloneViewProps, prevState: KloneViewState) {
         if (null != this.state.mergeViewer) {
             if (prevState.leftCode != this.state.leftCode) {
@@ -68,6 +89,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
                 setTimeout(() => this.state.mergeViewer!!.editor().refresh());
                 setTimeout(() => this.state.mergeViewer!!.rightOriginal().refresh());
             }
+            this.mergeViewerResize()
         }
     }
 
@@ -128,26 +150,27 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
     render() {
 
         let formatHeader = (klone: KloneInfo) => {
-            return `Submission ${klone.submissionId} @ ${klone.file.path}:${klone.fromLine}:${klone.toLine}`
+            return `${klone.denizen}:${klone.project}:${klone.submissionId} @ ${klone.file.path}:${klone.fromLine}:${klone.toLine}`
         };
 
         return (
             <div>
                 <Grid fluid>
-                    <Button block onClick={this.toggleOpen}>
-                        <Row className="align-items-center">
-                            <Col xs={6}>
-                                <samp>{formatHeader(this.props.leftKlone)}</samp>
-                            </Col>
-                            <Col xs={6}>
-                                <samp>{formatHeader(this.props.rightKlone)}</samp>
-                            </Col>
-                            <Clearfix/>
-                        </Row>
-                    </Button>
-                    <Panel collapsible expanded={this.state.open}>
-                        <div ref={(me) => this.mergeViewerElement = me}/>
-                    </Panel>
+                    <Row className="align-items-center"
+                         onClick={this.toggleOpen}>
+                        <Col xs={6} style={{wordWrap: "break-word"}}>
+                            {formatHeader(this.props.leftKlone)}
+                        </Col>
+                        <Col xs={6}>
+                            {formatHeader(this.props.rightKlone)}
+                        </Col>
+                        <Clearfix/>
+                    </Row>
+                    <Row>
+                        <Panel collapsible expanded={this.state.open}>
+                            <div ref={(me) => this.mergeViewerElement = me}/>
+                        </Panel>
+                    </Row>
                 </Grid>
             </div>
         );
