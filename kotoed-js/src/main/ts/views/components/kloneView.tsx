@@ -7,11 +7,12 @@ import {editorModeParam, guessCmModeForFile} from "../../code/util/codemirror";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 
-import * as cm from "codemirror";
-import "codemirror/mode/meta";
-
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/merge/merge.css";
+
+import * as cm from "codemirror";
+import "codemirror/mode/meta";
+import "codemirror/mode/clike/clike.js" // FIXME: akhin Why is this needed???
 
 import "diff-match-patch";
 import "codemirror/addon/merge/merge.js";
