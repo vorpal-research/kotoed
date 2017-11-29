@@ -38,7 +38,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     private val ee by lazy { newSingleThreadContext("kloneVerticle.executor") }
 
     @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
-    suspend fun handleSub(course: CourseRecord) {
+    suspend fun handleCheck(course: CourseRecord) {
 
         val projQ = ComplexDatabaseQuery("project")
                 .find(ProjectRecord().apply {
