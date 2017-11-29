@@ -102,7 +102,8 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
                 value: this.state.leftCode,
                 orig: this.state.leftCode,
                 origRight: this.state.rightCode,
-                mode: mode
+                mode: mode,
+                readOnly: "nocursor"
             });
 
             mergeViewer.editor().setOption("mode", mode);
