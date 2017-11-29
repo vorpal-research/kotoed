@@ -36,7 +36,6 @@ export interface KloneViewProps {
 }
 
 export interface KloneViewState {
-    mergeViewer: cm.MergeView.MergeViewEditor | null
     open: boolean
     leftCode: string
     rightCode: string
@@ -47,7 +46,6 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         super(props, context);
 
         this.state = {
-            mergeViewer: null,
             open: false,
             leftCode: "Loading...",
             rightCode: "Loading..."
@@ -55,12 +53,13 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
     }
 
     mergeViewerElement: HTMLDivElement | null = null;
+    mergeViewer: cm.MergeView.MergeViewEditor | null = null;
 
     mergeViewerHeight = () => {
-        if (null != this.state.mergeViewer) {
+        if (null != this.mergeViewer) {
             return Math.max(
-                this.state.mergeViewer.editor().getScrollInfo().height,
-                this.state.mergeViewer.rightOriginal().getScrollInfo().height,
+                this.mergeViewer.editor().getScrollInfo().height,
+                this.mergeViewer.rightOriginal().getScrollInfo().height,
             );
         } else {
             return null
@@ -68,26 +67,28 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
     };
 
     mergeViewerResize = () => {
-        if (null != this.state.mergeViewer) {
+        if (null != this.mergeViewer) {
             let height = this.mergeViewerHeight();
-            this.state.mergeViewer.editor().setSize(null, height);
-            this.state.mergeViewer.rightOriginal().setSize(null, height);
+            this.mergeViewer.editor().setSize(null, height);
+            this.mergeViewer.rightOriginal().setSize(null, height);
+
+            this.mergeViewer.getWrapperElement().style.height = `${height}px`
         }
     };
 
     componentDidUpdate(prevProps: KloneViewProps, prevState: KloneViewState) {
-        if (null != this.state.mergeViewer) {
+        if (null != this.mergeViewer) {
             if (prevState.leftCode != this.state.leftCode) {
-                this.state.mergeViewer.editor().setValue(this.state.leftCode);
-                setTimeout(() => this.state.mergeViewer!!.editor().refresh());
+                this.mergeViewer.editor().setValue(this.state.leftCode);
+                setTimeout(() => this.mergeViewer!!.editor().refresh());
             }
             if (prevState.rightCode != this.state.rightCode) {
-                this.state.mergeViewer.rightOriginal().setValue(this.state.rightCode);
-                setTimeout(() => this.state.mergeViewer!!.rightOriginal().refresh());
+                this.mergeViewer.rightOriginal().setValue(this.state.rightCode);
+                setTimeout(() => this.mergeViewer!!.rightOriginal().refresh());
             }
             if (!prevState.open && this.state.open) {
-                setTimeout(() => this.state.mergeViewer!!.editor().refresh());
-                setTimeout(() => this.state.mergeViewer!!.rightOriginal().refresh());
+                setTimeout(() => this.mergeViewer!!.editor().refresh());
+                setTimeout(() => this.mergeViewer!!.rightOriginal().refresh());
             }
             this.mergeViewerResize()
         }
@@ -107,15 +108,13 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
             mergeViewer.editor().setOption("mode", mode);
             mergeViewer.rightOriginal().setOption("mode", mode);
 
-            this.setState({
-                mergeViewer: mergeViewer
-            });
+            this.mergeViewer = mergeViewer;
         }
     }
 
     componentWillUnmount() {
-        if (null != this.state.mergeViewer) {
-            // this.state.mergeViewer.getWrapperElement()
+        if (null != this.mergeViewer) {
+            // this.mergeViewer.getWrapperElement()
         }
     }
 
