@@ -3,7 +3,11 @@ import {Component} from "react";
 import {Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
 
 import {fetchFile} from "../../code/remote/code";
-import {editorModeParam, guessCmModeForFile} from "../../code/util/codemirror";
+import {
+    editorModeParam,
+    guessCmModeForFile,
+    requireCmMode
+} from "../../code/util/codemirror";
 
 import "less/kotoed-bootstrap/bootstrap.less";
 
@@ -12,7 +16,6 @@ import "codemirror/addon/merge/merge.css";
 
 import * as cm from "codemirror";
 import "codemirror/mode/meta";
-import "codemirror/mode/clike/clike.js" // FIXME: akhin Why is this needed???
 
 import "diff-match-patch";
 import "codemirror/addon/merge/merge.js";
@@ -72,7 +75,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
             this.mergeViewer.editor().setSize(null, height);
             this.mergeViewer.rightOriginal().setSize(null, height);
 
-            this.mergeViewer.getWrapperElement().style.height = `${height}px`
+            // this.mergeViewer.getWrapperElement().style.height = `${height}px`
         }
     };
 
@@ -96,18 +99,20 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
 
     componentDidMount() {
         if (null != this.mergeViewerElement) {
-            let mode = editorModeParam(guessCmModeForFile(this.props.leftKlone.file.path))
+            let mode = guessCmModeForFile(this.props.leftKlone.file.path);
+
+            requireCmMode(mode);
 
             let mergeViewer = cm.MergeView(this.mergeViewerElement, {
                 value: this.state.leftCode,
                 orig: this.state.leftCode,
                 origRight: this.state.rightCode,
-                mode: mode,
-                readOnly: "nocursor"
+                mode: editorModeParam(mode),
+                readOnly: true
             });
 
-            mergeViewer.editor().setOption("mode", mode);
-            mergeViewer.rightOriginal().setOption("mode", mode);
+            mergeViewer.editor().setOption("mode", editorModeParam(mode));
+            mergeViewer.rightOriginal().setOption("mode", editorModeParam(mode));
 
             this.mergeViewer = mergeViewer;
         }
