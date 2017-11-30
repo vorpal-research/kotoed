@@ -151,6 +151,8 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
 
             resultList = Array.of<ResultT>().concat(...resultList.map(resultHolder.props.transformer));
 
+            resultList = resultHolder.props.merger(resultList);
+
             for (let filter of resultHolder.props.filters) {
                 if (this.isResultFilterActive(resultHolder.props.name, filter.name)) {
                     resultList = resultList.filter(_.negate(filter.predicate))
