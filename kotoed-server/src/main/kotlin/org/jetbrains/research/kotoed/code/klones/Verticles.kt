@@ -1,7 +1,9 @@
 package org.jetbrains.research.kotoed.code.klones
 
+import com.google.common.collect.Queues
 import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
+import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.run
@@ -23,12 +25,17 @@ import org.jetbrains.research.kotoed.util.*
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
 
+sealed class KloneRequest : Jsonable
+
+data class ProcessCourseBaseRepo(val course: CourseRecord) : KloneRequest()
+data class ProcessSubmission(val submissionData: JsonObject) : KloneRequest()
+data class BuildCourseReport(val course: CourseRecord) : KloneRequest()
+data class BuildSubmissionReport(val submissionData: JsonObject) : KloneRequest()
+
 @AutoDeployable
 class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     private val RESULT_TYPE = "klonecheck"
-
-    private val BASE_SUBMISSION_ID = -1
 
     enum class Mode {
         COURSE,
@@ -37,8 +44,12 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     private val ee by lazy { newSingleThreadContext("kloneVerticle.executor") }
 
-    @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
-    suspend fun handleCheck(course: CourseRecord) {
+    private val suffixTree = SuffixTree<Token>()
+    private val processed = mutableSetOf<Pair<Mode, Int>>()
+
+    private val kloneRequests = Queues.newConcurrentLinkedQueue<KloneRequest>()
+
+    suspend fun courseSubmissionData(course: CourseRecord): List<JsonObject> {
 
         val projQ = ComplexDatabaseQuery("project")
                 .find(ProjectRecord().apply {
@@ -53,22 +64,57 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 })
                 .join(projQ, field = "project_id")
 
-        val data: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission"), q)
-
-        val tree = SuffixTree<Token>()
-        val ids = mutableMapOf<Long, PsiElement>()
-
-        if (!handleBase(tree, ids, course)) return // we cannot do shirt without the base repo
-
-        for (sub in data) handleSub(tree, ids, sub)
-
-        handleReport(tree, ids, data)
+        return sendJsonableCollectAsync(Address.DB.query("submission"), q)
     }
 
-    suspend fun handleBase(
-            tree: SuffixTree<Token>,
-            ids: MutableMap<Long, PsiElement>,
-            crs: CourseRecord): Boolean {
+    @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
+    suspend fun handleCheck(course: CourseRecord) {
+
+        val data = courseSubmissionData(course)
+
+        with(kloneRequests) {
+            offer(ProcessCourseBaseRepo(course))
+            for (sub in data) offer(ProcessSubmission(sub))
+            offer(BuildCourseReport(course))
+        }
+    }
+
+    override fun start(startFuture: Future<Void>) {
+        vertx.setTimer(5000, this::handleRequest)
+        super.start(startFuture)
+    }
+
+    fun handleRequest(timerId: Long) {
+        val req = kloneRequests.peek()
+        when (req) {
+            is ProcessCourseBaseRepo -> {
+                spawn {
+                    if (handleBase(req.course)) kloneRequests.poll()
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            is ProcessSubmission -> {
+                spawn {
+                    if (handleSub(req.submissionData)) kloneRequests.poll()
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            is BuildCourseReport -> {
+                spawn {
+                    val data = courseSubmissionData(req.course)
+                    if (handleReport(data)) kloneRequests.poll()
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            else -> {
+                vertx.setTimer(5000, this::handleRequest)
+            }
+        }
+    }
+
+    suspend fun handleBase(crs: CourseRecord): Boolean {
+
+        if (Mode.COURSE to crs.id in processed) return true
 
         val course = when (crs.state) {
             null -> dbFetchAsync(crs)
@@ -80,28 +126,27 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 Code.Course.ListRequest(course.id)
         )
 
-        return handleFiles(tree, ids, Mode.COURSE, course.id, files)
+        return handleFiles(Mode.COURSE, course.id, files)
     }
 
-    suspend fun handleSub(
-            tree: SuffixTree<Token>,
-            ids: MutableMap<Long, PsiElement>,
-            sub: JsonObject): Boolean {
+    suspend fun handleSub(sub: JsonObject): Boolean {
+
+        if (Mode.SUBMISSION to sub.getInteger("id") in processed) return true
 
         val files: Code.ListResponse = sendJsonableAsync(
                 Address.Api.Submission.Code.List,
                 Code.Submission.ListRequest(sub.getInteger("id"))
         )
 
-        return handleFiles(tree, ids, Mode.SUBMISSION, sub.getInteger("id"), files)
+        return handleFiles(Mode.SUBMISSION, sub.getInteger("id"), files)
     }
 
     suspend fun handleFiles(
-            tree: SuffixTree<Token>,
-            ids: MutableMap<Long, PsiElement>,
             mode: Mode,
             id: Int,
             files: Code.ListResponse): Boolean {
+
+        if (mode to id in processed) return true
 
         if (files.status != CloneStatus.done) {
             log.trace("Repository not cloned yet")
@@ -143,32 +188,27 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .map { method ->
                     method to method.dfs { children.asSequence() }
                             .filter(Token.DefaultFilter)
-                            .map((::makeLiteralToken).bind(_0, when (mode) {
-                                Mode.COURSE -> BASE_SUBMISSION_ID
-                                Mode.SUBMISSION -> id
-                            }))
+                            .map((::makeLiteralToken).bind(_0, mode).bind(_0, id))
                 }
-                .forEach { (method, tokens) ->
+                .forEach { (_, tokens) ->
                     val lst = tokens.toList()
                     log.trace("lst = $lst")
-                    val seqId = tree.addSequence(lst)
-                    ids.put(seqId, method)
+                    val seqId = suffixTree.addSequence(lst)
                 }
 
         run(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
 
+        processed.add(mode to id)
+
         return true
     }
 
-    suspend fun handleReport(
-            tree: SuffixTree<Token>,
-            ids: MutableMap<Long, PsiElement>,
-            data: List<JsonObject>) {
+    suspend fun handleReport(data: List<JsonObject>): Boolean {
 
         val dataBySubmissionId = data.map { it.getInteger("id") to it }.toMap()
 
         val clones =
-                tree.root.dfs {
+                suffixTree.root.dfs {
                     edges
                             .asSequence()
                             .mapNotNull { it.terminal }
@@ -185,8 +225,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         val filtered = clones
                 .map(::CloneClass)
                 .filter { cc -> cc.clones.isNotEmpty() }
-                .filter { cc -> BASE_SUBMISSION_ID !in cc.clones.map { it.submissionId } }
-                .filter { cc -> cc.clones.map { it.submissionId }.toSet().size != 1 }
+                .filter { cc -> Mode.COURSE !in cc.clones.map { it.type } }
+                .filter { cc -> cc.clones.map { it.id }.toSet().size != 1 }
                 .toList()
 
         filtered.forEachIndexed { i, cloneClass ->
@@ -197,7 +237,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     .joinToString()
             builder.appendln("($fname) Clone class $i:")
             cloneClass.clones.forEach { c ->
-                builder.appendln("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
+                builder.appendln("${c.id}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
             builder.appendln()
             log.trace(builder)
@@ -205,7 +245,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
         val clonesBySubmission = filtered
                 .flatMap { cloneClass ->
-                    cloneClass.clones.map { clone -> clone.submissionId to cloneClass }
+                    cloneClass.clones.map { clone -> clone.id to cloneClass }
                 }
                 .groupBy { it.first }
                 .mapValues { it.value.map { it.second } }
@@ -219,9 +259,9 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         body = cloneClasses.map { cloneClass ->
                             cloneClass.clones.map { clone ->
                                 object : Jsonable {
-                                    val submissionId = clone.submissionId
-                                    val denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id")
-                                    val project = dataBySubmissionId[clone.submissionId].safeNav("project", "name")
+                                    val submissionId = clone.id
+                                    val denizen = dataBySubmissionId[clone.id].safeNav("project", "denizen", "denizen_id")
+                                    val project = dataBySubmissionId[clone.id].safeNav("project", "name")
                                     val file = clone.file
                                     val fromLine = clone.fromLine
                                     val toLine = clone.toLine
@@ -231,6 +271,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         }
                     })
                 }
+
+        return true
 
     }
 }

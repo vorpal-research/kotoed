@@ -12,13 +12,13 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 
-fun makeLiteralToken(submissionId: Int, origin: PsiElement) =
-    makeToken(submissionId, origin) { if(children.isEmpty()) text else "${node.elementType}" }
+fun makeLiteralToken(type: Any, id: Int, origin: PsiElement) =
+        makeToken(type, id, origin) { if (children.isEmpty()) text else "${node.elementType}" }
 
-fun makeAnonimizedToken(submissionId: Int, origin: PsiElement) =
-    makeToken(submissionId, origin) { "${node.elementType}" }
+fun makeAnonimizedToken(type: Any, id: Int, origin: PsiElement) =
+        makeToken(type, id, origin) { "${node.elementType}" }
 
-private inline fun makeToken(submissionId: Int, origin: PsiElement, converter: PsiElement.() -> String): Token {
+private inline fun makeToken(type: Any, id: Int, origin: PsiElement, converter: PsiElement.() -> String): Token {
     val text = converter(origin)
 
     val file = origin.containingFile
@@ -36,11 +36,12 @@ private inline fun makeToken(submissionId: Int, origin: PsiElement, converter: P
             col = origin.endOffset - document.getLineStartOffset(toLine)
     )
     val fname = origin.parentsWithSelf.filterIsInstance<KtNamedFunction>().first().name
-    return Token(submissionId, text, from, to, fname.orEmpty())
+    return Token(type, id, text, from, to, fname.orEmpty())
 }
 
 class Token(
-        val submissionId: Int,
+        val type: Any,
+        val id: Int,
         val text: String,
         val from: Location,
         val to: Location,
@@ -80,6 +81,5 @@ class Token(
             e.node.elementType !in filteredTokenTypes
         }
     }
-
 
 }
