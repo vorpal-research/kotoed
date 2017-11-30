@@ -7,12 +7,27 @@ import org.wickedsource.diffparser.api.model.Diff
 import org.wickedsource.diffparser.api.model.Hunk
 import org.wickedsource.diffparser.api.model.Line
 import org.wickedsource.diffparser.api.model.Range
+import ru.spbstu.ktuples.Tuple
+import ru.spbstu.ktuples.compareTo
 
 enum class FileLocType { NORMAL, NON_EXISTENT, UNKNOWN }
 
-data class Filename(val type: FileLocType = FileLocType.NORMAL, val path: String) : Jsonable
+data class Filename(val type: FileLocType = FileLocType.NORMAL, val path: String) : Jsonable, Comparable<Filename> {
+    override fun compareTo(other: Filename) = Tuple(type, path).compareTo(Tuple(other.type, other.path))
 
-data class Location(val filename: Filename, val line: Int, val col: Int = 0) : Jsonable {
+}
+
+data class Location(val filename: Filename, val line: Int, val col: Int = 0) : Jsonable, Comparable<Location> {
+    override fun compareTo(other: Location) =
+            Tuple(filename, line, col).compareTo(Tuple(other.filename, other.line, other.col))
+
+    // locations are primarily line-based
+    operator fun minus(other: Location) = when {
+        filename != other.filename -> Int.MAX_VALUE
+        else -> line - other.line
+    }
+    operator fun plus(offset: Int) = copy(line = line + offset)
+
     companion object {
         val Unknown = Location(Filename(FileLocType.UNKNOWN, ""), 0, 0)
     }

@@ -87,10 +87,25 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
             if (comment.previousCommentId != null) {
                 val prevAncestor = ancestorCommentCacheAsync(commentCacheAsync(comment.previousCommentId))
-                comment.previousCommentId = childComments.find { it.persistentCommentId == prevAncestor.persistentCommentId }?.id
+                val previousComment = childComments.find { it.persistentCommentId == prevAncestor.persistentCommentId }
+                comment.previousCommentId = previousComment?.id
             }
 
             dbUpdateAsync(comment)
+        }
+
+        data class DialoguePoint(var prev: DialoguePoint? = null, val value: SubmissionCommentRecord) {
+            val head: DialoguePoint get() = prev?.head?.also { prev = it } ?: this
+        }
+
+        val dialogues = childComments.map { it.id to DialoguePoint(value =  it) }.toMap()
+        dialogues.forEach { (_, v) ->
+            v.prev = dialogues[v.value.previousCommentId]
+        }
+        dialogues.forEach { (_, v) ->
+            v.value.sourceline = v.head.value.sourceline
+            v.value.sourcefile = v.head.value.sourcefile
+            dbUpdateAsync(v.value)
         }
     }
 
