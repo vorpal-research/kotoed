@@ -25,12 +25,14 @@ import org.jetbrains.research.kotoed.util.*
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
 
-sealed class KloneRequest : Jsonable
+sealed class KloneRequest(val priority: Int) : Jsonable, Comparable<KloneRequest> {
+    override fun compareTo(other: KloneRequest): Int = priority - other.priority
+}
 
-data class ProcessCourseBaseRepo(val course: CourseRecord) : KloneRequest()
-data class ProcessSubmission(val submissionData: JsonObject) : KloneRequest()
-data class BuildCourseReport(val course: CourseRecord) : KloneRequest()
-data class BuildSubmissionReport(val submissionData: JsonObject) : KloneRequest()
+data class ProcessCourseBaseRepo(val course: CourseRecord) : KloneRequest(1)
+data class ProcessSubmission(val submissionData: JsonObject) : KloneRequest(2)
+data class BuildSubmissionReport(val submissionData: JsonObject) : KloneRequest(3)
+data class BuildCourseReport(val course: CourseRecord) : KloneRequest(4)
 
 @AutoDeployable
 class KloneVerticle : AbstractKotoedVerticle(), Loggable {
@@ -47,7 +49,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     private val suffixTree = SuffixTree<Token>()
     private val processed = mutableSetOf<Pair<Mode, Int>>()
 
-    private val kloneRequests = Queues.newConcurrentLinkedQueue<KloneRequest>()
+    private val kloneRequests = Queues.newPriorityBlockingQueue<KloneRequest>()
 
     suspend fun courseSubmissionData(course: CourseRecord): List<JsonObject> {
 
@@ -85,24 +87,24 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     fun handleRequest(timerId: Long) {
-        val req = kloneRequests.peek()
+        val req = kloneRequests.poll()
         when (req) {
             is ProcessCourseBaseRepo -> {
                 spawn {
-                    if (handleBase(req.course)) kloneRequests.poll()
+                    if (!handleBase(req.course)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)
                 }
             }
             is ProcessSubmission -> {
                 spawn {
-                    if (handleSub(req.submissionData)) kloneRequests.poll()
+                    if (!handleSub(req.submissionData)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)
                 }
             }
             is BuildCourseReport -> {
                 spawn {
                     val data = courseSubmissionData(req.course)
-                    if (handleReport(data)) kloneRequests.poll()
+                    if (!handleReport(data)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)
                 }
             }
