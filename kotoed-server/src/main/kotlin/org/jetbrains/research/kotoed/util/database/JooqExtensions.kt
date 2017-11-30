@@ -83,7 +83,7 @@ class JsonGetElem(val obj: Field<Any>, val index: Int)
     override fun accept(ctx: Context<*>) = with(ctx) {
         expect(ctx.dialect().family() == SQLDialect.POSTGRES)
         parens {
-            visit(obj).sql(" -> ").sql("'$index'")
+            visit(obj).sql(" -> ").sql("$index")
         }
     }
 }

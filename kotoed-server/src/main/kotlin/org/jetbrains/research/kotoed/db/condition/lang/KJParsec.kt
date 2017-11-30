@@ -88,7 +88,7 @@ fun <T> recursive(f: (Parser<T>) -> Parser<T>): Parser<T> {
 }
 
 fun constant(s: String) = Parser(Scanners.string(s)).map { s }
-fun integer() = Parser(Scanners.DEC_INTEGER).map { it.toInt() }
+fun integer() = Parser(Scanners.INTEGER).map { it.toInt() }
 fun doubleQuotedString() = Parser(Scanners.DOUBLE_QUOTE_STRING).map { it.substring(1, it.length - 1) }
 fun empty(): Parser<Unit> = Parser(Parsers.always())
 fun <T> success(value: T) = empty().map { value }

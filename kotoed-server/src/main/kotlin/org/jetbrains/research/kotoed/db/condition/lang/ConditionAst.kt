@@ -1,5 +1,9 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
+import ru.spbstu.ktuples.EitherOf2
+import ru.spbstu.ktuples.Variant0
+import ru.spbstu.ktuples.Variant1
+
 sealed class Expression
 
 enum class CompareOp(val rep: String) {
@@ -37,6 +41,7 @@ object NullConstant : Constant() {
 }
 
 data class Path(val path: List<String>) : Expression()
+data class JsonPath(val base: Path, val path: List<EitherOf2<Int, String>>) : Expression()
 
 // TODO Inclusion operators are now a special case.
 // TODO maybe we should make PrimitiveSubquery a primitive and allow in everywhere sometimes
@@ -53,6 +58,9 @@ data class InclusionExpression(val op: InclusionOp, val lhv: Expression, val rhv
 
 object ExpressionParsers {
     val path = identifier().joinedBy(constant(".")).map(::Path)
+    val jsonIndex = identifier().map(::Variant1) or integer().map(::Variant0)
+    val jsonPath = path.zip((constant("->").ignore() + jsonIndex).many()).map { JsonPath(it.first, it.second) }
+
     val const = integer().map(::IntConstant) or
             doubleQuotedString().map(::StringConstant) or
             constant("null").map { NullConstant }
@@ -80,7 +88,7 @@ object ExpressionParsers {
         val primitive =
                 binop.between(lexeme("("), lexeme(")")) or
                         const.between(spaces(), spaces()) or
-                        path.between(spaces(), spaces())
+                        jsonPath.between(spaces(), spaces())
 
         val cmp = operators<Expression> {
             cmpOperators.forEach { infixl(it) }

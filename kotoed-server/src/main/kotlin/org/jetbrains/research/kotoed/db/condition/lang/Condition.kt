@@ -3,12 +3,16 @@ package org.jetbrains.research.kotoed.db.condition.lang
 import org.apache.commons.lang3.StringEscapeUtils
 import org.jetbrains.research.kotoed.util.database.FunctionCall
 import org.jetbrains.research.kotoed.util.database.documentMatch
+import org.jetbrains.research.kotoed.util.database.jsonGet
 import org.jetbrains.research.kotoed.util.database.toPlainTSQuery
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.Table
 import org.jooq.impl.DSL
+import ru.spbstu.ktuples.converge
+import ru.spbstu.ktuples.map0
+import ru.spbstu.ktuples.map1
 
 private fun<T> convertConstant(e: Expression): Field<T> = when (e) {
     is IntConstant -> DSL.inline(e.value).uncheckedCast()
@@ -18,7 +22,18 @@ private fun<T> convertConstant(e: Expression): Field<T> = when (e) {
 }
 
 private fun<T> convertPrimitive(e: Expression, tables: (String) -> Table<*>): Field<T> = when(e){
-    is Path -> tables(e.path.dropLast(1).joinToString(".")).field(e.path.last()).uncheckedCast()
+    is JsonPath -> {
+        val base = e.base.path
+        val field: Field<T> = tables(base.dropLast(1).joinToString(".")).field(base.last()).uncheckedCast()
+        if(e.path.isEmpty()) field
+        else e.path.fold(field.uncheckedCast<Field<Any>>()) { f, p ->
+            p
+                    .map0 { f.jsonGet(it) }
+                    .map1 { f.jsonGet(it) }
+                    .converge()
+        }.uncheckedCast()
+    }
+
     is Constant -> convertConstant(e)
     else -> error("convertPrimitive() is for primitives only!")
 }
