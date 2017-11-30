@@ -58,7 +58,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         val tree = SuffixTree<Token>()
         val ids = mutableMapOf<Long, PsiElement>()
 
-        handleBase(tree, ids, course)
+        if (!handleBase(tree, ids, course)) return // we cannot do shirt without the base repo
 
         for (sub in data) handleSub(tree, ids, sub)
 
@@ -68,7 +68,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleBase(
             tree: SuffixTree<Token>,
             ids: MutableMap<Long, PsiElement>,
-            crs: CourseRecord) {
+            crs: CourseRecord): Boolean {
 
         val course = when (crs.state) {
             null -> dbFetchAsync(crs)
@@ -80,20 +80,20 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 Code.Course.ListRequest(course.id)
         )
 
-        handleFiles(tree, ids, Mode.COURSE, course.id, files)
+        return handleFiles(tree, ids, Mode.COURSE, course.id, files)
     }
 
     suspend fun handleSub(
             tree: SuffixTree<Token>,
             ids: MutableMap<Long, PsiElement>,
-            sub: JsonObject) {
+            sub: JsonObject): Boolean {
 
         val files: Code.ListResponse = sendJsonableAsync(
                 Address.Api.Submission.Code.List,
                 Code.Submission.ListRequest(sub.getInteger("id"))
         )
 
-        handleFiles(tree, ids, Mode.SUBMISSION, sub.getInteger("id"), files)
+        return handleFiles(tree, ids, Mode.SUBMISSION, sub.getInteger("id"), files)
     }
 
     suspend fun handleFiles(
@@ -101,11 +101,11 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             ids: MutableMap<Long, PsiElement>,
             mode: Mode,
             id: Int,
-            files: Code.ListResponse) {
+            files: Code.ListResponse): Boolean {
 
         if (files.status != CloneStatus.done) {
             log.trace("Repository not cloned yet")
-            return
+            return false
         }
 
         val compilerEnv = run(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
@@ -156,6 +156,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 }
 
         run(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
+
+        return true
     }
 
     suspend fun handleReport(
