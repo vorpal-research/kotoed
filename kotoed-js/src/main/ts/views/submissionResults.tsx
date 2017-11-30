@@ -12,6 +12,7 @@ import {
     TestData,
     TestDataColumn
 } from "./components/griddleEx"
+import {KloneInfo} from "./components/kloneView";
 import {ResultHolder} from "./components/resultHolder";
 import {
     ResultListHolder,
@@ -75,6 +76,10 @@ namespace KFirst {
         return result.body.data
     }
 
+    export function merger(results: any[]): any[] {
+        return results
+    }
+
     export let hideTodosFilter = {
         name: "Hide TODOs",
         predicate: (row: any): boolean => {
@@ -130,6 +135,10 @@ namespace BuildLogs {
 
     export function transformer(result: any): any[] {
         return [result]
+    }
+
+    export function merger(results: any[]): any[] {
+        return results
     }
 
     export let rowDefinition =
@@ -264,6 +273,10 @@ namespace Statistics {
         });
     }
 
+    export function merger(results: any[]): any[] {
+        return results
+    }
+
     export let rowDefinition =
         <RowDefinition>
             <ColumnDefinition id="packageName"
@@ -291,11 +304,32 @@ namespace Klones {
     }
 
     export function transformer(result: any): any[] {
-        return _.map(result.body, (value: any) => {
+        return result.body;
+    }
+
+    export function merger(results: any[]): any[] {
+        let groups = _.groupBy(results, (result) => {
+            let baseKlone = result.find(
+                (klone: KloneInfo) => submissionId === klone.submissionId
+            );
+
+            return `${baseKlone.submissionId}:${baseKlone.file.path}:${baseKlone.fromLine}:${baseKlone.toLine}`;
+        });
+
+        return _.map(groups, (kloneClasses, baseKlone: KloneInfo) => {
+            let kloneClass = _.reduce(
+                kloneClasses,
+                (acc, kloneClass) => _.concat(acc, kloneClass),
+                []
+            );
+
             return {
                 value: {
                     baseSubmissionId: submissionId,
-                    kloneClass: value
+                    kloneClass: _.uniqBy(
+                        kloneClass,
+                        (klone: KloneInfo) => `${klone.submissionId}:${klone.file.path}:${klone.fromLine}:${klone.toLine}`
+                    )
                 }
             };
         });
@@ -317,6 +351,7 @@ render(
             <ResultHolder name="KFirst"
                           selector={KFirst.selector}
                           transformer={KFirst.transformer}
+                          merger={KFirst.merger}
                           filters={[
                               KFirst.hideTodosFilter,
                               KFirst.hideExamplesFilter,
@@ -327,18 +362,21 @@ render(
             <ResultHolder name="Statistics"
                           selector={Statistics.selector}
                           transformer={Statistics.transformer}
+                          merger={Statistics.merger}
                           filters={[]}
                           rowDefinition={Statistics.rowDefinition}
                           isVisible={_ => true}/> as any,
             <ResultHolder name="Build logs"
                           selector={BuildLogs.selector}
                           transformer={BuildLogs.transformer}
+                          merger={BuildLogs.merger}
                           filters={[]}
                           rowDefinition={BuildLogs.rowDefinition}
                           isVisible={_ => true}/> as any,
             <ResultHolder name="Klones"
                           selector={Klones.selector}
                           transformer={Klones.transformer}
+                          merger={Klones.merger}
                           filters={[]}
                           rowDefinition={Klones.rowDefinition}
                           isVisible={state => state.permissions ? state.permissions.klones : false}/> as any
