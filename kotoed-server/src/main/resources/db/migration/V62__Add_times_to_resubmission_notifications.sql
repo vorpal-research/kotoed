@@ -1,0 +1,1 @@
+UPDATE notification SET body = jsonb_set(body, '{times}', '1', true) WHERE type = 'RESUBMISSION';
