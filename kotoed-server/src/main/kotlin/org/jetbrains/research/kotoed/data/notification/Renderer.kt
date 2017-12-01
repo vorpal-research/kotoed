@@ -60,10 +60,14 @@ private fun renderNewSubmissionResults(id: Int, body: JsonObject): RenderedData 
 }
 
 private fun renderResubmission(id: Int, body: JsonObject): RenderedData {
+    val times = (body["times"] as? Int)?.let {
+        if (it == 1) "" else " $it times"
+    } ?: ""
     val node = createHTML().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" resubmitted his "
         strong { +"submission #${body["oldSubmissionId"]}" }
+        +times
     }
     val link = LinkData("submission", body.safeNav("submissionId").toString())
     return RenderedData(id, node, link)
