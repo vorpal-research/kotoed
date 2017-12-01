@@ -177,6 +177,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         val resp = db {
             selectFrom(table)
                     .where(message.toWhere())
+                    .orderBy(table.primaryKeyField.desc())
                     .fetch()
                     .into(JsonObject::class.java)
                     .let(::JsonArray)
