@@ -93,8 +93,9 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
     callOnChange = () => {
         this.props.onChange(this.state.password, {
             emptyPassword: this.state.password === "",
-            emptyPassword2: !this.props.setPassword && this.state.blindMode && this.state.password2 === "",
-            passwordsDoNotMatch: !this.props.setPassword && this.state.blindMode && (this.state.password !== this.state.password2)
+            emptyPassword2: this.getProperty('setPassword') && this.state.blindMode && this.state.password2 === "",
+            passwordsDoNotMatch: this.getProperty('setPassword')
+                && this.state.blindMode && (this.state.password !== this.state.password2)
         });
     };
 
