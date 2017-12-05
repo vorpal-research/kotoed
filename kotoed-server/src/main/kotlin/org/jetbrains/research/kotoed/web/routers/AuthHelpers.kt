@@ -142,6 +142,7 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
             resubmit = isAuthor && isResubmittable,
             changeState = isTeacher,
             clean = isTeacher,
-            tags = isTeacher
+            tags = isTeacher,
+            klones = isTeacher
     ))
 }

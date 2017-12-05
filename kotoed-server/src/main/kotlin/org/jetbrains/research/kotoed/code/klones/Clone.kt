@@ -20,11 +20,11 @@ data class CloneClass(val node: Node) {
 }
 
 data class Clone(val parent: CloneClass, val from: Token, val to: Token) {
-    val submissionId = from.submissionId
+    val type = from.type
+    val id = from.id
     val file = from.from.filename
     val fromLine = from.from.line
     val toLine = to.to.line
     val location = "$file:$fromLine:$toLine"
     val functionName = from.functionName
 }
-
