@@ -36,6 +36,10 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
         this.input.focus();
     }
 
+    componentWillReceiveProps(props: SearchBarProps) {
+        if(props.initialText != this.props.initialText) this.setState({ text: props.initialText })
+    }
+
     private notify = _.debounce(() => this.props.onChange(this.state), 300);
 
     updateText = (newText: string) => {
@@ -101,10 +105,12 @@ interface GroupProps {
     using: (children: Array<JSX.Element>) => JSX.Element
 }
 
+export type SearchCallback = () => { oldKey: String, toggleSearch: (key?: string) => void }
+
 export interface SearchTableProps<DataType, QueryType = {}> {
     searchAddress: string,
     countAddress: string,
-    elementComponent: (key: string, data: DataType, toggleSearch: () => void) => JSX.Element
+    elementComponent: (key: string, data: DataType, searchCallback: SearchCallback) => JSX.Element
     shouldPerformInitialSearch?: ShouldPerformInitialSearch
     makeBaseQuery?: MakeBaseQuery<QueryType>
     forcePagination?: boolean
@@ -325,7 +331,14 @@ export class SearchTable<DataType, QueryType = {}> extends
             return this.renderEmptyString();
         else {
             let resEls = this.state.currentResults.map((result, index) =>
-                this.props.elementComponent("result"+index, result, this.redoSearch)
+                this.props.elementComponent("result"+index, result,
+                    () => { return {
+                        oldKey: this.state.text,
+                        toggleSearch: (key?: string) => {
+                            this.onSearchStateChanged({ text: key != null? key : this.state.text })
+                        }
+                    }}
+                )
             );
             let toWrap: Array<JSX.Element>;
             if (this.props.group) {
