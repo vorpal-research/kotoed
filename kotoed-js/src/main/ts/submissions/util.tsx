@@ -11,6 +11,7 @@ import {Kotoed} from "../util/kotoed-api";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 import {intersperse} from "../util/common";
 import {Tag} from "../views/components/tags/Tag";
+import {SearchCallback} from "../views/components/search";
 
 export function isSubmissionAvalable(sub: SubmissionWithVer, pendingIsAvailable: boolean = false): boolean {
     let {status} = sub.verificationData;
@@ -108,12 +109,13 @@ export function linkToSubmissionReview(submission: SubmissionWithVer,
         return <span className={"grayed-out"}>Review</span>
 }
 
-export function renderSubmissionTags(submission: SubmissionToRead): JSX.Element {
+export function renderSubmissionTags(submission: SubmissionToRead, onClick?: (tag: string) => void): JSX.Element {
     const tags = (submission.submissionTags || []).map(st => st.tag);
 
     return <span>
         {intersperse<JSX.Element | string>(
-            tags.map((t, ix) => <Tag key={`tag-${ix}`} tag={t} removable={false}/>),
+            tags.map((t, ix) => <Tag key={`tag-${ix}`} tag={t} removable={false}
+                                     onClick={onClick && (() => onClick(t.name))}/>),
             " ")
         }
     </span>
