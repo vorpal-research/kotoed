@@ -1,14 +1,10 @@
 package org.jetbrains.research.kotoed.api
 
-import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.FileRecord
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.FileType.directory
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.FileType.file
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.ListRequest
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.ListResponse
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.ReadRequest
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.ReadResponse
-import org.jetbrains.research.kotoed.data.api.SubmissionCode.RemoteRequest
+import org.jetbrains.research.kotoed.data.api.Code.FileRecord
+import org.jetbrains.research.kotoed.data.api.Code.FileType.directory
+import org.jetbrains.research.kotoed.data.api.Code.FileType.file
+import org.jetbrains.research.kotoed.data.api.Code.ListResponse
+import org.jetbrains.research.kotoed.data.api.Code.Submission.RemoteRequest
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
@@ -18,6 +14,12 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.data.api.Code.Course.ListRequest as CrsListRequest
+import org.jetbrains.research.kotoed.data.api.Code.Course.ReadRequest as CrsReadRequest
+import org.jetbrains.research.kotoed.data.api.Code.Course.ReadResponse as CrsReadResponse
+import org.jetbrains.research.kotoed.data.api.Code.Submission.ListRequest as SubListRequest
+import org.jetbrains.research.kotoed.data.api.Code.Submission.ReadRequest as SubReadRequest
+import org.jetbrains.research.kotoed.data.api.Code.Submission.ReadResponse as SubReadResponse
 
 private typealias InnerRemoteRequest = org.jetbrains.research.kotoed.data.vcs.RemoteRequest
 private typealias InnerListRequest = org.jetbrains.research.kotoed.data.vcs.ListRequest
@@ -44,18 +46,31 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         return CommitInfo(repo, submission.revision, repo.status)
     }
 
+    private suspend fun getCommitInfo(course: CourseRecord): CommitInfo {
+        if (course.id !is Int) throw IllegalArgumentException("Course $course not found")
+
+        val repo: RepositoryInfo = sendJsonableAsync(
+                Address.Code.Download,
+                InnerRemoteRequest(
+                        vcs = null, // FIXME: akhin Add course base repo type
+                        url = course.baseRepoUrl
+                )
+        )
+        return CommitInfo(repo, course.baseRevision, repo.status)
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Download)
     suspend fun handleSubmissionCodeDownload(message: RemoteRequest): RepositoryInfo {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         return getCommitInfo(submission).repo
     }
 
-    @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Read)
-    suspend fun handleSubmissionCodeRead(message: ReadRequest): ReadResponse {
-        val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
-        val repoInfo = getCommitInfo(submission)
+    @JsonableEventBusConsumerFor(Address.Api.Course.Code.Read)
+    suspend fun handleCourseCodeRead(message: CrsReadRequest): CrsReadResponse {
+        val course: CourseRecord = dbFetchAsync(CourseRecord().apply { id = message.courseId })
+        val repoInfo = getCommitInfo(course)
         when (repoInfo.cloneStatus) {
-            CloneStatus.pending -> return ReadResponse("", repoInfo.cloneStatus)
+            CloneStatus.pending -> return CrsReadResponse("", repoInfo.cloneStatus)
             CloneStatus.failed -> throw NotFound("Repository not found")
             else -> {
             }
@@ -69,7 +84,38 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         revision = repoInfo.revision
                 )
         )
-        return ReadResponse(contents = inner.contents, status = CloneStatus.done)
+        return CrsReadResponse(contents = inner.contents, status = CloneStatus.done)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Read)
+    suspend fun handleSubmissionCodeRead(message: SubReadRequest): SubReadResponse {
+        val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
+        val repoInfo = getCommitInfo(submission)
+        when (repoInfo.cloneStatus) {
+            CloneStatus.pending -> return SubReadResponse("", repoInfo.cloneStatus)
+            CloneStatus.failed -> throw NotFound("Repository not found")
+            else -> {
+            }
+        }
+
+        val inner: InnerReadResponse = sendJsonableAsync(
+                Address.Code.Read,
+                InnerReadRequest(
+                        path = message.path,
+                        uid = repoInfo.repo.uid,
+                        revision = repoInfo.revision
+                )
+        )
+
+        val from = (message.fromLine ?: 1) - 1
+        val to = (message.toLine ?: inner.contents.lineSequence().count()) - 1
+        val contents = inner.contents
+                .lineSequence()
+                .drop(from)
+                .take(to - from + 1)
+                .joinToString(separator = "\n")
+
+        return SubReadResponse(contents = contents, status = CloneStatus.done)
     }
 
     // Feel da powa of Kotlin!
@@ -81,15 +127,15 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         private val fileComparator = compareBy<FileRecord> { it.type }.thenBy { it.name }
 
         private fun FileRecord.squash() =
-            if (type == directory && children?.size == 1 && children[0].type == directory)
-                FileRecord(
-                        type = directory,
-                        name = "$name/${children[0].name}",
-                        children = children[0].children,
-                        changed = changed
-                )
-            else
-                this
+                if (type == directory && children?.size == 1 && children[0].type == directory)
+                    FileRecord(
+                            type = directory,
+                            name = "$name/${children[0].name}",
+                            children = children[0].children,
+                            changed = changed
+                    )
+                else
+                    this
 
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
                 if (value.isEmpty()) FileRecord(type = file, name = key, changed = value.changed)
@@ -134,8 +180,36 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         return mutableCodeTree.toFileRecord()
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Course.Code.List)
+    suspend fun handleCourseCodeList(message: CrsListRequest): ListResponse {
+        val course: CourseRecord = dbFetchAsync(CourseRecord().apply { id = message.courseId })
+        val repoInfo = getCommitInfo(course)
+        when (repoInfo.cloneStatus) {
+            CloneStatus.pending -> return ListResponse(root = null, status = repoInfo.cloneStatus)
+            CloneStatus.failed -> throw NotFound("Repository not found")
+            else -> {
+            }
+        }
+
+        val innerResp: InnerListResponse = sendJsonableAsync(
+                Address.Code.List,
+                InnerListRequest(
+                        uid = repoInfo.repo.uid,
+                        revision = repoInfo.revision
+                )
+        )
+
+        return ListResponse(
+                root = buildCodeTree(
+                        innerResp.files,
+                        emptyList()
+                ),
+                status = repoInfo.cloneStatus
+        )
+    }
+
     @JsonableEventBusConsumerFor(Address.Api.Submission.Code.List)
-    suspend fun handleSubmissionCodeList(message: ListRequest): ListResponse {
+    suspend fun handleSubmissionCodeList(message: SubListRequest): ListResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         val repoInfo = getCommitInfo(submission)
         when (repoInfo.cloneStatus) {
@@ -164,15 +238,15 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
         var baseRev = foundationSub?.revision
 
-        if(baseRev == null) {
+        if (baseRev == null) {
             val course: CourseRecord =
                     dbQueryAsync(
                             ComplexDatabaseQuery(ProjectRecord().apply { id = submission.projectId }).join("course")
                     ).first().getJsonObject("course").toRecord()
 
-            baseRev = if(course.baseRevision != "") course.baseRevision else null
+            baseRev = if (course.baseRevision != "") course.baseRevision else null
 
-            if(baseRev != null) try {
+            if (baseRev != null) try {
                 run<Unit> {
                     sendJsonableAsync(
                             Address.Code.List,
@@ -182,18 +256,20 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                             )
                     )
                 }
-            } catch(ex: Exception) { baseRev = null }
+            } catch (ex: Exception) {
+                baseRev = null
+            }
         }
 
-        val diff: DiffResponse = when(baseRev) {
+        val diff: DiffResponse = when (baseRev) {
             null -> DiffResponse(listOf())
             else -> sendJsonableAsync(
-                Address.Code.Diff,
-                DiffRequest(
-                        uid = repoInfo.repo.uid,
-                        from = baseRev,
-                        to = submission.revision
-                )
+                    Address.Code.Diff,
+                    DiffRequest(
+                            uid = repoInfo.repo.uid,
+                            from = baseRev,
+                            to = submission.revision
+                    )
             )
         }
 
