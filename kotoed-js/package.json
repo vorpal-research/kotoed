@@ -9,10 +9,11 @@
     "@types/extract-text-webpack-plugin": "~2.1.0",
     "@types/jquery": "~3.2.5",
     "@types/lodash": "~4.14.70",
+    "@types/mousetrap": "~1.5.34",
     "@types/node": "~8.0.3",
     "@types/query-string": "~5.0.0",
     "@types/radium": "~0.18.22",
-    "@types/react": "~15.0.38",
+    "@types/react": "~15.6.7",
     "@types/react-autosuggest": "^8.0.2",
     "@types/react-bootstrap": "^0.31.0",
     "@types/react-dom": "~15.5.1",
@@ -27,7 +28,6 @@
     "@types/sockjs-client": "~1.0.30",
     "@types/vertx3-eventbus-client": "~3.4.0",
     "@types/webpack": "~3.0.4",
-    "@types/mousetrap": "~1.5.34",
     "awesome-typescript-loader": "~3.2.1",
     "babel-core": "~6.25.0",
     "babel-loader": "~7.1.1",
@@ -70,6 +70,7 @@
     "jquery": "~3.2.1",
     "lodash": "~4.17.4",
     "moment": "~2.18.1",
+    "mousetrap": "1.6.1",
     "path-to-regexp": "^1.7.0",
     "query-string": "~5.0.0",
     "radium": "~0.19.1",
@@ -89,7 +90,6 @@
     "redux-thunk": "~2.2.0",
     "tinycolor2": "^1.4.1",
     "typescript-fsa": "~2.4.0",
-    "vertx3-eventbus-client": "~3.4.2",
-    "mousetrap": "1.6.1"
+    "vertx3-eventbus-client": "~3.4.2"
   }
 }

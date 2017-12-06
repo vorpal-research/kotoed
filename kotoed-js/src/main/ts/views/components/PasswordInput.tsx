@@ -146,6 +146,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
             </label>
             <div className={this.getClassName("inputWrapper", true)}>
                 <input type="password"
+                       autoComplete="off"
                        disabled={this.props.disabled}
                        className={`form-control ${this.getClassName("input", true)}`}
                        placeholder={this.getStringProperty("placeholderRepeat")}
@@ -181,6 +182,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
                 <div className={this.getClassName("inputWrapper")}>
                     <div className="has-feedback">
                         <input type={this.getInputType()}
+                               autoComplete="off"
                                disabled={this.props.disabled}
                                className={`form-control ${this.getClassName("input")}`}
                                placeholder={this.getStringProperty("placeholder")}
