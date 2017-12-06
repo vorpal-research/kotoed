@@ -88,32 +88,37 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     fun handleRequest(timerId: Long) {
         val req = kloneRequests.poll()
-        when (req) {
-            is ProcessCourseBaseRepo -> {
-                spawn {
-                    if (!handleBase(req.course)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+        try {
+            when (req) {
+                is ProcessCourseBaseRepo -> {
+                    spawn {
+                        if (!handleBase(req.course)) kloneRequests.offer(req)
+                        vertx.setTimer(100, this::handleRequest)
+                    }
+                }
+                is ProcessSubmission -> {
+                    spawn {
+                        if (!handleSub(req.submissionData)) kloneRequests.offer(req)
+                        vertx.setTimer(100, this::handleRequest)
+                    }
+                }
+                is BuildCourseReport -> {
+                    spawn {
+                        val data = courseSubmissionData(req.course)
+                        if (!handleReport(data)) kloneRequests.offer(req)
+                        vertx.setTimer(100, this::handleRequest)
+                    }
+                }
+                else -> {
+                    vertx.setTimer(5000, this::handleRequest)
                 }
             }
-            is ProcessSubmission -> {
-                spawn {
-                    if (!handleSub(req.submissionData)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
-                }
-            }
-            is BuildCourseReport -> {
-                spawn {
-                    val data = courseSubmissionData(req.course)
-                    if (!handleReport(data)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
-                }
-            }
-            else -> {
-                vertx.setTimer(5000, this::handleRequest)
-            }
+        } catch (ex: Exception) {
+            log.error("Klones failed!", ex)
+            vertx.setTimer(5000, this::handleRequest)
         }
     }
-
+    
     suspend fun handleBase(crs: CourseRecord): Boolean {
 
         if (Mode.COURSE to crs.id in processed) return true
