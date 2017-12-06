@@ -87,38 +87,42 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     fun handleRequest(timerId: Long) {
-        val req = kloneRequests.poll()
-        try {
-            when (req) {
-                is ProcessCourseBaseRepo -> {
-                    spawn {
-                        if (!handleBase(req.course)) kloneRequests.offer(req)
-                        vertx.setTimer(100, this::handleRequest)
-                    }
-                }
-                is ProcessSubmission -> {
-                    spawn {
-                        if (!handleSub(req.submissionData)) kloneRequests.offer(req)
-                        vertx.setTimer(100, this::handleRequest)
-                    }
-                }
-                is BuildCourseReport -> {
-                    spawn {
-                        val data = courseSubmissionData(req.course)
-                        if (!handleReport(data)) kloneRequests.offer(req)
-                        vertx.setTimer(100, this::handleRequest)
-                    }
-                }
-                else -> {
-                    vertx.setTimer(5000, this::handleRequest)
-                }
-            }
-        } catch (ex: Exception) {
+
+        fun handleException(ex: Throwable) {
             log.error("Klones failed!", ex)
             vertx.setTimer(5000, this::handleRequest)
         }
+
+        val req = kloneRequests.poll()
+        when (req) {
+            is ProcessCourseBaseRepo -> {
+                spawn(VertxContext(vertx) +
+                        WithExceptions(::handleException)) {
+                    if (!handleBase(req.course)) kloneRequests.offer(req)
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            is ProcessSubmission -> {
+                spawn(VertxContext(vertx) +
+                        WithExceptions(::handleException)) {
+                    if (!handleSub(req.submissionData)) kloneRequests.offer(req)
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            is BuildCourseReport -> {
+                spawn(VertxContext(vertx) +
+                        WithExceptions(::handleException)) {
+                    val data = courseSubmissionData(req.course)
+                    if (!handleReport(data)) kloneRequests.offer(req)
+                    vertx.setTimer(100, this::handleRequest)
+                }
+            }
+            else -> {
+                vertx.setTimer(5000, this::handleRequest)
+            }
+        }
     }
-    
+
     suspend fun handleBase(crs: CourseRecord): Boolean {
 
         if (Mode.COURSE to crs.id in processed) return true
