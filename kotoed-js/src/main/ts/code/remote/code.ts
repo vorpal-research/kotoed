@@ -54,13 +54,18 @@ export async function fetchRootDir(submissionId: number): Promise<File> {
     return res.root;
 }
 
-export async function fetchFile(submissionId: number, path: string): Promise<string> {
+export async function fetchFile(submissionId: number,
+                                path: string,
+                                fromLine: number | null = null,
+                                toLine: number | null = null): Promise<string> {
+
     let res = await repeatTillReady<FileResponse>(() => {
         return eventBus.send(Kotoed.Address.Api.Submission.Code.Read, {
             submissionId: submissionId,
-            path
-        })
-
+            path: path,
+            fromLine: fromLine,
+            toLine: toLine
+        });
     });
     return res.contents;
 }

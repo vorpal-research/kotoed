@@ -18,7 +18,8 @@ export interface SubmissionPermissions {
     changeState: boolean,
     resubmit: boolean,
     clean: boolean,
-    tags: boolean
+    tags: boolean,
+    klones: boolean
 }
 
 export interface SubmissionUpdateRequest {
