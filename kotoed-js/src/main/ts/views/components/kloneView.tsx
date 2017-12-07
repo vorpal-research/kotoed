@@ -19,6 +19,11 @@ import "codemirror/mode/meta";
 
 import "diff-match-patch";
 import "codemirror/addon/merge/merge.js";
+import "codemirror/addon/fold/foldcode.js";
+import "codemirror/addon/fold/foldgutter.js";
+import "codemirror/addon/fold/brace-fold.js";
+import "codemirror/addon/fold/indent-fold.js";
+import "codemirror/addon/fold/comment-fold.js";
 
 export interface FileInfo {
     path: string
@@ -42,6 +47,14 @@ export interface KloneViewState {
     open: boolean
     leftCode: string
     rightCode: string
+}
+
+function foldAllCode(editor: cm.Editor) {
+    editor.operation(() => {
+        for (let l = editor.getDoc().firstLine(); l <= editor.getDoc().lastLine(); ++l) {
+            (editor as any).foldCode(cm.Pos(l, 0), null, "fold");
+        }
+    });
 }
 
 export class KloneView extends Component<KloneViewProps, KloneViewState> {
@@ -71,6 +84,9 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
 
     mergeViewerResize = () => {
         if (null != this.mergeViewer) {
+            foldAllCode(this.mergeViewer.editor());
+            foldAllCode(this.mergeViewer.rightOriginal());
+
             let height = this.mergeViewerHeight();
             this.mergeViewer.editor().setSize(null, height);
             this.mergeViewer.rightOriginal().setSize(null, height);
