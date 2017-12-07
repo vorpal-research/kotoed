@@ -137,7 +137,11 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 Code.Course.ListRequest(course.id)
         )
 
-        return handleFiles(Mode.COURSE, course.id, files)
+        return handleFiles(
+                Mode.COURSE,
+                course.id,
+                -1, // Course tokens do not have an owning denizen
+                files)
     }
 
     suspend fun handleSub(sub: JsonObject): Boolean {
@@ -149,12 +153,17 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 Code.Submission.ListRequest(sub.getInteger("id"))
         )
 
-        return handleFiles(Mode.SUBMISSION, sub.getInteger("id"), files)
+        return handleFiles(
+                Mode.SUBMISSION,
+                sub.getInteger("id"),
+                sub.safeNav("project", "denizen", "id") as Int,
+                files)
     }
 
     suspend fun handleFiles(
             mode: Mode,
             id: Int,
+            denizenId: Int,
             files: Code.ListResponse): Boolean {
 
         if (mode to id in processed) return true
@@ -199,7 +208,10 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .map { method ->
                     method to method.dfs { children.asSequence() }
                             .filter(Token.DefaultFilter)
-                            .map((::makeLiteralToken).bind(_0, mode).bind(_0, id))
+                            .map((::makeAnonimizedToken)
+                                    .bind(_0, mode)
+                                    .bind(_0, id)
+                                    .bind(_0, denizenId))
                 }
                 .forEach { (_, tokens) ->
                     val lst = tokens.toList()
@@ -237,7 +249,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .map(::CloneClass)
                 .filter { cc -> cc.clones.isNotEmpty() }
                 .filter { cc -> Mode.COURSE !in cc.clones.map { it.type } }
-                .filter { cc -> cc.clones.map { it.id }.toSet().size != 1 }
+                .filter { cc -> cc.clones.map { it.submissionId }.toSet().size != 1 }
                 .toList()
 
         filtered.forEachIndexed { i, cloneClass ->
@@ -248,7 +260,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     .joinToString()
             builder.appendln("($fname) Clone class $i:")
             cloneClass.clones.forEach { c ->
-                builder.appendln("${c.id}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
+                builder.appendln("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
             builder.appendln()
             log.trace(builder)
@@ -256,23 +268,29 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
         val clonesBySubmission = filtered
                 .flatMap { cloneClass ->
-                    cloneClass.clones.map { clone -> clone.id to cloneClass }
+                    cloneClass.clones.map { clone -> clone.submissionId to clone.denizenId to cloneClass }
                 }
                 .groupBy { it.first }
-                .mapValues { it.value.map { it.second } }
+                .mapValues { (key, value) ->
+                    value.map { e ->
+                        e.second.clones.filter { clone ->
+                            key.second != clone.denizenId
+                        }
+                    }
+                }
 
         clonesBySubmission.asSequence()
-                .forEach { (submissionId_, cloneClasses) ->
+                .forEach { (cloneId, cloneClasses) ->
                     dbCreateAsync(SubmissionResultRecord().apply {
-                        submissionId = submissionId_
+                        submissionId = cloneId.first
                         type = RESULT_TYPE
                         // FIXME: akhin Make this stuff Jsonable or what?
                         body = cloneClasses.map { cloneClass ->
-                            cloneClass.clones.map { clone ->
+                            cloneClass.map { clone ->
                                 object : Jsonable {
-                                    val submissionId = clone.id
-                                    val denizen = dataBySubmissionId[clone.id].safeNav("project", "denizen", "denizen_id")
-                                    val project = dataBySubmissionId[clone.id].safeNav("project", "name")
+                                    val submissionId = clone.submissionId
+                                    val denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id")
+                                    val project = dataBySubmissionId[clone.submissionId].safeNav("project", "name")
                                     val file = clone.file
                                     val fromLine = clone.fromLine
                                     val toLine = clone.toLine
