@@ -39,6 +39,10 @@ export interface KloneInfo {
     toLine: number
 }
 
+export function formatKloneInfoAsHeader(klone: KloneInfo) {
+    return `${klone.denizen}:${klone.project}:${klone.submissionId} @ ${klone.file.path}:${klone.fromLine}:${klone.toLine}`
+}
+
 export interface KloneViewProps {
     leftKlone: KloneInfo
     rightKlone: KloneInfo
@@ -183,21 +187,16 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
     };
 
     render() {
-
-        let formatHeader = (klone: KloneInfo) => {
-            return `${klone.denizen}:${klone.project}:${klone.submissionId} @ ${klone.file.path}:${klone.fromLine}:${klone.toLine}`
-        };
-
         return (
             <div>
                 <Grid fluid>
                     <Row className="align-items-center"
                          onClick={this.toggleOpen}>
                         <Col xs={6} style={{wordWrap: "break-word"}}>
-                            {formatHeader(this.props.leftKlone)}
+                            {formatKloneInfoAsHeader(this.props.leftKlone)}
                         </Col>
                         <Col xs={6}>
-                            {formatHeader(this.props.rightKlone)}
+                            {formatKloneInfoAsHeader(this.props.rightKlone)}
                         </Col>
                         <Clearfix/>
                     </Row>
