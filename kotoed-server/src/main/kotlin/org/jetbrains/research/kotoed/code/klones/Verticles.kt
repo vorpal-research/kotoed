@@ -275,10 +275,11 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     value.map { e ->
                         e.second.clones.filter { clone ->
                             key == clone.submissionId to clone.denizenId ||
-                            key.second != clone.denizenId
+                                    key.second != clone.denizenId
                         }
-                    }
+                    }.filter { it.isEmpty() }
                 }
+                .filter { it.value.isEmpty() }
 
         clonesBySubmission.asSequence()
                 .forEach { (cloneId, cloneClasses) ->
