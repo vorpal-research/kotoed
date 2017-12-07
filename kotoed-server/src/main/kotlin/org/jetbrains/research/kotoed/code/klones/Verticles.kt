@@ -274,6 +274,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .mapValues { (key, value) ->
                     value.map { e ->
                         e.second.clones.filter { clone ->
+                            key == clone.submissionId to clone.denizenId ||
                             key.second != clone.denizenId
                         }
                     }
