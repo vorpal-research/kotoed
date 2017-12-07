@@ -1,6 +1,7 @@
 import * as React from "react";
 import {Component} from "react";
 import {Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
+import * as _ from "lodash";
 
 import {fetchFile} from "../../code/remote/code";
 import {
@@ -143,7 +144,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         }
     }
 
-    fetchCode = () => {
+    fetchCode = _.once(() => {
         if (KloneView.NO_CODE === this.state.leftCode) {
             this.setState({leftCode: KloneView.LOADING_CODE});
 
@@ -169,7 +170,7 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
                 this.setState({rightCode: rightCode})
             );
         }
-    };
+    });
 
     toggleOpen = () => {
         this.fetchCode();
