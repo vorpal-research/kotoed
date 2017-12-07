@@ -63,10 +63,13 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
 
         this.state = {
             open: false,
-            leftCode: "Loading...",
-            rightCode: "Loading..."
+            leftCode: KloneView.NO_CODE,
+            rightCode: KloneView.NO_CODE
         };
     }
+
+    static NO_CODE = "No code available...";
+    static LOADING_CODE = "Loading...";
 
     mergeViewerElement: HTMLDivElement | null = null;
     mergeViewer: cm.MergeView.MergeViewEditor | null = null;
@@ -140,27 +143,37 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
         }
     }
 
-    componentWillMount() {
-        fetchFile(
-            this.props.leftKlone.submissionId,
-            this.props.leftKlone.file.path,
-            this.props.leftKlone.fromLine,
-            this.props.leftKlone.toLine
-        ).then((leftCode) =>
-            this.setState({leftCode: leftCode})
-        );
+    fetchCode = () => {
+        if (KloneView.NO_CODE === this.state.leftCode) {
+            this.setState({leftCode: KloneView.LOADING_CODE});
 
-        fetchFile(
-            this.props.rightKlone.submissionId,
-            this.props.rightKlone.file.path,
-            this.props.rightKlone.fromLine,
-            this.props.rightKlone.toLine
-        ).then((rightCode) =>
-            this.setState({rightCode: rightCode})
-        );
-    }
+            fetchFile(
+                this.props.leftKlone.submissionId,
+                this.props.leftKlone.file.path,
+                this.props.leftKlone.fromLine,
+                this.props.leftKlone.toLine
+            ).then((leftCode) =>
+                this.setState({leftCode: leftCode})
+            );
+        }
+
+        if (KloneView.NO_CODE === this.state.rightCode) {
+            this.setState({rightCode: KloneView.LOADING_CODE});
+
+            fetchFile(
+                this.props.rightKlone.submissionId,
+                this.props.rightKlone.file.path,
+                this.props.rightKlone.fromLine,
+                this.props.rightKlone.toLine
+            ).then((rightCode) =>
+                this.setState({rightCode: rightCode})
+            );
+        }
+    };
 
     toggleOpen = () => {
+        this.fetchCode();
+
         this.setState(
             (prevState: KloneViewState) => {
                 return {open: !prevState.open};
