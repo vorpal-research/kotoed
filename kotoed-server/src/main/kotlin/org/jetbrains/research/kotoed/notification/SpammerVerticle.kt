@@ -28,8 +28,8 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
     suspend fun setNext() {
         val now = LocalDateTime.now(ZoneOffset.UTC)
         var nextEvent = now
-                .withHour(14)
-                .withMinute(0)
+                .withHour(Config.Notifications.Mail.SendTime.Hours)
+                .withMinute(Config.Notifications.Mail.SendTime.Minutes)
                 .withSecond(0)
                 .withNano(0)
 

@@ -63,6 +63,13 @@ class GlobalConfig : Configuration() {
 
         val User: String? by Null
         val Password: String? by Null
+
+        class TimeConfig : Configuration() {
+            val Hours: Int by 11
+            val Minutes: Int by 0
+        }
+
+        val SendTime by TimeConfig()
     }
 
     class NotificationsConfig : Configuration() {
