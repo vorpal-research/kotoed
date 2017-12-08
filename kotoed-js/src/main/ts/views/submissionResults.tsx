@@ -313,7 +313,9 @@ namespace Klones {
                 (klone: KloneInfo) => submissionId === klone.submissionId
             );
 
-            return `${baseKlone.submissionId}:${baseKlone.file.path}:${baseKlone.fromLine}:${baseKlone.toLine}`;
+            return baseKlone
+                ? `${baseKlone.submissionId}:${baseKlone.file.path}:${baseKlone.fromLine}:${baseKlone.toLine}`
+                : "NONE";
         });
 
         return _.map(groups, (kloneClasses, baseKlone: KloneInfo) => {
