@@ -1,9 +1,9 @@
 package org.jetbrains.research.kotoed.data.vcs
 
-import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.code.diff.DiffJsonable
 import org.jetbrains.research.kotoed.util.Jsonable
+import java.time.Instant
 
 data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
 
@@ -48,3 +48,11 @@ data class LocationRequest(
         val toRevision: String
 ) : Jsonable
 data class LocationResponse(val location: Location): Jsonable
+
+data class BlameRequest(
+        val uid: String,
+        val path: String,
+        val fromLine: Int?,
+        val toLine: Int?
+): Jsonable
+data class BlameResponse(val time: Instant): Jsonable

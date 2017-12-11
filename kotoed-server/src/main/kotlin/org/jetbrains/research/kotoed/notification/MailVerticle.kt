@@ -44,7 +44,7 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
 
         val denizen = fetchByIdAsync(Tables.DENIZEN, message.receiverId)
 
-        if (denizen.email == null)
+        if (denizen.email.isNullOrBlank())
             throw IllegalArgumentException("User ${denizen.denizenId} does not have a specified email")
 
         val email =

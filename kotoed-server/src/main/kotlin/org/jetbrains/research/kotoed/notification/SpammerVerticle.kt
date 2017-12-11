@@ -69,7 +69,7 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
         }
 
         for (denizen in allDenizens) {
-            if (denizen.email == null) continue
+            if (denizen.email.isNullOrBlank()) continue
 
             val notifications: List<RenderedData> = sendJsonableCollectAsync(
                     Address.Api.Notification.RenderCurrent,

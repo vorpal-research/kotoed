@@ -281,4 +281,21 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                 status = repoInfo.cloneStatus
         )
     }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Date)
+    suspend fun handleSubmissionCodeDate(message: SubReadRequest): BlameResponse {
+        val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
+        val repoInfo = getCommitInfo(submission)
+
+        return sendJsonableAsync(
+                Address.Code.Date,
+                BlameRequest(
+                        uid = repoInfo.repo.uid,
+                        path = message.path,
+                        fromLine = message.fromLine,
+                        toLine = message.toLine
+                )
+        )
+
+    }
 }
