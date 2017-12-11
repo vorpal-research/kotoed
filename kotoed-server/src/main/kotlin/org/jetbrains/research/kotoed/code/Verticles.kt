@@ -391,4 +391,20 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                         ?: handleLocationGeneral(message)
                 else -> handleLocationGeneral(message)
             }
+
+    @JsonableEventBusConsumerFor(Address.Code.Date)
+    suspend fun handleBlame(message: BlameRequest): BlameResponse {
+        UUID.fromString(message.uid)
+
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
+
+        val res = run(ee) {
+            root.date(message.path, message.fromLine, message.toLine)
+        }.result
+
+        return BlameResponse(res)
+    }
+
 }
