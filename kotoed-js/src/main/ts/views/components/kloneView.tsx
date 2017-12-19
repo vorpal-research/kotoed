@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Component} from "react";
-import {Clearfix, Col, Grid, Panel, Row} from "react-bootstrap";
+import {Clearfix, Col, Grid, Panel, Row, Glyphicon} from "react-bootstrap";
 import * as _ from "lodash";
 
 import {fetchFile} from "../../code/remote/code";
@@ -25,6 +25,7 @@ import "codemirror/addon/fold/foldgutter.js";
 import "codemirror/addon/fold/brace-fold.js";
 import "codemirror/addon/fold/indent-fold.js";
 import "codemirror/addon/fold/comment-fold.js";
+import {makeCodeReviewCodePath} from "../../util/url";
 
 export interface FileInfo {
     path: string
@@ -41,6 +42,16 @@ export interface KloneInfo {
 
 export function formatKloneInfoAsHeader(klone: KloneInfo) {
     return `${klone.denizen}:${klone.project}:${klone.submissionId} @ ${klone.file.path}:${klone.fromLine}:${klone.toLine}`
+}
+
+export function linkToReview(klone: KloneInfo) {
+    return <a href={makeCodeReviewCodePath(
+        klone.submissionId,
+        klone.file.path,
+        {line: klone.fromLine}
+        )} target="_blank">
+        <Glyphicon glyph="new-window" />
+    </a>
 }
 
 export interface KloneViewProps {
@@ -194,9 +205,13 @@ export class KloneView extends Component<KloneViewProps, KloneViewState> {
                          onClick={this.toggleOpen}>
                         <Col xs={6} style={{wordWrap: "break-word"}}>
                             {formatKloneInfoAsHeader(this.props.leftKlone)}
+                            {" "}
+                            {linkToReview(this.props.leftKlone)}
                         </Col>
                         <Col xs={6}>
                             {formatKloneInfoAsHeader(this.props.rightKlone)}
+                            {" "}
+                            {linkToReview(this.props.rightKlone)}
                         </Col>
                         <Clearfix/>
                     </Row>

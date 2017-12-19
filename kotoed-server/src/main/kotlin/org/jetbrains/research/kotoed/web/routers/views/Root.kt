@@ -49,24 +49,6 @@ suspend fun handleCommentSearch(context: RoutingContext) {
     context.put(Context.BreadCrumb, CommentSearchBreadCrumb)
 }
 
-@HandlerFor(UrlPattern.Project.Search)
-@Templatize("projectSearch.jade")
-@AuthorityRequired(Authority.Teacher)
-@JsBundle("projectSearch")
-suspend fun handleProjectSearch(context: RoutingContext) {
-    context.put(Context.NavBar, kotoedNavBar(context.user()))
-    context.put(Context.BreadCrumb, ProjectSearchBreadCrumb)
-}
-
-@HandlerFor(UrlPattern.Submission.SearchByTags)
-@Templatize("submissionByTagsSearch.jade")
-@AuthorityRequired(Authority.Teacher)
-@JsBundle("submissionByTagsSearch")
-suspend fun handleSubmissionByTagsSearch(context: RoutingContext) {
-    context.put(Context.NavBar, kotoedNavBar(context.user()))
-    context.put(Context.BreadCrumb, SubmissionByTagsSearchBreadCrumb)
-}
-
 @HandlerFor(UrlPattern.CommentTemplate.Show)
 @Templatize("commentTemplateSearch.jade")
 @LoginRequired
