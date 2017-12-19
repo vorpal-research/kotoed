@@ -311,7 +311,10 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             else root.diffAll(from, to)
         }.result
 
-        return DiffResponse(contents = parseGitDiff(diffRes).map { it.asJsonable() })
+        return DiffResponse(contents = parseGitDiff(diffRes)
+                // FIXME Do smth when diff does not provide these file names
+                .filter { it.fromFileName != null && it.toFileName != null }
+                .map { it.asJsonable() })
     }
 
     fun getCompilerEnv() = FooBarCompiler.setupMyEnv(CompilerConfiguration())
