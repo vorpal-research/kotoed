@@ -55,51 +55,6 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleVerificationData(project: ProjectRecord): VerificationData =
             dbVerifyAsync(project)
 
-    @JsonableEventBusConsumerFor(Address.Api.Project.Search)
-    suspend fun handleSearch(query: SearchQuery): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
-        val projQ = ComplexDatabaseQuery("project_text_search")
-                .find(ProjectRecord().apply{ deleted = false })
-                .join("denizen", field = "denizen_id")
-                .join("course", field = "course_id")
-
-        val q = ComplexDatabaseQuery("submission")
-                .find(SubmissionRecord().apply { state = SubmissionState.open })
-                .join(projQ, field = "project_id")
-                .filter("project.document matches %s".formatToQuery(query.text))
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
-
-        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission"), q)
-
-        return req.map { sub ->
-            val project = sub.getJsonObject("project")
-            project.toRecord<ProjectRecord>().toJson().apply {
-                put("last_submission_id", sub["id"])
-                put("denizen_id", project["denizen", "denizen_id"])
-                put("course_name", project["course", "name"])
-            }
-        }.let(::JsonArray)
-    }
-
-    @JsonableEventBusConsumerFor(Address.Api.Project.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
-        val projQ = ComplexDatabaseQuery("project_text_search")
-                .find(ProjectRecord().apply{ deleted = false })
-                .join("denizen", field = "denizen_id")
-                .join("course", field = "course_id")
-
-        val q = ComplexDatabaseQuery("submission")
-                .find(SubmissionRecord().apply { state = SubmissionState.open })
-                .join(projQ, field = "project_id")
-                .filter("project.document matches %s".formatToQuery(query.text))
-
-        return sendJsonableAsync(Address.DB.count("submission"), q)
-    }
-
-
-    // TODO maybe we should have only one universal search for project?
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourse)
     suspend fun handleSearchForCourse(query: SearchQueryWithTags): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE

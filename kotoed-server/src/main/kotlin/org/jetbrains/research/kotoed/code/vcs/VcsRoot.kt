@@ -3,6 +3,8 @@ package org.jetbrains.research.kotoed.code.vcs
 import org.jetbrains.research.kotoed.rootLog
 import org.jetbrains.research.kotoed.util.DelegateLoggable
 import java.io.File
+import java.time.Instant
+import java.time.OffsetDateTime
 
 sealed class VcsResult<out T> {
     data class Success<out T>(val v: T) : VcsResult<T>()
@@ -45,6 +47,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
     abstract fun ls(rev: Revision): VcsResult<Sequence<String>>
     abstract fun info(rev: Revision, branch: String?): VcsResult<Pair<String, String>>
     abstract fun ping(): VcsResult<Unit>
+    abstract fun date(path: String, fromLine: Int?, toLine: Int?): VcsResult<Instant>
 }
 
 class Git(remote: String, local: String) : VcsRoot(remote, local) {
@@ -128,6 +131,18 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(sequenceOf())
     }
+
+    override fun date(path: String, fromLine: Int?, toLine: Int?): VcsResult<Instant> {
+        val from = fromLine ?: ""
+        val to = toLine ?: ""
+        val res = CommandLine(git, "blame", "--date", "unix", "-L", "$from,$to", "--", path)
+                .execute(File(local)).complete()
+        if(res.rcode.get() == 0) {
+            val output = res.cout.map { it.split(' ').filter { it.isNotEmpty() }[2].toLong() }
+                    .min()?.let { Instant.ofEpochSecond(it) }
+            return VcsResult.Success(output!!)
+        } else return VcsResult.Failure(res.cerr)
+    }
 }
 
 class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
@@ -205,5 +220,9 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
         val res = CommandLine(mercurial, "identify", remote).execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
+    }
+
+    override fun date(path: String, fromLine: Int?, toLine: Int?): VcsResult<Instant> {
+        TODO("not implemented yet")
     }
 }
