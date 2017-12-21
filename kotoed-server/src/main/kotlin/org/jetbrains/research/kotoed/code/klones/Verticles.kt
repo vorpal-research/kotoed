@@ -277,9 +277,9 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             key == clone.submissionId to clone.denizenId ||
                                     key.second != clone.denizenId
                         }
-                    }.filter { it.isEmpty() }
+                    }.filterNot { it.isEmpty() }
                 }
-                .filter { it.value.isEmpty() }
+                .filterNot { it.value.isEmpty() }
 
         clonesBySubmission.asSequence()
                 .forEach { (cloneId, cloneClasses) ->
