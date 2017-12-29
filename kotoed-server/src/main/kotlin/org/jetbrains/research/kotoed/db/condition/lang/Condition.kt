@@ -10,6 +10,9 @@ import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.Table
 import org.jooq.impl.DSL
+import ru.spbstu.kparsec.Failure
+import ru.spbstu.kparsec.Success
+import ru.spbstu.kparsec.parse
 import ru.spbstu.ktuples.converge
 import ru.spbstu.ktuples.map0
 import ru.spbstu.ktuples.map1
@@ -79,5 +82,9 @@ private fun convertAst(e: Expression, tables: (String) -> Table<*>): Condition =
 
 fun parseCondition(input: String, tables: (String) -> Table<*>): Condition {
     val e = ExpressionParsers.root.parse(input)
-    return convertAst(e, tables)
+    when(e) {
+        is Failure -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
+                "expected ${e.expected} at ${e.location}")
+        is Success -> return convertAst(e.result, tables)
+    }
 }
