@@ -12,7 +12,7 @@ export type LinkData = {
 export type NotificationData = {
     id: number,
     contents: string,
-    linkTo: LinkData
+    linkTo?: LinkData
 }
 
 export interface NotificationDisplayProps {
@@ -29,6 +29,8 @@ export class NotificationDisplay extends React.PureComponent<NotificationDisplay
     };
 
     onClick = async (e: MouseEvent<HTMLAnchorElement>) => {
+        if (!this.props.data.linkTo)
+            return;
         e.preventDefault();
         // We have to await, otherwise it races with new page loading
         await sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id });
