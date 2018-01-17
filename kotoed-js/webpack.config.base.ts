@@ -46,9 +46,7 @@ const config: webpack.Configuration = {
         submissionDetails: kotoedEntry("./ts/submissionDetails/index.tsx"),
         commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
         commentTemplateSearch: kotoedEntry("./ts/views/commentTemplateSearch.tsx"),
-        projectSearch: kotoedEntry("./ts/views/projectSearch.tsx"),
         denizenSearch: kotoedEntry("./ts/denizen/list.tsx"),
-        submissionByTagsSearch: kotoedEntry("./ts/views/submissionByTagsSearch.tsx"),
         courseList: kotoedEntry("./ts/courses/list.tsx"),
         projectList: kotoedEntry("./ts/projects/list.tsx"),
         submissionList: kotoedEntry("./ts/submissions/list.tsx"),
@@ -150,7 +148,11 @@ const config: webpack.Configuration = {
         new webpack.ProvidePlugin({  // TODO this is shit but Bootstrap JS does not work without it
             jQuery: 'jquery',
             $: 'jquery',
-            jquery: 'jquery'
+            jquery: 'jquery',
+            diff_match_patch: 'diff-match-patch',
+            DIFF_DELETE: ['diff-match-patch', 'DIFF_DELETE'],
+            DIFF_INSERT: ['diff-match-patch', 'DIFF_INSERT'],
+            DIFF_EQUAL: ['diff-match-patch', 'DIFF_EQUAL']
         }),
 
         new webpack.optimize.CommonsChunkPlugin({

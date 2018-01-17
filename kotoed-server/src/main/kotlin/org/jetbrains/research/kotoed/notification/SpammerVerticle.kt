@@ -28,11 +28,12 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
     suspend fun setNext() {
         val now = LocalDateTime.now(ZoneOffset.UTC)
         var nextEvent = now
-                .withHour(14)
-                .withMinute(0)
+                .withHour(Config.Notifications.Mail.SendTime.Hours)
+                .withMinute(Config.Notifications.Mail.SendTime.Minutes)
                 .withSecond(0)
+                .withNano(0)
 
-        if (nextEvent < now) nextEvent = nextEvent.plusDays(1)
+        if (nextEvent <= now) nextEvent = nextEvent.plusDays(1)
 
         log.info("Scheduling next spam session at $nextEvent")
 
@@ -68,7 +69,7 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
         }
 
         for (denizen in allDenizens) {
-            if (denizen.email == null) continue
+            if (denizen.email.isNullOrBlank()) continue
 
             val notifications: List<RenderedData> = sendJsonableCollectAsync(
                     Address.Api.Notification.RenderCurrent,

@@ -1,5 +1,13 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
+import org.jetbrains.research.kotoed.util.uncheckedCast
+import ru.spbstu.kparsec.Parser
+import ru.spbstu.kparsec.parsers.*
+import ru.spbstu.kparsec.parsers.Literals.lexeme
+import ru.spbstu.ktuples.EitherOf2
+import ru.spbstu.ktuples.Variant0
+import ru.spbstu.ktuples.Variant1
+
 sealed class Expression
 
 enum class CompareOp(val rep: String) {
@@ -37,6 +45,7 @@ object NullConstant : Constant() {
 }
 
 data class Path(val path: List<String>) : Expression()
+data class JsonPath(val base: Path, val path: List<EitherOf2<Int, String>>) : Expression()
 
 // TODO Inclusion operators are now a special case.
 // TODO maybe we should make PrimitiveSubquery a primitive and allow in everywhere sometimes
@@ -51,45 +60,45 @@ data class PrimitiveSubquery(val value: List<Constant>): Expression()
 
 data class InclusionExpression(val op: InclusionOp, val lhv: Expression, val rhv: Expression): Expression()
 
-object ExpressionParsers {
-    val path = identifier().joinedBy(constant(".")).map(::Path)
-    val const = integer().map(::IntConstant) or
-            doubleQuotedString().map(::StringConstant) or
-            constant("null").map { NullConstant }
+object ExpressionParsers: StringsAsParsers {
+    val identifier = regex("""[a-zA-Z_][a-zA-Z_0-9]*""".toRegex())
+    val integer = Literals.CINTEGER.map { it.toInt() }
+    val string = Literals.JSTRING
 
-    val cmpOperators = CompareOp.values().map { op ->
-        binaryOperator<Expression>(lexeme(op.rep)){ l, r -> CompareExpression(op, l, r) }
-    }
+    val path = (identifier joinedBy -".").map(::Path)
+    val jsonIndex = identifier.map(::Variant1) or integer.map(::Variant0)
+    val jsonPath = zip(path, (-"->" + jsonIndex).many()).map { JsonPath(it.first, it.second) }
 
-    val binaryOperators = BinaryOp.values().map {  op ->
-        binaryOperator<Expression>(lexeme(op.rep)){ l, r -> BinaryExpression(op, l, r) }
-    }
+    val const = integer.map(::IntConstant) or
+            string.map(::StringConstant) or
+            (+"null").map { NullConstant }
 
-    val inclusionOperators = InclusionOp.values().map {  op ->
-        binaryOperator<Expression>(lexeme(op.rep)){ l, r -> InclusionExpression(op, l, r) }
-    }
+    val primitive =
+            (-"(" + defer{ expr } + -")") or
+                    lexeme(const) or
+                    lexeme(jsonPath)
 
     val primitiveSubquery =
-            ((const.between(spaces(), spaces())
-                    .joinedBy(constant(","))) or spaces().map { listOf<Constant>() })
-                    .between(lexeme("["), lexeme("]"))
-                    .between(spaces(), spaces())
-                    .map(::PrimitiveSubquery)
+            (-"[" + (const joinedBy -",").orElse(emptyList()) + -"]").map {
+                lst -> PrimitiveSubquery(lst.uncheckedCast())
+            }
 
-    val root = recursive<Expression> { binop ->
-        val primitive =
-                binop.between(lexeme("("), lexeme(")")) or
-                        const.between(spaces(), spaces()) or
-                        path.between(spaces(), spaces())
 
-        val cmp = operators<Expression> {
-            cmpOperators.forEach { infixl(it) }
-            inclusionOperators.forEach{ infixl(it) }
-        }.build(primitive or primitiveSubquery) // TODO primitiveSubquery should only be allowed on RHS
+    val expr: Parser<Char, Expression> = operatorTable(primitive or primitiveSubquery) {
+        for (op in CompareOp.values()) {
+            (-op.rep)(priority = 7) { a, b -> CompareExpression(op, a, b) }
+        }
 
-        operators<Expression> {
-            prefix(unaryOperator(lexeme("!"), ::NotExpression))
-            binaryOperators.forEach { infixl(it) }
-        }.build(cmp)
+        for (op in InclusionOp.values()) {
+            (-op.rep)(priority = 7) { a, b -> InclusionExpression(op, a, b) }
+        }
+
+        for (op in BinaryOp.values()) {
+            (-op.rep)(priority = 5) { a, b -> BinaryExpression(op, a, b) }
+        }
+
+        (-"!")(assoc = Assoc.PREFIX, priority = 8){ a -> NotExpression(a) }
     }
+
+    val root = expr
 }

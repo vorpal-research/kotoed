@@ -9,6 +9,7 @@ interface TagProps {
     tag: TagData,
     removable: boolean
     onRemove?: (tag: TagData) => void
+    onClick?: () => void
     disabled?: boolean
 }
 
@@ -54,7 +55,9 @@ export class Tag extends React.Component<TagProps> {
     render() {
         let color = this.getColor();
         let xColor = this.getXColor(color || "white");
-        return <Label style={{...this.props.tag.style, color}} bsStyle="default" className="tag">
+        let cursorType = this.props.onClick ? { cursor: "pointer" } : {};
+        return <Label style={{...this.props.tag.style, color, ...cursorType}} bsStyle="default" className="tag"
+                      onClick={this.props.onClick}>
             {this.props.tag.name}
             {this.props.removable &&
                 <span

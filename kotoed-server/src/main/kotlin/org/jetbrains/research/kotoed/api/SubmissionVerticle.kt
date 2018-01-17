@@ -8,8 +8,10 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.*
+import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.database.tables.Notification
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -39,18 +41,48 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val targets = dbFindAsync(SubmissionCommentRecord().apply {
             submissionId = parentSubmissionId
             state = SubmissionCommentState.open
-        }).map{ it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as? Int
+        }).map{ it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as Int
 
         targets.forEach {
+            val existing = dbQueryAsync(
+                    ComplexDatabaseQuery(NOTIFICATION)
+                            .filter("status == %s and type == %s and body->submission_id == \"%s\" and denizen_id == %s"
+                                    .formatToQuery(
+                                            NotificationStatus.unread,
+                                            NotificationType.RESUBMISSION,
+                                            parentSubmissionId,
+                                            it
+                                    )
+                        )
+            )
+
+            val old = existing.firstOrNull()
+
+            old?.apply old@ {
+                val res: NotificationRecord =
+                        sendJsonableAsync(Address.Api.Notification.MarkRead, NotificationRecord().apply {
+                            id = this@old["id"] as Int
+                        })
+
+                use(res)
+            }
+
+            val oldParentId = old?.safeNav("body", "oldSubmissionId") as? Int
+            val oldTimes = old?.safeNav("body", "times") as? Int
+
             createNotification(NotificationRecord().apply {
                 denizenId = it
                 type = NotificationType.RESUBMISSION.toString()
                 body = JsonObject().apply {
                     this["author"] = jumboSub.safeNav("project", "denizen")
                     this["submissionId"] = record.id
-                    this["oldSubmissionId"] = parentSubmissionId
+                    this["oldSubmissionId"] = oldParentId ?: parentSubmissionId
+                    this["times"] = oldTimes?.let { it + 1 } ?: 1
                 }
             })
+
+
+
         }
     }
 

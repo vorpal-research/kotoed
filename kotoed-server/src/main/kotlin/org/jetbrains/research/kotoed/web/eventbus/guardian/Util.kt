@@ -14,12 +14,20 @@ abstract class LoggingBridgeEventFilter : BridgeEventFilter {
     suspend abstract fun checkIsAllowed(be: BridgeEvent): Boolean
 }
 
+
+fun JsonObject?.cleanUp(): JsonObject? {
+    this ?: return this
+    val msg = this.copy()
+    return msg.removeFields("password", "initiatorPassword", "newPassword")
+
+}
+
 fun JsonObject?.cleanUpBody(): JsonObject? {
     this ?: return this
     val msg = this.copy()
     val body = msg?.get("body") as? JsonObject ?: return this
 
-    body.removeFields("password", "initiatorPassword", "newPassword")
+    body.cleanUp()
 
     return msg
 }

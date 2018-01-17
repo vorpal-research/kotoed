@@ -8,21 +8,26 @@ import {
     ArrayColumn,
     CodeColumn,
     isUnknownFailureInfo,
+    KloneColumn,
     TestData,
     TestDataColumn
 } from "./components/griddleEx"
+import {KloneInfo} from "./components/kloneView";
 import {ResultHolder} from "./components/resultHolder";
 import {
     ResultListHolder,
     ResultListHolderProps
 } from "./components/resultListHolder";
 
+import {fetchPermissions} from "../submissionDetails/remote";
 import {Kotoed} from "../util/kotoed-api";
 
 export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
     constructor(props: ResultListHolderProps<ResultT>, context: undefined) {
         super(props, context);
     }
+
+    loadPermissions = () => fetchPermissions(this.props.id);
 
     loadResults = () => {
         return sendAsync<IdRequest, GenericResponse<ResultT>>
@@ -69,6 +74,10 @@ namespace KFirst {
 
     export function transformer(result: any): any[] {
         return result.body.data
+    }
+
+    export function merger(results: any[]): any[] {
+        return results
     }
 
     export let hideTodosFilter = {
@@ -126,6 +135,10 @@ namespace BuildLogs {
 
     export function transformer(result: any): any[] {
         return [result]
+    }
+
+    export function merger(results: any[]): any[] {
+        return results
     }
 
     export let rowDefinition =
@@ -260,6 +273,10 @@ namespace Statistics {
         });
     }
 
+    export function merger(results: any[]): any[] {
+        return results
+    }
+
     export let rowDefinition =
         <RowDefinition>
             <ColumnDefinition id="packageName"
@@ -280,6 +297,55 @@ namespace Statistics {
 
 } // namespace Statistics
 
+namespace Klones {
+
+    export function selector(result: any): boolean {
+        return result["type"].match(/^klonecheck$/)
+    }
+
+    export function transformer(result: any): any[] {
+        return result.body;
+    }
+
+    export function merger(results: any[]): any[] {
+        let groups = _.groupBy(results, (result) => {
+            let baseKlone = result.find(
+                (klone: KloneInfo) => submissionId === klone.submissionId
+            );
+
+            return baseKlone
+                ? `${baseKlone.submissionId}:${baseKlone.file.path}:${baseKlone.fromLine}:${baseKlone.toLine}`
+                : "NONE";
+        });
+
+        return _.map(groups, (kloneClasses, baseKlone: KloneInfo) => {
+            let kloneClass = _.reduce(
+                kloneClasses,
+                (acc, kloneClass) => _.concat(acc, kloneClass),
+                []
+            );
+
+            return {
+                value: {
+                    baseSubmissionId: submissionId,
+                    kloneClass: _.uniqBy(
+                        kloneClass,
+                        (klone: KloneInfo) => `${klone.submissionId}:${klone.file.path}:${klone.fromLine}:${klone.toLine}`
+                    )
+                }
+            };
+        });
+    }
+
+    export let rowDefinition =
+        <RowDefinition>
+            <ColumnDefinition id="value"
+                              title="Clone class"
+                              customComponent={KloneColumn}/>
+        </RowDefinition> as any
+
+}
+
 render(
     <SubmissionResultTable
         id={submissionId}
@@ -287,22 +353,35 @@ render(
             <ResultHolder name="KFirst"
                           selector={KFirst.selector}
                           transformer={KFirst.transformer}
+                          merger={KFirst.merger}
                           filters={[
                               KFirst.hideTodosFilter,
                               KFirst.hideExamplesFilter,
                               KFirst.hidePassedFilter
                           ]}
-                          rowDefinition={KFirst.rowDefinition}/> as any,
+                          rowDefinition={KFirst.rowDefinition}
+                          isVisible={_ => true}/> as any,
             <ResultHolder name="Statistics"
                           selector={Statistics.selector}
                           transformer={Statistics.transformer}
+                          merger={Statistics.merger}
                           filters={[]}
-                          rowDefinition={Statistics.rowDefinition}/> as any,
+                          rowDefinition={Statistics.rowDefinition}
+                          isVisible={_ => true}/> as any,
             <ResultHolder name="Build logs"
                           selector={BuildLogs.selector}
                           transformer={BuildLogs.transformer}
+                          merger={BuildLogs.merger}
                           filters={[]}
-                          rowDefinition={BuildLogs.rowDefinition}/> as any
+                          rowDefinition={BuildLogs.rowDefinition}
+                          isVisible={_ => true}/> as any,
+            <ResultHolder name="Klones"
+                          selector={Klones.selector}
+                          transformer={Klones.transformer}
+                          merger={Klones.merger}
+                          filters={[]}
+                          rowDefinition={Klones.rowDefinition}
+                          isVisible={state => state.permissions ? state.permissions.klones : false}/> as any
         ]}/>,
     rootElement
 );

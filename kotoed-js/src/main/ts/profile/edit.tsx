@@ -82,14 +82,12 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
 
     unsetError(error: keyof LocalErrors) {
         this.shadowErrors[error] = false;
-        super.unsetError(error);
     }
 
     commitErrorsAsync = async (...picker: (keyof LocalErrors)[]) => {
         picker = picker || typedKeys(this.shadowErrors);
         let newErrors = { ...this.state.localErrors, ...pick(this.shadowErrors, picker) };
         await setStateAsync(this, { localErrors: newErrors });
-        this.shadowErrors = {...this.shadowErrors, ...pick(noErrors, picker)};
     };
 
     setDenizen = <K extends keyof EditableProfileInfo>(pick: Pick<EditableProfileInfo,K>) => {
@@ -101,6 +99,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
             () => {
                 this.unsetError("emptyPassword");
                 this.unsetError("passwordsDontMatch");
+                this.unsetError("incorrectPassword");
                 if(errors.emptyPassword || errors.emptyPassword2) {
                     this.setError("emptyPassword")
                 }
@@ -138,7 +137,6 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
 
     onSavePassword = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
-        this.unsetError("incorrectPassword");
         await this.commitErrorsAsync("emptyPassword", "incorrectPassword", "passwordsDontMatch");
         if(this.hasErrors()) return;
 
@@ -213,6 +211,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                         placeholder="not specified"
                     />
                     <PasswordInput
+                        setPassword={true}
                         prefix="target-"
                         onChange={this.bindPassword("newPassword")}
                         onEnter={() => {}}

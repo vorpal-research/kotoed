@@ -2,6 +2,7 @@ import * as React from "react";
 import {Kotoed} from "../../util/kotoed-api";
 import UrlPattern = Kotoed.UrlPattern;
 import {sendAsync} from "../../views/components/common";
+import {MouseEvent} from "react";
 
 export type LinkData = {
     entity: string
@@ -27,13 +28,16 @@ export class NotificationDisplay extends React.PureComponent<NotificationDisplay
         return UrlPattern.reverse(UrlPattern.Redirect.ById, link)
     };
 
-    onClick = () => {
-        sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id }).then()
+    onClick = async (e: MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        // We have to await, otherwise it races with new page loading
+        await sendAsync(Kotoed.Address.Api.Notification.MarkRead, { id: this.props.data.id });
+        window.location.href = this.makeProperLink(this.props.data.linkTo)
     };
 
     render() {
         return <a className="list-group-item"
-                  href={this.makeProperLink(this.props.data.linkTo)}
+                  href="#"
                   onClick={this.onClick}
         >
             <span dangerouslySetInnerHTML={{ __html: this.props.data.contents }} />

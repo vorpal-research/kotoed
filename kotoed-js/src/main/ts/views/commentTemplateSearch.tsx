@@ -1,5 +1,5 @@
 import * as React from "react";
-import {SearchTable} from "./components/search";
+import {SearchCallback, SearchTable} from "./components/search";
 import CommentComponent from "../code/components/CommentComponent";
 import {doNothing} from "../util/common";
 import {Kotoed} from "../util/kotoed-api";
@@ -17,10 +17,14 @@ type UpdateCallback = {
     callback: () => void
 }
 
+type ModifySearchCallback = {
+    callback: SearchCallback
+}
+
 type CommentTemplateState = CommentTemplate
 
-class CommentTemplateEditComponent extends React.Component<CommentTemplateState & UpdateCallback, CommentTemplateState> {
-    constructor(props: CommentTemplateState & UpdateCallback) {
+class CommentTemplateEditComponent extends React.Component<CommentTemplateState & ModifySearchCallback, CommentTemplateState> {
+    constructor(props: CommentTemplateState & ModifySearchCallback) {
         super(props);
         let temp = { ...props } as CommentTemplateState;
         this.state = temp;
@@ -39,7 +43,7 @@ class CommentTemplateEditComponent extends React.Component<CommentTemplateState 
     onDelete = async () => {
         await sendAsync(Kotoed.Address.Api.CommentTemplate.Delete,
             {id: this.props.id});
-        this.props.callback()
+        this.props.callback().toggleSearch()
     };
 
     onNameChange = (text: string) => this.setState({name: text});
@@ -160,7 +164,7 @@ class CommentTemplateTable extends React.Component<{}, CommentTemplateTableState
                 toolbarComponent={(toggleSearch: () => void) =>
                     <CommentTemplateCreator {...this.state} callback={toggleSearch} />
                 }
-                elementComponent={(key, c: CommentTemplate, toggleSearch: () => void) =>
+                elementComponent={(key, c: CommentTemplate, toggleSearch: SearchCallback) =>
                     <CommentTemplateEditComponent key={key} {...c} callback={toggleSearch} />}
             />
         );

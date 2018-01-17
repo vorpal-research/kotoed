@@ -12,13 +12,13 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 
-fun makeLiteralToken(submissionId: Int, origin: PsiElement) =
-    makeToken(submissionId, origin) { if(children.isEmpty()) text else "${node.elementType}" }
+fun makeLiteralToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
+        makeToken(type, submissionId, denizenId, origin) { if (children.isEmpty()) text else "${node.elementType}" }
 
-fun makeAnonimizedToken(submissionId: Int, origin: PsiElement) =
-    makeToken(submissionId, origin) { "${node.elementType}" }
+fun makeAnonimizedToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
+        makeToken(type, submissionId, denizenId, origin) { "${node.elementType}" }
 
-private inline fun makeToken(submissionId: Int, origin: PsiElement, converter: PsiElement.() -> String): Token {
+private inline fun makeToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement, converter: PsiElement.() -> String): Token {
     val text = converter(origin)
 
     val file = origin.containingFile
@@ -36,11 +36,13 @@ private inline fun makeToken(submissionId: Int, origin: PsiElement, converter: P
             col = origin.endOffset - document.getLineStartOffset(toLine)
     )
     val fname = origin.parentsWithSelf.filterIsInstance<KtNamedFunction>().first().name
-    return Token(submissionId, text, from, to, fname.orEmpty())
+    return Token(type, submissionId, denizenId, text, from, to, fname.orEmpty())
 }
 
 class Token(
+        val type: Any,
         val submissionId: Int,
+        val denizenId: Int,
         val text: String,
         val from: Location,
         val to: Location,
@@ -59,7 +61,7 @@ class Token(
     override fun toString(): String = "T($text)"
 
     companion object {
-        val filteredTokenTypes = TokenSet.orSet(
+        private val filteredTokenTypes = TokenSet.orSet(
                 KtTokens.WHITESPACES,
                 KtTokens.COMMENTS,
                 TokenSet.create(
@@ -80,6 +82,5 @@ class Token(
             e.node.elementType !in filteredTokenTypes
         }
     }
-
 
 }

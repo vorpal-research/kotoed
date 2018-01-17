@@ -34,9 +34,7 @@ suspend private fun User?.getUtilities() =
             isAuthorisedAsync(Authority.Teacher) -> listOf(
                     NavBarLink("Comment templates", UrlPattern.CommentTemplate.Show),
                     NavBarLink("User search", UrlPattern.Denizen.Search),
-                    NavBarLink("Comment search", UrlPattern.Comment.Search),
-                    NavBarLink("Project search", UrlPattern.Project.Search),
-                    NavBarLink("Tag search", UrlPattern.Submission.SearchByTags))
+                    NavBarLink("Comment search", UrlPattern.Comment.Search))
             else -> listOf()
         }
 

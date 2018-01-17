@@ -12,7 +12,9 @@ export interface ResultHolderProps<ResultT> {
     rowDefinition: components.RowDefinition
     selector: (r: ResultT) => boolean
     transformer: (r: ResultT) => ResultT[]
+    merger: (rs: ResultT[]) => ResultT[]
     filters: ResultFilter<ResultT>[]
+    isVisible: (state: any) => boolean
 }
 
 export class ResultHolder<ResultT> extends Component<ResultHolderProps<ResultT>, any> {

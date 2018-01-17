@@ -240,3 +240,6 @@ inline fun <T, S> List<T>.chunksBy(classifier: (T) -> S): List<Pair<S, List<T>>>
     result += lastClass to subList(lastIndex, size)
     return result.asList()
 }
+
+operator fun<T: Comparable<T>> ClosedRange<T>.contains(that: ClosedRange<T>) =
+        contains(that.start) && contains(that.endInclusive)
