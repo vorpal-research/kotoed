@@ -10,6 +10,21 @@ import "codemirror/addon/fold/foldgutter"
 import "codemirror/addon/fold/brace-fold"
 import "codemirror/addon/fold/comment-fold"
 import "codemirror/addon/edit/matchbrackets"
+import "codemirror/addon/search/search"
+import "codemirror/addon/search/searchcursor"
+import "codemirror/addon/search/matchesonscrollbar"
+import "codemirror/addon/search/matchesonscrollbar.css"
+import "codemirror/addon/scroll/annotatescrollbar"
+import "codemirror/addon/scroll/simplescrollbars"
+import "codemirror/addon/scroll/simplescrollbars.css"
+import "codemirror/addon/search/jump-to-line"
+import "codemirror/addon/dialog/dialog"
+import "codemirror/addon/dialog/dialog.css"
+
+import "../../typesEx/codemirror/execCommand.d.ts"
+
+import Mousetrap from "../../util/mousetrap"
+
 
 import LineMarker from "./LineMarker";
 import {
@@ -24,6 +39,7 @@ import {BaseCommentToRead} from "../../data/comment";
 import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/forms";
 import {CodeAnnotation} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
+import {doNothing, sleep} from "../../util/common";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
@@ -351,10 +367,34 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
                 color: "#f00",
                 lineStyle: "solid",
                 width: 3
-            }]
+            }],
+            extraKeys: {
+                // Deleting handlers for search event defined by CM. We will handle them ourselves.
+                "Ctrl-F": doNothing,
+                "Cmd-F": doNothing,
+                "Ctrl-G": doNothing,
+                "Cmd-G": doNothing,
+                "Shift-Ctrl-G": doNothing,
+                "Shift-Cmd-G": doNothing,
+                "Shift-Ctrl-F": doNothing,
+                "Cmd-Alf-F": doNothing,
+                "Shift-Ctrl-R": doNothing,
+                "Shift-Cmd-Alf-F": doNothing,
+                "Alt-G": doNothing,
+            },
+            scrollbarStyle: "overlay"
         });
-
         this.editor.setSize("100%", this.props.height);
+        this.editor.on("scroll", async () => {
+            $(".CodeMirror-overlayscroll-vertical").addClass("scrolling");
+            $(".CodeMirror-overlayscroll-horizontal").addClass("scrolling");
+
+            await sleep(1000);
+
+            $(".CodeMirror-overlayscroll-vertical").removeClass("scrolling");
+            $(".CodeMirror-overlayscroll-horizontal").removeClass("scrolling");
+
+        });
 
         this.editor.setValue(this.processedValue);
         this.grayOutFakeLines();
@@ -363,6 +403,18 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
         this.renderMarkers();
         this.scrollToLine();
+
+        Mousetrap.bindGlobal('mod+f',  (e: KeyboardEvent) => {
+            e.preventDefault();
+            this.editor.focus();
+            this.editor.execCommand("findPersistent");
+        });
+        Mousetrap.bindGlobal('mod+g',  (e: KeyboardEvent) => {
+            e.preventDefault();
+            this.editor.focus();
+            this.editor.execCommand("jumpToLine");
+        });
+
     }
 
     private shouldResetExpanded(props: FileReviewProps, nextProps: FileReviewProps) {
@@ -419,6 +471,8 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (this.editor) {
             this.editor.toTextArea();
         }
+        Mousetrap.unbind('mod+f');
+        Mousetrap.unbind('mod+g');
     }
 
     render() {

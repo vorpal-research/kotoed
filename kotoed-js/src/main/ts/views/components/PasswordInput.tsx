@@ -93,8 +93,9 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
     callOnChange = () => {
         this.props.onChange(this.state.password, {
             emptyPassword: this.state.password === "",
-            emptyPassword2: !this.props.setPassword && this.state.blindMode && this.state.password2 === "",
-            passwordsDoNotMatch: !this.props.setPassword && this.state.blindMode && (this.state.password !== this.state.password2)
+            emptyPassword2: this.getProperty('setPassword') && this.state.blindMode && this.state.password2 === "",
+            passwordsDoNotMatch: this.getProperty('setPassword')
+                && this.state.blindMode && (this.state.password !== this.state.password2)
         });
     };
 
@@ -145,6 +146,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
             </label>
             <div className={this.getClassName("inputWrapper", true)}>
                 <input type="password"
+                       autoComplete="off"
                        disabled={this.props.disabled}
                        className={`form-control ${this.getClassName("input", true)}`}
                        placeholder={this.getStringProperty("placeholderRepeat")}
@@ -180,6 +182,7 @@ export class PasswordInput extends React.Component<PasswordInputProps, PasswordI
                 <div className={this.getClassName("inputWrapper")}>
                     <div className="has-feedback">
                         <input type={this.getInputType()}
+                               autoComplete="off"
                                disabled={this.props.disabled}
                                className={`form-control ${this.getClassName("input")}`}
                                placeholder={this.getStringProperty("placeholder")}

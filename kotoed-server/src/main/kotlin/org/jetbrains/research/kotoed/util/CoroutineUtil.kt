@@ -95,3 +95,15 @@ inline suspend fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
         }
 
 /******************************************************************************/
+
+class CoroLazy<T>(val generator: suspend () -> T) {
+    private var backer: T? = null
+
+    fun isInitialized() = backer != null
+    suspend fun get(): T {
+        if(!isInitialized()) backer = generator()
+        return backer!!
+    }
+}
+
+fun <T> coroLazy(generator: suspend () -> T) = CoroLazy(generator)

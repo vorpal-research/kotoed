@@ -1,10 +1,11 @@
 import * as React from "react";
 import {Component} from "react";
-import {ListGroup, ListGroupItem} from "react-bootstrap";
+import {Button, ListGroup, ListGroupItem, Panel} from "react-bootstrap";
 import {List} from "immutable";
 import * as _ from "lodash";
 import {isArray, isObject} from "util";
 
+import {formatKloneInfoAsHeader, KloneView} from "./kloneView";
 
 export const ArrayColumn = ({value}: { value: List<any> }) =>
     <span>{value.join(", ")}</span>;
@@ -14,6 +15,60 @@ export const JsonColumn = ({value}: { value: any }) =>
 
 export const CodeColumn = ({value}: { value: any }) =>
     <pre><code>{value}</code></pre>;
+
+export const KloneColumn = ({value}: { value: any }) => {
+    return <KloneClassPanel value={value.toJS()}/>;
+};
+
+export interface KloneClassPanelProps {
+    value: any
+}
+
+export interface KloneClassPanelState {
+    open: boolean
+}
+
+export class KloneClassPanel extends Component<KloneClassPanelProps, KloneClassPanelState> {
+    constructor(props: KloneClassPanelProps, context: undefined) {
+        super(props, context);
+
+        this.state = {
+            open: false
+        };
+    }
+
+    toggleOpen = () => {
+        this.setState(
+            (prevState: KloneClassPanelState) => {
+                return {open: !prevState.open};
+            }
+        );
+    };
+
+    render() {
+        let value = this.props.value;
+
+        let baseKlone = value.kloneClass.find((klone: any) => value.baseSubmissionId === klone.submissionId);
+
+        return <div>
+            <Button block onClick={this.toggleOpen}>
+                <div className="pull-left">
+                    {`(${value.kloneClass.length - 1}) ${formatKloneInfoAsHeader(baseKlone)}`}
+                </div>
+            </Button>
+            <Panel collapsible expanded={this.state.open}>
+                <ListGroup>
+                    {value.kloneClass.map((klone: any) => {
+                        return baseKlone !== klone ? <ListGroupItem>
+                            <KloneView leftKlone={baseKlone}
+                                       rightKlone={klone}/>
+                        </ListGroupItem> : null;
+                    })}
+                </ListGroup>
+            </Panel>
+        </div>;
+    }
+}
 
 
 export interface UnknownFailureInfo {

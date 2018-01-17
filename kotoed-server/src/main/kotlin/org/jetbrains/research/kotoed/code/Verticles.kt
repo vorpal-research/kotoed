@@ -3,11 +3,17 @@ package org.jetbrains.research.kotoed.code
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
+import com.intellij.psi.PsiElement
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.run
+import org.jetbrains.kootstrap.FooBarCompiler
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
+import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.diff.asJsonable
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
 import org.jetbrains.research.kotoed.code.vcs.*
@@ -15,6 +21,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.code.*
 import org.wickedsource.diffparser.api.UnifiedDiffParser
 import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
@@ -304,11 +311,64 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             else root.diffAll(from, to)
         }.result
 
-        return DiffResponse(contents = parseGitDiff(diffRes).map { it.asJsonable() })
+        return DiffResponse(contents = parseGitDiff(diffRes)
+                // FIXME Do smth when diff does not provide these file names
+                .filter { it.fromFileName != null && it.toFileName != null }
+                .map { it.asJsonable() })
     }
 
-    @JsonableEventBusConsumerFor(Address.Code.LocationDiff)
-    suspend fun handleLocation(message: LocationRequest): LocationResponse {
+    fun getCompilerEnv() = FooBarCompiler.setupMyEnv(CompilerConfiguration())
+
+    suspend fun getPsi(compiler: KotlinCoreEnvironment, request: ReadRequest): KtFile {
+        val read = handleRead(request)
+        val psiFactory = KtPsiFactory(compiler.project)
+
+        return psiFactory.createFile(request.path, read.contents)
+    }
+
+    fun findCorrespondingFunction(location: Location, fromFile: KtFile, toFile: KtFile): Pair<KtNamedFunction, KtNamedFunction>? {
+        val function = fromFile
+                .collectDescendantsOfType<KtNamedFunction> { location in it.location.alignToLines() }
+                .firstOrNull()
+                ?: return null
+        val resFunction = toFile.
+                collectDescendantsOfType<KtNamedFunction> {
+                    val lhv = it.fqName?.asString() ?: it.name
+                    val rhv = function.fqName?.asString() ?: function.name
+                    lhv == rhv
+                }.firstOrNull()
+                ?: return null
+        return function to resFunction
+    }
+
+    suspend fun handleLocationKotlin(message: LocationRequest): LocationResponse? {
+        log.trace("Requested location adjustment: $message")
+
+        UUID.fromString(message.uid)
+
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
+
+        val res = FooBarCompiler.useEnv { compiler ->
+            val fromFile =
+                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.fromRevision))
+            val toFile =
+                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.toRevision))
+
+            val (function, resFunction) = findCorrespondingFunction(message.location, fromFile, toFile)
+                    ?: return null
+
+            (resFunction.location.start.thisLine() +
+                    (message.location - function.location.start.thisLine()))
+                    .coerceIn(resFunction.location.alignToLines())
+        }
+
+        return LocationResponse(location = res)
+    }
+
+    //@JsonableEventBusConsumerFor(Address.Code.LocationDiff)
+    suspend fun handleLocationGeneral(message: LocationRequest): LocationResponse {
         log.trace("Requested location adjustment: $message")
 
         UUID.fromString(message.uid)
@@ -320,9 +380,34 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val diffRes = run(ee) {
             val from = message.fromRevision.let { VcsRoot.Revision(it) }
             val to = message.toRevision.let { VcsRoot.Revision(it) }
-            root.diffAll(from, to)
+            root.diff(message.location.filename.path, from, to)
         }.result
 
         return LocationResponse(location = message.location.applyDiffs(parseGitDiff(diffRes)))
     }
+
+    @JsonableEventBusConsumerFor(Address.Code.LocationDiff)
+    suspend fun handleLocation(message: LocationRequest): LocationResponse =
+            // FIXME: this is generally, um, not good
+            when {
+                message.location.filename.path.endsWith("kt") -> handleLocationKotlin(message)
+                        ?: handleLocationGeneral(message)
+                else -> handleLocationGeneral(message)
+            }
+
+    @JsonableEventBusConsumerFor(Address.Code.Date)
+    suspend fun handleBlame(message: BlameRequest): BlameResponse {
+        UUID.fromString(message.uid)
+
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
+
+        val res = run(ee) {
+            root.date(message.path, message.fromLine, message.toLine)
+        }.result
+
+        return BlameResponse(res)
+    }
+
 }

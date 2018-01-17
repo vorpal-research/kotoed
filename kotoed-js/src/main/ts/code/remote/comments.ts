@@ -1,5 +1,5 @@
 import {eventBus} from "../../eventBus";
-import {RequestWithId, SubmissionIdRequest} from "./common";
+import {RequestWithId} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 import {BaseComment, BaseCommentToRead, CommentToRead} from "../../data/comment";
 import {CommentState} from "../state/comments";

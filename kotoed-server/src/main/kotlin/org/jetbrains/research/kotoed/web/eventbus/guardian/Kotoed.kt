@@ -49,7 +49,8 @@ fun SelfOrTeacher(path: String = "id"): BridgeEventFilter =
 
 object ClientPushFilter : ByAddress() {
     suspend override fun isAllowed(principal: JsonObject, address: String): Boolean {
-        return address == Address.Api.Notification.pushRendered("${principal["id"]}")
+        return address == Address.Api.Notification.PushRenderedBroadcast ||
+            address == Address.Api.Notification.pushRendered("${principal["id"]}")
     }
 
     override fun toString() = "ClientPushFilter"

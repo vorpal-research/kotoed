@@ -22,7 +22,7 @@ import VerificationDataAlert from "../views/components/VerificationDataAlert";
 import {pollDespairing} from "../util/poll";
 import {truncateString} from "../util/string";
 import {fetchCourse} from "../courses/remote";
-import {ChoosyByVerDataSearchTable, ChoosySearchTable} from "../views/components/search";
+import {ChoosyByVerDataSearchTable, ChoosySearchTable, SearchCallback} from "../views/components/search";
 import {
     linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
     renderSubmissionIcon, renderSubmissionTags
@@ -30,7 +30,7 @@ import {
 import {Denizen} from "../data/denizen";
 import {makeProfileLink} from "../util/denizen";
 
-type ProjectWithVer = JumboProject & WithVerificationData
+type ProjectWithVer = JumboProject & WithVerificationData & { cb: SearchCallback }
 
 class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     constructor(props: ProjectWithVer) {
@@ -56,6 +56,14 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         })
     }
 
+    handleTagClick = (tag: string) => {
+        const searchState = this.props.cb();
+        // XXX: we can do better
+        if(!searchState.oldKey.endsWith(tag)) {
+            searchState.toggleSearch(searchState.oldKey + " " + tag)
+        }
+    };
+
     private renderOpenSubmissions = (): JSX.Element => {
         if (this.props.openSubmissions.length === 0)
             return <span>&mdash;</span>;
@@ -68,7 +76,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td>{linkToSubmissionResults(sub)}</td>
                         <td>{linkToSubmissionReview(sub)}</td>
                         <td>{renderSubmissionIcon(sub)}</td>
-                        <td>{renderSubmissionTags(sub)}</td>
+                        <td>{renderSubmissionTags(sub, this.handleTagClick)}</td>
                     </tr>)}
                 </tbody>
             </table>
@@ -202,7 +210,7 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
                             }
                         }}
                         wrapResults={this.renderTable}
-                        elementComponent={(key, c: ProjectWithVer) => <ProjectComponent {...c} key={key} />}
+                        elementComponent={(key, c: ProjectWithVer, cb: SearchCallback) => <ProjectComponent {...c} key={key} cb={cb} />}
                         toolbarComponent={this.toolbarComponent}
                     />
                 </Row>

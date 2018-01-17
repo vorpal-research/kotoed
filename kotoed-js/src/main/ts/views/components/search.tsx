@@ -36,6 +36,10 @@ export class SearchBar extends React.Component<SearchBarProps, SearchBarState> {
         this.input.focus();
     }
 
+    componentWillReceiveProps(props: SearchBarProps) {
+        if(props.initialText != this.props.initialText) this.setState({ text: props.initialText })
+    }
+
     private notify = _.debounce(() => this.props.onChange(this.state), 300);
 
     updateText = (newText: string) => {
@@ -101,10 +105,12 @@ interface GroupProps {
     using: (children: Array<JSX.Element>) => JSX.Element
 }
 
+export type SearchCallback = () => { oldKey: String, toggleSearch: (key?: string) => void }
+
 export interface SearchTableProps<DataType, QueryType = {}> {
     searchAddress: string,
     countAddress: string,
-    elementComponent: (key: string, data: DataType, toggleSearch: () => void) => JSX.Element
+    elementComponent: (key: string, data: DataType, searchCallback: SearchCallback) => JSX.Element
     shouldPerformInitialSearch?: ShouldPerformInitialSearch
     makeBaseQuery?: MakeBaseQuery<QueryType>
     forcePagination?: boolean
@@ -121,6 +127,7 @@ export interface SearchTableState<DataType> extends SearchBarState {
     currentResults: Array<DataType>
     touched: boolean
     inProgress: boolean
+    total: number
 }
 
 interface SearchQuery {
@@ -176,7 +183,8 @@ export class SearchTable<DataType, QueryType = {}> extends
             pageCount: 0,
             currentResults: [],
             touched: false,
-            inProgress: this.shouldPerformInitialSearch(text, currentPage)
+            inProgress: this.shouldPerformInitialSearch(text, currentPage),
+            total: 0
         };
     }
 
@@ -205,7 +213,10 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     protected queryCount = async () => {
         let resp = await this.doQueryCount();
-        this.setState({pageCount: Math.ceil(resp.count / PAGESIZE)});
+        this.setState({
+            pageCount: Math.ceil(resp.count / PAGESIZE),
+            total: resp.count
+        });
     };
 
     protected doQueryData = async () => {
@@ -320,7 +331,14 @@ export class SearchTable<DataType, QueryType = {}> extends
             return this.renderEmptyString();
         else {
             let resEls = this.state.currentResults.map((result, index) =>
-                this.props.elementComponent("result"+index, result, this.redoSearch)
+                this.props.elementComponent("result"+index, result,
+                    () => { return {
+                        oldKey: this.state.text,
+                        toggleSearch: (key?: string) => {
+                            this.onSearchStateChanged({ text: key != null? key : this.state.text })
+                        }
+                    }}
+                )
             );
             let toWrap: Array<JSX.Element>;
             if (this.props.group) {
@@ -333,6 +351,20 @@ export class SearchTable<DataType, QueryType = {}> extends
 
     };
 
+    renderTotal() {
+        if (this.state.currentResults.length === 0)
+            return null;
+        let start = this.state.currentPage * this.pageSize + 1;
+        let end = this.state.currentPage * this.pageSize +
+            Math.min(this.pageSize, this.state.total - this.state.currentPage * this.pageSize)
+        ;
+        let {total} = this.state;
+        return <div>
+            <div className="pull-right small grayed-out">{`Showing ${start} `} &mdash; {`${end} of ${total}`}</div>
+            <div className="clearfix"/>
+        </div>
+    }
+
     render() {
         return (
             <div>
@@ -343,6 +375,7 @@ export class SearchTable<DataType, QueryType = {}> extends
                 />}
                 {this.renderPagination()}
                 {this.renderResults()}
+                {this.renderTotal()}
                 {this.renderPagination()}
             </div>
         );

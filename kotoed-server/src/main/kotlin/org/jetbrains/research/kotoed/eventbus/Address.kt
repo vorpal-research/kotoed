@@ -18,6 +18,11 @@ object Address {
             object Verification {
                 const val Data = "kotoed.api.course.verification.data"
             }
+
+            object Code {
+                const val Read = "kotoed.api.course.code.read"
+                const val List = "kotoed.api.course.code.list"
+            }
         }
 
         object Project {
@@ -96,6 +101,7 @@ object Address {
                 const val Download = "kotoed.api.submission.code.download"
                 const val Read = "kotoed.api.submission.code.read"
                 const val List = "kotoed.api.submission.code.list"
+                const val Date = "kotoed.api.submission.code.date"
             }
 
             object Result {
@@ -125,6 +131,8 @@ object Address {
             const val Create = "kotoed.api.notification.create"
 
             fun pushRendered(id: String) = "kotoed.api.notification.push.$id.render"
+
+            const val PushRenderedBroadcast = "kotoed.api.notification.push.broadcast.render"
         }
 
         object OAuthProvider {
@@ -155,6 +163,7 @@ object Address {
         const val Diff = "kotoed.code.diff"
         const val Info = "kotoed.code.info"
         const val LocationDiff = "kotoed.code.diff.location"
+        const val Date = "kotoed.code.date"
         const val PurgeCache = "kotoed.code.purgecache"
 
         const val KloneCheck = "kotoed.code.klonecheck"
