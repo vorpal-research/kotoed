@@ -7,6 +7,7 @@
     "target": "es2017",
     "alwaysStrict": true,
     "strict": true,
+    "strictFunctionTypes": false, // TODO enable
     "skipLibCheck": true
   },
   "include": [

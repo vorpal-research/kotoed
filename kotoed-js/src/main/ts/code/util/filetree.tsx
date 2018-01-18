@@ -1,7 +1,7 @@
 import * as React from "react"
 import {Button, Panel, Label, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {File} from "../remote/code";
-import {IconClasses, Intent, Spinner} from "@blueprintjs/core";
+import {IconClasses, IconName, Intent, Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
 import {FileNode, FileNodeProps, FileTreeProps, LoadingNode} from "../state/filetree";
 import {NodePath} from "../state/blueprintTree";
@@ -33,7 +33,8 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
         label: file.name,
         hasCaret: file.type === "directory",
         className: nodeClass,
-        iconName: iconType + (file.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE),
+        // TODO this is fucked up and this string DOES NOT conform to IconName.
+        iconName: (iconType + (file.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE)) as IconName,
         childNodes: [],
         data: {
             kind: "file",

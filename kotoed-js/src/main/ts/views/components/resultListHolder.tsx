@@ -42,7 +42,7 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
 
         let flatMappedHolderFilters = _.flatMap(
             this.props.resultHolders,
-            rh => _.map(rh.props.filters, f => [`${rh.props.name}.${f.name}`, f.isOnByDefault])
+            rh => _.map(rh.props.filters, f => [`${rh.props.name}.${f.name}`, f.isOnByDefault] as [string, boolean])
         );
 
         this.state = _.extend(
