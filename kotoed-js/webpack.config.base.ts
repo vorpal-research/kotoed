@@ -152,7 +152,7 @@ const config: webpack.Configuration = {
             },
             {
                 test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
-                issuer: /(\.less|\.css)$/,
+                issuer: /(\.less|\.css|\.scss|\.sass)$/,
                 loader: "file-loader",
                 options: {
                     name: "fonts/[name].[ext]",

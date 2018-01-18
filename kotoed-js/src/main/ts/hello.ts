@@ -4,8 +4,8 @@
 
 import * as $ from 'jquery';
 
-import "less/kotoed-bootstrap/bootstrap.less";
-import "bootstrap";
+import "sass/kotoed-bootstrap/bootstrap.sass";
+import "bootstrap-sass";
 
 
 $(function() {

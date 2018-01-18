@@ -1,5 +1,4 @@
 import * as React from "react";
-import "bootstrap"
 import * as ReactMarkdown from "react-markdown";
 import * as moment from "moment";
 import {Button, Panel, Label} from "react-bootstrap";

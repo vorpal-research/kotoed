@@ -5,7 +5,6 @@ import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {fetchPermissions, fetchProject} from "./remote";
 import snafuDialog from "../util/snafuDialog";
-import "less/projects.less"
 import {renderSubmissionTable} from "./table";
 import {SubmissionComponent, SubmissionWithVer} from "./SubmissionComponent";
 import {SubmissionCreate} from "./create";
