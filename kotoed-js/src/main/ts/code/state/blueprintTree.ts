@@ -1,5 +1,5 @@
 import * as _ from "lodash"
-import {ITreeNode} from "@blueprintjs/core";
+import {IconName, ITreeNode} from "@blueprintjs/core";
 
 export class TreeError extends Error {
     constructor(numPath: NodePath) {
@@ -62,7 +62,7 @@ export class NodeImpl<T> implements Node<T>, NodeMethods<T> {
     readonly childNodes?: Array<Node<T>>;
     readonly className?: string;
     readonly hasCaret?: boolean;
-    readonly iconName?: string;
+    readonly iconName?: IconName;
     readonly isExpanded?: boolean;
     readonly isSelected?: boolean;
     readonly secondaryLabel?: string | JSX.Element;
