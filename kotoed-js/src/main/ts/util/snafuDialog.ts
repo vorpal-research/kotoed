@@ -1,5 +1,5 @@
 import * as $ from "jquery"
-import "bootstrap"
+import "bootstrap-sass"
 
 export const DO_NOT_BOTHER_ME_AGAIN = "do-not-bother-me-again";
 

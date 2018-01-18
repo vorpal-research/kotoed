@@ -1,0 +1,224 @@
+@import "./kotoed-bootstrap/variables.sass"
+@import "./comments.sass"
+
+$review-background: white
+$review-border-color:  $brand-primary
+
+.CodeMirror 
+  font-family: Consolas, Menlo, Courier, monospace
+
+
+#editor 
+  height: 800px
+
+
+.line-comments 
+  border: solid 2px $review-border-color
+  background: $review-background
+  font-family: $font-family-base
+  font-size: $font-size-base
+  margin-top: 5px
+  border-radius: 5px
+  padding: 5px
+  width: 100%
+  max-width: 750px
+
+
+.line-comments-arrow 
+  // Kill me pls
+  position: absolute
+  border-bottom: solid 5px $review-border-color
+  border-top: solid 5px transparent
+  border-left: solid 5px transparent
+  border-right: solid 5px transparent
+  top: -5px
+
+
+.review-gutter 
+  background: $gray-lighter
+  min-width: 2em
+
+
+.cm-fake-line-wrap 
+  background: $gray-lighter
+
+
+.cm-fake-line-gutter 
+  background: $gray-lighter
+
+
+.comments-counter-wrapper 
+  width: 100%
+  text-align: center
+
+
+.container 
+  display: flex
+  flex-flow: column
+  height: 100vh
+
+
+#code-review-app 
+  flex: 1 1 auto
+  min-height: 0px
+  overflow: hidden
+  display: flex
+  flex-flow: row
+
+
+.code-review 
+  flex: 1 1 auto
+  min-height: 0px
+  display: flex
+  flex-flow: row
+
+
+#code-review-left 
+  display: flex
+  flex: none
+
+
+#code-review-right 
+  flex: 1 0 auto
+  display: flex
+  flex-flow: column
+//position: relative
+
+
+
+.code-review-tree-container 
+  display: flex
+  flex-flow: column
+  width: 100%
+  flex: none
+
+
+.code-review-tree 
+  flex: 1 1 auto
+  min-height: 0px
+  min-width: 0px
+  overflow-y: auto
+
+
+.codemirror-with-veil 
+  flex: 1 1 auto
+  min-width: 1px
+  min-height: 1px
+  display: flex
+  flex-flow: column
+  //height: 100%
+  //width: 100%
+  position: relative
+
+
+.codemirror-abs 
+  position: absolute
+  height: 100%
+  width: 100%
+
+
+.CodeMirror 
+  min-width: 0px
+  flex: 1 1 auto
+
+
+.lost-found-button-container 
+  flex: 0 1 auto
+
+
+.lost-found-button 
+  width: 100%
+
+
+.comments-pencil-wrapper 
+  &:not(:hover):not(.comment-form-shown) 
+    opacity: 0
+
+  text-align: center
+
+
+.hidden-comments-heading 
+  overflow: hidden
+  text-align: center
+  margin-bottom: $line-height-computed  // Same as BS panel
+  color: $gray-light
+  cursor: pointer
+
+  &:before, &:after 
+    background-color: $gray-lighter 
+    content: ""
+    display: inline-block
+    height: 1px
+    position: relative
+    vertical-align: middle
+    width: 50%
+
+
+  &:before 
+    right: 0.5em
+    margin-left: -50%
+
+
+  &:after 
+    left: 0.5em
+    margin-right: -50%
+
+
+
+.no-file-chosen 
+  flex: 1 1 auto
+  min-height: 0px
+  color: $gray-light
+  font-size: 40px
+  display: flex
+  justify-content: center
+  align-items: center
+
+
+@media (min-width: 1600px)
+  .container
+    width: 1570px
+
+
+
+@media (min-width: 1920px)
+  .container
+    width: 1890px
+
+
+
+.pt-icon-changed 
+  color: green
+
+
+.pt-tree-node-changed > .pt-tree-node-content > .pt-tree-node-label 
+  font-weight: bold
+  color: green
+
+
+.pt-tree-node-changed.pt-tree-node-selected > .pt-tree-node-content > .pt-tree-node-label 
+  font-weight: bold
+  color: white
+
+
+.CodeMirror-linewidget 
+  overflow: visible!important
+
+
+.CodeMirror-overlayscroll-vertical 
+  width: 10px
+
+
+.CodeMirror-overlayscroll-horizontal 
+  height: 10px
+
+
+.CodeMirror-overlayscroll-vertical:not(:hover):not(.scrolling) > div 
+  opacity: 0.5
+  transition: opacity 0.2s ease
+
+
+.CodeMirror-overlayscroll-horizontal:not(:hover):not(.scrolling) > div 
+  opacity: 0.5
+  transition: opacity 0.2s ease
+

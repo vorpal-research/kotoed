@@ -1,0 +1,51 @@
+@import "kotoed-bootstrap/variables.sass"
+
+$spacings: 5, 10, 15, 20, 25, 30, 35, 40, 45, 50
+
+@each $spacing in $spacings
+  .vspace-#{spacing}
+    display: block
+    margin: 0
+    padding: 0
+    height: 0px + $spacing
+
+@each $spacing in $spacings
+  .hspace-#{spacing}
+    display: inline
+    margin: 0
+    padding: 0
+    width: 0px + $spacing
+
+=cover-up
+  position: absolute
+  top: 0
+  left: 0
+  width: 100%
+  height: 100%
+  z-index: 999
+  display: flex
+  justify-content: center
+  align-items: center
+
+.loading-veil
+  +cover-up
+  background-color: rgba(0, 0, 0, 0.3)
+
+.wooden-planks
+  +cover-up()
+  background-image: url("../../resources/planks.png")
+  background-size: 100% 100%
+
+.grayed-out
+  color: $gray-light
+
+.clickable-feedback
+  cursor: pointer
+  pointer-events: initial
+
+.display-inline
+  display: inline
+
+
+
+

@@ -1,9 +1,9 @@
 import * as React from "react"
 import {render} from "react-dom";
 
-import "less/kotoed-bootstrap/bootstrap.less"
-import "less/login.less"
-import "less/util.less"
+import "sass/kotoed-bootstrap/bootstrap.sass";
+import "sass/login.sass"
+import "sass/util.sass"
 
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ChangeEvent, MouseEvent} from "react";

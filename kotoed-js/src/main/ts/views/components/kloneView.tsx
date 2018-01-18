@@ -10,7 +10,7 @@ import {
     requireCmMode
 } from "../../code/util/codemirror";
 
-import "less/kotoed-bootstrap/bootstrap.less";
+import "sass/kotoed-bootstrap/bootstrap.sass";
 
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/merge/merge.css";

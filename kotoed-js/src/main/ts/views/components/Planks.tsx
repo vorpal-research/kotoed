@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import "less/util.less"
+import "sass/util.sass"
 
 export default class Planks extends React.Component {
     render() {

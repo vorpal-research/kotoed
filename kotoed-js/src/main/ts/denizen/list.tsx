@@ -11,7 +11,6 @@ import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../data/veri
 import snafuDialog from "../util/snafuDialog";
 import {JumboProject, SubmissionToRead} from "../data/submission";
 
-import "less/projects.less"
 import {SearchTable} from "../views/components/search";
 import {BloatDenizen, Denizen, Profile} from "../data/denizen";
 

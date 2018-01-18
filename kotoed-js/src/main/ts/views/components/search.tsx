@@ -5,9 +5,9 @@ import {Pagination} from "react-bootstrap";
 import {sendAsync} from "./common";
 import * as QueryString from "query-string";
 
-import "less/kotoed-bootstrap/bootstrap.less";
-import "less/search.less";
-import "less/util.less";
+import "sass/kotoed-bootstrap/bootstrap.sass";
+import "sass/search.sass";
+import "sass/util.sass"
 import {identity} from "../../util/common";
 import {isStatusFinal, WithVerificationData} from "../../data/verification";
 import {pollDespairing} from "../../util/poll";

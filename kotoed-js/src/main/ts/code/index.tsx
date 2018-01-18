@@ -17,10 +17,10 @@ import {
     submissionReducer
 } from "./reducers";
 
-import "less/kotoed-bootstrap/bootstrap.less";
+import "sass/kotoed-bootstrap/bootstrap.sass";
 import '@blueprintjs/core/dist/blueprint.css';
-import "less/unblueprint.less"
-import "less/code.less";
+import "sass/unblueprint.sass"
+import "sass/code.sass";
 import "codemirror/lib/codemirror.css";
 import "codemirror/addon/fold/foldgutter.css";
 
