@@ -3,7 +3,7 @@ import {Component} from "react";
 
 import Griddle, {components, GriddleStyleConfig, plugins} from "griddle-react";
 
-import "less/kotoed-bootstrap/bootstrap.less";
+import "sass/kotoed-bootstrap/bootstrap.sass";
 import {Bootstrap} from "./griddleEx";
 import Pagination = Bootstrap.Pagination;
 import PreviousButton = Bootstrap.PreviousButton;

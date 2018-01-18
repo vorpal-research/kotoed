@@ -13,7 +13,7 @@ import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
 import {JumboProject, SubmissionToRead} from "../data/submission";
 
-import "less/projects.less"
+import "sass/projects.sass"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
 import {eventBus} from "../eventBus";
 import {CourseToRead} from "../data/course";

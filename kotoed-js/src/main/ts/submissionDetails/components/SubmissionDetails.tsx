@@ -8,8 +8,8 @@ import {Kotoed} from "../../util/kotoed-api";
 import {CommentAggregate} from "../../code/remote/comments";
 import moment = require("moment");
 
-import "less/submissionDetails.less"
-import "less/util.less"
+import "sass/submissionDetails.sass"
+import "sass/util.sass"
 
 import {SubmissionCreate} from "../../submissions/create";
 import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../../data/verification";

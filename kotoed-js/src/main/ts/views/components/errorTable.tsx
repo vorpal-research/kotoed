@@ -10,7 +10,7 @@ import Griddle, {
 import {ErrorDesc} from "./common";
 import {JsonColumn} from "./griddleEx";
 
-import "less/kotoed-bootstrap/bootstrap.less";
+import "sass/kotoed-bootstrap/bootstrap.sass";
 
 export interface ErrorTableProps {
     errors: ErrorDesc[]

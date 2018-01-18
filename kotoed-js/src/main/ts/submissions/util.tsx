@@ -5,7 +5,7 @@ import {OverlayTrigger, Glyphicon, Tooltip, Label} from "react-bootstrap"
 import {Submission, SubmissionToRead} from "../data/submission";
 import {SubmissionWithVer} from "./SubmissionComponent";
 
-import "less/util.less"
+import "sass/util.sass"
 import {isStatusFinal} from "../data/verification";
 import {Kotoed} from "../util/kotoed-api";
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";

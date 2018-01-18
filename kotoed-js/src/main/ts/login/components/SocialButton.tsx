@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import "less/bootstrap-social.less"
+import "sass/bootstrap-social.sass"
 
 import "font-awesome/less/font-awesome.less"
 
