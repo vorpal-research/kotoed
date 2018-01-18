@@ -19,7 +19,7 @@ const neverPutInVendorBundle: Array<RegExp> = [
 
 function kotoedEntry(root: string, notifications: boolean = true): string[] {
     function* gen() {
-        yield "./less/global.less";
+        yield "./sass/global.sass";
         yield "babel-polyfill";
         if (notifications) {
             yield "./ts/notifications/notificationMenu.tsx";
@@ -57,14 +57,15 @@ const config: webpack.Configuration = {
         filename: 'js/[name].bundle.js'
     },
     resolve: {
-        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".jsx", ".css", ".less"],
+        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js", ".jsx", ".css", ".less", ".sass", ".scss"],
         alias: {
             css: path.resolve(srcMain, "css"),
             ts: path.resolve(srcMain, "ts"),
             js: path.resolve(srcMain, "js"),
             less: path.resolve(srcMain, "less"),
+            sass: path.resolve(srcMain, "sass"),
+            scss: path.resolve(srcMain, "scss"),
             res: path.resolve(src, "resources")
-
         }
     },
     module: {
@@ -114,15 +115,41 @@ const config: webpack.Configuration = {
                             {
                                 loader: 'css-loader',
                                 options: {
+                                    sourceMap: true
+                                }
+                            },
+                            {
+                                loader: 'less-loader',
+                                options: {
+                                    sourceMap: true
+                                }
+                            },
+                        ]
+                    })
+            },
+            {
+                test: /\.s[ca]ss/,
+                use:
+                    ExtractTextPlugin.extract({
+                        //resolve-url-loader may be chained before sass-loader if necessary
+                        fallback: 'style-loader',
+                        use: [
+                            {
+                                loader: 'css-loader',
+                                options: {
                                     // importLoaders: 2,
                                     sourceMap: true
                                 }
                             },
-                            'less-loader?sourceMap'
+                            {
+                                loader: 'sass-loader',
+                                options: {
+                                    sourceMap: true
+                                }
+                            },
                         ]
                     })
             },
-
             {
                 test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
                 issuer: /(\.less|\.css)$/,
