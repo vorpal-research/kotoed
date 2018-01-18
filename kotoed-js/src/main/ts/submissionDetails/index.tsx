@@ -11,6 +11,8 @@ import snafuDialog from "../util/snafuDialog";
 import SubmissionDetailsContainer from "./containers/SubmissionDetailsContainer";
 import {reducer} from "./reducers";
 
+import "sass/kotoed-bootstrap/bootstrap.sass";
+
 export const store = createStore(
     reducer,
     applyMiddleware(thunk)

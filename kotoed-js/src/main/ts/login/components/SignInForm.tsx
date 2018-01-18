@@ -4,7 +4,7 @@ import {ErrorMessages} from "../util";
 import {ComponentWithLocalErrors} from "../../views/components/ComponentWithLocalErrors";
 import SocialButton from "./SocialButton";
 
-import "less/util.less"
+import "sass/util.sass"
 import {Kotoed} from "../../util/kotoed-api";
 import UrlPattern = Kotoed.UrlPattern;
 import {PasswordErrors, PasswordInput} from "../../views/components/PasswordInput";

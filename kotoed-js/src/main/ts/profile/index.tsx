@@ -1,7 +1,7 @@
 import * as React from "react";
 import {render} from "react-dom";
 
-import "less/kotoed-bootstrap/bootstrap.less"
+import "sass/kotoed-bootstrap/bootstrap.sass";
 import {Denizen, WithDenizen} from "../data/denizen";
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus} from "../eventBus";

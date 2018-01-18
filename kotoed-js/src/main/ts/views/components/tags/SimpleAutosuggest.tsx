@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Autosuggest from "react-autosuggest";
-import "less/autosuggest.less"
+import "sass/autosuggest.sass"
 
 interface SimpleAutoSuggestProps<T> {
     values: Array<T>

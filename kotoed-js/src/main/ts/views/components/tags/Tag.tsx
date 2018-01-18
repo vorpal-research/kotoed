@@ -3,7 +3,7 @@ import * as tinycolor from "tinycolor2"
 import {Tag as TagData} from "../../../data/submission";
 import {Label} from "react-bootstrap";
 
-import "less/tags.less"
+import "sass/tags.sass"
 
 interface TagProps {
     tag: TagData,

@@ -2,8 +2,8 @@ import * as React from "react"
 import {render} from "react-dom";
 import createHistory from 'history/createBrowserHistory'
 
-import "less/kotoed-bootstrap/bootstrap.less"
-import "less/login.less"
+import "sass/kotoed-bootstrap/bootstrap.sass";
+import "sass/login.sass"
 import {reducer} from "./reducers";
 import {applyMiddleware, createStore} from "redux";
 import thunk from "redux-thunk";

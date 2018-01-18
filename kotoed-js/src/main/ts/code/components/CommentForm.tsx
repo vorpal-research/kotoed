@@ -8,7 +8,7 @@ import {FormState} from "../state/forms";
 import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
 import {CommentTemplates} from "../remote/templates";
 import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
-import "less/autosuggest.less"
+import "sass/autosuggest.sass"
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
