@@ -5,7 +5,7 @@
 import * as $ from 'jquery';
 
 import "sass/kotoed-bootstrap/bootstrap.sass";
-import "bootstrap-sass";
+import "bootstrap";
 
 
 $(function() {

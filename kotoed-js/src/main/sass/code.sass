@@ -2,7 +2,7 @@
 @import "./comments.sass"
 
 $review-background: white
-$review-border-color:  $brand-primary
+$review-border-color:  $primary
 
 .CodeMirror 
   font-family: Consolas, Menlo, Courier, monospace
@@ -35,16 +35,16 @@ $review-border-color:  $brand-primary
 
 
 .review-gutter 
-  background: $gray-lighter
+  background: gray("100")
   min-width: 2em
 
 
 .cm-fake-line-wrap 
-  background: $gray-lighter
+  background: gray("100")
 
 
 .cm-fake-line-gutter 
-  background: $gray-lighter
+  background: gray("100")
 
 
 .comments-counter-wrapper 
@@ -140,12 +140,12 @@ $review-border-color:  $brand-primary
 .hidden-comments-heading 
   overflow: hidden
   text-align: center
-  margin-bottom: $line-height-computed  // Same as BS panel
-  color: $gray-light
+  margin-bottom: $line-height-lg  // Same as BS panel // TODO ???
+  color: gray("200")
   cursor: pointer
 
   &:before, &:after 
-    background-color: $gray-lighter 
+    background-color: gray("200")
     content: ""
     display: inline-block
     height: 1px
@@ -167,8 +167,8 @@ $review-border-color:  $brand-primary
 
 .no-file-chosen 
   flex: 1 1 auto
-  min-height: 0px
-  color: $gray-light
+  min-height: 0
+  color: gray("200")
   font-size: 40px
   display: flex
   justify-content: center
