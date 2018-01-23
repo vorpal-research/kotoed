@@ -31,7 +31,9 @@ class RoutingConfig(
 
 
     private val cookieHandler = CookieHandler.create()
-    private val sessionHandler = SessionHandler.create(sessionStore)
+    private val sessionHandler = SessionHandler
+            .create(sessionStore)
+            .setSessionTimeout(30L * 24L * 60L * 60L * 1000L)
     private val userSessionHandler = UserSessionHandler.create(authProvider)
     private val redirectAuthHandler = RedirectAuthHandler.create(authProvider, loginPath)
     private val rejectAuthHandler = RejectAnonymousHandler.create(authProvider)
