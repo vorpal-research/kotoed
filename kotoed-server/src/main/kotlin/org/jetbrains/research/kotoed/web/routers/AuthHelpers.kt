@@ -128,7 +128,8 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
 
     val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
     val isOpen = submission.state == SubmissionState.open
-            && course.state == CourseState.open
+            // && course.state == CourseState.open // otherwise comments do not work
+                                                   // for closed courses
     val isResubmittable = (isOpen || submission.state == SubmissionState.invalid)
             && course.state == CourseState.open
     val isAuthor = author.id == context.user()?.principal()?.getInteger("id")
