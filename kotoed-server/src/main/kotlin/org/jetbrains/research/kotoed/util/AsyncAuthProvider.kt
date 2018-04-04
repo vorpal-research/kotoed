@@ -11,7 +11,7 @@ import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUp
 
-abstract class AsyncAuthProvider(protected val vertx: Vertx) : AuthProvider, Loggable {
+abstract class AsyncAuthProvider(val vertx: Vertx) : AuthProvider, Loggable {
     protected abstract suspend fun doAuthenticateAsync(authInfo: JsonObject): User
 
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
