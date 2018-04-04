@@ -15,6 +15,7 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
 import org.jetbrains.research.kotoed.util.routing.RoutingConfig
 import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
@@ -93,7 +94,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore = LocalSessionStore.create(vertx),
+                sessionStore = AsyncSessionStore(vertx),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()

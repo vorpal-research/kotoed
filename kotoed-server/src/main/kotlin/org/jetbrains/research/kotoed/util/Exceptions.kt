@@ -48,7 +48,7 @@ fun codeFor(ex: Throwable): Int =
             is java.lang.reflect.InvocationTargetException -> ex.cause?.let(::codeFor) ?: StatusCodes.INTERNAL_ERROR
             is ReplyException -> ex.failureCode()
             is KotoedException -> ex.code
-            is IllegalArgumentException, is IllegalStateException ->
+            is IllegalArgumentException, is IllegalStateException, is UnsupportedOperationException ->
                 StatusCodes.BAD_REQUEST
             else ->
                 StatusCodes.INTERNAL_ERROR
