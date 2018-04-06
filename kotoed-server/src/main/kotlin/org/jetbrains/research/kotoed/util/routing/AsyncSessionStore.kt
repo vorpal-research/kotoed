@@ -18,13 +18,13 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jetbrains.research.kotoed.util.requestUUID
 import org.jetbrains.research.kotoed.util.withRequestUUID
 
 private typealias MessageRes = AsyncResult<Message<JsonObject>>
 
 class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     private fun Session.asRecord(): WebSessionRecord {
-        log.trace("Serializing: " + this.rep())
         this as SessionImpl
         val buf = Buffer.buffer()
         writeToBuffer(buf)
@@ -41,7 +41,6 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         val buf = Buffer.buffer(java.util.Base64.getDecoder().decode(data))
         val session = SessionImpl(random)
         session.readFromBuffer(0, buf)
-        log.trace("Deserialized: " + session.rep())
         return session
     }
 
@@ -74,7 +73,8 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     }
 
     override fun put(session: Session, resultHandler: Handler<AsyncResult<Boolean>>) {
-        log.trace("put $session")
+        val deliveryOptions = withRequestUUID()
+        log.info("Assigning ${deliveryOptions.requestUUID()} to put(${session.id()})")
 
         session as SessionImpl
         get(session.id()) { getResult ->
@@ -88,7 +88,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
                     vertx.eventBus().send(
                             Address.DB.create(Tables.WEB_SESSION.name),
                             session.asRecord().toJson(),
-                            withRequestUUID()
+                            deliveryOptions
                     ) { mes: AsyncResult<Message<JsonObject>> ->
                         resultHandler.handle(mes.map(false))
                     }
@@ -100,7 +100,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
                     vertx.eventBus().send(
                             Address.DB.update(Tables.WEB_SESSION.name),
                             session.asRecord().toJson(),
-                            withRequestUUID()
+                            deliveryOptions
                     ) { mes: AsyncResult<Message<JsonObject>> ->
                         resultHandler.handle(mes.map(true))
                     }
@@ -111,24 +111,25 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     }
 
     override fun size(resultHandler: Handler<AsyncResult<Int>>) {
-        log.trace("size")
-
+        val deliveryOptions = withRequestUUID()
+        log.info("Assigning ${deliveryOptions.requestUUID()} to size request")
         vertx.eventBus().send(
                 Address.DB.count(Tables.WEB_SESSION.name),
                 ComplexDatabaseQuery(Tables.WEB_SESSION).toJson(),
-                withRequestUUID()
+                deliveryOptions
         ) { mes: MessageRes ->
             resultHandler.handle(mes.map { it.body().getInteger("count") })
         }
     }
 
     override fun get(id: String, resultHandler: Handler<AsyncResult<Session?>>) {
-        log.trace("get $id")
+        val deliveryOptions = withRequestUUID()
+        log.info("Assigning ${deliveryOptions.requestUUID()} to get($id)")
 
         vertx.eventBus().send(
                 Address.DB.read(Tables.WEB_SESSION.name),
                 WebSessionRecord().apply { this.id = id }.toJson(),
-                withRequestUUID()
+                deliveryOptions
         ) { mes: MessageRes ->
             resultHandler.handle(mes
                     .map { it.body().toRecord<WebSessionRecord>().asSession() }
@@ -140,11 +141,13 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 
 
     override fun delete(id: String, resultHandler: Handler<AsyncResult<Boolean>>) {
-        log.trace("delete $id")
+        val deliveryOptions = withRequestUUID()
+        log.info("Assigning ${deliveryOptions.requestUUID()} to delete($id)")
+
         vertx.eventBus().send(
                 Address.DB.delete(Tables.WEB_SESSION.name),
                 WebSessionRecord().apply { this.id = id }.toJson(),
-                withRequestUUID()
+                deliveryOptions
         ) { mes: MessageRes ->
             resultHandler.handle(mes.map { true }.otherwise(false))
         }
