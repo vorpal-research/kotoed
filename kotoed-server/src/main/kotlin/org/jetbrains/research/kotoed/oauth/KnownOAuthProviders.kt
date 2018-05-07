@@ -8,7 +8,8 @@ val KnownOAuthProviders =
                 Facebook.Name to ::Facebook,
                 GitHub.Name to ::GitHub,
                 Vk.Name to ::Vk,
-                Google.Name to ::Google
+                Google.Name to ::Google,
+                PolyCas.Name to ::PolyCas
         )
 
 fun getOAuthProvider(name: String, vertx: Vertx, callbackBaseUri: String) =
