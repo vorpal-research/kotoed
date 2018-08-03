@@ -61,7 +61,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     }
 
     override fun retryTimeout(): Long {
-        return 500
+        return -1 // do not retry ever
     }
 
     override fun close() {}
