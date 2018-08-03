@@ -1,61 +1,46 @@
 package org.jetbrains.research.kotoed.util
 
+import kotlinx.coroutines.experimental.future.await
+import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
-import kotlin.reflect.KProperty
+import org.zeroturnaround.exec.ProcessExecutor
+import org.zeroturnaround.exec.ProcessResult
+import org.zeroturnaround.exec.StartedProcess
+import org.zeroturnaround.exec.listener.ProcessListener
+import java.io.File
+import java.util.concurrent.*
+import java.util.function.Supplier
+import kotlin.coroutines.experimental.suspendCoroutine
 
-sealed class Symbolic<T>
-data class Var<T>(val name: String): Symbolic<T>()
-data class Const<T>(val value: T): Symbolic<T>()
-data class Add<T>(val lhv: Symbolic<T>, val rhv: Symbolic<T>): Symbolic<T>()
-data class Mult<T>(val lhv: Symbolic<T>, val rhv: Symbolic<T>): Symbolic<T>()
-data class Constraint<T>(val lhv: Symbolic<T>, val rhv: Symbolic<T>)
+class AsyncProcessExecutor(val service: ExecutorService = Executors.newSingleThreadExecutor()) : ProcessExecutor() {
+    override fun <T : Any?> invokeSubmit(executor: ExecutorService?, task: Callable<T>): CompletableFuture<T> =
+            CompletableFuture.supplyAsync(Supplier { task.call() }, service)
 
-object SymbolicDelegate
-
-class SymbolicContext {
-
-    val constraints = mutableListOf<Constraint<*>>()
-
-    operator fun<T> SymbolicDelegate.setValue(self: Any?, property: KProperty<*>, value: Symbolic<T>) {
-        constraints += Constraint(Var(property.name), value)
-    }
-
-    operator fun SymbolicDelegate.getValue(self: Any?, property: KProperty<*>): Symbolic<Int> {
-        return Var(property.name)
-    }
-
-    operator fun<T> Symbolic<T>.plus(that: Symbolic<T>) = Add(this, that)
-    operator fun<T> Symbolic<T>.times(that: Symbolic<T>) = Mult(this, that)
-
-    operator fun Int.invoke(witness: () -> Unit) = Const(this)
-
-    val Int.c get() = Const(this)
-
-    val re = Regex(""".*[a-z]+""")
+    override fun newExecutor(processName: String?): ExecutorService? = null
 }
 
-class PlaygroundTest {
+suspend fun ProcessExecutor.executeAsync(): ProcessResult {
+    val future = start().future
+    if(future !is CompletableFuture)
+        throw IllegalArgumentException("Use BetterProcessExecutor please")
 
+    return future.await()
+}
 
+suspend fun peton() =
+        AsyncProcessExecutor()
+                    .command("python", "-c", "foo(bar)")
+                    .directory(File("/home/belyaev"))
+                    .readOutput(true)
+                    .redirectErrorStream(true)
+                    .executeAsync()
+
+class Playground {
     @Test
     fun whatever() {
-        val sc = SymbolicContext()
-        with(sc) {
-            var x: Symbolic<Int> by SymbolicDelegate
-            var z: Symbolic<Int> by SymbolicDelegate
-            var y: Symbolic<Int> by SymbolicDelegate
-
-            y = 0.c
-            x = x + y + 2.c + 4.c
-            x = y
-            z = x * x
-
-            listOf(1,2,3).max()
-
+        runBlocking {
+            peton().let { it.output.lines.forEach { println(it) } }
+            peton().let { it.output.lines.forEach { println(it) } }
         }
-
-        println(sc.constraints)
-
     }
-
 }

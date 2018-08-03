@@ -155,6 +155,17 @@ object Address {
         }
     }
 
+    object BuildSystem {
+        object Build {
+            object Submission {
+                const val Request = "kotoed.build.submission.request"
+            }
+
+            const val Request = "kotoed.build.request"
+            const val Result = "kotoed.build.result"
+        }
+    }
+
     object Code {
         const val Ping = "kotoed.code.ping"
         const val Download = "kotoed.code.download"
