@@ -25,12 +25,13 @@ data class CommandLine(val args: List<String>) : Loggable {
     }
 
     fun execute(wd: File = File(System.getProperty("user.dir")),
+                env: Map<String, String> = mapOf(),
                 input: Sequence<String> = sequenceOf()): Output {
 
         log.info("Running: " + args.joinToString(" "))
 
         val pb = ProcessBuilder(args).apply {
-            environment().put("GIT_ASKPASS", "echo")
+            environment() += env
         }.directory(wd).start()
 
         val cin = pb.outputStream.writer()

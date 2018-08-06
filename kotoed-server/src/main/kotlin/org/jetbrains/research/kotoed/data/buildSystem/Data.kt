@@ -12,7 +12,9 @@ data class BuildCommand(
 ) : Jsonable
 
 data class BuildRequest(val submissionId: Int,
-                        val buildId: Int, val buildScript: List<BuildCommand>) : Jsonable
+                        val buildId: Int,
+                        val buildScript: List<BuildCommand>,
+                        val env: Map<String, String>?) : Jsonable
 sealed class BuildResponse : JsonableSealed {
     data class BuildSuccess(val submissionId: Int,
                             val buildId: Int,
@@ -21,3 +23,4 @@ sealed class BuildResponse : JsonableSealed {
                            val buildId: Int,
                            val log: String): BuildResponse()
 }
+data class BuildAck(val buildId: Int) : Jsonable

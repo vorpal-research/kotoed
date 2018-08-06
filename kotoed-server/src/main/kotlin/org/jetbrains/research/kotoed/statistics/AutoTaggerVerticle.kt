@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.statistics
 
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.buildSystem.BuildResponse
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
@@ -76,6 +77,44 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             }
 
     private val successTemplate = "results\\.json".toRegex()
+
+    @JsonableEventBusConsumerFor(Address.BuildSystem.Build.Result)
+    suspend fun consumeBuildResult(build: BuildResponse) = when(build) {
+        is BuildResponse.BuildSuccess -> {
+            removeTag(build.submissionId, getStale())
+            removeTag(build.submissionId, getBuildFailed())
+            removeTag(build.submissionId, getTestsFailed())
+            removeTag(build.submissionId, getBuildOk())
+            removeTag(build.submissionId, getEmptySub())
+
+            val content: KotoedRunnerTestRun = build.results.snakeKeys().toJsonable()
+
+            if(content.data.any { it.results.any {
+                        it.status != "SUCCESSFUL" &&
+                                it.failure != null &&
+                                !it.failure.nestedException.startsWith("kotlin.NotImplementedError")
+                    } }) {
+                setTag(build.submissionId, getTestsFailed())
+            } else {
+                if(content.data.all {
+                            it.results.any { it.status != "SUCCESSFUL" } || "Example" in it.tags
+                        }) {
+                    setTag(build.submissionId, getEmptySub())
+                } else {
+                    setTag(build.submissionId, getBuildOk())
+                }
+            }
+        }
+        is BuildResponse.BuildFailed -> {
+            removeTag(build.submissionId, getStale())
+            removeTag(build.submissionId, getBuildFailed())
+            removeTag(build.submissionId, getTestsFailed())
+            removeTag(build.submissionId, getBuildOk())
+            removeTag(build.submissionId, getEmptySub())
+
+            setTag(build.submissionId, getBuildFailed())
+        }
+    }
 
     @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
     suspend fun consumeLogContent(logContent: LogContent) {

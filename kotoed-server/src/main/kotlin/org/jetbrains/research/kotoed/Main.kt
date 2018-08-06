@@ -8,6 +8,7 @@ import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.sstore.LocalSessionStore
+import io.vertx.ext.web.sstore.impl.LocalSessionStoreImpl
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import kotlinx.coroutines.experimental.CoroutineName
@@ -94,7 +95,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore = AsyncSessionStore(vertx),
+                sessionStore = LocalSessionStoreImpl(vertx, "whatever", 10),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()
