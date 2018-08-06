@@ -306,7 +306,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 }
 
 private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
-    if(klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
+    if(klass.isSealed && klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
     val asMap = klass.declaredMemberProperties.map {
         val key = camelToKey(it.name)
         val value = data.getValue(key)

@@ -61,7 +61,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     }
 
     override fun retryTimeout(): Long {
-        return -1 // do not retry ever
+        return 0 // do not retry ever
     }
 
     override fun close() {}
@@ -78,10 +78,14 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 
         session as SessionImpl
         get(session.id()) { getResult ->
-            if(getResult.failed())
+            log.info("Getting: ${getResult.succeeded()}")
+            if(getResult.failed()) {
+                log.error("Getting existing session failed with ${getResult.cause()}")
                 return@get resultHandler.handle(getResult.map(false))
+            }
 
             val oldSession = getResult.result()
+            log.info("Old session: $oldSession")
             when(oldSession) {
                 null -> {
                     session.incrementVersion()
@@ -96,13 +100,15 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
                 is SessionImpl -> {
                     if(session.version() != oldSession.version())
                         resultHandler.handle(Future.failedFuture("Version mismatch"))
-                    session.incrementVersion()
-                    vertx.eventBus().send(
-                            Address.DB.update(Tables.WEB_SESSION.name),
-                            session.asRecord().toJson(),
-                            deliveryOptions
-                    ) { mes: AsyncResult<Message<JsonObject>> ->
-                        resultHandler.handle(mes.map(true))
+                    else {
+                        session.incrementVersion()
+                        vertx.eventBus().send(
+                                Address.DB.update(Tables.WEB_SESSION.name),
+                                session.asRecord().toJson(),
+                                deliveryOptions
+                        ) { mes: AsyncResult<Message<JsonObject>> ->
+                            resultHandler.handle(mes.map(true))
+                        }
                     }
                 }
                 else -> resultHandler.handle(Future.failedFuture(IllegalStateException()))
@@ -149,7 +155,8 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
                 WebSessionRecord().apply { this.id = id }.toJson(),
                 deliveryOptions
         ) { mes: MessageRes ->
-            resultHandler.handle(mes.map { true }.otherwise(false))
+            // supposed to be otherwise(false), but LocalSessionStorage never returns false
+            resultHandler.handle(mes.map { true }.otherwise(true))
         }
     }
 

@@ -36,6 +36,7 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
     }
 
     suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord {
+        log.trace("Create requested in table ${table.name}:\n$message")
         // this is the same as regular create, but without resetting primary keys
         return db {
             sqlStateAware {
