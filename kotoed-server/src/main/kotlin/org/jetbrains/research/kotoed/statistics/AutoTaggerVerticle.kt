@@ -116,46 +116,6 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
         }
     }
 
-    @JsonableEventBusConsumerFor(Address.Buildbot.Build.LogContent)
-    suspend fun consumeLogContent(logContent: LogContent) {
-        val build = dbFindAsync(BuildRecord().setBuildRequestId(logContent.buildRequestId()))
-                .firstOrNull() ?: throw IllegalStateException(
-                "Build request ${logContent.buildRequestId()} not found")
-
-        removeTag(build.submissionId, getStale())
-        removeTag(build.submissionId, getBuildFailed())
-        removeTag(build.submissionId, getTestsFailed())
-        removeTag(build.submissionId, getBuildOk())
-        removeTag(build.submissionId, getEmptySub())
-        //removeTag(build.submissionId, getBadStyle())
-
-        if(0 != logContent.results()) {
-            // build error
-            setTag(build.submissionId, getBuildFailed())
-        }
-
-        if (successTemplate in logContent.logName()) {
-            val content: KotoedRunnerTestRun = JsonObject(logContent.content).snakeKeys().toJsonable()
-
-            if(content.data.any { it.results.any {
-                it.status != "SUCCESSFUL" &&
-                        it.failure != null &&
-                        !it.failure.nestedException.startsWith("kotlin.NotImplementedError")
-            } }) {
-                setTag(build.submissionId, getTestsFailed())
-            } else {
-                if(content.data.all {
-                    it.results.any { it.status != "SUCCESSFUL" } || "Example" in it.tags
-                }) {
-                    setTag(build.submissionId, getEmptySub())
-                } else {
-                    setTag(build.submissionId, getBuildOk())
-                }
-            }
-
-        }
-    }
-
     @JsonableEventBusConsumerFor(Address.Event.Submission.Created)
     suspend fun consumeSubmissionCreated(sub: SubmissionRecord) {
         if (sub.parentSubmissionId == null) {

@@ -1,6 +1,8 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.Future
+import kotlinx.coroutines.experimental.sync.Mutex
+import kotlinx.coroutines.experimental.sync.withMutex
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.WebSession
 import org.jetbrains.research.kotoed.database.tables.records.WebSessionRecord
@@ -35,17 +37,56 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
         }
     }
 
-    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord {
+    // For now, this is the only way to guarantee that read-after-write does not behave
+    // differently from what vert.x-web expects it to do
+    val mutex = Mutex()
+
+    override suspend fun handleRead(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+        super.handleRead(message)
+    }
+
+    override suspend fun handleUpdate(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+        log.trace("Update requested in table ${table.name}:\n$message")
+        handleCreateOrUpdate(message)
+    }
+
+    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
         log.trace("Create requested in table ${table.name}:\n$message")
-        // this is the same as regular create, but without resetting primary keys
+        handleCreateOrUpdate(message)
+    }
+
+    suspend fun handleCreateOrUpdate(message: WebSessionRecord): WebSessionRecord {
+        val table = WebSession.WEB_SESSION
         return db {
             sqlStateAware {
-                insertInto(table)
-                        .set(message)
-                        .returning()
-                        .fetch()
-                        .into(recordClass)
-                        .first()
+                withTransaction {
+                    val prev = selectFrom(table)
+                            .where(table.ID.eq(message.id))
+                            .forUpdate()
+                            .noWait()
+                            .fetch()
+                            .into(recordClass)
+                            .firstOrNull()
+
+                    log.trace("Previous record:\n$prev")
+
+                    require(prev == null || prev.version == message.version) { "Conflict" }
+
+                    ++message.version
+
+                    insertInto(table)
+                            .set(message)
+                            .onConflict(WebSession.WEB_SESSION.ID)
+                            .doUpdate()
+                            .set(message)
+                            .returning()
+                            .fetch()
+                            .into(recordClass)
+                            .first()
+                            .apply { log.trace("Inserted:\n$this") }
+                }
+
+
             }
         }
     }

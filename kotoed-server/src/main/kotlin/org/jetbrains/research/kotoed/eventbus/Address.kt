@@ -140,21 +140,6 @@ object Address {
         }
     }
 
-    object Buildbot {
-        object Project {
-            const val Create = "kotoed.buildbot.project.create"
-        }
-
-        object Build {
-            const val Trigger = "kotoed.buildbot.build.trigger"
-            const val RequestInfo = "kotoed.buildbot.build.requestinfo"
-            const val BuildCrawl = "kotoed.buildbot.build.buildcrawl"
-            const val StepCrawl = "kotoed.buildbot.build.stepcrawl"
-            const val LogCrawl = "kotoed.buildbot.build.logcrawl"
-            const val LogContent = "kotoed.buildbot.build.logcontent"
-        }
-    }
-
     object BuildSystem {
         object Build {
             object Submission {

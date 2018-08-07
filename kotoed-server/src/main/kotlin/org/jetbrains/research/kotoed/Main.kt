@@ -7,7 +7,9 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
+import io.vertx.ext.web.sstore.ClusteredSessionStore
 import io.vertx.ext.web.sstore.LocalSessionStore
+import io.vertx.ext.web.sstore.impl.ClusteredSessionStoreImpl
 import io.vertx.ext.web.sstore.impl.LocalSessionStoreImpl
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
@@ -17,6 +19,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
+import org.jetbrains.research.kotoed.util.routing.EasyAsyncSessionStore
 import org.jetbrains.research.kotoed.util.routing.RoutingConfig
 import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
@@ -95,7 +98,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore = LocalSessionStoreImpl(vertx, "whatever", 10),
+                sessionStore = AsyncSessionStore(vertx),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()
