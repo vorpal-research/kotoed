@@ -28,6 +28,13 @@ fun CourseBreadCrumbElement(active: Boolean, course: CourseRecord): BreadCrumbEl
             href = UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to course.id)))
 }
 
+fun BuildTemplateBreadCrumbElement(active: Boolean, buildTemplate: BuildTemplateRecord): BreadCrumbElement {
+    return BreadCrumbElement(
+            text = "Build template #" + buildTemplate.id,
+            active = active,
+            href = UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to buildTemplate.id)))
+}
+
 fun ProjectBreadCrumbElement(active: Boolean,
                              author: DenizenRecord,
                              authorProfile: ProfileRecord?,
@@ -116,6 +123,9 @@ fun MyProfileBreadCrumbElemement(active: Boolean,
 val RootBreadCrumb = BreadCrumb(RootBreadCrumbElement(true))
 
 fun CourseBreadCrumb(course: CourseRecord) = RootBreadCrumbElement(false) + CourseBreadCrumbElement(true, course)
+
+fun BuildTemplateBreadCrumb(buildTemplate: BuildTemplateRecord) =
+        RootBreadCrumbElement(false) + BuildTemplateBreadCrumbElement(true, buildTemplate)
 
 
 fun ProjectBreadCrumb(course: CourseRecord,

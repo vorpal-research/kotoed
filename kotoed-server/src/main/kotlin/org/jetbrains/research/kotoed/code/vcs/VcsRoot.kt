@@ -41,6 +41,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
 
     abstract fun clone(): VcsResult<Unit>
     abstract fun update(): VcsResult<Unit>
+    abstract fun checkoutTo(revision: Revision, targetDirectory: String): VcsResult<Unit>
     abstract fun cat(path: String, revision: Revision): VcsResult<Sequence<String>>
     abstract fun diff(path: String, from: Revision, to: Revision): VcsResult<Sequence<String>>
     abstract fun diffAll(from: Revision, to: Revision): VcsResult<Sequence<String>>
@@ -76,6 +77,25 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
         }
 
         if (res.rcode.get() != 0) return die(res)
+
+        return VcsResult.Success(Unit)
+    }
+
+    override fun checkoutTo(revision: Revision, targetDirectory: String): VcsResult<Unit> {
+        val target = File(targetDirectory)
+        target.mkdirs()
+        val init = CommandLine(git, "init")
+                .execute(target).complete()
+        if(init.rcode.get() != 0) return VcsResult.Failure(init.cerr)
+
+        val fetch = CommandLine(git, "fetch", local, revision.rep, "--depth", "1")
+                .execute(target).complete()
+        if(fetch.rcode.get() != 0) return VcsResult.Failure(fetch.cerr)
+
+        val reset = CommandLine(git, "reset", "--hard", "FETCH_HEAD")
+                .execute(target).complete()
+
+        if(fetch.rcode.get() != 0) return VcsResult.Failure(reset.cerr)
 
         return VcsResult.Success(Unit)
     }
@@ -184,6 +204,17 @@ class Mercurial(remote: String, local: String) : VcsRoot(remote, local) {
         val res = CommandLine(mercurial, "pull").execute(File(local)).complete()
         if (res.rcode.get() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
+    }
+
+    override fun checkoutTo(revision: Revision, targetDirectory: String): VcsResult<Unit> {
+        val target = File(targetDirectory)
+        target.mkdirs()
+        val res = CommandLine(mercurial, "clone", "-r", revision.rep, local, targetDirectory)
+                .execute(File(targetDirectory)).complete()
+
+        if(res.rcode.get() != 0) return VcsResult.Failure(res.cerr)
+
+        return VcsResult.Success(Unit)
     }
 
     override fun cat(path: String, revision: Revision): VcsResult<Sequence<String>> {

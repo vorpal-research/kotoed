@@ -86,6 +86,22 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             is VcsResult.Failure -> throw VcsException(output.toList())
         }
 
+    @JsonableEventBusConsumerFor(Address.Code.Checkout)
+    suspend fun handleCheckout(message: CheckoutRequest) {
+        log.info("Requested checkout: $message")
+
+        UUID.fromString(message.uid)
+
+        val inf = expectNotNull(info[message.uid], "Repository not found")
+        val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
+
+        val checkoutRes = run(ee) {
+            val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
+            if(rev == VcsRoot.Revision.Trunk) root.update()
+            root.update()
+        }.result
+    }
+
     @JsonableEventBusConsumerFor(Address.Code.Read)
     suspend fun handleRead(message: ReadRequest): ReadResponse {
         log.info("Requested read: $message")
