@@ -55,6 +55,10 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
         handleCreateOrUpdate(message)
     }
 
+    override suspend fun handleDelete(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+        super.handleDelete(message)
+    }
+
     suspend fun handleCreateOrUpdate(message: WebSessionRecord): WebSessionRecord {
         val table = WebSession.WEB_SESSION
         return db {

@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.*
 import kotlin.reflect.KClass
 
-enum class BuildCommandType: Jsonable { SHELL }
+enum class BuildCommandType { SHELL }
 
 data class BuildCommand(
         val type: BuildCommandType = BuildCommandType.SHELL,

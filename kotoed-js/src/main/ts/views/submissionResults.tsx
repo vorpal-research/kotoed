@@ -84,6 +84,7 @@ namespace KFirst {
         name: "Hide TODOs",
         predicate: (row: any): boolean => {
             return _.every(row.results, (td: TestData) =>
+                td.status == "NOT_IMPLEMENTED" ||
                 isUnknownFailureInfo(td.failure)
                 && td.failure.nestedException.match(/kotlin\.NotImplementedError/)
             );

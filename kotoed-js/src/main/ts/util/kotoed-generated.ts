@@ -11,6 +11,11 @@ export namespace Generated {
                 return `kotoed.api.${entity}.read`;
             },
             Report: "kotoed.api.report",
+            BuildTemplate: {
+                Create: "kotoed.api.buildTemplate.create",
+                Read: "kotoed.api.buildTemplate.read",
+                Update: "kotoed.api.buildTemplate.update",
+            },
             CommentTemplate: {
                 Create: "kotoed.api.comment_template.create",
                 Delete: "kotoed.api.comment_template.delete",
@@ -26,6 +31,10 @@ export namespace Generated {
                 Search: "kotoed.api.course.search",
                 SearchCount: "kotoed.api.course.search.count",
                 Update: "kotoed.api.course.update",
+                Code: {
+                    List: "kotoed.api.course.code.list",
+                    Read: "kotoed.api.course.code.read",
+                },
                 Verification: {
                     Data: "kotoed.api.course.verification.data",
                 },
@@ -83,6 +92,7 @@ export namespace Generated {
                 Read: "kotoed.api.submission.read",
                 Update: "kotoed.api.submission.update",
                 Code: {
+                    Date: "kotoed.api.submission.code.date",
                     Download: "kotoed.api.submission.code.download",
                     List: "kotoed.api.submission.code.list",
                     Read: "kotoed.api.submission.code.read",
@@ -144,6 +154,9 @@ export namespace Generated {
             SubmissionPerms: "/auth/perms/submission/:id",
             WhoAmI: "/auth/whoAmI",
         },
+        BuildTemplate: {
+            Edit: "/buildTemplate/edit/:id",
+        },
         CodeReview: {
             Index: "/submission/:id/review/*",
         },
@@ -155,6 +168,7 @@ export namespace Generated {
             Show: "/commentTemplates",
         },
         Course: {
+            Edit: "/course/edit/:id",
             Index: "/course/:id",
         },
         Denizen: {

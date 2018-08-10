@@ -25,6 +25,12 @@ object Address {
             }
         }
 
+        object BuildTemplate {
+            const val Read = "kotoed.api.buildTemplate.read"
+            const val Update = "kotoed.api.buildTemplate.update"
+            const val Create = "kotoed.api.buildTemplate.create"
+        }
+
         object Project {
             const val Create = "kotoed.api.project.create"
             const val Read = "kotoed.api.project.read"
@@ -155,6 +161,7 @@ object Address {
         const val Ping = "kotoed.code.ping"
         const val Download = "kotoed.code.download"
         const val Read = "kotoed.code.read"
+        const val Checkout = "kotoed.code.checkout"
         const val List = "kotoed.code.list"
         const val Diff = "kotoed.code.diff"
         const val Info = "kotoed.code.info"
