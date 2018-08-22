@@ -6,12 +6,15 @@ import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
-import org.jetbrains.research.kotoed.util.JsonObject
-import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
-import org.jetbrains.research.kotoed.util.tryToJson
 import org.jooq.Record
 import java.util.*
+
+import org.jetbrains.research.kotoed.data.buildSystem.BuildCommand
+import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
+import org.jetbrains.research.kotoed.util.*
+import ru.spbstu.ktuples.Tuple
+import ru.spbstu.ktuples.Tuple2
 
 enum class VerificationStatus {
     Unknown,
@@ -228,3 +231,35 @@ data class SubmissionCodeAnnotation(
 data class SubmissionCodeAnnotationResponse(
         val map: Map<String, Set<SubmissionCodeAnnotation>>
 ) : Jsonable
+
+data class EnVar(val name: String, val value: String): Jsonable
+
+data class BuildTemplate(
+        val id: Int,
+        val commandLine: List<BuildCommand>,
+        val environment: List<EnVar>
+) : Jsonable {
+    fun toRecord(): BuildTemplateRecord = BuildTemplateRecord().also {
+        it.id = this.id
+        it.commandLine = JsonArray(this.commandLine.map { it.toJson() })
+        it.environment = JsonObject().also {
+            environment.forEach { (k, v) ->
+                it.put(k, v) // not set or [] because it converts keys
+            }
+        }
+    }
+
+    companion object {
+        fun ofRecord(record: BuildTemplateRecord) =
+                BuildTemplate(
+                        id = record.id,
+                        commandLine =
+                            (record.commandLine as JsonArray)
+                                    .filterIsInstance<JsonObject>()
+                                    .map { fromJson<BuildCommand>(it)},
+                        environment =
+                            (record.environment as JsonObject)
+                                .map { (k, v) -> EnVar(k, "$v") }
+                )
+    }
+}

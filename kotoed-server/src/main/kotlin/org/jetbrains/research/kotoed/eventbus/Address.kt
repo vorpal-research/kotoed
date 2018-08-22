@@ -25,6 +25,12 @@ object Address {
             }
         }
 
+        object BuildTemplate {
+            const val Read = "kotoed.api.buildTemplate.read"
+            const val Update = "kotoed.api.buildTemplate.update"
+            const val Create = "kotoed.api.buildTemplate.create"
+        }
+
         object Project {
             const val Create = "kotoed.api.project.create"
             const val Read = "kotoed.api.project.read"
@@ -140,18 +146,14 @@ object Address {
         }
     }
 
-    object Buildbot {
-        object Project {
-            const val Create = "kotoed.buildbot.project.create"
-        }
-
+    object BuildSystem {
         object Build {
-            const val Trigger = "kotoed.buildbot.build.trigger"
-            const val RequestInfo = "kotoed.buildbot.build.requestinfo"
-            const val BuildCrawl = "kotoed.buildbot.build.buildcrawl"
-            const val StepCrawl = "kotoed.buildbot.build.stepcrawl"
-            const val LogCrawl = "kotoed.buildbot.build.logcrawl"
-            const val LogContent = "kotoed.buildbot.build.logcontent"
+            object Submission {
+                const val Request = "kotoed.build.submission.request"
+            }
+
+            const val Request = "kotoed.build.request"
+            const val Result = "kotoed.build.result"
         }
     }
 
@@ -159,6 +161,7 @@ object Address {
         const val Ping = "kotoed.code.ping"
         const val Download = "kotoed.code.download"
         const val Read = "kotoed.code.read"
+        const val Checkout = "kotoed.code.checkout"
         const val List = "kotoed.code.list"
         const val Diff = "kotoed.code.diff"
         const val Info = "kotoed.code.info"

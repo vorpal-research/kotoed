@@ -1,13 +1,11 @@
 package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.buildbot.util.Kotoed2Buildbot
-import org.jetbrains.research.kotoed.buildbot.verticles.BuildRequestPollerVerticle
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
-import org.jetbrains.research.kotoed.data.buildbot.build.TriggerBuild
+import org.jetbrains.research.kotoed.data.buildSystem.BuildAck
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.*
@@ -185,37 +183,21 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
             when (buildInfos.size) {
                 0 -> {
-                    val btr: BuildTriggerResult = sendJsonableAsync(
-                            Address.Buildbot.Build.Trigger,
-                            TriggerBuild(
-                                    Kotoed2Buildbot.projectName2schedulerName(
-                                            Kotoed2Buildbot.asBuildbotProjectName(
-                                                    owner.denizenId, project.name)),
-                                    sub.revision
-                            )
+                    val ack: BuildAck = sendJsonableAsync(
+                            Address.BuildSystem.Build.Submission.Request,
+                            SubmissionRecord().apply { id = sub.id }
                     )
 
                     dbCreateAsync(
                             BuildRecord().apply {
                                 submissionId = sub.id
-                                buildRequestId = btr.buildRequestId
+                                buildRequestId = ack.buildId
                             }
                     )
 
                     VerificationData.Processed
                 }
                 1 -> {
-                    val buildInfo = buildInfos[0]
-
-                    val buildResults = dbFindAsync(
-                            SubmissionResultRecord().apply { submissionId = sub.id })
-
-                    if (buildResults.isEmpty()) {
-                        log.info("Retrying polling for build request id: $buildInfo.buildRequestId")
-                        vertx.deployVerticle(
-                                BuildRequestPollerVerticle(buildInfo.buildRequestId))
-                    }
-
                     VerificationData.Processed
                 }
                 else -> {

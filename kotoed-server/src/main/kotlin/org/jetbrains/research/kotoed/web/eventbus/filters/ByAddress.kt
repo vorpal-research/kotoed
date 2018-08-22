@@ -10,7 +10,8 @@ abstract class ByAddress: BridgeEventFilter {
     suspend override fun isAllowed(be: BridgeEvent): Boolean {
         val address = be.rawMessage?.get("address") as? String
         address ?: return false
-        return isAllowed(be.socket().webUser().principal(), address).also { logResult(be, it) }
+        val principal = be.socket().webUser()?.principal() ?: return false
+        return isAllowed(principal, address).also { logResult(be, it) }
     }
 
 }

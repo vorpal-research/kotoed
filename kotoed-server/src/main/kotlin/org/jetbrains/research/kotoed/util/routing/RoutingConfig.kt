@@ -31,7 +31,7 @@ class RoutingConfig(
 
 
     private val cookieHandler = CookieHandler.create()
-    private val sessionHandler = SessionHandler
+    private val sessionHandler = SessionHandlerImpl
             .create(sessionStore)
             .setSessionTimeout(30L * 24L * 60L * 60L * 1000L)
     private val userSessionHandler = UserSessionHandler.create(authProvider)

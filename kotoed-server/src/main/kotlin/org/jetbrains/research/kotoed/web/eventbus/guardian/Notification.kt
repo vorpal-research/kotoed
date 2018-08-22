@@ -11,7 +11,7 @@ import org.jetbrains.research.kotoed.web.eventbus.patchers.BridgeEventPatcher
 
 object DenizenDatabaseIdPatcher : BridgeEventPatcher {
     suspend override fun patch(be: BridgeEvent) {
-        val principalId = be.socket().webUser().principal()["id"]
+        val principalId = be.socket().webUser()?.principal()?.get("id") ?: return
         val rawMessage = be.rawMessage ?: return
 
         rawMessage["body", "denizen_id"] = principalId

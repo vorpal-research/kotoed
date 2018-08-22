@@ -51,6 +51,12 @@ class GlobalConfig : Configuration() {
 
     val VCS by VCSConfig()
 
+    class BuildSystemConfig : Configuration() {
+        val StoragePath: String by "builds"
+        val PoolSize: Int by { Runtime.getRuntime().availableProcessors() }
+    }
+    val BuildSystem by BuildSystemConfig()
+
     class MailConfig : Configuration() {
         val KotoedAddress: String by "kotoed@jetbrains.com"
         val KotoedSignature: String by "Kotoed, the one and only"
