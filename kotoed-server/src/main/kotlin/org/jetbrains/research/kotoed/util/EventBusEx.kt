@@ -43,6 +43,8 @@ fun <T> Message<T>.requestUUID() = headers()[KOTOED_REQUEST_UUID] ?: "UNKNOWN"
 fun withRequestUUID(uuid: String = newRequestUUID()): DeliveryOptions =
         DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, uuid)
 
+fun DeliveryOptions.requestUUID() = headers[KOTOED_REQUEST_UUID] ?: "UNKNOWN"
+
 /******************************************************************************/
 
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any, deliveryOptions: DeliveryOptions = DeliveryOptions()): Message<ReturnType> {

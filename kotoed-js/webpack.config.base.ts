@@ -46,6 +46,8 @@ const config: webpack.Configuration = {
         submissionDetails: kotoedEntry("./ts/submissionDetails/index.tsx"),
         commentSearch: kotoedEntry("./ts/views/commentSearch.tsx"),
         commentTemplateSearch: kotoedEntry("./ts/views/commentTemplateSearch.tsx"),
+        buildTemplateEdit: kotoedEntry("./ts/buildTemplates/edit.tsx"),
+        courseEdit: kotoedEntry("./ts/courses/edit.tsx"),
         denizenSearch: kotoedEntry("./ts/denizen/list.tsx"),
         courseList: kotoedEntry("./ts/courses/list.tsx"),
         projectList: kotoedEntry("./ts/projects/list.tsx"),

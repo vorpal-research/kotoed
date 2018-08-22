@@ -128,6 +128,12 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                         Passed
                     </li>
                 }
+                case "NOT_IMPLEMENTED": {
+                    return <li key={`${value.hashCode()}-${idx}`}
+                               className="list-group-item list-group-item-secondary">
+                        Not done
+                    </li>
+                }
                 case "ABORTED":
                 case "FAILED": {
                     let failure = td.failure;

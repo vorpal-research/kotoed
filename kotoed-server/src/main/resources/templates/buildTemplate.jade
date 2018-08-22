@@ -1,0 +1,8 @@
+extends ./baseWithNav
+
+append content
+    div(id="build-template-app" data-id=context.get("id"))
+
+block title
+    // TODO Username here?
+    +kotoedTitle("Edit build template")

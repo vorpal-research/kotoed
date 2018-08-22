@@ -91,6 +91,21 @@ suspend fun EventBus.courseByIdOrNull(id: Int): CourseRecord? {
     return course
 }
 
+
+suspend fun EventBus.buildTemplateByIdOrNull(id: Int): BuildTemplateRecord? {
+    val bt: BuildTemplateRecord
+    try {
+        bt = this.sendJsonableAsync(
+                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.BUILD_TEMPLATE.name),
+                org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord().apply { this.id = id })
+    } catch (ex: ReplyException) {
+        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
+            return null
+        else throw ex
+    }
+    return bt
+}
+
 suspend fun EventBus.notificationByIdOrNull(id: Int): NotificationRecord? {
     val notification: NotificationRecord
     try {

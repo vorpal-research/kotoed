@@ -306,6 +306,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 }
 
 private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
+    if(klass.isSealed && klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
     val asMap = klass.declaredMemberProperties.map {
         val key = camelToKey(it.name)
         val value = data.getValue(key)
@@ -321,6 +322,27 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
     }
+}
+
+const val classField = "#class"
+
+interface JsonableSealed : Jsonable {
+    override fun toJson(): JsonObject =
+            super.toJson().apply { set(classField, this@JsonableSealed::class.simpleName) }
+}
+
+private fun <T : Any> sealedFromJson(data: JsonObject, klass: KClass<T>): T {
+    require(klass.isSealed)
+    val descendants = klass.nestedClasses.filter {
+        it.isSubclassOf(klass)
+    }.map { it.simpleName!! to it.uncheckedCast<KClass<out T>>() }.toMap()
+
+    val discriminator = data.getString(classField, null)
+            ?: throw IllegalArgumentException("No discriminator field while trying to parse $klass")
+    val childClass = descendants[discriminator]
+            ?: throw IllegalArgumentException("Unknown child class: $discriminator")
+
+    return objectFromJson(data, childClass)
 }
 
 /******************************************************************************/
