@@ -65,7 +65,7 @@ function fromRemote(bt: any): BuildTemplate {
 function qSplit(s: string): string[] {
     let ss = s.trim().split(' ');
     let res = [];
-    for(let i = 0; i < res.length; ++i) {
+    for(let i = 0; i < ss.length; ++i) {
         let cur = ss[i];
         if(cur.startsWith("\"")) {
             cur = "";

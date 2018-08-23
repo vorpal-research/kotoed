@@ -1,23 +1,41 @@
 package org.jetbrains.research.kotoed.util
 
-import kotlinx.coroutines.experimental.future.await
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
-import org.zeroturnaround.exec.ProcessExecutor
-import org.zeroturnaround.exec.ProcessResult
-import org.zeroturnaround.exec.StartedProcess
-import org.zeroturnaround.exec.listener.ProcessListener
-import java.io.File
-import java.util.concurrent.*
-import java.util.function.Supplier
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.reflect.jvm.reflect
 
-data class Moo(var v: Int)
+interface SuperHyperSet<in T> {
+    operator fun contains(value: T): Boolean
+}
+
+fun <T> SuperHyperSet(func: (T) -> Boolean) = object: SuperHyperSet<T> {
+    override operator fun contains(value: T) = func(value)
+}
+
+object Universe : SuperHyperSet<Any?> {
+    override fun contains(value: Any?): Boolean = true
+}
+
+open class A
+interface B
+
+fun <T> typeOf(body: () -> T) = body.reflect()!!.returnType
 
 class Playground {
     @Test
     fun whatever() {
-        val moo = Moo(2)
-        ++moo.v
+
+        val a = SuperHyperSet<A> { it.hashCode() == 1 }
+        val b = SuperHyperSet<B> { it.hashCode() == 2 }
+
+        val c = if(true) b else if(false) a else b
+        var d = if(false) a else b
+
+        println(typeOf { a })
+        println(typeOf { b })
+        println(typeOf { c })
+        println(typeOf { d })
+
+        //println(c.contains(CC))
+
     }
 }
