@@ -160,56 +160,32 @@ namespace Statistics {
     }
 
     function getLessonPoints(packageData: Map<string, { solved: number, total: number }>): number {
-        let res = 0;
-
-        let tags = _.concat(
-            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => "Impossible"),
-            _.times((packageData.get("Hard") || {solved: 0}).solved, () => "Hard"),
-            _.times((packageData.get("Normal") || {solved: 0}).solved, () => "Normal"),
-            _.times((packageData.get("Easy") || {solved: 0}).solved, () => "Easy"),
-            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => "Trivial"),
+        let scores = _.concat(
+            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => 10),
+            _.times((packageData.get("Hard") || {solved: 0}).solved, () => 7),
+            _.times((packageData.get("Normal") || {solved: 0}).solved, () => 4),
+            _.times((packageData.get("Easy") || {solved: 0}).solved, () => 1),
+            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => 0),
         );
 
-        let [first, second, third] = tags;
+        let lessonScore;
 
-        switch (first) {
-            case "Impossible":
-                res += 8;
+        switch (scores.length) {
+            case 0:
+                lessonScore = 0.0;
                 break;
-            case "Hard":
-                res += 5;
+            case 1:
+                lessonScore = scores[0];
                 break;
-            case "Normal":
-                res += 2;
+            default: {
+                let [first, second] = scores;
+                if (first == second) lessonScore = first + 1;
+                else lessonScore = first;
                 break;
-            case "Easy":
-            case "Trivial":
-                res += 1;
-                break;
+            }
         }
 
-        switch (second) {
-            case "Impossible":
-                res += 3;
-                break;
-            case "Hard":
-                res += 2;
-                break;
-            case "Normal":
-            case "Easy":
-                res += 1;
-                break;
-        }
-
-        switch (third) {
-            case "Impossible":
-            case "Hard":
-            case "Normal":
-                res += 1;
-                break;
-        }
-
-        return res;
+        return lessonScore;
     }
 
     export function transformer(result: any): any[] {
