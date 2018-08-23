@@ -26,7 +26,7 @@ type CommandType = 'SHELL'
 
 interface CommandTemplate {
     type: CommandType
-    commandLine: Immutable.List<string>
+    commandLine: string
     uniqueKey?: number
 }
 type EnVar = {
@@ -46,7 +46,9 @@ function toRemote(bt: BuildTemplate): object {
         environment : bt.environment.toArray(),
         commandLine : bt.commandLine.map( command => ({
                 type: command!.type,
-                commandLine: command!.commandLine.toArray()
+                commandLine: qSplit(command!.commandLine)
+                    .map(it => it.trim())
+                    .filter(it => it !== "")
         })).toArray()
     }
 }
@@ -57,7 +59,7 @@ function fromRemote(bt: any): BuildTemplate {
         environment : Immutable.List(bt.environment as EnVar[]),
         commandLine : bt.commandLine.map( (command: any) => ({
             type: command.type,
-            commandLine: Immutable.List(command.commandLine as string[])
+            commandLine: (command.commandLine as string[]).join(" ")
         }))
     }
 }
@@ -69,7 +71,7 @@ function qSplit(s: string): string[] {
         let cur = ss[i];
         if(cur.startsWith("\"")) {
             cur = "";
-            do { cur = cur + ss[i]; ++i } while(i < res.length && !ss[i].endsWith("\""))
+            do { cur = cur + ss[i]; ++i } while(i < ss.length && !ss[i].endsWith("\""))
         }
         res.push(cur)
     }
@@ -203,16 +205,16 @@ class CommandLineMultiEdit extends React.Component<
         const newState = this.state.unwrapped.set(ix,
             {
                 type: "SHELL",
-                commandLine: Immutable.List<string>(qSplit(value)),
+                commandLine: value,
                 uniqueKey: oldState.unwrapped.get(ix).uniqueKey
             });
-        this.setState(wrap(newState), () => this.props.onEdit(oldState, this.state))
+        this.setState(wrap(newState), () => this.props.onEdit(this.state, oldState))
     };
 
     onElementRemove = (ix: number) => {
         const oldState = this.state;
         const newState = this.state.unwrapped.remove(ix);
-        this.setState(wrap(newState), () => this.props.onEdit(oldState, this.state))
+        this.setState(wrap(newState), () => this.props.onEdit(this.state, oldState))
     };
 
     doRender = () =>
@@ -222,7 +224,7 @@ class CommandLineMultiEdit extends React.Component<
                     <div className="col-sm-11">
                         <input
                             className="form-control"
-                            value={kv!.commandLine.join(" ")}
+                            value={kv!.commandLine}
                             onChange={ e => this.onElementEdit(ix!, e.target.value) }
                         />
                     </div>
@@ -240,7 +242,7 @@ class CommandLineMultiEdit extends React.Component<
                         const oldState = this.state;
                         const newState = this.state.unwrapped.push({
                             type: "SHELL",
-                            commandLine: Immutable.List.of("echo", "Hello"),
+                            commandLine: "echo Hello",
                             uniqueKey: nextUniqueId()
                         });
                         this.setState(wrap(newState), () => this.props.onEdit(this.state, oldState))
