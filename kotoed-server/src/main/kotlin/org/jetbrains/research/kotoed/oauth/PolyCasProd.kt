@@ -13,8 +13,8 @@ import org.jetbrains.research.kotoed.util.sendAsync
  *
  * We can probably use it later if PolyCAS will be a thing.
  */
-class PolyCas(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
-    override val providerBaseUri: String = "https://localhost:1488/oauth2.0"  // TODO definitely not localhost
+class PolyCasProd(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
+    override val providerBaseUri: String = "https://cas.icc.spbstu.ru/oauth2.0"  // TODO definitely not localhost
     override val accessTokenPath: String = "/token"
 
     suspend override fun doGetUserId(): String {
@@ -31,6 +31,6 @@ class PolyCas(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Nam
 
 
     companion object {
-        val Name = "PolyCas"
+        val Name = "PolyCasProd"
     }
 }
