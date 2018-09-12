@@ -125,9 +125,9 @@ class BuildVerticle : AbstractKotoedVerticle() {
                                 }
 
                         if (result.rcode.get() != 0) {
-                            log.error(result.cout.joinToString("\n"))
-                            log.error(result.cerr.joinToString("\n"))
-                            log.info("Build failed, exit code is ${result.rcode.get()}")
+                            log.error("[$randomName]" + result.cout.joinToString("\n"))
+                            log.error("[$randomName]" + result.cerr.joinToString("\n"))
+                            log.info("[$randomName]" + "Build failed, exit code is ${result.rcode.get()}")
 
                             return BuildResponse.BuildFailed(
                                     request.submissionId,
@@ -149,6 +149,9 @@ class BuildVerticle : AbstractKotoedVerticle() {
                     request.buildId,
                     res
             )
+        } catch (ex: Exception) {
+            log.info("Build request failed in directory $randomName: $ex")
+            throw ex
         } finally {
             fs.deleteRecursiveAsync(randomName.absolutePath)
         }
