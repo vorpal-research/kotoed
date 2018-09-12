@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.api
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
@@ -21,6 +22,8 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.web.UrlPattern
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.plus
+import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 private typealias CommentsResponse = SubmissionComments.CommentsResponse
@@ -413,6 +416,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Annotations)
     suspend fun handleAnnotations(request: SubmissionRecord): SubmissionCodeAnnotationResponse {
+        val buildBaseDir = File(System.getProperty("user.dir"), Config.BuildSystem.StoragePath).absolutePath
 
         val errorMessageRe = """(([\\/][^\\/:]+)+):\s*[(\[]([0-9]+),\s*([0-9]+)[)\]]\s*(.*)$""".toRegex()
 
@@ -429,7 +433,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .map {
                     val (_, fileG, _, lineG, colG, messageG) =
                             errorMessageRe.find(it)?.groupValues ?: return@map null
-                    val file = fileG.replaceBefore("/build/", "").removePrefix("/build/")
+
+                    val file = fileG // /home/path/to/kotoed/$uid/path/to/code
+                            .removePrefix(buildBaseDir) // /$uid/path/to/code
+                            .removePrefix("/") // $uid/path/to/code
+                            .replaceBefore("/", "") // /path/to/code
+                            .removePrefix("/") // path/to/code
+                    // XXX: rewrite this using Path api?
+                    // XXX: put build id inside the build result object?
                     val line = lineG.toIntOrNull() ?: return@map null
                     val col = colG.toIntOrNull() ?: return@map null
                     val message = messageG.trim()
