@@ -29,7 +29,7 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
     };
 
     renderPlanks = () => {
-        if (this.props.verificationData.status === "Invalid")
+        if (this.props.verificationData.status === "Invalid" || this.props.state === "closed")
             return <Planks/>;
         else
             return null;
