@@ -2,7 +2,7 @@ import * as React from "react";
 import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal, Label} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
-import {imagePath} from "../images";
+import {embeddedImage, imagePath} from "../images";
 import {ChoosyByVerDataSearchTable, SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
@@ -39,11 +39,12 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
         let href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Course.Index, {
             id: this.props.id
         });
+        let icon = embeddedImage(this.props.icon) || imagePath("kotoed3.png");
         return (
             <div>
                 {this.renderSpinner()}
                 {this.renderPlanks()}
-                <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
+                <Thumbnail src={icon} alt="242x200">
                     <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
                     <p>
                         <Button
