@@ -29,8 +29,20 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
     bindInput = <K extends keyof CourseToRead>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
         this.setState({ [key]: e.target.value } as Pick<CourseToRead, K>)
     };
+    bindFileInput = <K extends keyof CourseToRead>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            this.setState({ [key]: window.btoa(reader.result) } as Pick<CourseToRead, K>)
+        }, false);
+        if(!e.target.files) {
+            this.setState({ [key]: undefined } as Pick<CourseToRead, K>);
+            return
+        }
+        reader.readAsBinaryString(e.target.files[0])
+    };
 
-    mkInputFor = (label: string, field: keyof CourseToRead, type = "input", onChange = this.bindInput(field)) =>
+    mkInputFor = (label: string, field: keyof CourseToRead, type = "input",
+                  accept: string | undefined = undefined, onChange = this.bindInput(field)) =>
         <div className="form-group">
             <label className="control-label col-sm-2"
                    htmlFor={`input-${field}`}>{label}</label>
@@ -42,6 +54,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
                     value={this.state[field] || ""}
                     placeholder="not specified"
                     onChange={onChange}
+                    accept={accept}
                 />
             </div>
         </div>;
@@ -76,6 +89,8 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
                         {this.mkInputFor("Base repo URL", "baseRepoUrl")}
                         {this.mkInputFor("Base revision", "baseRevision")}
                         {this.mkInputFor("Build template ID", "buildTemplateId", "number")}
+                        {this.mkInputFor("Icon file (*.png)", "icon", "file",
+                        "image/png", this.bindFileInput("icon"))}
                         <div className="form-group">
                             <div className="col-sm-offset-2 col-sm-1">
                                 <a className="btn btn-primary btn-block" onClick={this.onSave}>Save</a>
