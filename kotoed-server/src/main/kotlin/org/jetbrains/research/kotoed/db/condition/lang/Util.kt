@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.intellij.lang.annotations.Language
 
 fun String.escape(): String = StringEscapeUtils.escapeJava(this)
 

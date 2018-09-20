@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.utils.join
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.DatabaseJoin
+import org.jetbrains.research.kotoed.data.db.query
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.COURSE
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN
