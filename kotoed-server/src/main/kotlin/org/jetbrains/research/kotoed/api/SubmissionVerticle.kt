@@ -319,25 +319,25 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
     suspend fun handleList(query: SearchQueryWithTags): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
-
         val currentPage = query.currentPage ?: 0
-        val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
-                .find(SubmissionRecord().apply {
-                    projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
-                })
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
 
-        val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
+        val resp = dbQueryAsync(SUBMISSION) {
+            find {
+                projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
+            }
+            limit(pageSize)
+            offset(currentPage * pageSize)
 
-        val qFiltered = stateIn?.let { q.filter("state in %s".formatToQuery(it)) } ?: q
+            val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
 
-        val qTags =
-                if (query.withTags ?: false)
-                    qFiltered.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
-                else qFiltered
+            stateIn?.let { filter("state in %s".formatToQuery(it)) }
 
-        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), qTags)
+            if(query.withTags == true) {
+                rjoin(SUBMISSION_TAG) {
+                    join(TAG)
+                }
+            }
+        }
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             resp.map { json ->
@@ -463,21 +463,21 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
 
-        val denizenQ = ComplexDatabaseQuery("project")
-                .join("denizen")
+        val req = dbQueryAsync(SUBMISSION_TAG) {
+            join(SUBMISSION) {
+                join(PROJECT) {
+                    join(DENIZEN)
+                }
+            }
 
-        val projectQ = ComplexDatabaseQuery("submission")
-                .join(denizenQ)
+            join(TAG)
 
-        val q = ComplexDatabaseQuery("submission_tag")
-                .join(projectQ)
-                .join("tag")
-                .filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
+            filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
 
-        val req: List<JsonObject> =
-                sendJsonableCollectAsync(Address.DB.query("submission_tag"), q)
+            limit(pageSize)
+            offset(currentPage * pageSize)
+
+        }
 
         return req.map { sub ->
             sub

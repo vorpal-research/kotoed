@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.parseCondition
+import org.jetbrains.research.kotoed.db.condition.lang.parseSortCriterion
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.JsonWalker.Companion.defaultObjectCallback
@@ -352,20 +353,17 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                             val keyField: Field<Any> = (table.field(it.key) ?: table.primaryKeyField).uncheckedCast()
                             listOf(
                                     DSL.`val`(it.resultField),
-                                    to_jsonb(array(
-                                            queryToSelect(it.query)
-                                                    .and(keyField.eq(qtable.field(it.field)))
-                                                    .orderBy(qtable.primaryKeyField)
-                                    ))
+                                    to_jsonb(array(queryToSelect(it.query, keyField.eq(qtable.field(it.field)))))
                             )
                         }
         )
     }
 
-    private fun DSLContext.queryToSelect(message: ComplexDatabaseQuery) = run {
+    private fun DSLContext.queryToSelect(message: ComplexDatabaseQuery,
+                                         vararg additionalConditions: Condition) = run {
         fun die(): Nothing = throw IllegalArgumentException("Illegal query")
 
-        val table = Public.PUBLIC.tables.find { it.name == message.table } ?: die()
+        val table = tableByName(message.table.orEmpty()) ?: die()
 
         val joins = message.joinSequence().toList()
         val joinedTables: List<Table<*>> = joins.map { it.v2 }
@@ -387,8 +385,18 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 } ?: die()
             }
         } ?: DSL.condition(true)
-        val where = join.where(condition).and(baseCondition).and(parsedCondition)
-        where!!
+        var where = join.where(condition).and(baseCondition).and(parsedCondition)!!
+        additionalConditions.forEach { where = where.and(it) }
+        val parsedSort = message.sortBy.map {
+            parseSortCriterion(it) { tname ->
+                when {
+                    tname.isEmpty() -> tableMap[table.name]
+                    else -> tableMap[table.name + "." + tname]
+                } ?: die()
+            }
+        }
+        if(parsedSort.isEmpty()) where.orderBy(table.primaryKeyField.asc())
+        else where.orderBy(parsedSort)
     }
 
     protected open suspend fun handleQuery(message_: ComplexDatabaseQuery): JsonArray {
@@ -409,11 +417,11 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     .let {
                         when { // there is no way to do it in one run, 'cos these are two DIFFERENT .offset()'s
                             message.limit != null && message.offset != null ->
-                                it.orderBy(table.primaryKeyField).limit(message.limit).offset(message.offset)
+                                it.limit(message.limit).offset(message.offset)
                             message.limit != null ->
-                                it.orderBy(table.primaryKeyField).limit(message.limit)
+                                it.limit(message.limit)
                             message.offset != null ->
-                                it.orderBy(table.primaryKeyField).offset(message.offset)
+                                it.offset(message.offset)
                             else -> it
                         }
                     }
