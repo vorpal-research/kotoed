@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.data.api.PageableQuery
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.util.Jsonable
+import org.jetbrains.research.kotoed.util.database.primaryKeyField
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
 import org.jooq.Table
@@ -164,8 +165,7 @@ class TypedQueryBuilder<T : TableRecord<T>>(val table: Table<T>) {
     fun <U : TableRecord<U>> join(table: Table<U>,
                                   field: String = defaultField(table.name),
                                   resultField: String = defaultResultField(field),
-                                  key: String? = table.primaryKey.fields.firstOrNull()?.name
-                                          ?: table.fields().find { it.name == "id" }?.name,
+                                  key: String? = null,
                                   body: TypedQueryBuilder<U>.() -> Unit = {}) {
         val builder = TypedQueryBuilder(table)
         builder.body()
@@ -175,8 +175,7 @@ class TypedQueryBuilder<T : TableRecord<T>>(val table: Table<T>) {
     fun <U : TableRecord<U>> rjoin(table: Table<U>,
               field: String = defaultField(this.table.name),
               resultField: String = defaultReverseResultField(table.name),
-              key: String? = this.table.primaryKey.fields.firstOrNull()?.name
-                      ?: this.table.fields().find { it.name == "id" }?.name,
+              key: String? = null,
               body: TypedQueryBuilder<U>.() -> Unit = {}) {
         val builder = TypedQueryBuilder(table)
         builder.body()
