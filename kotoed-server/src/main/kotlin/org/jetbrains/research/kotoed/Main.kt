@@ -16,8 +16,11 @@ import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import kotlinx.coroutines.experimental.CoroutineName
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.launch
+import org.flywaydb.core.Flyway
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
 import org.jetbrains.research.kotoed.util.routing.EasyAsyncSessionStore
 import org.jetbrains.research.kotoed.util.routing.RoutingConfig
@@ -26,6 +29,7 @@ import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
+import org.jooq.util.h2.information_schema.Tables
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -52,6 +56,23 @@ suspend fun startApplication(): Vertx {
                 )
             }
     )
+
+    rootLog.info("Warming up DB connection")
+    try { vertx.getSharedDataSource().getConnection().close() } catch (ex: Exception) {
+        rootLog.error("", ex)
+    }
+
+    rootLog.info("Migrating the migrations")
+
+    val flyway = Flyway()
+    flyway.setSchemas(Public.PUBLIC.name)
+    flyway.dataSource = vertx.getSharedDataSource()
+    flyway.isBaselineOnMigrate = true
+    flyway.setBaselineVersionAsString("1")
+    flyway.sqlMigrationPrefix = "V"
+    flyway.migrate()
+
+    rootLog.info("Migration successful")
 
     //vertx.eventBus().addInterceptor(DebugInterceptor)
 
