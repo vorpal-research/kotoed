@@ -12,6 +12,8 @@ import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {Course, CourseToRead} from "../data/course";
 import {CourseCreate} from "./create";
 
+import "less/courses.less"
+
 type CourseWithVer = CourseToRead & WithVerificationData
 
 class CourseComponent extends React.PureComponent<CourseWithVer> {
@@ -41,12 +43,13 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
         });
         let icon = embeddedImage(this.props.icon) || imagePath("kotoed3.png");
         return (
-            <div>
+            <div className={"thumbnail-wrapper"}>
                 {this.renderSpinner()}
                 {this.renderPlanks()}
                 <Thumbnail src={icon} alt="242x200">
-                    <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
-                    <p>
+                    <div className={"stretch"}/>
+                    <h3 className="course-name">{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
+                    <p className="open-wrapper">
                         <Button
                             disabled={this.props.verificationData.status !== "Processed"}
                             href={href} bsSize="large" bsStyle="primary"
@@ -82,7 +85,7 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
     };
 
     renderRow = (children: Array<JSX.Element>): JSX.Element => {
-        return <Row key={`row-${children[0].key}`}>
+        return <Row key={`row-${children[0].key}`} className="flex-row">
             {children.map((c, ix) => <Col md={3} key={`col-${ix}`}>{c}</Col>)}
         </Row>
     };
