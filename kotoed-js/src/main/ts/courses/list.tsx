@@ -20,6 +20,8 @@ type CourseProps = CourseWithVer & {
     canCrushPlanks: boolean
 }
 
+const N_PLANKS = 7;
+
 class CourseComponent extends React.PureComponent<CourseProps> {
     constructor(props: CourseProps) {
         super(props);
@@ -36,7 +38,7 @@ class CourseComponent extends React.PureComponent<CourseProps> {
 
     renderPlanks = () => {
         if (this.props.verificationData.status === "Invalid" || this.props.state === "closed")
-            return <Planks crushable={this.props.canCrushPlanks}/>;
+            return <Planks crushable={this.props.canCrushPlanks} imgNum={this.props.id % 7}/>;
         else
             return null;
     };
