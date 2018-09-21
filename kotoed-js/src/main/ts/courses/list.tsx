@@ -16,8 +16,12 @@ import "less/courses.less"
 
 type CourseWithVer = CourseToRead & WithVerificationData
 
-class CourseComponent extends React.PureComponent<CourseWithVer> {
-    constructor(props: CourseWithVer) {
+type CourseProps = CourseWithVer & {
+    canCrushPlanks: boolean
+}
+
+class CourseComponent extends React.PureComponent<CourseProps> {
+    constructor(props: CourseProps) {
         super(props);
 
         this.state = {}
@@ -32,7 +36,7 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
 
     renderPlanks = () => {
         if (this.props.verificationData.status === "Invalid" || this.props.state === "closed")
-            return <Planks/>;
+            return <Planks crushable={this.props.canCrushPlanks}/>;
         else
             return null;
     };
@@ -96,7 +100,11 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
                 shouldPerformInitialSearch={() => true}
                 searchAddress={Kotoed.Address.Api.Course.Search}
                 countAddress={Kotoed.Address.Api.Course.SearchCount}
-                elementComponent={(key, c: CourseWithVer) => <CourseComponent {...c} key={key} />}
+                elementComponent={(key, c: CourseWithVer) => <CourseComponent
+                    canCrushPlanks={this.state.canCreateCourse} // TODO this is fucked up but adding `canCrushPlanks permission`
+                                                                // TODO to the backend is also fucked up
+                    {...c}
+                    key={key} />}
                 group={{
                     by: Infinity,
                     using: this.renderRow
