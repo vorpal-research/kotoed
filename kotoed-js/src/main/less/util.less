@@ -53,11 +53,16 @@
   background-color: rgba(0, 0, 0, 0.3);
 }
 
-.wooden-planks {
-  .cover-up();
-  background-image: url("../../resources/planks.png");
-  background-size: 100% 100%;
-}
+
+@planks: 0, 1, 2, 3, 4, 5, 6;
+
+.for(@planks, {
+  .wooden-planks-@{value} {
+    .cover-up();
+    background-image: url("../../resources/planks-@{value}.png");
+    background-size: 100% 100%;
+  }
+});
 
 .grayed-out {
   color: @gray-light
