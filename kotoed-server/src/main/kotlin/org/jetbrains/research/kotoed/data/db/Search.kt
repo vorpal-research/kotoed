@@ -8,9 +8,7 @@ import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
-import org.jooq.Record
-import org.jooq.Table
-import org.jooq.TableRecord
+import org.jooq.*
 
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultField(query: ComplexDatabaseQuery) = defaultField(query.table!!)
@@ -148,6 +146,10 @@ fun ComplexDatabaseQuery.setPageForQuery(query: PageableQuery): ComplexDatabaseQ
 
 data class TextSearchRequest(val text: String) : Jsonable
 
+@DslMarker
+annotation class TypedQueryLanguage
+
+@TypedQueryLanguage
 class TypedQueryBuilder<T : TableRecord<T>>(val table: Table<T>) {
     var query: ComplexDatabaseQuery = ComplexDatabaseQuery(table.name)
 

@@ -46,7 +46,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "processAddress")
     suspend fun handleProcess(msg: JsonObject): VerificationData {
-        log.trace("Handling process for: $msg")
+        log.trace("Handling process for: { \"id\" : ${msg["id"]} }")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
@@ -59,7 +59,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "verifyAddress")
     suspend fun handleVerify(msg: JsonObject): VerificationData {
-        log.trace("Handling verify for: $msg")
+        log.trace("Handling verify for: { \"id\" : ${msg["id"]} }")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
@@ -71,7 +71,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "cleanAddress")
     suspend fun handleClean(msg: JsonObject): VerificationData {
-        log.trace("Handling clean for: $msg")
+        log.trace("Handling clean for: { \"id\" : ${msg["id"]} }")
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
@@ -117,8 +117,9 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
         val oldData = cache[id].bang()
 
-        log.trace("Processing: $data")
-        log.trace("Old data: $oldData")
+        // XXX: this can actually leak sensitive information (passwords, etc)
+        log.trace("Processing: ${"$data".take(300)}...")
+        log.trace("Old data: ${"$oldData".take(300)}...")
 
         when (oldData.status) {
             VerificationStatus.Processed -> return
@@ -191,8 +192,8 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
 
         val oldData = cache[id].bang()
 
-        log.trace("Cleaning: $data")
-        log.trace("Old data: $oldData")
+        log.trace("Cleaning: ${"$data".take(300)}...")
+        log.trace("Old data: ${"$oldData".take(300)}...")
 
         val ok = withNotReady(id, oldData) {
             log.trace("Going in!")
