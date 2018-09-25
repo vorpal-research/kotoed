@@ -217,6 +217,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
 
     private renderMarkers = () => {
+        this.editor.startOperation();
         let scrollInfo = this.editor.getScrollInfo();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
             let cmLine = i;
@@ -225,10 +226,12 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
             this.renderMarker(cmLine, comments);
         }
+        this.editor.endOperation();
         this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
     private incrementallyRenderMarkers = (oldProps: FileReviewProps) => {
+        this.editor.startOperation();
         let oldFileComments = oldProps.comments;
         let scrollInfo = this.editor.getScrollInfo();
         for (let i = 0; i < this.editor.getDoc().lineCount(); i++) {
@@ -241,6 +244,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
             if (comments !== oldComments || formState !== oldFormState)
                 this.renderMarker(cmLine, comments);
         }
+        this.editor.endOperation();
         this.editor.scrollTo(scrollInfo.left,  scrollInfo.top)
     };
 
@@ -404,6 +408,12 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         this.renderMarkers();
         this.scrollToLine();
 
+        Mousetrap.bindGlobal("escape escape", (e: KeyboardEvent) => {
+            e.preventDefault();
+            this.setState({expanded: this.state.expanded.map(() => false)}, () => {
+                this.renderMarkers()
+            });
+        });
         Mousetrap.bindGlobal('mod+f',  (e: KeyboardEvent) => {
             e.preventDefault();
             this.editor.focus();
@@ -471,6 +481,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         if (this.editor) {
             this.editor.toTextArea();
         }
+        Mousetrap.unbind("escape escape");
         Mousetrap.unbind('mod+f');
         Mousetrap.unbind('mod+g');
     }

@@ -17,6 +17,7 @@ interface LineCommentsProps {
     commentTemplates: CommentTemplates
     arrowOffset: number
     onSubmit: (text: string) => void
+    onCancel: () => void
     onCommentUnresolve: (id: number) => void
     onCommentResolve: (id: number) => void
     onEdit: (id: number, newText: string) => void
@@ -37,6 +38,7 @@ export default class LineComments extends React.Component<LineCommentsProps, {}>
                         this.props.canPostComment &&
                         <CommentForm
                             onSubmit={this.props.onSubmit}
+                            onCancel={this.props.onCancel}
                             notifyEditorAboutChange={this.props.notifyEditorAboutChange}
                             whoAmI={this.props.whoAmI}
                             commentTemplates={this.props.commentTemplates}
