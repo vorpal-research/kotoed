@@ -159,26 +159,18 @@ namespace Statistics {
         return KFirst.selector(result)
     }
 
-    function getLessonPoints(packageData: Map<string, { solved: number, total: number }>): number {
-        let scores = _.concat(
-            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => 10),
-            _.times((packageData.get("Hard") || {solved: 0}).solved, () => 7),
-            _.times((packageData.get("Normal") || {solved: 0}).solved, () => 4),
-            _.times((packageData.get("Easy") || {solved: 0}).solved, () => 1),
-            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => 0),
-        );
-
+    function lesson2score(lesson: number[]): number {
         let lessonScore;
 
-        switch (scores.length) {
+        switch (lesson.length) {
             case 0:
                 lessonScore = 0.0;
                 break;
             case 1:
-                lessonScore = scores[0];
+                lessonScore = lesson[0];
                 break;
             default: {
-                let [first, second] = scores;
+                let [first, second] = lesson;
                 if (first == second) lessonScore = first + 1;
                 else lessonScore = first;
                 break;
@@ -186,6 +178,28 @@ namespace Statistics {
         }
 
         return lessonScore;
+    }
+
+    function getLessonPoints(packageData: Map<string, { solved: number, total: number }>): string {
+        let solvedScores = _.concat(
+            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => 10),
+            _.times((packageData.get("Hard") || {solved: 0}).solved, () => 7),
+            _.times((packageData.get("Normal") || {solved: 0}).solved, () => 4),
+            _.times((packageData.get("Easy") || {solved: 0}).solved, () => 1),
+            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => 0),
+        );
+
+        let totalScores = _.concat(
+            _.times((packageData.get("Impossible") || {total: 0}).total, () => 10),
+            _.times((packageData.get("Hard") || {total: 0}).total, () => 7),
+            _.times((packageData.get("Normal") || {total: 0}).total, () => 4),
+            _.times((packageData.get("Easy") || {total: 0}).total, () => 1),
+            _.times((packageData.get("Trivial") || {total: 0}).total, () => 0),
+        );
+
+        let res = lesson2score(solvedScores) / lesson2score(totalScores);
+
+        return (isFinite(res) ? res : 0.0).toFixed(2);
     }
 
     export function transformer(result: any): any[] {
