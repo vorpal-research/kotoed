@@ -6,10 +6,7 @@ import org.jetbrains.research.kotoed.data.notification.render
 import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
-import org.jetbrains.research.kotoed.util.publishJsonable
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class NotificationVerticle : AbstractKotoedVerticle() {
@@ -57,6 +54,16 @@ class NotificationVerticle : AbstractKotoedVerticle() {
         return record
     }
 
+    @JsonableEventBusConsumerFor(Address.Api.Notification.Read)
+    suspend fun handleRead(query: NotificationRecord) =
+            dbFetchAsync(
+                    NotificationRecord().apply {
+                        id = query.id ?: throw NotFound("Notification not found: id = ${query.id}")
+                    }
+            )
 
+    @JsonableEventBusConsumerFor(Address.Api.Notification.Render)
+    suspend fun handleRender(query: NotificationRecord) =
+            render(handleRead(query))
 
 }
