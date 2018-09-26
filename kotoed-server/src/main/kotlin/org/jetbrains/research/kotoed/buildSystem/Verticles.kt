@@ -125,9 +125,9 @@ class BuildVerticle : AbstractKotoedVerticle() {
                                 }
 
                         if (result.rcode.get() != 0) {
-                            log.error("[$randomName]" + result.cout.joinToString("\n"))
-                            log.error("[$randomName]" + result.cerr.joinToString("\n"))
-                            log.info("[$randomName]" + "Build failed, exit code is ${result.rcode.get()}")
+                            log.error("[$randomName] " + result.cout.joinToString("\n"))
+                            log.error("[$randomName] " + result.cerr.joinToString("\n"))
+                            log.info("[$randomName] " + "Build failed, exit code is ${result.rcode.get()}")
 
                             return BuildResponse.BuildFailed(
                                     request.submissionId,

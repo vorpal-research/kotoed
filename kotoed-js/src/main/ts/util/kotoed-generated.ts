@@ -59,6 +59,8 @@ export namespace Generated {
                 MarkAllRead: "kotoed.api.notification.markRead.all",
                 MarkRead: "kotoed.api.notification.markRead",
                 PushRenderedBroadcast: "kotoed.api.notification.push.broadcast.render",
+                Read: "kotoed.api.notification.read",
+                Render: "kotoed.api.notification.render",
                 RenderCurrent: "kotoed.api.notification.current.render",
             },
             OAuthProvider: {
@@ -173,6 +175,9 @@ export namespace Generated {
         },
         Denizen: {
             Search: "/search/denizen",
+        },
+        Notification: {
+            ById: "/notification/:id",
         },
         Profile: {
             Edit: "/auth/profile/edit/:id",
