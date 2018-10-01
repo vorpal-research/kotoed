@@ -427,7 +427,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     val log = objectBody?.getString("log")
                     when {
                         log == null -> listOf()
-                        else -> log.lines().filter { it.startsWith("[ERROR]") }
+                        else -> log.lineSequence().filter { it.startsWith("[ERROR]") }.toList()
                     }
                 }
                 .map {
