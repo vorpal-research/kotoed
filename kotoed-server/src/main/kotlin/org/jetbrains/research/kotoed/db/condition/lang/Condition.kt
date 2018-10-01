@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.util.database.toPlainTSQuery
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.Condition
 import org.jooq.Field
+import org.jooq.SortField
 import org.jooq.Table
 import org.jooq.impl.DSL
 import ru.spbstu.kparsec.Failure
@@ -86,5 +87,20 @@ fun parseCondition(input: String, tables: (String) -> Table<*>): Condition {
         is Failure -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
                 "expected ${e.expected} at ${e.location}")
         is Success -> return convertAst(e.result, tables)
+    }
+}
+
+fun parseSortCriterion(input: String, tables: (String) -> Table<*>): SortField<*> {
+    val e = ExpressionParsers.sortCriterion.parse(input)
+    when(e) {
+        is Failure -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
+                "expected ${e.expected} at ${e.location}")
+        is Success -> {
+            val expr = convertPrimitive<Any?>(e.result.path, tables)
+            return when(e.result.sorting) {
+                Sorting.ASC -> expr.asc()
+                Sorting.DESC -> expr.desc()
+            }
+        }
     }
 }

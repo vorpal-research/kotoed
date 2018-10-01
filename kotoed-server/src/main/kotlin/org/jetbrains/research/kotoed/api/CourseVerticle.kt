@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.Tables.COURSE_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
@@ -53,16 +54,14 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleSearch(query: SearchQuery): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
-        val q_ = ComplexDatabaseQuery("course_text_search")
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
 
-        val q = if (query.text.trim() == "")
-            q_
-        else
-            q_.filter("document matches %s".formatToQuery(query.text))
-
-        val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("course_text_search"), q)
+        val req: List<JsonObject> = dbQueryAsync(COURSE_TEXT_SEARCH) {
+            limit(pageSize)
+            offset(currentPage * pageSize)
+            sortBy("-id")
+            if(query.text.isNotBlank())
+                filter("document matches %s".formatToQuery(query.text))
+        }
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             req.map { json ->

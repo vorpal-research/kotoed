@@ -77,6 +77,10 @@ object UrlPattern {
         const val ById = "/redirect/submissionResults/:id"
     }
 
+    object Notification {
+        const val ById = "/notification/:id"
+    }
+
     const val EventBus = "/eventbus/*"
     const val Static = "/static/*"
 

@@ -1,4 +1,5 @@
 import axios from "axios"
+import * as _ from "lodash"
 import {eventBus} from "../eventBus";
 import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
@@ -85,7 +86,7 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
 export async function fetchAvailableTags(): Promise<Tag[]> {
     return eventBus.send<{}, Tag[]>(Kotoed.Address.Api.Tag.List, {})
         .then(tags => {
-            return tags
+            return _.sortBy(tags, t => t.name);
         });
 }
 

@@ -83,6 +83,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
                 commentTemplates={this.props.commentTemplates}
                 arrowOffset={this.props.arrowOffset}
                 onSubmit={(text) => this.props.onSubmit(this.props.lineNumber, text)}
+                onCancel={this.onCancel}
                 onCommentResolve={id => this.props.onCommentResolve(this.props.lineNumber, id)}
                 onCommentUnresolve={id => this.props.onCommentUnresolve(this.props.lineNumber, id)}
                 onExpand={(comments) => this.props.onHiddenExpand(this.props.lineNumber, comments)}
@@ -117,6 +118,14 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         this.setState((prevState) => ({
             expanded: !prevState.expanded
         }));
+    };
+
+    onCancel = () => {
+        if (this.state.expanded) {
+            this.doCollapse();
+            this.props.onCollapse(this.props.lineNumber);
+        }
+        this.setState({ expanded: false });
     };
 
     getPencilWrapperClasses = () => {

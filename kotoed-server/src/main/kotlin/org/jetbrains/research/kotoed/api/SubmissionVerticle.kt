@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.api
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.experimental.launch
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
@@ -21,6 +22,8 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.web.UrlPattern
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.plus
+import java.io.File
+import java.nio.file.Path
 import java.util.*
 
 private typealias CommentsResponse = SubmissionComments.CommentsResponse
@@ -316,25 +319,25 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
     suspend fun handleList(query: SearchQueryWithTags): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
-
         val currentPage = query.currentPage ?: 0
-        val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
-                .find(SubmissionRecord().apply {
-                    projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
-                })
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
 
-        val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
+        val resp = dbQueryAsync(SUBMISSION) {
+            find {
+                projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
+            }
+            limit(pageSize)
+            offset(currentPage * pageSize)
 
-        val qFiltered = stateIn?.let { q.filter("state in %s".formatToQuery(it)) } ?: q
+            val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
 
-        val qTags =
-                if (query.withTags ?: false)
-                    qFiltered.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
-                else qFiltered
+            stateIn?.let { filter("state in %s".formatToQuery(it)) }
 
-        val resp: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query(Tables.SUBMISSION.name), qTags)
+            if(query.withTags == true) {
+                rjoin(SUBMISSION_TAG) {
+                    join(TAG)
+                }
+            }
+        }
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             resp.map { json ->
@@ -413,6 +416,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Annotations)
     suspend fun handleAnnotations(request: SubmissionRecord): SubmissionCodeAnnotationResponse {
+        val buildBaseDir = File(System.getProperty("user.dir"), Config.BuildSystem.StoragePath).absolutePath
 
         val errorMessageRe = """(([\\/][^\\/:]+)+):\s*[(\[]([0-9]+),\s*([0-9]+)[)\]]\s*(.*)$""".toRegex()
 
@@ -429,7 +433,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .map {
                     val (_, fileG, _, lineG, colG, messageG) =
                             errorMessageRe.find(it)?.groupValues ?: return@map null
-                    val file = fileG.replaceBefore("/build/", "").removePrefix("/build/")
+
+                    val file = fileG // /home/path/to/kotoed/$uid/path/to/code
+                            .removePrefix(buildBaseDir) // /$uid/path/to/code
+                            .removePrefix("/") // $uid/path/to/code
+                            .replaceBefore("/", "") // /path/to/code
+                            .removePrefix("/") // path/to/code
+                    // XXX: rewrite this using Path api?
+                    // XXX: put build id inside the build result object?
                     val line = lineG.toIntOrNull() ?: return@map null
                     val col = colG.toIntOrNull() ?: return@map null
                     val message = messageG.trim()
@@ -452,21 +463,21 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
 
-        val denizenQ = ComplexDatabaseQuery("project")
-                .join("denizen")
+        val req = dbQueryAsync(SUBMISSION_TAG) {
+            join(SUBMISSION) {
+                join(PROJECT) {
+                    join(DENIZEN)
+                }
+            }
 
-        val projectQ = ComplexDatabaseQuery("submission")
-                .join(denizenQ)
+            join(TAG)
 
-        val q = ComplexDatabaseQuery("submission_tag")
-                .join(projectQ)
-                .join("tag")
-                .filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
+            filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
 
-        val req: List<JsonObject> =
-                sendJsonableCollectAsync(Address.DB.query("submission_tag"), q)
+            limit(pageSize)
+            offset(currentPage * pageSize)
+
+        }
 
         return req.map { sub ->
             sub

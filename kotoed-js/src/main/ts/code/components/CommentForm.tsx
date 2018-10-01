@@ -12,6 +12,7 @@ import "less/autosuggest.less"
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
+    onCancel: () => void
     notifyEditorAboutChange: () => void
     whoAmI: string
     commentTemplates: CommentTemplates
@@ -166,6 +167,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     componentWillUnmount() {
         this.mousetrap && this.mousetrap.unbind("mod+enter");
         this.mousetrap && this.mousetrap.unbind("ctrl+space");
+        this.mousetrap && this.mousetrap.unbind("escape");
     }
 
     componentDidMount() {
@@ -174,6 +176,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
             this.props.formState.processing || this.props.onSubmit(this.state.editText));
         this.mousetrap.bind("ctrl+space", () =>
             this.props.formState.processing || this.suggestComment());
+        this.mousetrap.bind("escape", () => this.props.formState.processing || this.props.onCancel());
         if (!this.props.formState.processing)
             this.textArea.focus();
     }

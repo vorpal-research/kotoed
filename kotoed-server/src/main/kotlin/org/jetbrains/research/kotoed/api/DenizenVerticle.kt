@@ -6,6 +6,8 @@ import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.LoginMsg
 import org.jetbrains.research.kotoed.database.Tables
+import org.jetbrains.research.kotoed.database.Tables.DENIZEN_TEXT_SEARCH
+import org.jetbrains.research.kotoed.database.Tables.PROFILE
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProfileRecord
@@ -86,26 +88,22 @@ class DenizenVerticle: AbstractKotoedVerticle() {
     suspend fun handleSearch(query: SearchQuery): JsonArray {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
-        val q_ = ComplexDatabaseQuery(Tables.DENIZEN_TEXT_SEARCH)
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
-                .rjoin(Tables.PROFILE, field = Tables.PROFILE.DENIZEN_ID.name)
 
-        val q = if (query.text.trim() == "")
-            q_
-        else
-            q_.filter("document matches %s".formatToQuery(query.text))
-
-        val req: List<JsonObject> = dbQueryAsync(q)
+        val req: List<JsonObject> = dbQueryAsync(DENIZEN_TEXT_SEARCH) {
+            limit(pageSize)
+            offset(currentPage * pageSize)
+            rjoin(PROFILE, field = "denizen_id")
+            if(query.text.isNotBlank())
+                filter("document matches %s".formatToQuery(query.text))
+        }
 
         return JsonArray(req)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
-        val q_ = ComplexDatabaseQuery(Tables.DENIZEN_TEXT_SEARCH.name)
-        val q = if (query.text.trim() == "") q_ else q_.filter("document matches %s".formatToQuery(query.text))
-
-        return dbCountAsync(q)
-    }
+    suspend fun handleSearchCount(query: SearchQuery): JsonObject =
+            dbCountAsync(DENIZEN_TEXT_SEARCH) {
+                if(query.text.isNotBlank())
+                    filter("document matches %s".formatToQuery(query.text))
+            }
 }

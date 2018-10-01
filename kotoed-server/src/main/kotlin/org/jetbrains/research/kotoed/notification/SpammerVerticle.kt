@@ -1,7 +1,6 @@
 package org.jetbrains.research.kotoed.notification
 
 import io.vertx.core.Future
-import kotlinx.coroutines.experimental.launch
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
@@ -61,10 +60,10 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
 
         val allDenizens = dbFindAsync(DenizenRecord())
 
-        fun makeLink(link: LinkData): String {
+        fun makeLink(link: RenderedData): String {
             return "${Config.Root.Host}:${Config.Root.Port}" + UrlPattern.reverse(
-                    UrlPattern.Redirect.ById,
-                    link.toJson().map
+                    UrlPattern.Notification.ById,
+                    mapOf("id" to link.id)
             )
         }
 
@@ -102,7 +101,7 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
                                                                 "border:1px solid #ddd",
                                                                 "border-radius:4px"
                                                         ).joinToString(";")
-                                                a(href = makeLink(it.linkTo)) {
+                                                a(href = makeLink(it)) {
                                                     span { unsafe { +it.contents } }
                                                 }
                                             }
