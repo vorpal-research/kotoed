@@ -100,7 +100,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
             fetchByIdAsync(SUBMISSION, it)
         }
 
-        expect(parent == null || parent.state == SubmissionState.open)
+        expect(parent == null || parent.state == SubmissionState.open || parent.state == SubmissionState.invalid)
 
         val res: SubmissionRecord = dbCreateAsync(submission)
         dbProcessAsync(res)
