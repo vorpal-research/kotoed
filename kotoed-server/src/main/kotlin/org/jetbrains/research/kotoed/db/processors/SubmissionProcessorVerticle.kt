@@ -237,6 +237,9 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         if (status == VerificationStatus.Processed
                 && subFresh.state == SubmissionState.pending) {
             dbUpdateAsync(subFresh.apply { state = SubmissionState.open })
+        } else if (status == VerificationStatus.Invalid
+                    && subFresh.state == SubmissionState.pending) {
+            dbUpdateAsync(subFresh.apply { state = SubmissionState.invalid })
         }
     }
 
