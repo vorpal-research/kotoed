@@ -55,7 +55,9 @@
 .container {
   display: flex;
   flex-flow: column;
-  height: 100vh
+  height: 100vh;
+  width: 100%;
+  padding: 0;
 }
 
 #code-review-app {
@@ -68,21 +70,24 @@
 
 .code-review {
   flex: 1 1 auto;
-  min-height: 0px;
+  min-height: 0;
   display: flex;
   flex-flow: row;
+  border-top: 1px solid #ccc;
 }
 
 #code-review-left {
   display: flex;
   flex: none;
+  border-right: 1px solid #ccc;
+  padding-right: 0;
 }
 
 #code-review-right {
   flex: 1 0 auto;
   display: flex;
   flex-flow: column;
-  //position: relative;
+  padding-left: 0;
 }
 
 
@@ -175,18 +180,6 @@
   align-items: center;
 }
 
-@media (min-width: 1600px) {
-  .container {
-    width: 1570px;
-  }
-}
-
-@media (min-width: 1920px) {
-  .container {
-    width: 1890px;
-  }
-}
-
 .pt-icon-changed {
   color: green;
 }
@@ -221,4 +214,8 @@
 .CodeMirror-overlayscroll-horizontal:not(:hover):not(.scrolling) > div {
   opacity: 0.5;
   transition: opacity 0.2s ease;
+}
+
+.navbar {
+  border-radius: 0;
 }
