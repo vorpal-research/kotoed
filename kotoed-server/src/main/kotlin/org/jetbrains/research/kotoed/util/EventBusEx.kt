@@ -14,6 +14,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.TypedQueryBuilder
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -472,9 +473,17 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
 
+    protected suspend fun <R : TableRecord<R>> dbQueryAsync(table: Table<R>,
+                                                            builderBody: TypedQueryBuilder<R>.() -> Unit) =
+            dbQueryAsync(TypedQueryBuilder(table).apply(builderBody).query)
+
     protected suspend fun dbCountAsync(q: ComplexDatabaseQuery): JsonObject =
             @Suppress(DEPRECATION)
             vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
+
+    protected suspend fun <R : TableRecord<R>> dbCountAsync(table: Table<R>,
+                                                            builderBody: TypedQueryBuilder<R>.() -> Unit) =
+            dbCountAsync(TypedQueryBuilder(table).apply(builderBody).query)
 
     protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
             @Suppress(DEPRECATION)

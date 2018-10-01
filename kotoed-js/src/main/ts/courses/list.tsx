@@ -2,7 +2,7 @@ import * as React from "react";
 import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal, Label} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
-import {imagePath} from "../images";
+import {embeddedImage, imagePath} from "../images";
 import {ChoosyByVerDataSearchTable, SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
@@ -12,10 +12,18 @@ import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {Course, CourseToRead} from "../data/course";
 import {CourseCreate} from "./create";
 
+import "less/courses.less"
+
 type CourseWithVer = CourseToRead & WithVerificationData
 
-class CourseComponent extends React.PureComponent<CourseWithVer> {
-    constructor(props: CourseWithVer) {
+type CourseProps = CourseWithVer & {
+    canCrushPlanks: boolean
+}
+
+const N_PLANKS = 7;
+
+class CourseComponent extends React.PureComponent<CourseProps> {
+    constructor(props: CourseProps) {
         super(props);
 
         this.state = {}
@@ -29,8 +37,8 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
     };
 
     renderPlanks = () => {
-        if (this.props.verificationData.status === "Invalid")
-            return <Planks/>;
+        if (this.props.verificationData.status === "Invalid" || this.props.state === "closed")
+            return <Planks crushable={this.props.canCrushPlanks} imgNum={this.props.id % 7}/>;
         else
             return null;
     };
@@ -39,13 +47,15 @@ class CourseComponent extends React.PureComponent<CourseWithVer> {
         let href = Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Course.Index, {
             id: this.props.id
         });
+        let icon = embeddedImage(this.props.icon) || imagePath("kotoed3.png");
         return (
-            <div>
+            <div className={"thumbnail-wrapper"}>
                 {this.renderSpinner()}
                 {this.renderPlanks()}
-                <Thumbnail src={imagePath("kotoed3.png")} alt="242x200">
-                    <h3>{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
-                    <p>
+                <Thumbnail src={icon} alt="242x200">
+                    <div className={"stretch"}/>
+                    <h3 className="course-name">{this.props.name || <span className="text-danger">Unnamed</span>}</h3>
+                    <p className="open-wrapper">
                         <Button
                             disabled={this.props.verificationData.status !== "Processed"}
                             href={href} bsSize="large" bsStyle="primary"
@@ -81,8 +91,8 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
     };
 
     renderRow = (children: Array<JSX.Element>): JSX.Element => {
-        return <Row key={`row-${children[0].key}`}>
-            {children.map((c, ix) => <Col md={3} key={`col-${ix}`}>{c}</Col>)}
+        return <Row key={`row-${children[0].key}`} className="flex-row">
+            {children.map((c, ix) => <Col xs={12} sm={6} md={4} lg={3} key={`col-${ix}`}>{c}</Col>)}
         </Row>
     };
 
@@ -92,9 +102,13 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
                 shouldPerformInitialSearch={() => true}
                 searchAddress={Kotoed.Address.Api.Course.Search}
                 countAddress={Kotoed.Address.Api.Course.SearchCount}
-                elementComponent={(key, c: CourseWithVer) => <CourseComponent {...c} key={key} />}
+                elementComponent={(key, c: CourseWithVer) => <CourseComponent
+                    canCrushPlanks={this.state.canCreateCourse} // TODO this is fucked up but adding `canCrushPlanks permission`
+                                                                // TODO to the backend is also fucked up
+                    {...c}
+                    key={key} />}
                 group={{
-                    by: 4,
+                    by: Infinity,
                     using: this.renderRow
                 }}
                 toolbarComponent={this.toolbarComponent}

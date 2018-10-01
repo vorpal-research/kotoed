@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.query
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -17,6 +18,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jooq.TableRecord
 
 @AutoDeployable
 class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
@@ -60,15 +62,19 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val pageSize = query.pageSize ?: Int.MAX_VALUE
         val currentPage = query.currentPage ?: 0
 
-        val subQ = ComplexDatabaseQuery(Tables.SUBMISSION.name)
-                .find(SubmissionRecord().apply {
-                    state = SubmissionState.open
-                })
+        val subQ = query(Tables.SUBMISSION) {
+            find {
+                state = SubmissionState.open
+            }
 
-        val subQTags =
-                if (query.withTags ?: false)
-                    subQ.rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG).join(Tables.TAG))
-                else subQ
+            sortBy("-datetime")
+
+            if(query.withTags == true) {
+                rjoin(Tables.SUBMISSION_TAG) {
+                    join(Tables.TAG)
+                }
+            }
+        }
 
         val tableName =
                 if(query.withTags == true)
@@ -78,7 +84,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery(tableName)
                 .find(ProjectRecord().apply{ deleted = false })
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
-                .rjoin(subQTags, "project_id", "openSubmissions")
+                .rjoin(subQ, "project_id", "openSubmissions")
                 .find(ProjectRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)

@@ -131,7 +131,9 @@ object Address {
 
         object Notification {
             const val Current = "kotoed.api.notification.current"
+            const val Read = "kotoed.api.notification.read"
             const val RenderCurrent = "kotoed.api.notification.current.render"
+            const val Render = "kotoed.api.notification.render"
             const val MarkRead = "kotoed.api.notification.markRead"
             const val MarkAllRead = "kotoed.api.notification.markRead.all"
             const val Create = "kotoed.api.notification.create"

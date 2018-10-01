@@ -47,6 +47,9 @@ object NullConstant : Constant() {
 data class Path(val path: List<String>) : Expression()
 data class JsonPath(val base: Path, val path: List<EitherOf2<Int, String>>) : Expression()
 
+enum class Sorting{ ASC, DESC }
+data class SortCriterion(val path: JsonPath, val sorting: Sorting)
+
 // TODO Inclusion operators are now a special case.
 // TODO maybe we should make PrimitiveSubquery a primitive and allow in everywhere sometimes
 
@@ -98,6 +101,13 @@ object ExpressionParsers: StringsAsParsers {
         }
 
         (-"!")(assoc = Assoc.PREFIX, priority = 8){ a -> NotExpression(a) }
+    }
+
+    val sortCriterion = zip(+"-" or +"+" or +"", jsonPath) { sign, path ->
+        when(sign) {
+            "-" -> SortCriterion(path, Sorting.DESC)
+            else -> SortCriterion(path, Sorting.ASC)
+        }
     }
 
     val root = expr

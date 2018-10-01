@@ -6,6 +6,8 @@ export interface Course {
     baseRepoUrl?: string
     baseRevision?: string
     buildTemplateId?: number
+    state: "open" | "closed" | "frozen"
+    icon?: string
 }
 
 export interface CourseToRead extends Course, WithId {}

@@ -2,14 +2,13 @@ package org.jetbrains.research.kotoed.data.db
 
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.NOTHING_TO_INLINE
+import org.intellij.lang.annotations.Language
 import org.jetbrains.research.kotoed.data.api.PageableQuery
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
-import org.jooq.Record
-import org.jooq.Table
-import org.jooq.TableRecord
+import org.jooq.*
 
 @Suppress(NOTHING_TO_INLINE)
 internal inline fun defaultField(query: ComplexDatabaseQuery) = defaultField(query.table!!)
@@ -68,6 +67,7 @@ data class ComplexDatabaseQuery(
         val joins: List<DatabaseJoin>? = listOf(),
         val rjoins: List<ReverseDatabaseJoin>? = listOf(),
         val filter: String? = null,
+        val sortBy: List<String> = listOf(),
         val limit: Int? = null,
         val offset: Int? = null
 ) : Jsonable {
@@ -122,7 +122,8 @@ data class ComplexDatabaseQuery(
         return copy(find = find_, joins = joins_, rjoins = rjoins_)
     }
 
-    fun filter(filter: String) = copy(filter = filter)
+    fun filter(@Language("Kotlin") filter: String) = copy(filter = filter)
+    fun sortBy(@Language("Kotlin") expr: String) = copy(sortBy = sortBy + expr)
 
     fun limit(limit: Int) = copy(limit = limit)
     fun offset(offset: Int) = copy(offset = offset)
@@ -144,3 +145,52 @@ fun ComplexDatabaseQuery.setPageForQuery(query: PageableQuery): ComplexDatabaseQ
 }
 
 data class TextSearchRequest(val text: String) : Jsonable
+
+@DslMarker
+annotation class TypedQueryLanguage
+
+@TypedQueryLanguage
+class TypedQueryBuilder<T : TableRecord<T>>(val table: Table<T>) {
+    var query: ComplexDatabaseQuery = ComplexDatabaseQuery(table.name)
+
+    fun find(body: T.() -> Unit) {
+        val rec = table.newRecord()
+        rec.body()
+        query = query.find(rec)
+    }
+
+    fun find(record: T) {
+        query = query.find(record)
+    }
+
+    fun <U : TableRecord<U>> join(table: Table<U>,
+                                  field: String = defaultField(table.name),
+                                  resultField: String = defaultResultField(field),
+                                  key: String? = null,
+                                  body: TypedQueryBuilder<U>.() -> Unit = {}) {
+        val builder = TypedQueryBuilder(table)
+        builder.body()
+        query = query.join(builder.query, field, resultField, key)
+    }
+
+    fun <U : TableRecord<U>> rjoin(table: Table<U>,
+              field: String = defaultField(this.table.name),
+              resultField: String = defaultReverseResultField(table.name),
+              key: String? = null,
+              body: TypedQueryBuilder<U>.() -> Unit = {}) {
+        val builder = TypedQueryBuilder(table)
+        builder.body()
+        query = query.rjoin(builder.query, field, resultField, key)
+    }
+
+    fun limit(limit: Int) { query = query.limit(limit) }
+    fun offset(offset: Int)  { query = query.offset(offset) }
+    fun filter(@Language("Kotlin") filter: String) { query = query.filter(filter) }
+    fun sortBy(@Language("Kotlin") expr: String) { query = query.sortBy(expr) }
+}
+
+fun <T: TableRecord<T>> query(table: Table<T>, body: TypedQueryBuilder<T>.() -> Unit): ComplexDatabaseQuery {
+    val builder = TypedQueryBuilder(table)
+    builder.body()
+    return builder.query.fillDefaults()
+}
