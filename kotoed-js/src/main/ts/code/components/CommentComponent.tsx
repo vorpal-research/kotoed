@@ -11,6 +11,10 @@ import CmrmCodeBlock from "./CmrmCodeBlock";
 import {BaseCommentToRead} from "../../data/comment";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {setStateAsync} from "../../views/components/common";
+import {twemojifyNode} from "../../views/components/TwemojiText";
+import {Picker} from "emoji-mart";
+
+import 'emoji-mart/css/emoji-mart.css'
 
 
 type CommentProps = Comment & {
@@ -187,7 +191,10 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         return <ReactMarkdown
             source={this.props.text}
             className="comment-markdown"
-            renderers={{CodeBlock: CmrmCodeBlock}}
+            renderers={{
+                CodeBlock: CmrmCodeBlock,
+                Text: twemojifyNode
+            }}
             escapeHtml={true}
         />
     };
@@ -200,7 +207,10 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         return <ReactMarkdown
                 source={this.state.editText}
                 className="comment-markdown"
-                renderers={{CodeBlock: CmrmCodeBlock}}
+                renderers={{
+                    CodeBlock: CmrmCodeBlock,
+                    Text: twemojifyNode
+                }}
                 escapeHtml={true}
         />;
     };
@@ -234,6 +244,8 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                     }}>
                 Cancel
             </Button>
+            <Picker set='twitter' />
+
         </p>;
     };
 
