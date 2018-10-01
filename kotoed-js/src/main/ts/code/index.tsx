@@ -18,6 +18,7 @@ import {
 } from "./reducers";
 
 import "less/kotoed-bootstrap/bootstrap.less";
+import "less/bootstrap-xl.less";
 import '@blueprintjs/core/dist/blueprint.css';
 import "less/unblueprint.less"
 import "less/code.less";

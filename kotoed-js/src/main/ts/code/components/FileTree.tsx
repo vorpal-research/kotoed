@@ -42,7 +42,7 @@ export default class FileTree extends React.Component<FileTreeProps & FileTreeCa
                 onNodeClick={this.onNodeClick}
                 onNodeCollapse={this.onNodeCollapse}
                 onNodeExpand={this.onNodeExpand}
-                className={`${Classes.ELEVATION_0} code-review-tree`}
+                className={`code-review-tree`}
             />;
     }
 }

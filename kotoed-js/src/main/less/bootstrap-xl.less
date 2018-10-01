@@ -1,0 +1,15 @@
+@import "~bootstrap/less/variables.less";
+@import "~bootstrap/less/mixins.less";
+
+@screen-xl-min: 1200px;
+@container-xl: 1140px;
+
+.container {
+  @media (min-width: @screen-xl-min) {
+    width: @container-xl;
+  }
+}
+
+@media (min-width: @screen-xl-min) {
+  .make-grid(xl);
+}

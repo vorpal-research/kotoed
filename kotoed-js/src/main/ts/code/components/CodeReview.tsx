@@ -149,7 +149,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
 
     renderReview = () => {
         return <div className="row code-review">
-            <div className="col-md-3" id="code-review-left">
+            <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
                 {this.renderFileTreeVeil()}
                 <div className="code-review-tree-container">
                     <FileTree root={this.props.fileTree.root}
@@ -167,7 +167,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                     </div>
                 </div>
             </div>
-            <div className="col-md-9" id="code-review-right">
+            <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
                 {this.renderRightSide()}
             </div>
         </div>
