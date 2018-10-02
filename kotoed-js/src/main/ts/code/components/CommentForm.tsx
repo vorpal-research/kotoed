@@ -9,6 +9,7 @@ import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
 import {CommentTemplates} from "../remote/templates";
 import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
 import "less/autosuggest.less"
+import {TextEditor} from "../../views/components/TextEditor";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
@@ -203,10 +204,20 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
+    renderEditor = () => {
+        switch(this.state.editState) {
+            case "edit":
+                return <TextEditor onNewText={(text, after) => this.setState({editText: text}, after)} text={this.state.editText} textArea={this.textArea}/>;
+            default:
+                return null;
+        }
+    }
+
     renderEditArea = () => {
         return <div style={this.getTextAreaStyle()}>
             {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
             <textarea
+                key={`comment-form-editor`}
                 disabled={this.props.formState.processing}
                 className="form-control"
                 ref={ref => this.textArea = ref!}
@@ -223,6 +234,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     render() {
         return (
             <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
+                {this.renderEditor()}
                 {this.renderPanelBodyContent()}
                 {this.renderEditArea()}
             </Panel>

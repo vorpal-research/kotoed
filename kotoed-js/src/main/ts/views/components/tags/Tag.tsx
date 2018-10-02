@@ -5,7 +5,7 @@ import {Tag as TagData} from "../../../data/submission";
 import {Label} from "react-bootstrap";
 
 import "less/tags.less"
-import TwemojiText from "../TwemojiText";
+import {TwemojiText} from "../emoji";
 
 interface TagProps {
     tag: TagData,

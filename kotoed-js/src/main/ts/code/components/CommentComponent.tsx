@@ -11,7 +11,7 @@ import CmrmCodeBlock from "./CmrmCodeBlock";
 import {BaseCommentToRead} from "../../data/comment";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {setStateAsync} from "../../views/components/common";
-import {twemojifyNode} from "../../views/components/TwemojiText";
+import {twemojifyNode} from "../../views/components/emoji";
 import {Picker} from "emoji-mart";
 
 import 'emoji-mart/css/emoji-mart.css'
@@ -244,7 +244,6 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                     }}>
                 Cancel
             </Button>
-            <Picker set='twitter' />
 
         </p>;
     };
@@ -287,6 +286,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     renderEditArea = () => {
         return <div style={this.getTextAreaStyle()}>
             {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
+            {/*<Picker set='twitter' style={{ position: 'absolute', bottom: '20px', right: '20px' }}/>*/}
             <textarea
                 className="form-control"
                 ref={ref => this.textArea = ref!}
