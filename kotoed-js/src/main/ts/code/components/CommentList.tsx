@@ -5,6 +5,7 @@ import {List} from "immutable";
 import CollapsedComments from "./CollapsedComments";
 import CommentComponent from "./CommentComponent";
 import {BaseCommentToRead} from "../../data/comment";
+import {CommentTemplates} from "../remote/templates";
 
 interface CommentListProps {
     comments: List<Comment>
@@ -14,6 +15,7 @@ interface CommentListProps {
     onExpand: (comments: List<Comment>) => void
     notifyEditorAboutChange: () => void
     makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
+    commentTemplates: CommentTemplates
 }
 
 export class CommentList extends React.Component<CommentListProps, {}> {
@@ -44,6 +46,7 @@ export class CommentList extends React.Component<CommentListProps, {}> {
                     onUnresolve={lcProps.onCommentUnresolve}
                     onEdit={this.props.onEdit}
                     makeOriginalLink={this.props.makeOriginalLink}
+                    commentTemplates={this.props.commentTemplates}
                 />);
 
             } else {

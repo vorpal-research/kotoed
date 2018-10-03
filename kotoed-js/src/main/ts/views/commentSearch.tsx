@@ -47,6 +47,7 @@ class CommentSearchResult extends React.PureComponent<{ comment: CommentToRead }
                     notifyEditorAboutChange={doNothing}
                     onEdit={doNothing}
                     processing={false}
+                    commentTemplates={[]}
                 />
             </SearchResult>
         )

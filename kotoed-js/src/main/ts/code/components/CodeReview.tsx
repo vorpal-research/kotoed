@@ -110,6 +110,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                           makeOriginalLink={this.props.comments.makeOriginalLink}
                                           loading={this.props.lostFound.loading}
                                           scrollTo={this.props.scrollTo}
+                                          commentTemplates={this.props.commentTemplates}
                 />;
             case "code":
                 if (this.props.editor.file !== "")
