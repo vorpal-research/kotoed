@@ -10,6 +10,8 @@ import {CommentTemplates} from "../remote/templates";
 import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
 import "less/autosuggest.less"
 import {TextEditor} from "../../views/components/TextEditor";
+import {setStateAsync} from "../../views/components/common";
+import {twemojifyNode} from "../../views/components/emoji";
 
 interface CommentFormProps {
     onSubmit: (text: string) => void
@@ -26,7 +28,7 @@ interface CommentFormState {
 }
 
 export default class CommentForm extends React.Component<CommentFormProps, CommentFormState> {
-    private textArea: HTMLTextAreaElement;
+    private editor: TextEditor;
 
     constructor(props: CommentFormProps) {
         super(props);
@@ -112,7 +114,10 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         return <ReactMarkdown
             source={this.state.editText}
             className="comment-markdown"
-            renderers={{CodeBlock: CmrmCodeBlock}}
+            renderers={{
+                CodeBlock: CmrmCodeBlock,
+                Text: twemojifyNode
+            }}
             escapeHtml={true}
         />;
     };
@@ -127,31 +132,6 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
-    insertTemplateText = (value: string) => {
-        this.setState({editText: value})
-    };
-
-    suggestComment = () => {
-        let text = this.state.editText;
-        let template = this.props.commentTemplates.find(template => template.name.trim() == text.trim());
-        template && this.insertTemplateText(template.text);
-    };
-
-    renderCommentTemplatesButton = () =>
-        <SplitButton bsStyle="default" title="Use template" id="template-dropdown"
-                     disabled={this.props.formState.processing}>
-            {
-                this.props.commentTemplates.map( template =>
-                    <MenuItem key={`template-key-${template.name}`}
-                              eventKey={template.name}
-                              onSelect={() => this.insertTemplateText(template.text)}
-                    >
-                        { template.name }
-                    </MenuItem>
-                )
-            }
-        </SplitButton>
-    ;
 
     renderPanelFooter = () => {
         return <ButtonToolbar>
@@ -160,26 +140,16 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
                     disabled={this.props.formState.processing}>
                 Send
             </Button>
-            { this.props.commentTemplates.length != 0 && this.renderCommentTemplatesButton() }
         </ButtonToolbar>
     };
 
     private mousetrap: MousetrapInstance | undefined;
     componentWillUnmount() {
-        this.mousetrap && this.mousetrap.unbind("mod+enter");
-        this.mousetrap && this.mousetrap.unbind("ctrl+space");
-        this.mousetrap && this.mousetrap.unbind("escape");
     }
 
     componentDidMount() {
-        this.mousetrap = new Mousetrap(this.textArea);
-        this.mousetrap.bind("mod+enter", () =>
-            this.props.formState.processing || this.props.onSubmit(this.state.editText));
-        this.mousetrap.bind("ctrl+space", () =>
-            this.props.formState.processing || this.suggestComment());
-        this.mousetrap.bind("escape", () => this.props.formState.processing || this.props.onCancel());
         if (!this.props.formState.processing)
-            this.textArea.focus();
+            this.editor.focus();
     }
 
     componentDidUpdate(prevProps: CommentFormProps, prevState: CommentFormState) {
@@ -187,9 +157,9 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
             this.props.notifyEditorAboutChange();
         if (this.state.editState !== prevState.editState) {
             if (this.state.editState == "edit" && !this.props.formState.processing)
-                this.textArea.focus();
+                this.editor.focus();
             else
-                this.textArea.blur();
+                this.editor.blur();
         }
     }
 
@@ -204,37 +174,24 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
-    renderEditor = () => {
-        switch(this.state.editState) {
-            case "edit":
-                return <TextEditor onNewText={(text, after) => this.setState({editText: text}, after)} text={this.state.editText} textArea={this.textArea}/>;
-            default:
-                return null;
-        }
-    }
-
-    renderEditArea = () => {
+    renderEditArea = (): JSX.Element => {
         return <div style={this.getTextAreaStyle()}>
-            {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
-            <textarea
-                key={`comment-form-editor`}
-                disabled={this.props.formState.processing}
-                className="form-control"
-                ref={ref => this.textArea = ref!}
-                rows={5}
-                id="comment"
-                value={this.state.editText}
-                style={{
-                    resize: "none"
-                }}
-                onChange={(event) => this.setState({editText: event.target.value})}/>
-        </div>
+            <TextEditor
+                    ref={(ref) => this.editor = ref!}
+                    text={this.state.editText}
+                    onChange={(text) => setStateAsync(this, {editText: text})}
+                    panelDisabled={this.state.editState !== "edit"}
+                    disabled={this.props.formState.processing}
+                    onEscape={this.props.onCancel}
+                    onCtrlEnter={() => this.props.onSubmit(this.state.editText)}
+                    commentTemplates={this.props.commentTemplates}
+            />
+            </div>
     };
 
     render() {
         return (
             <Panel header={this.renderPanelHeading()} bsStyle={this.getPanelClass()} footer={this.renderPanelFooter()}>
-                {this.renderEditor()}
                 {this.renderPanelBodyContent()}
                 {this.renderEditArea()}
             </Panel>
