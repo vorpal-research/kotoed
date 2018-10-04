@@ -119,7 +119,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore = LocalSessionStore.create(vertx),
+                sessionStore =  AsyncSessionStore(vertx),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()
