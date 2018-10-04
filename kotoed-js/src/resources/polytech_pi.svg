@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="polyLogo"
+   x="0px"
+   y="0px"
+   viewBox="0 0 100.64314 100.04446"
+   xml:space="preserve"
+   sodipodi:docname="polytech_pi.svg"
+   inkscape:version="0.92.2 2405546, 2018-03-11"
+   width="100.64314"
+   height="100.04446"><metadata
+   id="metadata12"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+   id="defs10" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1920"
+   inkscape:window-height="1139"
+   id="namedview8"
+   showgrid="false"
+   inkscape:zoom="4.4830189"
+   inkscape:cx="120.51086"
+   inkscape:cy="67.063496"
+   inkscape:window-x="1280"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="polyLogo" />
+<style
+   type="text/css"
+   id="style2">
+	.st0{fill:#37B34A;}
+	.st1{fill:#404041;}
+</style>
+<path
+   id="polytechLogo"
+   class="st0"
+   d="m 73.674571,25.337228 c 1.473,0.631 3.997,4.418 3.436,8.556 -2.875,2.314 -6.312,3.927 -9.608,4.418 v 26.368 h 9.818 c 0,4.067 -0.631,7.293 -1.332,8.486 h -17.952 v -34.434 h -12.483 v 20.548 c 0,10.379 -5.821,15.428 -13.254,15.428 -2.104,0 -4.558,-0.281 -6.732,-0.912 -0.982,-1.332 -1.473,-5.33 -1.613,-10.309 4.909,2.384 11.641,3.506 12.202,-4.208 v -19.214 c -7.504,0.771 -10.239,6.031 -12.834,9.538 0.07,-4.699 0.281,-8.976 0.561,-11.852 5.119,-5.54 10.87,-8.135 22.231,-8.135 h 16.2 c 3.927,0.07 7.784,-1.403 11.36,-4.278"
+   inkscape:connector-curvature="0"
+   style="fill:#ffffff"
+   sodipodi:nodetypes="cccccccccssccccccscc" />
+
+
+</svg>
