@@ -5,6 +5,7 @@ import {List} from "immutable";
 import {ScrollTo} from "../state/index";
 import ComponentWithLoading, {LoadingProperty} from "../../views/components/ComponentWithLoading";
 import {BaseCommentToRead} from "../../data/comment";
+import {CommentTemplates} from "../remote/templates";
 
 interface LostFoundCommentsProps {
     comments: LostFoundCommentsState
@@ -15,6 +16,7 @@ interface LostFoundCommentsProps {
     onEdit: (id: number, newText: string) => void
     makeOriginalLink?: (comment: BaseCommentToRead) => string | undefined
     scrollTo: ScrollTo
+    commentTemplates: CommentTemplates
 }
 
 export class LostFoundComments extends ComponentWithLoading<LostFoundCommentsProps & LoadingProperty, {}> {
