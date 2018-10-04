@@ -1,7 +1,13 @@
+@import "~bootstrap/less/variables.less";
+@import "~bootstrap/less/mixins.less";
+
+@polytech-color: #37B34A;
+@polytech-text: #fff;
+
+
 .btn-polytech {
-  color: #fff;
-  background-color: #37B34A;
-  border-color: rgba(0, 0, 0, 0.2);
+  background-color: @polytech-color;
+  .button-variant(@polytech-text, @polytech-color, rgba(0,0,0,.2))
 }
 
 .fa-polytech {
