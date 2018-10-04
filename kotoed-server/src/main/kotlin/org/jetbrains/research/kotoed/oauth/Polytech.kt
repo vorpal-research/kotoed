@@ -8,11 +8,6 @@ import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
-/**
- * This is my impl of Apereo CAS client which I accidentally created while debugging it on my local machine.
- *
- * We can probably use it later if PolyCAS will be a thing.
- */
 class Polytech(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
     override val providerBaseUri: String = "https://cas.icc.spbstu.ru/oauth2.0"
     override val accessTokenPath: String = "/token"
