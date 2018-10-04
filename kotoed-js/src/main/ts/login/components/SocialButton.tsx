@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import "less/bootstrap-social.less"
+import "less/socialButtonsEx.less"
 
 import "font-awesome/less/font-awesome.less"
 

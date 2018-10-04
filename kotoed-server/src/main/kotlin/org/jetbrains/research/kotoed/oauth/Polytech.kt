@@ -13,11 +13,11 @@ import org.jetbrains.research.kotoed.util.sendAsync
  *
  * We can probably use it later if PolyCAS will be a thing.
  */
-class PolyCasProd(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
-    override val providerBaseUri: String = "https://cas.icc.spbstu.ru/oauth2.0"  // TODO definitely not localhost
+class Polytech(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
+    override val providerBaseUri: String = "https://cas.icc.spbstu.ru/oauth2.0"
     override val accessTokenPath: String = "/token"
 
-    suspend override fun doGetUserId(): String {
+    override suspend fun doGetUserId(): String {
         val query = mapOf(
                 AccessToken to getAccessToken()
         ).makeUriQuery()
@@ -26,11 +26,11 @@ class PolyCasProd(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider
                 .putHeader("${HttpHeaderNames.CONTENT_TYPE}", "${HttpHeaderValues.APPLICATION_JSON}")
                 .sendAsync()
 
-        return resp.bodyAsJsonObject()?.getString("employeeID") ?: throw OAuthException("Cannot get PolyCas id")
+        return resp.bodyAsJsonObject()?.getString("objectSid") ?: throw OAuthException("Cannot get Polytech id")
     }
 
 
     companion object {
-        val Name = "PolyCasProd"
+        val Name = "Polytech"
     }
 }
