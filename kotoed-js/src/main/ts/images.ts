@@ -1,4 +1,5 @@
 import "res/kotoed3.png"
+import "res/kotoed_no_cats.png"
 import "res/kotoed3w.png"
 
 import {Kotoed} from "./util/kotoed-api";
