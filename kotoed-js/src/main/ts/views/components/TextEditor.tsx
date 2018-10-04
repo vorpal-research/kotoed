@@ -8,6 +8,11 @@ import {SimpleAutoSuggest} from "./tags/SimpleAutosuggest";
 import * as Row from "react-bootstrap/lib/Row";
 import Col = require("react-bootstrap/lib/Col");
 
+import "@fortawesome/fontawesome-free/less/fontawesome.less"
+import "@fortawesome/fontawesome-free/less/solid.less"
+import "@fortawesome/fontawesome-free/less/brands.less"
+
+
 interface TextEditorProps {
     text: string,
     onChange: (text: string) => void
@@ -308,46 +313,46 @@ export class TextEditor extends React.Component<TextEditorProps> {
                         <ButtonGroup>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="header-tooltip">Header</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeHeader}>
-                                    <Glyphicon glyph="header"/>
+                                    <i className="fas fa-heading"/>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="bold-tooltip">Bold</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeBold}>
-                                    <Glyphicon glyph="bold"/>
+                                    <i className="fas fa-bold"/>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="italic-tooltip">Italic</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeItalic}>
-                                    <Glyphicon glyph="italic"/>
+                                    <i className="fas fa-italic"/>
                                 </Button>
                             </OverlayTrigger>
                         </ButtonGroup>
                         <ButtonGroup>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="link-tooltip">Link</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeLink}>
-                                    <Glyphicon glyph="link"/>
+                                    <i className="fas fa-link"/>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="code-tooltip">Code</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeCode}>
-                                    <Glyphicon glyph="console"/>
+                                    <i className="fas fa-code"/>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="quote-tooltip">Quote</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeQuote}>
-                                    <Glyphicon glyph="chevron-right"/>
+                                    <i className="fas fa-quote-right"/>
                                 </Button>
                             </OverlayTrigger>
                         </ButtonGroup>
                         <ButtonGroup>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="bulleted-tooltip">Bulleted list</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeBulleted}>
-                                    <Glyphicon glyph="list"/>
+                                    <i className="fas fa-list-ul"/>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="top" overlay={<Tooltip id="numbered-tooltip">Numbered list</Tooltip>}>
                                 <Button bsSize="sm" onClick={this.makeNumbered}>
-                                    <b>1.</b>
+                                    <i className="fas fa-list-ol"/>
                                 </Button>
                             </OverlayTrigger>
                         </ButtonGroup>
