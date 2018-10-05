@@ -48,7 +48,6 @@ export class TextEditor extends React.Component<TextEditorProps> {
 
     constructor(props: TextEditorProps) {
         super(props)
-
     }
 
     componentWillMount() {
@@ -173,7 +172,7 @@ export class TextEditor extends React.Component<TextEditorProps> {
             nNewLinesAfter = 1;
         }
 
-        const newLinesAfter = "\n".repeat(nNewLinesBefore);
+        const newLinesAfter = "\n".repeat(nNewLinesAfter);
 
         const lines = this.props.text.substring(selectionStart, selectionEnd).split("\n");
         const newSelectionText =
