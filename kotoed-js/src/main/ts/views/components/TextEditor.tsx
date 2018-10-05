@@ -1,7 +1,7 @@
 import * as React from "react";
 import {ButtonGroup, Button, Glyphicon, ButtonToolbar, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {EmojiPicker} from "./emoji";
-import {MousetrapInstance} from "../../util/mousetrap";
+import {MousetrapInstance, withPreventDefault} from "../../util/mousetrap";
 import {CommentTemplate, CommentTemplates} from "../../code/remote/templates";
 import * as _ from "lodash"
 import {SimpleAutoSuggest} from "./tags/SimpleAutosuggest";
@@ -294,6 +294,12 @@ export class TextEditor extends React.Component<TextEditorProps> {
         this.mousetrap && this.mousetrap.unbind("mod+enter");
         this.mousetrap && this.mousetrap.unbind("ctrl+space");
         this.mousetrap && this.mousetrap.unbind("escape");
+        this.mousetrap && this.mousetrap.unbind("mod+b");
+        this.mousetrap && this.mousetrap.unbind("mod+i");
+        this.mousetrap && this.mousetrap.unbind("mod+/");
+        this.mousetrap && this.mousetrap.unbind("mod+k");
+
+
     }
 
     componentDidMount() {
@@ -303,6 +309,10 @@ export class TextEditor extends React.Component<TextEditorProps> {
         this.mousetrap.bind("ctrl+space", () =>
             this.props.disabled || this.suggestComment());
         this.mousetrap.bind("escape", () => this.props.disabled || this.props.onEscape());
+        this.mousetrap.bind("mod+b", () => this.props.disabled || this.makeBold());
+        this.mousetrap.bind("mod+i", () => this.props.disabled || this.makeItalic());
+        this.mousetrap.bind("mod+/", () => this.props.disabled || this.makeCode());
+        this.mousetrap.bind("mod+k", withPreventDefault(() => this.props.disabled || this.makeLink()));
     }
 
     renderPanel() {
