@@ -11,15 +11,15 @@
    id="polyLogo"
    x="0px"
    y="0px"
-   viewBox="0 0 100.64314 100.04446"
+   viewBox="0 0 53.998 49.370001"
    xml:space="preserve"
    sodipodi:docname="polytech_pi.svg"
    inkscape:version="0.92.2 2405546, 2018-03-11"
-   width="100.64314"
-   height="100.04446"><metadata
+   width="53.998001"
+   height="49.369999"><metadata
    id="metadata12"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
    id="defs10" /><sodipodi:namedview
    pagecolor="#ffffff"
    bordercolor="#666666"
@@ -34,8 +34,8 @@
    id="namedview8"
    showgrid="false"
    inkscape:zoom="4.4830189"
-   inkscape:cx="120.51086"
-   inkscape:cy="67.063496"
+   inkscape:cx="97.188289"
+   inkscape:cy="41.726268"
    inkscape:window-x="1280"
    inkscape:window-y="0"
    inkscape:window-maximized="1"
@@ -49,7 +49,7 @@
 <path
    id="polytechLogo"
    class="st0"
-   d="m 73.674571,25.337228 c 1.473,0.631 3.997,4.418 3.436,8.556 -2.875,2.314 -6.312,3.927 -9.608,4.418 v 26.368 h 9.818 c 0,4.067 -0.631,7.293 -1.332,8.486 h -17.952 v -34.434 h -12.483 v 20.548 c 0,10.379 -5.821,15.428 -13.254,15.428 -2.104,0 -4.558,-0.281 -6.732,-0.912 -0.982,-1.332 -1.473,-5.33 -1.613,-10.309 4.909,2.384 11.641,3.506 12.202,-4.208 v -19.214 c -7.504,0.771 -10.239,6.031 -12.834,9.538 0.07,-4.699 0.281,-8.976 0.561,-11.852 5.119,-5.54 10.87,-8.135 22.231,-8.135 h 16.2 c 3.927,0.07 7.784,-1.403 11.36,-4.278"
+   d="m 50.352,0 c 1.473,0.631 3.997,4.418 3.436,8.556 -2.875,2.314 -6.312,3.927 -9.608,4.418 v 26.368 h 9.818 c 0,4.067 -0.631,7.293 -1.332,8.486 H 34.714 V 13.394 H 22.231 V 33.942 C 22.231,44.321 16.41,49.37 8.977,49.37 6.873,49.37 4.419,49.089 2.245,48.458 1.263,47.126 0.772,43.128 0.632,38.149 5.541,40.533 12.273,41.655 12.834,33.941 V 14.727 C 5.33,15.498 2.595,20.758 0,24.265 0.07,19.566 0.281,15.289 0.561,12.413 5.68,6.873 11.431,4.278 22.792,4.278 h 16.2 C 42.919,4.348 46.776,2.875 50.352,0"
    inkscape:connector-curvature="0"
    style="fill:#ffffff"
    sodipodi:nodetypes="cccccccccssccccccscc" />
