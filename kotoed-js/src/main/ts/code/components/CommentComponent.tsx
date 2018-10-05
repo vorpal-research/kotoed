@@ -11,6 +11,12 @@ import CmrmCodeBlock from "./CmrmCodeBlock";
 import {BaseCommentToRead} from "../../data/comment";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {setStateAsync} from "../../views/components/common";
+import {twemojifyNode} from "../../views/components/emoji";
+import {Picker} from "emoji-mart";
+
+import 'emoji-mart/css/emoji-mart.css'
+import {TextEditor} from "../../views/components/TextEditor";
+import {CommentTemplates} from "../remote/templates";
 
 
 type CommentProps = Comment & {
@@ -23,6 +29,7 @@ type CommentProps = Comment & {
     customHeaderComponent?: (state: CommentComponentState) => JSX.Element
     customHeaderButton?: (state: CommentComponentState) => JSX.Element
     defaultEditState?: "display" | "edit" | "preview"
+    commentTemplates: CommentTemplates
 }
 
 interface CommentComponentState {
@@ -31,7 +38,7 @@ interface CommentComponentState {
 }
 
 export default class CommentComponent extends React.Component<CommentProps, CommentComponentState> {
-    private textArea: HTMLTextAreaElement;
+    private editor: TextEditor;
 
     constructor(props: CommentProps) {
         super(props);
@@ -187,7 +194,10 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         return <ReactMarkdown
             source={this.props.text}
             className="comment-markdown"
-            renderers={{CodeBlock: CmrmCodeBlock}}
+            renderers={{
+                CodeBlock: CmrmCodeBlock,
+                Text: twemojifyNode
+            }}
             escapeHtml={true}
         />
     };
@@ -200,7 +210,10 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         return <ReactMarkdown
                 source={this.state.editText}
                 className="comment-markdown"
-                renderers={{CodeBlock: CmrmCodeBlock}}
+                renderers={{
+                    CodeBlock: CmrmCodeBlock,
+                    Text: twemojifyNode
+                }}
                 escapeHtml={true}
         />;
     };
@@ -234,6 +247,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                     }}>
                 Cancel
             </Button>
+
         </p>;
     };
 
@@ -254,9 +268,9 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
 
         if (this.state.editState !== prevState.editState) {
             if (this.state.editState === "edit")
-                this.textArea.focus();
+                this.editor.focus();
             else
-                this.textArea.blur();
+                this.editor.blur();
         }
     }
 
@@ -272,20 +286,19 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         }
     };
 
-    renderEditArea = () => {
+    renderEditArea = (): JSX.Element => {
         return <div style={this.getTextAreaStyle()}>
-            {/* Trying to cheat on React here to preserve Ctrl-Z history on text area when switching edit<->preview */}
-            <textarea
-                className="form-control"
-                ref={ref => this.textArea = ref!}
-                rows={5}
-                id="comment"
-                value={this.state.editText}
-                style={{
-                    resize: "none"
-                }}
-                onChange={(event) => this.setState({editText: event.target.value})}/>
-        </div>
+            <TextEditor
+                ref={(ref) => this.editor = ref!}
+                text={this.state.editText}
+                onChange={(text) => setStateAsync(this, {editText: text})}
+                panelDisabled={this.state.editState !== "edit"}
+                disabled={false}
+                onEscape={() => {}}
+                onCtrlEnter={() => this.props.onEdit(this.props.id, this.state.editText)}
+                commentTemplates={this.props.commentTemplates}
+            />
+        </div>;
     };
 
     render() {

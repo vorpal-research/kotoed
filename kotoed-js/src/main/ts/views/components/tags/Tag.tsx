@@ -1,9 +1,11 @@
 import * as React from "react";
 import * as tinycolor from "tinycolor2"
+import twemoji from "twemoji"
 import {Tag as TagData} from "../../../data/submission";
 import {Label} from "react-bootstrap";
 
 import "less/tags.less"
+import {TwemojiText} from "../emoji";
 
 interface TagProps {
     tag: TagData,
@@ -12,6 +14,7 @@ interface TagProps {
     onClick?: () => void
     disabled?: boolean
 }
+
 
 export class Tag extends React.Component<TagProps> {
     private handleRemove = () => {
@@ -58,7 +61,7 @@ export class Tag extends React.Component<TagProps> {
         let cursorType = this.props.onClick ? { cursor: "pointer" } : {};
         return <Label style={{...this.props.tag.style, color, ...cursorType}} bsStyle="default" className="tag"
                       onClick={this.props.onClick}>
-            {this.props.tag.name}
+            <TwemojiText text={this.props.tag.name}/>
             {this.props.removable &&
                 <span
                     style={{color: xColor}}
