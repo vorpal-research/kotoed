@@ -10,3 +10,16 @@ export interface MousetrapInstance {
 }
 
 export default Mousetrap
+
+export function withPreventDefault(callback: (e: Event) => void) {
+    return function (e: Event) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        } else {
+            // internet explorer
+            e.returnValue = false;
+        }
+        callback(e);
+    }
+
+}

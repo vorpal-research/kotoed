@@ -11,7 +11,7 @@ import "less/util.less";
 import {identity} from "../../util/common";
 import {isStatusFinal, WithVerificationData} from "../../data/verification";
 import {pollDespairing} from "../../util/poll";
-import Mousetrap from "../../util/mousetrap"
+import Mousetrap, {withPreventDefault} from "../../util/mousetrap"
 
 export interface SearchBarProps {
     initialText: string
@@ -270,12 +270,12 @@ export class SearchTable<DataType, QueryType = {}> extends
     };
 
     componentWillMount() {
-        Mousetrap.bindGlobal('mod+left',  _.debounce(() => {
+        Mousetrap.bindGlobal('mod+left',  _.debounce(withPreventDefault(() => {
             this.onPageChanged(this.state.currentPage - 1)
-        }, 40));
-        Mousetrap.bindGlobal('mod+right',  _.debounce(() => {
+        }), 40));
+        Mousetrap.bindGlobal('mod+right',  _.debounce(withPreventDefault(() => {
             this.onPageChanged(this.state.currentPage + 1)
-        }, 40));
+        }), 40));
         //document.addEventListener("keydown", this.onKeyPressedGlobal);
     }
 
