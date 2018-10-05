@@ -89,7 +89,7 @@ class EmojiPicker_ extends React.Component<ExpandableEmojiPickerProps, Expandabl
                 showPreview={false}
                 onSelect={(emoji) => {
                     this.props.onPick(emoji && emoji.colons && emoji.colons.replace(/_/g, "+"));
-                    // this.setState({expanded: false});
+                    this.setState({expanded: false});
                 }}
             />
         </div>
