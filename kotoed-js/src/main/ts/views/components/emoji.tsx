@@ -24,7 +24,7 @@ function toNative(text: string): string {
     const re = /:([\w-+]+):/g;
     let result: RegExpExecArray|null;
     return text.replace(re, (match, name) => {
-        const replacement = (emojiIndex.emojis[name.replace("+", "_")] as BaseEmoji);
+        const replacement = (emojiIndex.emojis[name.replace(/\+/g, "_")] as BaseEmoji);
         if (!replacement)
             return match;
         return replacement.native;
@@ -88,8 +88,8 @@ class EmojiPicker_ extends React.Component<ExpandableEmojiPickerProps, Expandabl
                 sheetSize={20}
                 showPreview={false}
                 onSelect={(emoji) => {
-                    this.props.onPick(emoji && emoji.colons && emoji.colons.replace("_", "+"));
-                    this.setState({expanded: false});
+                    this.props.onPick(emoji && emoji.colons && emoji.colons.replace(/_/g, "+"));
+                    // this.setState({expanded: false});
                 }}
             />
         </div>
