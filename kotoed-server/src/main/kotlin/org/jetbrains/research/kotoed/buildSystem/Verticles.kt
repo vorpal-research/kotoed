@@ -7,7 +7,6 @@ import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.code.vcs.CommandLine
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.buildSystem.*
-import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
@@ -18,6 +17,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRec
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -76,7 +76,10 @@ class BuildVerticle : AbstractKotoedVerticle() {
                     .map.mapValues { (_, v) -> "$v" }
 
             val res = executeBuild(BuildRequest(submission.id, buildId, pattern, env))
-            publishJsonable(Address.BuildSystem.Build.Result, res)
+
+            res.forEach {
+                publishJsonable(Address.BuildSystem.Build.Result, it)
+            }
 
             createNotification(
                     NotificationRecord().apply {
@@ -104,7 +107,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
         return BuildAck(request.buildId)
     }
 
-    suspend fun executeBuild(request: BuildRequest): BuildResponse {
+    suspend fun executeBuild(request: BuildRequest): List<BuildResponse> {
         val fs = vertx.fileSystem()
         val uid = UUID.randomUUID()
         val randomName = File(dir, "$uid")
@@ -129,11 +132,11 @@ class BuildVerticle : AbstractKotoedVerticle() {
                             log.error("[$randomName] " + result.cerr.joinToString("\n"))
                             log.info("[$randomName] " + "Build failed, exit code is ${result.rcode.get()}")
 
-                            return BuildResponse.BuildFailed(
+                            return listOf(BuildResponse.BuildFailed(
                                     request.submissionId,
                                     request.buildId,
                                     result.cout.joinToString("\n") +
-                                            result.cerr.joinToString("\n"))
+                                            result.cerr.joinToString("\n")))
                         }
                         Unit
                     }
@@ -142,13 +145,38 @@ class BuildVerticle : AbstractKotoedVerticle() {
 
             val res = fs.readFileAsync(File(randomName, "results.json").absolutePath).toJsonObject()
 
+            val inspectionsFile = File(randomName, "report/inspections.xml")
+
+            val inspections = if (inspectionsFile.exists()) {
+                val inspectionsXml = fs.readFileAsync(inspectionsFile.absolutePath)
+                xml2json(ByteArrayInputStream(inspectionsXml.bytes))
+            } else null
+
             log.info("Build request finished in directory $randomName")
 
-            return BuildResponse.BuildSuccess(
-                    request.submissionId,
-                    request.buildId,
-                    res
-            )
+            return if (inspections != null) {
+                listOf(
+                        BuildResponse.BuildSuccess(
+                                request.submissionId,
+                                request.buildId,
+                                res
+                        ),
+                        BuildResponse.BuildInspection(
+                                request.submissionId,
+                                request.buildId,
+                                inspections
+                        )
+                )
+            } else {
+                listOf(
+                        BuildResponse.BuildSuccess(
+                                request.submissionId,
+                                request.buildId,
+                                res
+                        )
+                )
+            }
+
         } catch (ex: Exception) {
             log.info("Build request failed in directory $randomName: $ex")
             throw ex
@@ -182,6 +210,17 @@ class BuildResultVerticle : AbstractKotoedVerticle() {
                 time = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
                 type = "Failed build log"
                 body = JsonObject("log" to build.log)
+            }
+            dbCreateAsync(result)
+        }
+        is BuildResponse.BuildInspection -> {
+            log.trace("Processing $build")
+
+            val result: SubmissionResultRecord = SubmissionResultRecord().apply {
+                submissionId = build.submissionId
+                time = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
+                type = "inspections.json"
+                body = build.results
             }
             dbCreateAsync(result)
         }
