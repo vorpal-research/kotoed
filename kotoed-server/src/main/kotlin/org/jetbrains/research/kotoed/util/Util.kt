@@ -127,6 +127,18 @@ inline fun <K, V> Map<K, V>.asMultiMap() =
         MultiMap.caseInsensitiveMultiMap().addAll(
                 this.mapKeys { (k, _) -> k.toString() }.mapValues { (_, v) ->  v.toString() })
 
+inline infix fun <K, V> Map<K, Set<V>>.mergeValues(other: Map<K, Set<V>>): Map<K, Set<V>> {
+    val keys = this.keys + other.keys
+
+    val res = mutableMapOf<K, Set<V>>()
+
+    for (key in keys) {
+        res[key] = (this[key] ?: emptySet()) + (other[key] ?: emptySet())
+    }
+
+    return res
+}
+
 /******************************************************************************/
 
 @Suppress(UNCHECKED_CAST, NOTHING_TO_INLINE)
