@@ -42,13 +42,19 @@ class Xml2JsonContentHandler : DefaultHandler() {
 
         val res = JsonObject()
 
-        (0..attributes.length - 1).map { i ->
+        (0 until attributes.length).map { i ->
             Pair(attributes.getQName(i), attributes.getValue(i))
         }.forEach { (k, v) ->
             res.put(k, v)
         }
 
         stack.push(res)
+    }
+
+    override fun characters(ch: CharArray, start: Int, length: Int) {
+        val me = stack.peek()
+
+        me["value"] = String(ch, start, length)
     }
 
     override fun endElement(

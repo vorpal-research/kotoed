@@ -126,6 +126,9 @@ inline fun JsonObject?.safeNav(fields: List<String>) =
 inline fun JsonObject?.safeNav(vararg fields: String) =
         safeNav(fields.asList())
 
+inline fun <reified T> JsonObject?.safeNavAs(vararg fields: String) =
+        safeNav(fields.asList()) as? T
+
 inline operator fun JsonObject.get(vararg fields: String) =
         get(fields.asList())
 

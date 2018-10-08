@@ -12,19 +12,15 @@ import org.jetbrains.research.kotoed.database.Tables.*
 import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.Notification
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
-import org.jetbrains.research.kotoed.web.UrlPattern
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.plus
 import java.io.File
-import java.nio.file.Path
-import java.util.*
 
 private typealias CommentsResponse = SubmissionComments.CommentsResponse
 private typealias CommentAggregate = SubmissionComments.CommentAggregate
@@ -44,7 +40,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val targets = dbFindAsync(SubmissionCommentRecord().apply {
             submissionId = parentSubmissionId
             state = SubmissionCommentState.open
-        }).map{ it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as Int
+        }).map { it.authorId }.toSet() - jumboSub.safeNav("project", "denizen", "id") as Int
 
         targets.forEach {
             val existing = dbQueryAsync(
@@ -56,12 +52,12 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                                             parentSubmissionId,
                                             it
                                     )
-                        )
+                            )
             )
 
             val old = existing.firstOrNull()
 
-            old?.apply old@ {
+            old?.apply old@{
                 val res: NotificationRecord =
                         sendJsonableAsync(Address.Api.Notification.MarkRead, NotificationRecord().apply {
                             id = this@old["id"] as Int
@@ -83,8 +79,6 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                     this["times"] = oldTimes?.let { it + 1 } ?: 1
                 }
             })
-
-
 
         }
     }
@@ -332,7 +326,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
             stateIn?.let { filter("state in %s".formatToQuery(it)) }
 
-            if(query.withTags == true) {
+            if (query.withTags == true) {
                 rjoin(SUBMISSION_TAG) {
                     join(TAG)
                 }
@@ -372,8 +366,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         var currentId = query.submissionId
 
         for (i in 0 until limit) {
-            val oldest = dbFetchAsync(SubmissionRecord().apply { id = currentId }) ?:
-                    throw NotFound("Submission ${query.submissionId} not found")
+            val oldest = dbFetchAsync(SubmissionRecord().apply { id = currentId })
+                    ?: throw NotFound("Submission ${query.submissionId} not found")
             history.add(oldest.toJson())
             currentId = oldest.parentSubmissionId ?: break
         }
@@ -414,8 +408,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         return dbSubmissionTags
     }
 
-    @JsonableEventBusConsumerFor(Address.Api.Submission.Annotations)
-    suspend fun handleAnnotations(request: SubmissionRecord): SubmissionCodeAnnotationResponse {
+    private suspend fun handleBuildErrors(request: SubmissionRecord): Map<String, Set<SubmissionCodeAnnotation>> {
         val buildBaseDir = File(System.getProperty("user.dir"), Config.BuildSystem.StoragePath).absolutePath
 
         val errorMessageRe = """(([\\/][^\\/:]+)+):\s*[(\[]([0-9]+),\s*([0-9]+)[)\]]\s*(.*)$""".toRegex()
@@ -425,14 +418,15 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .flatMap {
                     val objectBody = it.body as? JsonObject
                     val log = objectBody?.getString("log")
-                    when {
-                        log == null -> listOf()
+                    when (log) {
+                        null -> listOf()
                         else -> log.lineSequence().filter { it.startsWith("[ERROR]") }.toList()
                     }
                 }
                 .map {
                     val (_, fileG, _, lineG, colG, messageG) =
-                            errorMessageRe.find(it)?.groupValues ?: return@map null
+                            errorMessageRe.find(it)?.groupValues
+                                    ?: return@map null
 
                     val file = fileG // /home/path/to/kotoed/$uid/path/to/code
                             .removePrefix(buildBaseDir) // /$uid/path/to/code
@@ -455,7 +449,56 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                         keySelector = { it.first },
                         valueTransform = { it.second }
                 )
-        return SubmissionCodeAnnotationResponse(compilerErrors.mapValues { it.value.toSet() })
+        return compilerErrors.mapValues { it.value.toSet() }
+    }
+
+    private suspend fun handleInspectionWarnings(request: SubmissionRecord): Map<String, Set<SubmissionCodeAnnotation>> {
+        val inspectionWarnings = dbFindAsync(SubmissionResultRecord().apply { submissionId = request.id })
+                .filter { "inspections.json" == it.type }
+                .flatMap {
+                    val inspections = it.body as JsonObject
+                    val infos = inspections.safeNav("report", "info", "problem")
+                    val errors = inspections.safeNav("report", "errors", "problem")
+                    val warnings = inspections.safeNav("report", "warnings", "problem")
+
+                    fun Any?.listOrEmpty() = when (this) {
+                        is JsonArray -> list
+                        is JsonObject -> listOf(this)
+                        else -> emptyList()
+                    }
+
+                    infos.listOrEmpty() + errors.listOrEmpty() + warnings.listOrEmpty()
+                }
+                .filterIsInstance<JsonObject>()
+                .map {
+                    val file = it.safeNavAs<String>("file", "value")
+                            ?: return@map null
+                    val line = it.safeNavAs<String>("line", "value")?.toIntOrNull()
+                            ?: return@map null
+                    val col = it.safeNavAs<String>("row", "value")?.toIntOrNull()
+                            ?: return@map null
+                    val desc = it.safeNavAs<String>("description", "value")
+                            ?: return@map null
+
+                    file to SubmissionCodeAnnotation(
+                            SubmissionCodeAnnotationSeverity.warning,
+                            desc,
+                            SubmissionCodeAnnotationPosition(line, col)
+                    )
+                }
+                .filterNotNull()
+                .groupBy(
+                        keySelector = { it.first },
+                        valueTransform = { it.second }
+                )
+        return inspectionWarnings.mapValues { it.value.toSet() }
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Annotations)
+    suspend fun handleAnnotations(request: SubmissionRecord): SubmissionCodeAnnotationResponse {
+        val buildErrors = handleBuildErrors(request)
+        val inspectionWarnings = handleInspectionWarnings(request)
+        return SubmissionCodeAnnotationResponse(buildErrors mergeValues inspectionWarnings)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Search)
