@@ -163,14 +163,15 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return resp
                 .groupBy { it.safeNav("submission", "project", "denizen", "denizenId") as? String }
                 .map { (k, v) ->
-                    k to v.filter {
-                        (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime <= date
-                    }.map {
-                        it.toRecord<SubmissionResultRecord>()
-                    }
+                    k to  v
+                            .filter { template in it.getString("type") }
+                            .sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
+                            .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
+                            .firstOrNull()
+                            ?.toRecord<SubmissionResultRecord>()
                 }
                 .map { (k, v) ->
-                    k.orEmpty() to (v.map(this::calcScore).max() ?: 0.0)
+                    k.orEmpty() to (v?.let(this::calcScore) ?: 0.0)
                 }.toMap()
     }
 
