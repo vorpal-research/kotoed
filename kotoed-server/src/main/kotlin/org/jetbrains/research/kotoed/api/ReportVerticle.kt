@@ -62,8 +62,6 @@ class ReportVerticle : AbstractKotoedVerticle() {
                                     .sortedDescending()
                         }
 
-        log.debug("goodLessonData = ${goodLessonData}")
-
         val fullLessonData: Map<String, List<Double>> =
                 content.data
                         .groupBy { it.packageName.split('.').first() }
@@ -73,16 +71,12 @@ class ReportVerticle : AbstractKotoedVerticle() {
                                     .sortedDescending()
                         }
 
-        log.debug("fullLessonData = ${fullLessonData}")
-
         val lessonData: Map<String, Pair<List<Double>, List<Double>>> =
                 fullLessonData.entries.fold(mutableMapOf()) { acc, (id, fullData) ->
                     acc.also {
                         it[id] = (goodLessonData[id] ?: emptyList()) to fullData
                     }
                 }
-
-        log.debug("lessonData = ${lessonData}")
 
         var total = 0.0
 
@@ -92,8 +86,6 @@ class ReportVerticle : AbstractKotoedVerticle() {
             total += score
         }
         total /= lessonData.size
-
-        log.debug("total = ${total}")
 
         return total
     }
