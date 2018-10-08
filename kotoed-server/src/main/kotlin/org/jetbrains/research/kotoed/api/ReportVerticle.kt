@@ -176,12 +176,12 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
     suspend fun handleReport(request: ReportRequest): ReportResponse {
-        val open = makeReport(request, listOf("open", "closed"))
+        val open = makeReport(request, listOf("open", "obsolete", "closed"))
         val closed = makeReport(request, listOf("closed"))
 
         val students = open.keys + closed.keys
         val result = listOf(
-                listOf("Student", "Score (open)", "Score (closed)")
+                listOf("Student", "Score (all)", "Score (closed)")
         ) + students.sorted().map { listOf(it, open[it].orZero().fmt, closed[it].orZero().fmt) }
 
         return ReportResponse(result)
