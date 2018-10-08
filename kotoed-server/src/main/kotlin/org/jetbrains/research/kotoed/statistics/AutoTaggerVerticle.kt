@@ -80,6 +80,9 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.BuildSystem.Build.Result)
     suspend fun consumeBuildResult(build: BuildResponse) = when(build) {
+        is BuildResponse.BuildInspection -> {
+            // TODO: Inspection-related tags?
+        }
         is BuildResponse.BuildSuccess -> {
             removeTag(build.submissionId, getStale())
             removeTag(build.submissionId, getBuildFailed())

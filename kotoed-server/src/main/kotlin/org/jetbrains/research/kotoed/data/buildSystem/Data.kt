@@ -1,8 +1,8 @@
 package org.jetbrains.research.kotoed.data.buildSystem
 
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.util.*
-import kotlin.reflect.KClass
+import org.jetbrains.research.kotoed.util.Jsonable
+import org.jetbrains.research.kotoed.util.JsonableSealed
 
 enum class BuildCommandType { SHELL }
 
@@ -15,12 +15,20 @@ data class BuildRequest(val submissionId: Int,
                         val buildId: Int,
                         val buildScript: List<BuildCommand>,
                         val env: Map<String, String>?) : Jsonable
+
 sealed class BuildResponse : JsonableSealed {
+
     data class BuildSuccess(val submissionId: Int,
                             val buildId: Int,
-                            val results: JsonObject): BuildResponse()
+                            val results: JsonObject) : BuildResponse()
+
+    data class BuildInspection(val submissionId: Int,
+                               val buildId: Int,
+                               val results: JsonObject) : BuildResponse()
+
     data class BuildFailed(val submissionId: Int,
                            val buildId: Int,
-                           val log: String): BuildResponse()
+                           val log: String) : BuildResponse()
 }
+
 data class BuildAck(val buildId: Int) : Jsonable
