@@ -1,0 +1,11 @@
+extends ./baseWithNav
+
+block title
+    +kotoedTitleFromContext()
+
+append content
+    div(
+    id="course-report-app"
+    data-course-id=context.get("course-id")
+    data-timestamp=context.get("timestamp")
+    )

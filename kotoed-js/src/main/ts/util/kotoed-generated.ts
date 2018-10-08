@@ -10,7 +10,6 @@ export namespace Generated {
             read: (entity: string) => {
                 return `kotoed.api.${entity}.read`;
             },
-            Report: "kotoed.api.report",
             BuildTemplate: {
                 Create: "kotoed.api.buildTemplate.create",
                 Read: "kotoed.api.buildTemplate.read",
@@ -28,6 +27,7 @@ export namespace Generated {
                 Create: "kotoed.api.course.create",
                 Error: "kotoed.api.course.remoteError",
                 Read: "kotoed.api.course.read",
+                Report: "kotoed.api.course.report",
                 Search: "kotoed.api.course.search",
                 SearchCount: "kotoed.api.course.search.count",
                 Update: "kotoed.api.course.update",
@@ -92,6 +92,7 @@ export namespace Generated {
                 List: "kotoed.api.submission.list",
                 ListCount: "kotoed.api.submission.list.count",
                 Read: "kotoed.api.submission.read",
+                Report: "kotoed.api.submission.report",
                 Update: "kotoed.api.submission.update",
                 Code: {
                     Date: "kotoed.api.submission.code.date",
@@ -109,6 +110,7 @@ export namespace Generated {
                 Result: {
                     BatchRead: "kotoed.api.submission.result.read.batch",
                     Read: "kotoed.api.submission.result.read",
+                    Report: "kotoed.api.submission.result.report",
                 },
                 Tags: {
                     Create: "kotoed.api.submission.tags.create",
