@@ -11,6 +11,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import java.time.OffsetDateTime
+import java.util.*
 
 data class ReportRequest(val id: Int, val timestamp: OffsetDateTime?) : Jsonable
 
@@ -43,7 +44,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             }
         }
 
-    private val Double.fmt get() = String.format("%.2f", this)
+    private val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
     private fun Double?.orZero() = this ?: 0.0
 
     private fun calcScore(sr: SubmissionResultRecord): Double {
