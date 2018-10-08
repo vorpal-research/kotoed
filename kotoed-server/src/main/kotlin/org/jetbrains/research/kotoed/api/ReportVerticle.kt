@@ -21,7 +21,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val successfulStatus = KotoedRunnerStatus.SUCCESSFUL
 
     private val tagging = mapOf(
-            "Example" to 0.0,
+            "Example" to null,
             "Trivial" to 0.0,
             "Easy" to 1.0,
             "Normal" to 4.0,
@@ -30,8 +30,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
     )
     private val tags = tagging.entries.sortedBy { it.value }.map { it.key }
 
-    private val String?.grade: Double
-        get() = tagging[this] ?: 0.0
+    private val String?.grade: Double?
+        get() = tagging[this]
 
     private val List<Double>.grade: Double
         get() = when (size) {
@@ -51,24 +51,28 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         val content: KotoedRunnerTestRun = (sr.body as JsonObject).snakeKeys().toJsonable()
 
-        val goodLessonData =
+        val goodLessonData: Map<String, List<Double>> =
                 content.data
                         .groupBy { it.packageName.split('.').first() }
                         .mapValues { (_, results) ->
                             results.groupBy { it.methodName }
                                     .filter { (_, v) -> v.flatMap { it.results }.all { it.status == successfulStatus } }
-                                    .map { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
+                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
                                     .sortedDescending()
                         }
 
-        val fullLessonData =
+        log.debug("goodLessonData = ${goodLessonData}")
+
+        val fullLessonData: Map<String, List<Double>> =
                 content.data
                         .groupBy { it.packageName.split('.').first() }
                         .mapValues { (_, results) ->
                             results.groupBy { it.methodName }
-                                    .map { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
+                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
                                     .sortedDescending()
                         }
+
+        log.debug("fullLessonData = ${fullLessonData}")
 
         val lessonData: Map<String, Pair<List<Double>, List<Double>>> =
                 fullLessonData.entries.fold(mutableMapOf()) { acc, (id, fullData) ->
@@ -76,6 +80,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                         it[id] = (goodLessonData[id] ?: emptyList()) to fullData
                     }
                 }
+
+        log.debug("lessonData = ${lessonData}")
 
         var total = 0.0
 
@@ -85,6 +91,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
             total += score
         }
         total /= lessonData.size
+
+        log.debug("total = ${total}")
 
         return total
     }
@@ -124,8 +132,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 val total = fullLesson.count { it == tag }
                 tableData[lesson to tag] = "$good/$total"
             }
-            val goodScore = goodLesson.map { it.grade }.grade
-            val fullScore = fullLesson.map { it.grade }.grade
+            val goodScore = goodLesson.mapNotNull { it.grade }.grade
+            val fullScore = fullLesson.mapNotNull { it.grade }.grade
             scores[lesson] = goodScore / fullScore
         }
 
