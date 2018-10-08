@@ -3,6 +3,8 @@ package org.jetbrains.research.kotoed.statistics
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.buildSystem.BuildResponse
+import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerStatus
+import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerTestRun
 import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
@@ -12,21 +14,6 @@ import org.jetbrains.research.kotoed.database.tables.records.TagRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import java.time.OffsetDateTime
-
-data class KotoedRunnerFailure(
-        val nestedException: String
-): Jsonable
-data class KotoedRunnerTestResult(
-        val status: String,
-        val failure: KotoedRunnerFailure?
-): Jsonable
-data class KotoedRunnerTestMethodRun(
-        val tags: List<String>,
-        val results: List<KotoedRunnerTestResult>,
-        val methodName: String,
-        val packageName: String
-): Jsonable
-data class KotoedRunnerTestRun(val data: List<KotoedRunnerTestMethodRun>): Jsonable
 
 @AutoDeployable
 class AutoTaggerVerticle: AbstractKotoedVerticle() {
@@ -90,14 +77,14 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             val content: KotoedRunnerTestRun = build.results.snakeKeys().toJsonable()
 
             if(content.data.any { it.results.any {
-                        it.status != "SUCCESSFUL" &&
+                        it.status != KotoedRunnerStatus.SUCCESSFUL &&
                                 it.failure != null &&
                                 !it.failure.nestedException.startsWith("kotlin.NotImplementedError")
                     } }) {
                 setTag(build.submissionId, getTestsFailed())
             } else {
                 if(content.data.all {
-                            it.results.any { it.status != "SUCCESSFUL" } || "Example" in it.tags
+                            it.results.any { it.status != KotoedRunnerStatus.SUCCESSFUL } || "Example" in it.tags
                         }) {
                     setTag(build.submissionId, getEmptySub())
                 } else {
