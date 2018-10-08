@@ -110,5 +110,5 @@ object ExpressionParsers: StringsAsParsers {
         }
     }
 
-    val root = expr
+    val root = expr + eof()
 }

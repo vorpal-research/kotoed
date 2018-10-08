@@ -5,8 +5,6 @@ object Address {
         fun create(entity: String) = "kotoed.api.$entity.create"
         fun read(entity: String) = "kotoed.api.$entity.read"
 
-        const val Report = "kotoed.api.report"
-
         object Course {
             const val Create = "kotoed.api.course.create"
             const val Read = "kotoed.api.course.read"
@@ -14,6 +12,7 @@ object Address {
             const val Error = "kotoed.api.course.remoteError"
             const val Search = "kotoed.api.course.search"
             const val SearchCount = "kotoed.api.course.search.count"
+            const val Report = "kotoed.api.course.report"
 
             object Verification {
                 const val Data = "kotoed.api.course.verification.data"
@@ -80,6 +79,8 @@ object Address {
             const val History = "kotoed.api.submission.history"
             const val HasOpen = "kotoed.api.submission.hasOpen"
 
+            const val Report = "kotoed.api.submission.report"
+
             object Tags {
                 const val Create = "kotoed.api.submission.tags.create"
                 const val Read = "kotoed.api.submission.tags.read"
@@ -113,6 +114,8 @@ object Address {
             object Result {
                 const val Read = "kotoed.api.submission.result.read"
                 const val BatchRead = "kotoed.api.submission.result.read.batch"
+
+                const val Report = "kotoed.api.submission.result.report"
             }
         }
 
