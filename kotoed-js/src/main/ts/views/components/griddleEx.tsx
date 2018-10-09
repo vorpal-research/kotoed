@@ -77,7 +77,7 @@ export interface UnknownFailureInfo {
 
 export function isUnknownFailureInfo(failure: FailureInfo): failure is UnknownFailureInfo {
     return failure &&
-        (failure as any).class === "org.jetbrains.research.runner.data.UnknownFailureDatum";
+        (failure as any)["@class"] === "org.jetbrains.research.runner.data.UnknownFailureDatum";
 }
 
 export interface TestFailureInfo {
@@ -89,7 +89,7 @@ export interface TestFailureInfo {
 
 export function isTestFailureInfo(failure: FailureInfo): failure is TestFailureInfo {
     return failure &&
-        (failure as any).class === "org.jetbrains.research.runner.data.TestFailureDatum";
+        (failure as any)["@class"] === "org.jetbrains.research.runner.data.TestFailureDatum";
 }
 
 export type FailureInfo = TestFailureInfo | UnknownFailureInfo
@@ -146,12 +146,14 @@ export const TestDataColumn = ({value}: { value: List<TestData> }) =>
                                 <ListGroupItem bsStyle="danger">
                                     Inputs:
                                     <ListGroup>
-                                        {_.toPairs(failure.input).map(([k, v]) => {
-                                            return <ListGroupItem
-                                                bsStyle="danger">
-                                                <pre><code>{prettyPrint(k)} -> {prettyPrint(v)}</code></pre>
-                                            </ListGroupItem>
-                                        })}
+                                        {_.toPairs(failure.input)
+                                            .filter(([k, _]) => !k.startsWith("@"))
+                                            .map(([k, v]) => {
+                                                return <ListGroupItem
+                                                    bsStyle="danger">
+                                                    <pre><code>{prettyPrint(k)} -> {prettyPrint(v)}</code></pre>
+                                                </ListGroupItem>
+                                            })}
                                     </ListGroup>
                                 </ListGroupItem>
                                 <ListGroupItem bsStyle="danger">
@@ -231,7 +233,7 @@ export namespace Bootstrap {
                     <a className="page-link"
                        href="#"
                        aria-label={`Page ${idx}`}
-                       onClick={(e) => props.setPage(idx)}>
+                       onClick={(_) => props.setPage(idx)}>
                         <span aria-hidden="true">{idx}</span>
                         <span className="sr-only">{`Page ${idx}`}</span>
                     </a>
