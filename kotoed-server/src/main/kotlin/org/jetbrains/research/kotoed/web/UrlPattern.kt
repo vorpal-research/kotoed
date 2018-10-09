@@ -45,6 +45,7 @@ object UrlPattern {
     object Course {
         const val Index = "/course/:id"
         const val Edit = "/course/edit/:id"
+        const val Report = "/course/report/:id"
     }
 
     object BuildTemplate {

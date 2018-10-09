@@ -62,6 +62,7 @@ class CommentTemplateEditComponent extends React.Component<CommentTemplateState 
                     notifyEditorAboutChange={doNothing}
                     onEdit={this.onEdit}
                     processing={false}
+                    commentTemplates={[]}
                     customHeaderComponent={ newState =>
                         newState.editState === "edit" ?
                             <input value={this.state.name}
@@ -130,6 +131,7 @@ class CommentTemplateCreator
                         onCancelEdit={this.onCancel}
                         processing={false}
                         defaultEditState={'edit'}
+                        commentTemplates={[]}
                         customHeaderComponent={ newState =>
                             newState.editState === "edit" ?
                                 <input value={this.state.name}

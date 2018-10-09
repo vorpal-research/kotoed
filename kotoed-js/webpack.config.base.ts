@@ -52,6 +52,7 @@ const config: webpack.Configuration = {
         courseList: kotoedEntry("./ts/courses/list.tsx"),
         projectList: kotoedEntry("./ts/projects/list.tsx"),
         submissionList: kotoedEntry("./ts/submissions/list.tsx"),
+        courseReport: kotoedEntry("./ts/views/courseReport.tsx"),
         images: "./ts/images.ts"
     },
     output: {
