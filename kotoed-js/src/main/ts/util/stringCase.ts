@@ -13,10 +13,12 @@ function convertStringKeys(obj: any, f: (key: string) => string) {
 
         let newKey;
 
-        if (typeof key === "string")
+        if (typeof key === "string") {
             newKey = f(key);
-        else
+            if (key.startsWith("@")) newKey = `@${newKey}`
+        } else {
             newKey = key;
+        }
 
         newObj[newKey] = convertStringKeys(obj[key], f);
     }
