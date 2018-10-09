@@ -387,7 +387,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         } ?: DSL.condition(true)
         var where = join.where(condition).and(baseCondition).and(parsedCondition)!!
         additionalConditions.forEach { where = where.and(it) }
-        val parsedSort = message.sortBy.map {
+        val parsedSort = message.sortBy.orEmpty().map {
             parseSortCriterion(it) { tname ->
                 when {
                     tname.isEmpty() -> tableMap[table.name]

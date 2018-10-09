@@ -8,6 +8,7 @@ interface SimpleAutoSuggestProps<T> {
     valueToString?: (v: T) => string
     renderSuggestion?: (v: T) => JSX.Element
     disabled?: boolean
+    placeholder?: string
 }
 
 interface SimpleAutosuggestState<T> {
@@ -58,7 +59,8 @@ export class SimpleAutoSuggest<T> extends React.Component<SimpleAutoSuggestProps
             inputProps={{
                 value: this.state.search,
                 onChange: (evt: {}, params: {newValue: string}) => {this.setState({search: params.newValue})},
-                disabled: this.isDisabled()
+                disabled: this.isDisabled(),
+                placeholder: this.props.placeholder || ""
             }}
             onSuggestionSelected={(ev: {}, {suggestion: v}: {suggestion: T}) => {
                 this.props.onSelect(v);

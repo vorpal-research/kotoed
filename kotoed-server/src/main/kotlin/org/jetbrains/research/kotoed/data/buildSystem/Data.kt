@@ -32,3 +32,24 @@ sealed class BuildResponse : JsonableSealed {
 }
 
 data class BuildAck(val buildId: Int) : Jsonable
+
+data class KotoedRunnerFailure(
+        val nestedException: String
+): Jsonable
+// acquired by fair
+// ```SQL
+// select distinct (jsonb_array_elements(jsonb_array_elements(body->'data')->'results')->'status')
+// from submission_result where type = 'results.json';
+// ```
+enum class KotoedRunnerStatus : Jsonable { ABORTED, SUCCESSFUL, NOT_IMPLEMENTED, FAILED }
+data class KotoedRunnerTestResult(
+        val status: KotoedRunnerStatus,
+        val failure: KotoedRunnerFailure?
+): Jsonable
+data class KotoedRunnerTestMethodRun(
+        val tags: List<String>,
+        val results: List<KotoedRunnerTestResult>,
+        val methodName: String,
+        val packageName: String
+): Jsonable
+data class KotoedRunnerTestRun(val data: List<KotoedRunnerTestMethodRun>): Jsonable

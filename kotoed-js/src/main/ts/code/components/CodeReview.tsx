@@ -10,7 +10,7 @@ import {List} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate} from "../remote/comments";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
-import {ScrollTo} from "../state/index";
+import {ScrollTo} from "../state";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {BaseCommentToRead} from "../../data/comment";
 import {DbRecordWrapper} from "../../data/verification";
@@ -110,6 +110,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                           makeOriginalLink={this.props.comments.makeOriginalLink}
                                           loading={this.props.lostFound.loading}
                                           scrollTo={this.props.scrollTo}
+                                          commentTemplates={this.props.commentTemplates}
                 />;
             case "code":
                 if (this.props.editor.file !== "")
@@ -173,7 +174,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
         </div>
     };
 
-    shouldRenderReview = () => this.props.submission && this.props.submission.verificationData.status === "Processed"
+    shouldRenderReview = () => this.props.submission && this.props.submission.verificationData.status === "Processed";
 
 
     render() {

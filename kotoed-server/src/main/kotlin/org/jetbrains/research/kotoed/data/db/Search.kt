@@ -67,7 +67,7 @@ data class ComplexDatabaseQuery(
         val joins: List<DatabaseJoin>? = listOf(),
         val rjoins: List<ReverseDatabaseJoin>? = listOf(),
         val filter: String? = null,
-        val sortBy: List<String> = listOf(),
+        val sortBy: List<String>? = listOf(),
         val limit: Int? = null,
         val offset: Int? = null
 ) : Jsonable {
@@ -119,11 +119,12 @@ data class ComplexDatabaseQuery(
         val find_ = find ?: JsonObject()
         val joins_ = joins.orEmpty().map { it.fillDefaults() }
         val rjoins_ = rjoins.orEmpty().map { it.fillDefaults() }
-        return copy(find = find_, joins = joins_, rjoins = rjoins_)
+        val sortBy_ = sortBy.orEmpty()
+        return copy(find = find_, joins = joins_, rjoins = rjoins_, sortBy = sortBy_)
     }
 
     fun filter(@Language("Kotlin") filter: String) = copy(filter = filter)
-    fun sortBy(@Language("Kotlin") expr: String) = copy(sortBy = sortBy + expr)
+    fun sortBy(@Language("Kotlin") expr: String) = copy(sortBy = sortBy.orEmpty() + expr)
 
     fun limit(limit: Int) = copy(limit = limit)
     fun offset(offset: Int) = copy(offset = offset)
