@@ -1,4 +1,4 @@
-import * as React from "react";
+ import * as React from "react";
 import {Table,
     Glyphicon,
     Tooltip,
@@ -12,13 +12,28 @@ import snafuDialog from "../util/snafuDialog";
 import {JumboProject, SubmissionToRead} from "../data/submission";
 
 import "less/projects.less"
-import {SearchTable} from "../views/components/search";
+import {SearchCallback, SearchTable} from "../views/components/search";
 import {BloatDenizen, Denizen, Profile} from "../data/denizen";
+ import {makeGroup} from "../util/denizen";
 
-class DenizenComponent extends React.PureComponent<BloatDenizen> {
-    constructor(props: BloatDenizen) {
+class DenizenComponent extends React.PureComponent<BloatDenizen & {cb: SearchCallback}> {
+    constructor(props: BloatDenizen & {cb: SearchCallback}) {
         super(props);
     }
+
+    handleSearchableClick = (word: string) => {
+        const searchState = this.props.cb();
+        // XXX: we can do better
+        if(!searchState.oldKey.includes(word)) {
+            searchState.toggleSearch(searchState.oldKey + " " + word)
+        }
+    };
+
+    makeGroupLink = () => {
+        const mg = makeGroup(this.props);
+        return mg && <a style={{cursor: "pointer"}}
+                        onClick={() => this.handleSearchableClick(mg)}>{mg}</a>
+    };
 
     linkify = (text: string | undefined): JSX.Element => {
         if (!text)
@@ -35,7 +50,7 @@ class DenizenComponent extends React.PureComponent<BloatDenizen> {
             <td>{this.linkify(this.props.email)}</td>
             <td>{this.linkify(profile.firstName)}</td>
             <td>{this.linkify(profile.lastName)}</td>
-            <td>{this.linkify(profile.groupId)}</td>
+            <td>{this.makeGroupLink()}</td>
         </tr>
     }
 
@@ -78,7 +93,8 @@ class ProjectsSearch extends React.Component<{}> {
                 searchAddress={Kotoed.Address.Api.Denizen.Search}
                 countAddress={Kotoed.Address.Api.Denizen.SearchCount}
                 wrapResults={this.renderTable}
-                elementComponent={(key, c: BloatDenizen) => <DenizenComponent {...c} key={key} />}
+                elementComponent={(key, c: BloatDenizen, cb: SearchCallback) =>
+                    <DenizenComponent {...c} key={key} cb={cb}/>}
             />
         );
     }

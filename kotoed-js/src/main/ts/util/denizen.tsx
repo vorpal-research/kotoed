@@ -19,6 +19,23 @@ export function makeRealName(denizen: BloatDenizen): string {
     return `(${firstName} ${lastName}${groupId_})`
 }
 
+export function makeFullName(denizen: BloatDenizen): string {
+    if (!denizen.profiles || denizen.profiles.length == 0)
+        return "";
+
+    let {firstName, lastName} = denizen.profiles[0];
+    firstName = firstName || "";
+    lastName = lastName || "";
+    return (`${firstName} ${lastName}`).trim()
+}
+
+export function makeGroup(denizen: BloatDenizen): string {
+    if (!denizen.profiles || denizen.profiles.length == 0)
+        return "";
+
+    return denizen.profiles[0].groupId || ""
+}
+
 export function makeProfileLink(denizen: BloatDenizen): JSX.Element {
     return <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: denizen.id})}>
         {truncateString(denizen.denizenId, 16)}{" "}{makeRealName(denizen)}
