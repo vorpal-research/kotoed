@@ -27,8 +27,8 @@ import {
     linkToSubmissionDetails, linkToSubmissionResults, linkToSubmissionReview,
     renderSubmissionIcon, renderSubmissionTags
 } from "../submissions/util";
-import {Denizen} from "../data/denizen";
-import {makeProfileLink} from "../util/denizen";
+import {BloatDenizen, Denizen} from "../data/denizen";
+import {makeFullName, makeGroup, makeProfileLink, makeRealName} from "../util/denizen";
 
 type ProjectWithVer = JumboProject & WithVerificationData & { cb: SearchCallback }
 
@@ -56,11 +56,11 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         })
     }
 
-    handleTagClick = (tag: string) => {
+    handleSearchableClick = (word: string) => {
         const searchState = this.props.cb();
         // XXX: we can do better
-        if(!searchState.oldKey.endsWith(tag)) {
-            searchState.toggleSearch(searchState.oldKey + " " + tag)
+        if(!searchState.oldKey.includes(word)) {
+            searchState.toggleSearch(searchState.oldKey + " " + word)
         }
     };
 
@@ -76,7 +76,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
                         <td>{linkToSubmissionResults(sub)}</td>
                         <td>{linkToSubmissionReview(sub)}</td>
                         <td>{renderSubmissionIcon(sub)}</td>
-                        <td>{renderSubmissionTags(sub, this.handleTagClick)}</td>
+                        <td>{renderSubmissionTags(sub, this.handleSearchableClick)}</td>
                     </tr>)}
                 </tbody>
             </table>
@@ -101,11 +101,35 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
         }
     };
 
+    private renderRealName = (denizen: BloatDenizen): JSX.Element => {
+        let fullName = makeFullName(denizen);
+        let group = makeGroup(denizen);
+        let nameLink =
+            <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: denizen.id})}>
+                {fullName || `#${denizen.id}`}
+            </a>;
+        let groupLink = group && <a style={{cursor: "pointer"}} onClick={() => this.handleSearchableClick(group)}>{group}</a>;
+
+        return <span>
+            ({nameLink}{groupLink && <span>, {groupLink}</span> || null})
+        </span>
+    };
+
+    private renderProfileLinks = (denizen: BloatDenizen): JSX.Element => {
+        return <span>
+            <a style={{cursor: "pointer"}}
+               onClick={() => this.handleSearchableClick(denizen.denizenId)}>
+                {truncateString(denizen.denizenId, 16)}
+            </a>
+            {" "}{this.renderRealName(denizen)}
+        </span>
+    };
+
     render() {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
             <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
-            <td>{makeProfileLink(this.props.denizen)}</td>
+            <td>{this.renderProfileLinks(this.props.denizen)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>
         </tr>
