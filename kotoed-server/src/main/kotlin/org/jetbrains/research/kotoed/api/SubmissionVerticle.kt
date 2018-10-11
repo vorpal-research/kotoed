@@ -457,7 +457,8 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                 .filter { "inspections.json" == it.type }
                 .flatMap {
                     val inspections = it.body as JsonObject
-                    val infos = inspections.safeNav("report", "info", "problem")
+                    val info = inspections.safeNav("report", "info", "problem")
+                    val infos = inspections.safeNav("report", "infos", "problem")
                     val errors = inspections.safeNav("report", "errors", "problem")
                     val warnings = inspections.safeNav("report", "warnings", "problem")
 
@@ -467,7 +468,10 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                         else -> emptyList()
                     }
 
-                    infos.listOrEmpty() + errors.listOrEmpty() + warnings.listOrEmpty()
+                    info.listOrEmpty() +
+                            infos.listOrEmpty() +
+                            errors.listOrEmpty() +
+                            warnings.listOrEmpty()
                 }
                 .filterIsInstance<JsonObject>()
                 .map {
