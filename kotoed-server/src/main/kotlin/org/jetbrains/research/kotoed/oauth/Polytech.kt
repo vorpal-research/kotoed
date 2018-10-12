@@ -9,7 +9,7 @@ import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
 class Polytech(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, vertx, callbackBaseUri), Loggable {
-    override val providerBaseUri: String = "https://cas.icc.spbstu.ru/oauth2.0"
+    override val providerBaseUri: String = "https://cas.spbstu.ru/oauth2.0"
     override val accessTokenPath: String = "/token"
 
     override suspend fun doGetUserId(): String {
