@@ -91,7 +91,8 @@ class EmojiPicker_ extends React.Component<ExpandableEmojiPickerProps, Expandabl
                 onSelect={(emoji) => {
                     // Well, it looks like shit now.
                     // _ -> + replacement is because undersores are separate tokens in Markdown.
-                    // + -> @plus@ is because some emojis actually use + in their names
+                    // + -> @plus@ is because some emojis actually use + in their names.
+                    // The second one was done later and I didn't want to corrupt the emojis typed earlier
                     this.props.onPick(emoji && emoji.colons && emoji.colons.replace(/\+/, "@plus@").replace(/_/g, "+"));
                     this.setState({expanded: false});
                 }}
