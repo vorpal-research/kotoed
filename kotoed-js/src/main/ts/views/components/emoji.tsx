@@ -21,10 +21,11 @@ export class TwemojiText extends React.Component<TwemojiTextProps> {
 }
 
 function toNative(text: string): string {
-    const re = /:([\w-+]+):/g;
+    const re = /:([\w-+@]+):/g;
     let result: RegExpExecArray|null;
     return text.replace(re, (match, name) => {
-        const replacement = (emojiIndex.emojis[name.replace(/\+/g, "_")] as BaseEmoji);
+        // Undoing changes done in Picker
+        const replacement = (emojiIndex.emojis[name.replace(/\+/g, "_").replace(/@plus@/, "+")] as BaseEmoji);
         if (!replacement)
             return match;
         return replacement.native;
@@ -88,7 +89,10 @@ class EmojiPicker_ extends React.Component<ExpandableEmojiPickerProps, Expandabl
                 sheetSize={20}
                 showPreview={false}
                 onSelect={(emoji) => {
-                    this.props.onPick(emoji && emoji.colons && emoji.colons.replace(/_/g, "+"));
+                    // Well, it looks like shit now.
+                    // _ -> + replacement is because undersores are separate tokens in Markdown.
+                    // + -> @plus@ is because some emojis actually use + in their names
+                    this.props.onPick(emoji && emoji.colons && emoji.colons.replace(/\+/, "@plus@").replace(/_/g, "+"));
                     this.setState({expanded: false});
                 }}
             />
