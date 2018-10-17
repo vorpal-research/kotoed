@@ -28,6 +28,7 @@ interface EditableProfileInfo {
     lastName?: string
     group?: string
     powerMode: boolean
+    emailNotifications: boolean
 }
 
 interface EditablePasswordInfo {
@@ -117,12 +118,14 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.setPassword({ [key]: password } as Pick<EditablePasswordInfo, K>, errors)
     };
 
-
+    bindCheckbox = <K extends keyof EditableProfileInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
+        this.setDenizen({ [key]: e.target.checked } as Pick<EditableProfileInfo, K>)
+    };
 
     onEmailChanged = (e: ChangeEvent<HTMLInputElement>) => {
         this.unsetError("badEmail");
-        if(!e.target.checkValidity()) this.setError("badEmail");
-        this.setDenizen({ email: e.target.value })
+        if(e.target.value && !e.target.checkValidity()) this.setError("badEmail");
+        this.setDenizen({ email: e.target.value || undefined })
     };
 
     onSave = async (e: MouseEvent<HTMLAnchorElement>) => {
@@ -167,12 +170,34 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                     className="form-control"
                     id={`input-${field}`}
                     type={type}
-                    value={this.state.denizen![field] as string}
+                    value={this.state.denizen![field] as string || ""}
                     placeholder="not specified"
                     onChange={onChange}
                 />
             </div>
         </div>;
+
+    renderCheckBox = () => {
+        const field = "emailNotifications";
+        return <div className="form-group">
+            <span className="col-sm-2"/>
+            <div className="col-sm-10">
+                <div className="checkbox">
+                    <label htmlFor={`input-${field}`}>
+                        <input
+                            id={`input-${field}`}
+                            type="checkbox"
+                            value={field}
+                            placeholder="not specified"
+                            onChange={this.bindCheckbox(field)}
+                            defaultChecked={this.state.denizen.emailNotifications}
+                        />
+                        Receive notifications using this email
+                    </label>
+                </div>
+            </div>
+        </div>;
+    };
 
     renderBody = () => {
         return <div className="panel">
@@ -190,6 +215,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                         { this.renderErrors() }
                     </div>
                     { this.mkInputFor("Email", "email", "email", this.onEmailChanged) }
+                    { this.renderCheckBox() }
                     { this.mkInputFor("First name", "firstName") }
                     { this.mkInputFor("Last name", "lastName") }
                     { this.mkInputFor("Group #", "group") }

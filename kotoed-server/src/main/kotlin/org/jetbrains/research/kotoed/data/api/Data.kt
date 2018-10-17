@@ -196,7 +196,8 @@ data class ProfileInfo(
         val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
-        val group: String?
+        val group: String?,
+        val emailNotifications: Boolean
 ) : Jsonable
 
 data class PasswordChangeRequest(
@@ -213,7 +214,8 @@ data class ProfileInfoUpdate(
         val oauth: Map<String, String?>,
         val firstName: String?,
         val lastName: String?,
-        val group: String?
+        val group: String?,
+        val emailNotifications: Boolean
 ) : Jsonable
 
 enum class SubmissionCodeAnnotationSeverity { error, warning }

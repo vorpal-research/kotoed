@@ -48,7 +48,8 @@ class DenizenVerticle: AbstractKotoedVerticle() {
                 oauth = oauth,
                 firstName = profile?.firstName,
                 lastName = profile?.lastName,
-                group = profile?.groupId
+                group = profile?.groupId,
+                emailNotifications = profile?.emailNotifications ?: false
         )
     }
 
@@ -67,6 +68,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
             update.firstName?.let { firstName = it }
             update.lastName?.let { lastName = it }
             update.group?.let { groupId = it }
+            update.emailNotifications.let { emailNotifications = it }
         }
 
         if(profile != null) {
