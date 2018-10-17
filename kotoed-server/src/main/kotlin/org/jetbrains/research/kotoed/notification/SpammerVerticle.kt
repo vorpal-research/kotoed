@@ -6,9 +6,12 @@ import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.notification.*
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProfileRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.web.UrlPattern
 import java.time.Duration
 import java.time.LocalDateTime
@@ -58,7 +61,7 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
         use(unit)
         setNext()
 
-        val allDenizens = dbFindAsync(DenizenRecord())
+        val allDenizens = dbQueryAsync(Tables.PROFILE) { join(Tables.DENIZEN) }
 
         fun makeLink(link: RenderedData): String {
             return "${Config.Root.Host}:${Config.Root.Port}" + UrlPattern.reverse(
@@ -67,8 +70,10 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
             )
         }
 
-        for (denizen in allDenizens) {
-            if (denizen.email.isNullOrBlank()) continue
+        for (profileJson in allDenizens) {
+            val profile: ProfileRecord = profileJson.toRecord()
+            val denizen: DenizenRecord = profileJson.getJsonObject("denizen").toRecord()
+            if (denizen.email.isNullOrBlank() || !profile.emailNotifications) continue
 
             val notifications: List<RenderedData> = sendJsonableCollectAsync(
                     Address.Api.Notification.RenderCurrent,

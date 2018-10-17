@@ -1,0 +1,1 @@
+ALTER TABLE profile ADD COLUMN email_notifications BOOLEAN NOT NULL DEFAULT TRUE;;
