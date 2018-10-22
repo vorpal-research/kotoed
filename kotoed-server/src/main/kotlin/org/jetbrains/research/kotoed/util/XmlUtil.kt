@@ -54,7 +54,7 @@ class Xml2JsonContentHandler : DefaultHandler() {
     override fun characters(ch: CharArray, start: Int, length: Int) {
         val me = stack.peek()
 
-        me["value"] = String(ch, start, length)
+        me["value"] = (me["value"] as? String ?: "") + String(ch, start, length)
     }
 
     override fun endElement(
