@@ -320,14 +320,18 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[message.uid], "Repository not found")
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val diffRes = run(ee) {
+        val diffContents = run(ee) {
             val from = message.from.let { VcsRoot.Revision(it) }
-            val to = message.to?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
-            if (message.path != null) root.diff(message.path, from, to)
-            else root.diffAll(from, to)
-        }.result
+            val to = message.to?.let { VcsRoot.Revision(it) }
+                    ?: VcsRoot.Revision.Trunk
 
-        return DiffResponse(contents = parseGitDiff(diffRes)
+            val vcsRes = if (message.path != null) root.diff(message.path, from, to)
+            else root.diffAll(from, to)
+
+            parseGitDiff(vcsRes.result)
+        }
+
+        return DiffResponse(contents = diffContents
                 // FIXME Do smth when diff does not provide these file names
                 .filter { it.fromFileName != null && it.toFileName != null }
                 .map { it.asJsonable() })
