@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.data.db
 import io.vertx.core.json.JsonObject
 import kotlinx.Warnings.NOTHING_TO_INLINE
 import org.intellij.lang.annotations.Language
+import org.jetbrains.research.kotoed.api.Magic
 import org.jetbrains.research.kotoed.data.api.PageableQuery
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
@@ -138,7 +139,8 @@ fun <R : Record> ComplexDatabaseQuery(table: Table<R>) =
         ComplexDatabaseQuery(table = table.name)
 
 fun ComplexDatabaseQuery.setPageForQuery(query: PageableQuery): ComplexDatabaseQuery {
-    val pageSize = query.pageSize ?: Int.MAX_VALUE
+    // TODO maybe propagate smth like bad request error to the client
+    val pageSize = query.pageSize ?: Magic.MaxPageSize
     val currentPage = query.currentPage ?: 0
     return this
             .limit(pageSize)
@@ -194,4 +196,8 @@ fun <T: TableRecord<T>> query(table: Table<T>, body: TypedQueryBuilder<T>.() -> 
     val builder = TypedQueryBuilder(table)
     builder.body()
     return builder.query.fillDefaults()
+}
+
+fun <T : TableRecord<T>> TypedQueryBuilder<T>.setPageForQuery(pq: PageableQuery) {
+    query = query.setPageForQuery(pq)
 }

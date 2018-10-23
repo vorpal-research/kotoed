@@ -6,6 +6,7 @@ import kotlinx.coroutines.experimental.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.*
@@ -312,15 +313,13 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.List)
     suspend fun handleList(query: SearchQueryWithTags): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
 
         val resp = dbQueryAsync(SUBMISSION) {
             find {
                 projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
             }
-            limit(pageSize)
-            offset(currentPage * pageSize)
+
+            setPageForQuery(query)
 
             val stateIn = query.find?.getJsonArray("state_in")?.toList()?.mapNotNull { it as? String }
 
@@ -507,8 +506,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.Search)
     suspend fun handleSearchForTag(query: SearchQuery): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
+
 
         val req = dbQueryAsync(SUBMISSION_TAG) {
             join(SUBMISSION) {
@@ -521,8 +519,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
 
             filter("tag.name == %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
 
-            limit(pageSize)
-            offset(currentPage * pageSize)
+            setPageForQuery(query)
 
         }
 

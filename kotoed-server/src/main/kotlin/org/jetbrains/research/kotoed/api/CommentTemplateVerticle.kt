@@ -29,9 +29,9 @@ class CommentTemplateVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.CommentTemplate.Search)
     suspend fun handleSearch(query: SearchQuery): List<CommentTemplateRecord> {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
+        val pageSize = query.pageSize ?: Magic.MaxPageSize
         val currentPage = query.currentPage ?: 0
-
+        // TODO maybe use DB queries to paginate and search?
         val res = dbFindAsync(CommentTemplateRecord().apply {
             denizenId = query.denizenId
         }).filter { query.text.toLowerCase() in it.text.toLowerCase()

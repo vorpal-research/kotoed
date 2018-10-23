@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.LoginMsg
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.Tables.PROFILE
@@ -86,12 +87,8 @@ class DenizenVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
-
         val req: List<JsonObject> = dbQueryAsync(DENIZEN_TEXT_SEARCH) {
-            limit(pageSize)
-            offset(currentPage * pageSize)
+            setPageForQuery(query)
             rjoin(PROFILE, field = "denizen_id")
             if(query.text.isNotBlank())
                 filter("document matches %s".formatToQuery(query.text))

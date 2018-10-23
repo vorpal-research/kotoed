@@ -6,6 +6,7 @@ import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.COURSE_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
@@ -52,12 +53,8 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
-
         val req: List<JsonObject> = dbQueryAsync(COURSE_TEXT_SEARCH) {
-            limit(pageSize)
-            offset(currentPage * pageSize)
+            setPageForQuery(query)
             sortBy("-id")
             if(query.text.isNotBlank())
                 filter("document matches %s".formatToQuery(query.text))
