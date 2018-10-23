@@ -1,15 +1,16 @@
 package org.jetbrains.research.kotoed.api
 
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
-import org.jetbrains.research.kotoed.util.JsonObject
 import org.jetbrains.research.kotoed.data.api.SearchQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.CommentTemplateRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.database.toRecord
 
 @AutoDeployable
 class CommentTemplateVerticle: AbstractKotoedVerticle() {
@@ -28,23 +29,19 @@ class CommentTemplateVerticle: AbstractKotoedVerticle() {
 
 
     @JsonableEventBusConsumerFor(Address.Api.CommentTemplate.Search)
-    suspend fun handleSearch(query: SearchQuery): List<CommentTemplateRecord> {
-        val pageSize = query.pageSize ?: Magic.MaxPageSize
-        val currentPage = query.currentPage ?: 0
-        // TODO maybe use DB queries to paginate and search?
-        val res = dbFindAsync(CommentTemplateRecord().apply {
-            denizenId = query.denizenId
-        }).filter { query.text.toLowerCase() in it.text.toLowerCase()
-                || query.text.toLowerCase() in it.name.toLowerCase() }
-                .sortedBy { it.id }
-                .drop(currentPage * pageSize)
-                .take(pageSize)
-
-        return res
-    }
+    suspend fun handleSearch(query: SearchQuery): List<CommentTemplateRecord> =
+            dbQueryAsync(Tables.COMMENT_TEMPLATE) {
+                setPageForQuery(query)
+                filter("denizen_id == %s and (text iContains %s or name iContains %s)"
+                        .formatToQuery(query.denizenId, query.text, query.text))
+            }.map {
+                it.toRecord<CommentTemplateRecord>()
+            }
 
     @JsonableEventBusConsumerFor(Address.Api.CommentTemplate.SearchCount)
     suspend fun handleSearchCount(query: SearchQuery): JsonObject =
-            JsonObject("count" to handleSearch(query).size)
-
+            dbCountAsync(Tables.COMMENT_TEMPLATE) {
+                filter("denizen_id == %s and (text iContains %s or name iContains %s)"
+                        .formatToQuery(query.denizenId, query.text, query.text))
+            }
 }

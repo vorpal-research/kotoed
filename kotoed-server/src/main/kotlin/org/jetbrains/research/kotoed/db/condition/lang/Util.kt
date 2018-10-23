@@ -28,8 +28,9 @@ private fun Number.toQuery() = "$this"
  *
  * Example: "%s != %s and %s in %s and %s > %s".formatToQuery(str1, str2, str3, list, int1, int2)
  */
-fun String.formatToQuery(vararg params: Any) = this.format(*(params.map {
+fun String.formatToQuery(vararg params: Any?) = this.format(*(params.map {
     when(it) {
+        null -> "NULL"
         is String -> it.toQuery()
         is Enum<*> -> it.toString().toQuery()
         is Number -> it.toQuery()

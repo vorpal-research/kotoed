@@ -6,6 +6,7 @@ import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.*
 import org.jooq.impl.CustomField
 import org.jooq.impl.DSL
+import org.jooq.impl.DSL.inline
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.reflect.KClass
 
