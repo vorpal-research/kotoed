@@ -17,7 +17,15 @@ enum class CompareOp(val rep: String) {
     GE(">="),
     LT("<"),
     LE("<="),
-    MATCH("matches")
+    MATCH("matches"),
+    CONTAINS("contains"),
+    STARTS_WITH("startsWith"),
+    ENDS_WITH("endsWith"),
+    I_CONTAINS("iContains"),
+    // TODO these require jOOQ extensions that need to access some jOOQ extensions for LIKE escaping
+//    I_STARTS_WITH("iStartsWith"),
+//    I_ENDS_WITH("iEndsWith"),
+
 }
 
 data class CompareExpression(val op: CompareOp, val lhv: Expression, val rhv: Expression) : Expression()

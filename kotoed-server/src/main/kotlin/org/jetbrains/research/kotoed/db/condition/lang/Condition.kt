@@ -61,6 +61,13 @@ private fun<T> convertCompareExpression(cmp: CompareExpression, tables: (String)
         if(rhv.dataType.typeName != "tsquery") rhv = toPlainTSQuery(rhv.uncheckedCast())
         DSL.condition(lhv documentMatch rhv)
     }
+    CompareOp.CONTAINS -> convertPrimitive<T>(cmp.lhv, tables).contains(convertPrimitive<T>(cmp.rhv, tables))
+    CompareOp.STARTS_WITH -> convertPrimitive<T>(cmp.lhv, tables).startsWith(convertPrimitive<T>(cmp.rhv, tables))
+    CompareOp.ENDS_WITH -> convertPrimitive<T>(cmp.lhv, tables).endsWith(convertPrimitive<T>(cmp.rhv, tables))
+    CompareOp.I_CONTAINS -> convertPrimitive<T>(cmp.lhv, tables).containsIgnoreCase(convertPrimitive<T>(cmp.rhv, tables))
+//    CompareOp.I_STARTS_WITH -> convertPrimitive<T>(cmp.lhv, tables).startsWithIgnoreCase(convertPrimitive<T>(cmp.rhv, tables))
+//    CompareOp.I_ENDS_WITH -> convertPrimitive<T>(cmp.lhv, tables).endsWithIgnoreCase(convertPrimitive<T>(cmp.rhv, tables))
+
 }
 
 private fun convertBinaryExpression(bin: BinaryExpression, tables: (String) -> Table<*>) = when(bin.op) {
