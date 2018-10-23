@@ -2,6 +2,9 @@
 
 package org.jetbrains.research.kotoed.util
 
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
 import com.hazelcast.util.Base64
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
@@ -12,8 +15,10 @@ import kotlinx.Warnings.UNUSED_PARAMETER
 import java.io.BufferedReader
 import java.io.InputStream
 import java.lang.invoke.MethodHandles
+import java.lang.reflect.Method
 import java.net.URI
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
@@ -52,8 +57,17 @@ inline fun base64Encode(v: CharSequence): String =
 
 /******************************************************************************/
 
-fun Enum.Companion.valueOf(value: String, klass: KClass<*>) =
-        klass.java.getMethod("valueOf", String::class.java).invoke(null, value)
+val enumValueOfCache: LoadingCache<KClass<*>, Method> = CacheBuilder.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
+        .build(
+                object : CacheLoader<KClass<*>, Method>() {
+                    override fun load(key: KClass<*>) =
+                            key.java.getMethod("valueOf", String::class.java)
+                }
+        )
+
+fun Enum.Companion.valueOf(value: String, klass: KClass<*>): Any =
+        enumValueOfCache[klass].invoke(null, value)
 
 inline fun <reified E : Enum<E>> Enum.Companion.valueOf(value: String) =
         enumValueOf<E>(value)

@@ -3,6 +3,9 @@
 package org.jetbrains.research.kotoed.util
 
 import com.google.common.base.CaseFormat
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -15,12 +18,12 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
-val camelToKey
-        = CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.LOWER_UNDERSCORE)
+val camelToKey = CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.LOWER_UNDERSCORE)
 
 /******************************************************************************/
 
@@ -32,7 +35,7 @@ typealias NullType = Nothing?
 typealias JsonEither = EitherOf6<Boolean, Number, String, JsonArray, JsonObject, NullType>
 
 fun Any?.asJsonEither(): JsonEither =
-        when(this) {
+        when (this) {
             is Boolean -> Variant0(this)
             is Number -> Variant1(this)
             is String -> Variant2(this)
@@ -52,33 +55,50 @@ data class JsonWalker(
 ) {
     companion object {
         fun JsonWalker.defaultObjectCallback(obj: JsonObject) =
-            JsonObject(obj.map { (k, v) -> k to visit(v) })
+                JsonObject(obj.map { (k, v) -> k to visit(v) })
 
         fun JsonWalker.defaultArrayCallback(arr: JsonArray) =
                 JsonArray(arr.map { visit(it) })
     }
 
-    fun onBoolean(callback: JsonWalker.(Boolean) -> Any?){ onBooleanCallBack = callback }
-    fun onNumber(callback: JsonWalker.(Number) -> Any?){ onNumberCallBack = callback }
-    fun onString(callback: JsonWalker.(String) -> Any?){ onStringCallBack = callback }
-    fun onNull(callback: JsonWalker.() -> Any?){ onNullCallBack = callback }
-    fun onObject(callback: JsonWalker.(JsonObject) -> Any?){ onObjectCallBack = callback }
-    fun onArray(callback: JsonWalker.(JsonArray) -> Any?){ onArrayCallBack = callback }
+    fun onBoolean(callback: JsonWalker.(Boolean) -> Any?) {
+        onBooleanCallBack = callback
+    }
+
+    fun onNumber(callback: JsonWalker.(Number) -> Any?) {
+        onNumberCallBack = callback
+    }
+
+    fun onString(callback: JsonWalker.(String) -> Any?) {
+        onStringCallBack = callback
+    }
+
+    fun onNull(callback: JsonWalker.() -> Any?) {
+        onNullCallBack = callback
+    }
+
+    fun onObject(callback: JsonWalker.(JsonObject) -> Any?) {
+        onObjectCallBack = callback
+    }
+
+    fun onArray(callback: JsonWalker.(JsonArray) -> Any?) {
+        onArrayCallBack = callback
+    }
 
     fun visit(value: Any?): Any? =
-        value.asJsonEither()
-                .map0{ onBooleanCallBack(it) }
-                .map1{ onNumberCallBack(it) }
-                .map2{ onStringCallBack(it) }
-                .map3{ onArrayCallBack(it) }
-                .map4{ onObjectCallBack(it) }
-                .map5{ onNullCallBack() }
-                .converge()
+            value.asJsonEither()
+                    .map0 { onBooleanCallBack(it) }
+                    .map1 { onNumberCallBack(it) }
+                    .map2 { onStringCallBack(it) }
+                    .map3 { onArrayCallBack(it) }
+                    .map4 { onObjectCallBack(it) }
+                    .map5 { onNullCallBack() }
+                    .converge()
 
 }
 
 fun Any?.walk(f: JsonWalker.() -> Unit) =
-    JsonWalker().apply{ f() }.visit(this)
+        JsonWalker().apply { f() }.visit(this)
 
 /******************************************************************************/
 
@@ -136,7 +156,8 @@ inline operator fun JsonObject.set(fields: List<String>, value: Any?) =
         fields.dropLast(1).fold(this) { obj, key_ ->
             val key = camelToKey(key_)!!
             when {
-                key in obj -> obj.getJsonObject(key) ?: throw IllegalArgumentException("JSON field $key: object expected")
+                key in obj -> obj.getJsonObject(key)
+                        ?: throw IllegalArgumentException("JSON field $key: object expected")
                 else -> JsonObject().apply { obj.put(key, this@apply) }
             }
         }.set(fields.last(), value).let { this }
@@ -145,22 +166,34 @@ inline operator fun JsonObject.set(vararg fields: String, value: Any?) =
         set(fields.asList(), value)
 
 fun JsonObject.snakeKeys(): JsonObject {
-    fun recurse(value: Any?): Any? = when(value) {
+    fun recurse(value: Any?): Any? = when (value) {
         is JsonObject -> value.snakeKeys()
-        is JsonArray -> value.map{ recurse(it) }.let(::JsonArray)
+        is JsonArray -> value.map { recurse(it) }.let(::JsonArray)
         else -> value
     }
-    return JsonObject(this.asSequence().map {
-        (k, v) -> camelToKey(k) to recurse(v)
+    return JsonObject(this.asSequence().map { (k, v) ->
+        camelToKey(k) to recurse(v)
     }.toMap())
 }
 
 
 /******************************************************************************/
 
+val declaredMemberPropertyCache: LoadingCache<KClass<*>, Collection<KProperty1<*, *>>> = CacheBuilder.newBuilder()
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .build(
+                        object : CacheLoader<KClass<*>, Collection<KProperty1<*, *>>>() {
+                            override fun load(key: KClass<*>): Collection<KProperty1<*, *>> {
+                                return key.declaredMemberProperties
+                            }
+                        }
+                )
+
+/******************************************************************************/
+
 interface Jsonable {
     fun toJson(): JsonObject =
-            JsonObject(javaClass.kotlin.declaredMemberProperties.map { Pair(camelToKey(it.name)!!, it.call(this).tryToJson()) })
+            JsonObject(declaredMemberPropertyCache[javaClass.kotlin].map { Pair(camelToKey(it.name)!!, it.call(this).tryToJson()) })
 }
 
 interface JsonableCompanion<T : Any> {
@@ -210,7 +243,21 @@ private fun makeJsonCollection(klass: KType, list: List<Any?>): Any =
 
 /******************************************************************************/
 
+val subclassCache: LoadingCache<Pair<KClass<*>, KClass<*>>, Boolean> = CacheBuilder.newBuilder()
+        .expireAfterAccess(10, TimeUnit.MINUTES)
+        .build(
+                object : CacheLoader<Pair<KClass<*>, KClass<*>>, Boolean>() {
+                    override fun load(key: Pair<KClass<*>, KClass<*>>): Boolean {
+                        val (erasure, target) = key
+                        return erasure.isSubclassOf(target)
+                    }
+                }
+        )
+
 private fun Any?.tryFromJson(klass: KType): Any? {
+
+    fun KClass<*>.isSubclassOf(target: KClass<*>) = subclassCache[this to target]
+
     fun die(): Nothing = throw IllegalArgumentException("Cannot convert $this from json to type $klass")
     val erasure = klass.jvmErasure
     val companion = erasure.companionObjectInstance
@@ -309,8 +356,8 @@ private fun Any?.tryFromJson(klass: KType): Any? {
 }
 
 private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
-    if(klass.isSealed && klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
-    val asMap = klass.declaredMemberProperties.map {
+    if (klass.isSealed && klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
+    val asMap = declaredMemberPropertyCache[klass].map {
         val key = camelToKey(it.name)
         val value = data.getValue(key)
         if (value == null && !it.returnType.isMarkedNullable)
@@ -320,7 +367,8 @@ private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
 
     return try {
         fun ctorCheck(ctor: KFunction<*>) = ctor.parameters.map { it.name }.toSet() == asMap.keys
-        val ctor = klass.primaryConstructor?.takeIf(::ctorCheck) ?: klass.constructors.find(::ctorCheck)
+        val ctor = klass.primaryConstructor?.takeIf(::ctorCheck)
+                ?: klass.constructors.find(::ctorCheck)
         ctor!!.callBy(asMap.mapKeys { prop -> ctor.parameters.find { param -> param.name == prop.key }!! })
     } catch (ex: Exception) {
         throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: please use only datatype-like classes", ex)
@@ -379,7 +427,10 @@ fun JsonObject.getValueByType(name: String, type: KType): Any? {
 /******************************************************************************/
 
 object AnyAsJson {
-    operator fun Any?.get(key: String) = (this as? JsonObject)?.run { getValue(key) ?: getValue(camelToKey(key)) }
+    operator fun Any?.get(key: String) = (this as? JsonObject)?.run {
+        getValue(key) ?: getValue(camelToKey(key))
+    }
+
     operator fun Any?.get(index: Int) = (this as? JsonArray)?.getValue(index)
 }
 

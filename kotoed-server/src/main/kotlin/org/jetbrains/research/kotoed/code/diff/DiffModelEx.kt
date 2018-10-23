@@ -38,8 +38,7 @@ fun parseGitDiff(lines: Sequence<String>): List<Diff> {
     val hunkHeader = Regex("""@@\s*-(\d+\s*)(,\s*\d+)?\s*\+(\d+\s*)(,\s*\d+)?\s*@@.*""")
 
     for(line in lines) when {
-        line.startsWith("diff") -> newDiff()
-        line.startsWith("Binary") && diffs.isNotEmpty() -> diffs.remove(currentDiff())
+
         // XXX: in unified diff, these filenames may(sic!) be followed by whatever-formatted timestamps
         // making it one hell of a parsing experience if filepaths may contains spaces
         line.startsWith("---") -> {
@@ -48,6 +47,19 @@ fun parseGitDiff(lines: Sequence<String>): List<Diff> {
         line.startsWith("+++") -> {
             currentDiff().toFileName = line.removePrefix("+++").trim().removePrefix("b/")
         }
+
+        line.startsWith("-") -> {
+            currentHunk().lines.add(Line(Line.LineType.FROM, line.drop(1)))
+        }
+        line.startsWith("+") -> {
+            currentHunk().lines.add(Line(Line.LineType.TO, line.drop(1)))
+        }
+        line.startsWith(" ") -> {
+            currentHunk().lines.add(Line(Line.LineType.NEUTRAL, line.drop(1)))
+        }
+
+        line.startsWith("diff") -> newDiff()
+        line.startsWith("Binary") && diffs.isNotEmpty() -> diffs.remove(currentDiff())
 
         line.startsWith("@@") -> {
             newHunk()
@@ -69,19 +81,6 @@ fun parseGitDiff(lines: Sequence<String>): List<Diff> {
                     toCount?.value?.drop(1)?.trim()?.toInt() ?: 1
             )
         }
-
-        line.startsWith("-") -> {
-            currentHunk().lines.add(Line(Line.LineType.FROM, line.drop(1)))
-        }
-
-        line.startsWith("+") -> {
-            currentHunk().lines.add(Line(Line.LineType.TO, line.drop(1)))
-        }
-
-        line.startsWith(" ") -> {
-            currentHunk().lines.add(Line(Line.LineType.NEUTRAL, line.drop(1)))
-        }
-
     }
 
     return diffs
