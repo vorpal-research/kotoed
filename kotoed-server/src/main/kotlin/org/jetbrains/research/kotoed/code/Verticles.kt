@@ -334,6 +334,11 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         return DiffResponse(contents = diffContents
                 // FIXME Do smth when diff does not provide these file names
                 .filter { it.fromFileName != null && it.toFileName != null }
+                .map { diff ->
+                    if (diff.hunks.any { it.lines.size > Config.VCS.MaxDiffHunkLines })
+                        diff.apply { hunks.clear() }
+                    else diff
+                }
                 .map { it.asJsonable() })
     }
 
