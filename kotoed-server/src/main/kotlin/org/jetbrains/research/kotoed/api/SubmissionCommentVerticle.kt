@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
@@ -167,14 +168,11 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Search)
     suspend fun handleSearch(query: SearchQuery): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
                 .join("submission")
                 .filter("document matches %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
+                .setPageForQuery(query)
 
         val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission_comment_text_search"), q)
 

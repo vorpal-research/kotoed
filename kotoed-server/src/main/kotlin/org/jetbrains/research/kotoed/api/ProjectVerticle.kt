@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.query
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -59,9 +60,6 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourse)
     suspend fun handleSearchForCourse(query: SearchQueryWithTags): JsonArray {
-        val pageSize = query.pageSize ?: Int.MAX_VALUE
-        val currentPage = query.currentPage ?: 0
-
         val subQ = query(Tables.SUBMISSION) {
             find {
                 state = SubmissionState.open
@@ -89,8 +87,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
                 })
-                .limit(pageSize)
-                .offset(currentPage * pageSize)
+                .setPageForQuery(query)
 
         val qWithSearch = if (query.text == "")
             q
