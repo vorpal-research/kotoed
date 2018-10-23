@@ -47,6 +47,8 @@ class GlobalConfig : Configuration() {
         val BuildPath: String by "vcs_build"
 
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
+
+        val MaxDiffHunkLines: Int by 5000
     }
 
     val VCS by VCSConfig()
