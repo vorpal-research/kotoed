@@ -139,7 +139,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return header + data + footer
     }
 
-    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Double> {
+    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, Double>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
         val resp = dbQueryAsync(Tables.SUBMISSION_RESULT) {
@@ -147,6 +147,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 join(Tables.PROJECT) {
                     join(Tables.DENIZEN, field = "denizen_id")
                 }
+
+                rjoin(Tables.SUBMISSION_TAG, resultField = "tags")
             }
             filter("(submission.project.course_id == ${request.id}) and " +
                     "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ")")
@@ -160,10 +162,18 @@ class ReportVerticle : AbstractKotoedVerticle() {
                             .sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
                             .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
                             .firstOrNull()
-                            ?.toRecord<SubmissionResultRecord>()
                 }
                 .map { (k, v) ->
-                    k.orEmpty() to (v?.let(this::calcScore) ?: 0.0)
+
+                    val rec = v?.toRecord<SubmissionResultRecord>()?.let(this::calcScore) ?: 0.0
+                    val tag = v
+                            ?.getJsonObject("submission")
+                            ?.getJsonArray("tags")
+                            ?.mapNotNull { "$it".toDoubleOrNull() }
+                            ?.firstOrNull()
+                            ?: 0.75
+
+                    k.orEmpty() to (rec to tag)
                 }.toMap()
     }
 
@@ -174,8 +184,15 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         val students = open.keys + closed.keys
         val result = listOf(
-                listOf("Student", "Score (all)", "Score (closed)")
-        ) + students.sorted().map { listOf(it, open[it].orZero().fmt, closed[it].orZero().fmt) }
+                listOf("Student", "Score (all)", "Adjustment", "Score (closed)")
+        ) + students.sorted().map {
+            listOf(
+                    it,
+                    open[it]?.first.orZero().fmt,
+                    (open[it]?.second ?: 0.75).fmt,
+                    closed[it]?.first.orZero().fmt
+            )
+        }
 
         return ReportResponse(result)
     }
