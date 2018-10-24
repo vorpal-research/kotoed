@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerStatus
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerTestRun
 import org.jetbrains.research.kotoed.data.statistics.ReportResponse
@@ -10,6 +11,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRec
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
+import kotlinx.coroutines.experimental.*
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -17,6 +19,8 @@ data class ReportRequest(val id: Int, val timestamp: OffsetDateTime?) : Jsonable
 
 @AutoDeployable
 class ReportVerticle : AbstractKotoedVerticle() {
+
+    private val reportPool = newFixedThreadPoolContext(2, "report-pool")
 
     private val template = "results\\.json".toRegex()
     private val successfulStatus = KotoedRunnerStatus.SUCCESSFUL
@@ -178,7 +182,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
-    suspend fun handleReport(request: ReportRequest): ReportResponse {
+    suspend fun handleReport(request: ReportRequest): ReportResponse = run(reportPool) {
         val open = makeReport(request, listOf("open", "obsolete", "closed"))
         val closed = makeReport(request, listOf("closed"))
 
@@ -194,25 +198,25 @@ class ReportVerticle : AbstractKotoedVerticle() {
             )
         }
 
-        return ReportResponse(result)
+        ReportResponse(result)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Report)
-    suspend fun handleSubmission(record: ReportRequest): ReportResponse {
+    suspend fun handleSubmission(record: ReportRequest): ReportResponse = run(reportPool) {
         val result = dbFindAsync(SubmissionResultRecord().apply { submissionId = record.id }).firstOrNull()
 
-        result ?: return ReportResponse(listOf())
+        result ?: return@run ReportResponse(listOf())
 
-        return ReportResponse (calcAllScores(result))
+        ReportResponse (calcAllScores(result))
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Result.Report)
-    suspend fun handleSubmissionResult(record: ReportRequest): ReportResponse {
+    suspend fun handleSubmissionResult(record: ReportRequest): ReportResponse = run(reportPool) {
         val result = dbFindAsync(SubmissionResultRecord().apply { id = record.id }).firstOrNull()
 
-        result ?: return ReportResponse(listOf())
+        result ?: return@run ReportResponse(listOf())
 
-        return ReportResponse (calcAllScores(result))
+        ReportResponse (calcAllScores(result))
     }
 
 }
