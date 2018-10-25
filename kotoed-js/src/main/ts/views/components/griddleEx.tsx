@@ -7,6 +7,8 @@ import {isArray, isObject} from "util";
 
 import {formatKloneInfoAsHeader, KloneView} from "./kloneView";
 
+import "less/submissionResults.less";
+
 export const ArrayColumn = ({value}: { value: List<any> }) =>
     <span>{value.join(", ")}</span>;
 
@@ -118,69 +120,98 @@ export function deepRenameKey(js: any, from: string, to: string): any {
     } else return js
 }
 
-export const TestDataColumn = ({value}: { value: List<TestData> }) =>
-    <ul className="list-group">{
-        (value.toJS() as TestData[]).map((td, idx) => {
-            switch (td.status) {
-                case "SUCCESSFUL": {
-                    return <li key={`${value.hashCode()}-${idx}`}
-                               className="list-group-item list-group-item-success">
-                        Passed
-                    </li>
-                }
-                case "NOT_IMPLEMENTED": {
-                    return <li key={`${value.hashCode()}-${idx}`}
-                               className="list-group-item list-group-item-secondary">
-                        Not done
-                    </li>
-                }
-                case "ABORTED":
-                case "FAILED": {
-                    let failure = td.failure;
+export interface TestDataColumnProps {
+    value: any
+}
 
-                    if (isTestFailureInfo(failure)) {
-                        return <li key={`${value.hashCode()}-${idx}`}
-                                   className="list-group-item list-group-item-danger">
-                            Failed with:
-                            <ListGroup>
-                                <ListGroupItem bsStyle="danger">
-                                    Inputs:
-                                    <ListGroup>
-                                        {_.toPairs(failure.input)
-                                            .filter(([k, _]) => !k.startsWith("@"))
-                                            .map(([k, v]) => {
-                                                return <ListGroupItem
-                                                    bsStyle="danger">
-                                                    <pre><code>{prettyPrint(k)} -> {prettyPrint(v)}</code></pre>
-                                                </ListGroupItem>
-                                            })}
-                                    </ListGroup>
-                                </ListGroupItem>
-                                <ListGroupItem bsStyle="danger">
-                                    Output:
-                                    <pre><code>{prettyPrint(failure.output)}</code></pre>
-                                </ListGroupItem>
-                                <ListGroupItem bsStyle="danger">
-                                    Expected output:
-                                    <pre><code>{prettyPrint(failure.expectedOutput)}</code></pre>
-                                </ListGroupItem>
-                                <ListGroupItem bsStyle="danger">
-                                    Nested exception:
-                                    <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
-                                </ListGroupItem>
-                            </ListGroup>
-                        </li>
-                    } else if (isUnknownFailureInfo(failure)) {
-                        return <li key={`${value.hashCode()}-${idx}`}
-                                   className="list-group-item list-group-item-danger">
-                            Failed with:<br/>
-                            <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
-                        </li>
-                    }
-                }
+export interface TestDataColumnState {
+    open: boolean
+}
+
+export class TestDataColumn extends Component<TestDataColumnProps, TestDataColumnState> {
+    constructor(props: KloneClassPanelProps, context: undefined) {
+        super(props, context);
+
+        this.state = {
+            open: true
+        };
+    }
+
+    toggleOpen = () => {
+        this.setState(
+            (prevState: TestDataColumnState) => {
+                return {open: !prevState.open};
             }
-        })
-    }</ul>;
+        );
+    };
+
+    render() {
+        let value = this.props.value;
+
+        return <div className="test-data-column">
+            <Panel collapsible expanded={this.state.open}>
+                <ListGroup onClick={this.toggleOpen}>{
+                    (value.toJS() as TestData[]).map((td, idx) => {
+                        switch (td.status) {
+                            case "SUCCESSFUL": {
+                                return <ListGroupItem bsStyle="success">
+                                    Passed
+                                </ListGroupItem>
+                            }
+                            case "NOT_IMPLEMENTED": {
+                                return <ListGroupItem bsStyle="info">
+                                    Not done
+                                </ListGroupItem>
+                            }
+                            case "ABORTED":
+                            case "FAILED": {
+                                let failure = td.failure;
+
+                                if (isTestFailureInfo(failure)) {
+                                    return <ListGroupItem bsStyle="danger">
+                                        Failed with:
+                                        <ListGroup>
+                                            <ListGroupItem bsStyle="danger">
+                                                Inputs:
+                                                <ListGroup>
+                                                    {_.toPairs(failure.input)
+                                                        .filter(([k, v]) => !k.startsWith("@"))
+                                                        .map(([k, v]) => {
+                                                            return <ListGroupItem
+                                                                bsStyle="danger">
+                                                                <pre><code>{prettyPrint(k)} -> {prettyPrint(v)}</code></pre>
+                                                            </ListGroupItem>
+                                                        })}
+                                                </ListGroup>
+                                            </ListGroupItem>
+                                            <ListGroupItem bsStyle="danger">
+                                                Output:
+                                                <pre><code>{prettyPrint(failure.output)}</code></pre>
+                                            </ListGroupItem>
+                                            <ListGroupItem bsStyle="danger">
+                                                Expected output:
+                                                <pre><code>{prettyPrint(failure.expectedOutput)}</code></pre>
+                                            </ListGroupItem>
+                                            <ListGroupItem bsStyle="danger">
+                                                Nested exception:
+                                                <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
+                                            </ListGroupItem>
+                                        </ListGroup>
+                                    </ListGroupItem>
+                                } else if (isUnknownFailureInfo(failure)) {
+                                    return <ListGroupItem bsStyle="danger">
+                                        Failed with:<br/>
+                                        <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
+                                    </ListGroupItem>
+                                }
+                            }
+                        }
+                    })
+                }</ListGroup>
+            </Panel>
+        </div>;
+    }
+}
 
 
 export namespace Bootstrap {
