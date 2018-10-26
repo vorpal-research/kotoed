@@ -426,12 +426,13 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                         }
                     }
                     .fetch()
-        }.map { (res) ->
-            res.walk {
-                onObject {
-                    if ("id" in it && it["id"] == null) null else defaultObjectCallback(it) // XXX this is generally fucked up
-                }
-            }
+                    .map { (res) ->
+                        res.walk {
+                            onObject {
+                                if ("id" in it && it["id"] == null) null else defaultObjectCallback(it) // XXX this is generally fucked up
+                            }
+                        }
+                    }
         }.let(::JsonArray)
     }
 
