@@ -429,7 +429,11 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     .map { (res) ->
                         res.walk {
                             onObject {
-                                if ("id" in it && it["id"] == null) null else defaultObjectCallback(it) // XXX this is generally fucked up
+                                when {
+                                    "id" !in it -> it
+                                    "id" in it && it["id"] == null -> null
+                                    else -> defaultObjectCallback(it)
+                                } // XXX this is generally fucked up
                             }
                         }
                     }
