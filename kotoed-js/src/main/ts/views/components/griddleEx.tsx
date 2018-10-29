@@ -150,7 +150,7 @@ export class TestDataColumn extends Component<TestDataColumnProps, TestDataColum
 
         return <div className="test-data-column">
             <Panel collapsible expanded={this.state.open}>
-                <ListGroup onClick={this.toggleOpen}>{
+                <ListGroup onDoubleClick={this.toggleOpen}>{
                     (value.toJS() as TestData[]).map((td, idx) => {
                         switch (td.status) {
                             case "SUCCESSFUL": {
