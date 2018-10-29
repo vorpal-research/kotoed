@@ -152,7 +152,9 @@ class ReportVerticle : AbstractKotoedVerticle() {
                     join(Tables.DENIZEN, field = "denizen_id")
                 }
 
-                rjoin(Tables.SUBMISSION_TAG, resultField = "tags")
+                rjoin(Tables.SUBMISSION_TAG, resultField = "tags") {
+                    join(Tables.TAG)
+                }
             }
             filter("(submission.project.course_id == ${request.id}) and " +
                     "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ")")
@@ -173,7 +175,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                     val tag = v
                             ?.getJsonObject("submission")
                             ?.getJsonArray("tags")
-                            ?.mapNotNull { "$it".toDoubleOrNull() }
+                            ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toDoubleOrNull() }
                             ?.firstOrNull()
                             ?: 0.75
 
