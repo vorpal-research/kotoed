@@ -125,11 +125,12 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
         address: String,
         value: Argument,
         argClass: KClass<out Argument>,
-        resultClass: KClass<out Result>
+        resultClass: KClass<out Result>,
+        deliveryOptions: DeliveryOptions = DeliveryOptions()
 ): List<Result> {
     val toJson = getToJsonConverter(argClass.starProjectedType)
     val fromJson = getFromJsonConverter(resultClass.starProjectedType)
-    return sendAsync<JsonArray>(address, toJson(value))
+    return sendAsync<JsonArray>(address, toJson(value), deliveryOptions = deliveryOptions)
             .body()
             .asSequence()
             .filterIsInstance<JsonObject>()
@@ -193,14 +194,14 @@ inline suspend fun <
 annotation class EventBusConsumerFor(val address: String)
 
 @Target(AnnotationTarget.FUNCTION)
-annotation class JsonableEventBusConsumerFor(val address: String)
+annotation class JsonableEventBusConsumerFor(val address: String, val nonCopy: Boolean = false)
 
 
 @Target(AnnotationTarget.FUNCTION)
 annotation class EventBusConsumerForDynamic(val addressProperty: String)
 
 @Target(AnnotationTarget.FUNCTION)
-annotation class JsonableEventBusConsumerForDynamic(val addressProperty: String)
+annotation class JsonableEventBusConsumerForDynamic(val addressProperty: String, val nonCopy: Boolean = false)
 
 
 @Target(AnnotationTarget.CLASS)
@@ -292,7 +293,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                 is EventBusConsumerFor ->
                     registerRawConsumer(function, annotation.address, cleanupJsonFields)
                 is JsonableEventBusConsumerFor ->
-                    registerJsonableConsumer(function, annotation.address, cleanupJsonFields)
+                    registerJsonableConsumer(function, annotation.address, annotation.nonCopy, cleanupJsonFields)
                 is EventBusConsumerForDynamic -> {
                     val address = klass
                             .memberProperties
@@ -309,7 +310,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
                             ?.call(this)
                             as? String
                             ?: throw IllegalStateException("Property ${annotation.addressProperty} not found in class $klass")
-                    registerJsonableConsumer(function, address, cleanupJsonFields)
+                    registerJsonableConsumer(function, address, annotation.nonCopy, cleanupJsonFields)
                 }
             }
         }
@@ -354,6 +355,7 @@ private fun AbstractVerticle.registerRawConsumer(
 private fun AbstractVerticle.registerJsonableConsumer(
         function: KFunction<*>,
         address: String,
+        isNonCopy: Boolean,
         cleanupJsonFields: Array<String>
 ) {
     val klass = this::class
@@ -378,7 +380,16 @@ private fun AbstractVerticle.registerJsonableConsumer(
                     + CoroutineName(msg.requestUUID())) {
                 val argument = fromJson(msg.body())
                 val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
-                msg.reply(toJson(res))
+
+                val delOps = DeliveryOptions()
+                if(isNonCopy) {
+                    delOps.codecName = when {
+                        resultType.jvmErasure.isSubclassOf(JsonObject::class) -> NonCopyJsonObjectCodec.name()
+                        resultType.jvmErasure.isSubclassOf(JsonArray::class) -> NonCopyJsonArrayCodec.name()
+                        else -> null
+                    }
+                }
+                msg.reply(toJson(res), delOps)
             }
         }
     } else {
@@ -389,7 +400,17 @@ private fun AbstractVerticle.registerJsonableConsumer(
                 DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
                     val argument = fromJson(msg.body())
                     val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
-                    msg.reply(toJson(res))
+
+                    val delOps = DeliveryOptions()
+                    if(isNonCopy) {
+                        delOps.codecName = when {
+                            resultType.jvmErasure.isSubclassOf(JsonObject::class) -> NonCopyJsonObjectCodec.name()
+                            resultType.jvmErasure.isSubclassOf(JsonArray::class) -> NonCopyJsonArrayCodec.name()
+                            else -> null
+                        }
+                    }
+
+                    msg.reply(toJson(res), delOps)
                 }
             } finally {
                 Thread.currentThread().name = oldName
@@ -471,7 +492,9 @@ open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
 
     protected suspend fun dbQueryAsync(q: ComplexDatabaseQuery): List<JsonObject> =
             @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
+            vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q,
+                    ComplexDatabaseQuery::class,
+                    JsonObject::class)
 
     protected suspend fun <R : TableRecord<R>> dbQueryAsync(table: Table<R>,
                                                             builderBody: TypedQueryBuilder<R>.() -> Unit) =

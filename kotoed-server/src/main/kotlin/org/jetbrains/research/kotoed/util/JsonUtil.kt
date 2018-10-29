@@ -6,6 +6,9 @@ import com.google.common.base.CaseFormat
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
+import io.vertx.core.buffer.Buffer
+import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec
+import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.database.toJson
@@ -448,3 +451,15 @@ object JsonEx
 fun JsonEx.decode(enc: String): Any? = JsonArray("""[$enc]""").getValue(0)
 
 /******************************************************************************/
+
+object NonCopyJsonObjectCodec : JsonObjectMessageCodec(), Loggable {
+    override fun name() = "non-copy-object"
+    override fun transform(jsonObject: JsonObject): JsonObject = jsonObject
+    override fun systemCodecID(): Byte = -1
+}
+
+object NonCopyJsonArrayCodec : JsonArrayMessageCodec(), Loggable {
+    override fun name() = "non-copy-array"
+    override fun transform(jsonObject: JsonArray): JsonArray = jsonObject
+    override fun systemCodecID(): Byte = -1
+}
