@@ -157,7 +157,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 }
             }
             filter("(submission.project.course_id == ${request.id}) and " +
-                    "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ")")
+                    "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ") and " +
+                    "type == \"results.json\"")
         }
 
         return resp
