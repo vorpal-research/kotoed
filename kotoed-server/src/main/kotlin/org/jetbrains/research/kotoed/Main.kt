@@ -76,6 +76,10 @@ suspend fun startApplication(): Vertx {
 
     //vertx.eventBus().addInterceptor(DebugInterceptor)
 
+    //vertx.eventBus().registerDefaultCodec(io.vertx.core.json.JsonObject::class.java, NonCopyJsonObjectCodec)
+    vertx.eventBus().registerCodec(NonCopyJsonObjectCodec)
+    vertx.eventBus().registerCodec(NonCopyJsonArrayCodec)
+
     val cf = vxa<CompositeFuture> { autoDeploy(vertx, it) }
 
     if (cf.failed()) {

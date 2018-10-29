@@ -302,7 +302,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                 }
             }
 
-    @JsonableEventBusConsumerForDynamic(addressProperty = "queryAddress")
+    @JsonableEventBusConsumerForDynamic(addressProperty = "queryAddress", nonCopy = true)
     suspend fun handleQueryWrapper(message: JsonObject) =
             handleQuery(message.toJsonable())
 
