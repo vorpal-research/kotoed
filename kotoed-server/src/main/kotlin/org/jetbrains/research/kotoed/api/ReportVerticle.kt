@@ -12,6 +12,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import kotlinx.coroutines.experimental.*
+import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -20,7 +21,7 @@ data class ReportRequest(val id: Int, val timestamp: OffsetDateTime?) : Jsonable
 @AutoDeployable
 class ReportVerticle : AbstractKotoedVerticle() {
 
-    private val reportPool = newFixedThreadPoolContext(2, "report-pool")
+    private val reportPool = newFixedThreadPoolContext(4, "report-pool")
 
     private val template = "results\\.json".toRegex()
     private val successfulStatus = KotoedRunnerStatus.SUCCESSFUL
@@ -146,42 +147,39 @@ class ReportVerticle : AbstractKotoedVerticle() {
     suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, Double>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
-        val resp = dbQueryAsync(Tables.SUBMISSION_RESULT) {
-            join(Tables.SUBMISSION) {
-                join(Tables.PROJECT) {
-                    join(Tables.DENIZEN, field = "denizen_id")
+        return dbFindAsync(DenizenRecord()).map { denizen -> async(reportPool) iter@{
+            val result = dbQueryAsync(Tables.SUBMISSION_RESULT) {
+                join(Tables.SUBMISSION) {
+                    join(Tables.PROJECT) {
+                        join(Tables.DENIZEN, field = "denizen_id") {
+                            find { id = denizen.id }
+                        }
+                    }
+
+                    rjoin(Tables.SUBMISSION_TAG, resultField = "tags") {
+                        join(Tables.TAG)
+                    }
                 }
+                filter("(submission.project.course_id == ${request.id}) and " +
+                        "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ") and " +
+                        "type == \"results.json\"")
+            }.sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
+                    .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
+                    .firstOrNull()
 
-                rjoin(Tables.SUBMISSION_TAG, resultField = "tags") {
-                    join(Tables.TAG)
-                }
-            }
-            filter("(submission.project.course_id == ${request.id}) and " +
-                    "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ") and " +
-                    "type == \"results.json\"")
-        }
+            val rec = result?.toRecord<SubmissionResultRecord>()?.let(this::calcScore)
+                    ?: return@iter null
+            val tag = result
+                    .getJsonObject("submission")
+                    ?.getJsonArray("tags")
+                    ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toDoubleOrNull() }
+                    ?.firstOrNull()
+                    ?: 0.75
 
-        return resp
-                .groupBy { it.safeNav("submission", "project", "denizen", "denizenId") as? String }
-                .map { (k, v) ->
-                    k to  v
-                            .filter { template in it.getString("type") }
-                            .sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
-                            .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
-                            .firstOrNull()
-                }
-                .map { (k, v) ->
-
-                    val rec = v?.toRecord<SubmissionResultRecord>()?.let(this::calcScore) ?: 0.0
-                    val tag = v
-                            ?.getJsonObject("submission")
-                            ?.getJsonArray("tags")
-                            ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toDoubleOrNull() }
-                            ?.firstOrNull()
-                            ?: 0.75
-
-                    k.orEmpty() to (rec to tag)
-                }.toMap()
+            denizen.denizenId to (rec to tag)
+        }}
+                .mapNotNull { it.await() }
+                .toMap()
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
