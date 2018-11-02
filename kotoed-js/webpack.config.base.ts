@@ -53,7 +53,8 @@ const config: webpack.Configuration = {
         projectList: kotoedEntry("./ts/projects/list.tsx"),
         submissionList: kotoedEntry("./ts/submissions/list.tsx"),
         courseReport: kotoedEntry("./ts/views/courseReport.tsx"),
-        images: "./ts/images.ts"
+        images: "./ts/images.ts",
+        serviceWorker: "./ts/notifications/serviceWorker.js"
     },
     output: {
         path: dstPath,
@@ -125,7 +126,14 @@ const config: webpack.Configuration = {
                         ]
                     })
             },
-
+            {
+                test: /serviceWorker\.js$/,
+                loader: "file-loader",
+                options: {
+                    name: "static/[name].[ext]",
+                    publicPath: '/static/'
+                }
+            },
             {
                 test: /\.(woff2?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
                 issuer: /(\.less|\.css)$/,
