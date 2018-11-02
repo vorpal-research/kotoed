@@ -9,6 +9,7 @@ import {myDatabaseId} from "../login/remote";
 import {doNothing, run} from "../util/common";
 import {EventbusMessage} from "../util/vertx";
 import {NotificationDisplay} from "./components/NotificationDisplay";
+import {subscribeToPushNotifications} from "./pushNotifications";
 
 interface NotificationMenuProps {}
 
@@ -69,6 +70,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
     }
 }
 
+subscribeToPushNotifications().then().catch();
 render(
     <li><NotificationMenu /></li>,
     document.getElementById('notifications-menu')

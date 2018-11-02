@@ -33,7 +33,7 @@ class GlobalConfig : Configuration() {
         val EndpointRoot: String by "/api/v2"
 
         val User: String by "kotoed"
-        val Password: String by Uninitialized
+        val Password: String by "change me"
         val AuthString: String by { "Basic ${base64Encode("$User:$Password")}" }
     }
 
@@ -80,10 +80,16 @@ class GlobalConfig : Configuration() {
         val SendTime by TimeConfig()
     }
 
+    class WebNotificationConfig : Configuration() {
+        val VapidKeyPublic: String by ""
+        val VapidKeyPrivate: String by ""
+    }
+
     class NotificationsConfig : Configuration() {
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() }
 
         val Mail by MailConfig()
+        val Web by WebNotificationConfig()
     }
 
     val Notifications by NotificationsConfig()

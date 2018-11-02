@@ -62,6 +62,10 @@ export namespace Generated {
                 Read: "kotoed.api.notification.read",
                 Render: "kotoed.api.notification.render",
                 RenderCurrent: "kotoed.api.notification.current.render",
+                Web: {
+                    PublicKey: "kotoed.api.notification.web.publicKey",
+                    Subscribe: "kotoed.api.notification.web.subscribe",
+                },
             },
             OAuthProvider: {
                 List: "kotoed.api.oAuthProvider.list",
@@ -174,6 +178,7 @@ export namespace Generated {
         Course: {
             Edit: "/course/edit/:id",
             Index: "/course/:id",
+            Report: "/course/report/:id",
         },
         Denizen: {
             Search: "/search/denizen",
