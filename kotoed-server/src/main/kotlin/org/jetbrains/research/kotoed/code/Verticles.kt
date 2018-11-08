@@ -344,8 +344,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
     fun getCompilerEnv() = FooBarCompiler.setupMyEnv(CompilerConfiguration())
 
-    suspend fun getPsi(compiler: KotlinCoreEnvironment, request: ReadRequest): KtFile {
-        val read = handleRead(request)
+    suspend fun getPsi(compiler: KotlinCoreEnvironment, request: ReadRequest): KtFile? {
+        val read = try { handleRead(request) } catch(ex: VcsException) { return null }
         val psiFactory = KtPsiFactory(compiler.project)
 
         return psiFactory.createFile(request.path, read.contents)
@@ -377,9 +377,9 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val res = FooBarCompiler.useEnv { compiler ->
             val fromFile =
-                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.fromRevision))
+                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.fromRevision)) ?: return null
             val toFile =
-                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.toRevision))
+                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.toRevision)) ?: return null
 
             val (function, resFunction) = findCorrespondingFunction(message.location, fromFile, toFile)
                     ?: return null
