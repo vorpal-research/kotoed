@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
+import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.data.api.Code
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
@@ -281,6 +282,16 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 }
                 .filterNot { it.value.isEmpty() }
 
+        data class CloneInfo(
+                val submissionId: Int,
+                val denizen: Any?,
+                val project: Any?,
+                val file: Filename,
+                val fromLine: Int,
+                val toLine: Int,
+                val functionName: String
+        ) : Jsonable
+
         clonesBySubmission.asSequence()
                 .forEach { (cloneId, cloneClasses) ->
                     dbCreateAsync(SubmissionResultRecord().apply {
@@ -289,15 +300,15 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         // FIXME: akhin Make this stuff Jsonable or what?
                         body = cloneClasses.map { cloneClass ->
                             cloneClass.map { clone ->
-                                object : Jsonable {
-                                    val submissionId = clone.submissionId
-                                    val denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id")
-                                    val project = dataBySubmissionId[clone.submissionId].safeNav("project", "name")
-                                    val file = clone.file
-                                    val fromLine = clone.fromLine
-                                    val toLine = clone.toLine
-                                    val functionName = clone.functionName
-                                }
+                                CloneInfo(
+                                    submissionId = clone.submissionId,
+                                    denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id"),
+                                    project = dataBySubmissionId[clone.submissionId].safeNav("project", "name"),
+                                    file = clone.file,
+                                    fromLine = clone.fromLine,
+                                    toLine = clone.toLine,
+                                    functionName = clone.functionName
+                                )
                             }
                         }
                     })

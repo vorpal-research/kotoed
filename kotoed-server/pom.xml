@@ -15,7 +15,7 @@
     </parent>
 
     <properties>
-        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.version>1.2.60</kotlin.version>
         <java.version>1.8</java.version>
 
         <vertx.version>3.4.2</vertx.version>
