@@ -144,6 +144,11 @@ object Address {
             fun pushRendered(id: String) = "kotoed.api.notification.push.$id.render"
 
             const val PushRenderedBroadcast = "kotoed.api.notification.push.broadcast.render"
+
+            object Web {
+                const val Subscribe = "kotoed.api.notification.web.subscribe"
+                const val PublicKey = "kotoed.api.notification.web.publicKey"
+            }
         }
 
         object OAuthProvider {

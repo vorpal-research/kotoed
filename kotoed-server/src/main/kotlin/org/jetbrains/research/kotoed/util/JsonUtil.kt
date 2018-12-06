@@ -6,7 +6,6 @@ import com.google.common.base.CaseFormat
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec
 import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec
 import io.vertx.core.json.JsonArray

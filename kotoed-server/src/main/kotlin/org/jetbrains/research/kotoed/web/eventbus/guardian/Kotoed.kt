@@ -79,6 +79,8 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Notification.MarkRead to ShouldBeNotificationTarget(vertx),
             Address.Api.Notification.MarkAllRead to Permissive, // patcher covers our asses
             Address.Api.Notification.RenderCurrent to Permissive,
+            Address.Api.Notification.Web.Subscribe to Permissive,
+            Address.Api.Notification.Web.PublicKey to Permissive,
 
             Address.Api.Project.Create to Permissive,
             Address.Api.Project.Read to ProjectOwnerOrTeacher(vertx, "id"),
@@ -177,7 +179,8 @@ fun kotoedPerAddressPatcher(vertx: Vertx) = PerAddressPatcher(
         Address.Api.CommentTemplate.Update to DenizenDatabaseIdPatcher,
         Address.Api.CommentTemplate.Delete to DenizenDatabaseIdPatcher,
         Address.Api.CommentTemplate.Search to DenizenDatabaseIdPatcher,
-        Address.Api.CommentTemplate.SearchCount to DenizenDatabaseIdPatcher
+        Address.Api.CommentTemplate.SearchCount to DenizenDatabaseIdPatcher,
+        Address.Api.Notification.Web.Subscribe to DenizenDatabaseIdPatcher
 )
 
 object WithRequestUUIDPatcher : BridgeEventPatcher {
