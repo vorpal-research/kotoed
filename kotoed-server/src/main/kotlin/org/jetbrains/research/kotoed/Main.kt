@@ -7,10 +7,6 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
-import io.vertx.ext.web.sstore.ClusteredSessionStore
-import io.vertx.ext.web.sstore.LocalSessionStore
-import io.vertx.ext.web.sstore.impl.ClusteredSessionStoreImpl
-import io.vertx.ext.web.sstore.impl.LocalSessionStoreImpl
 import io.vertx.ext.web.templ.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import kotlinx.coroutines.experimental.CoroutineName
@@ -22,14 +18,12 @@ import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
-import org.jetbrains.research.kotoed.util.routing.EasyAsyncSessionStore
 import org.jetbrains.research.kotoed.util.routing.RoutingConfig
 import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
 import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
-import org.jooq.util.h2.information_schema.Tables
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
