@@ -1,16 +1,53 @@
 package org.jetbrains.research.kotoed.data.notification
 
 import io.vertx.core.json.JsonObject
-import kotlinx.html.div
+import kotlinx.html.*
 import kotlinx.html.stream.createHTML
-import kotlinx.html.strong
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.safeNav
 import org.jetbrains.research.kotoed.util.uncheckedCast
+import org.w3c.dom.events.Event
 
-private fun renderCommentClosed(id: Int, body: JsonObject): RenderedData {
-    val node = createHTML().div {
+class RawTagConsumer(): TagConsumer<String> {
+    override fun finalize(): String = contents.toString()
+
+    override fun onTagAttributeChange(tag: Tag, attribute: String, value: String?) {}
+
+    override fun onTagContent(content: CharSequence) {
+        contents.append(content)
+    }
+
+    override fun onTagContentEntity(entity: Entities) {
+        contents.append(entity.text)
+    }
+
+    override fun onTagContentUnsafe(block: Unsafe.() -> Unit) {
+        val unsafe = object : Unsafe {
+            override fun String.unaryPlus() {
+                contents.append(this)
+            }
+        }
+        unsafe.block()
+    }
+
+    override fun onTagEnd(tag: Tag) {}
+
+    override fun onTagEvent(tag: Tag, event: String, value: (Event) -> Unit) {}
+
+    override fun onTagStart(tag: Tag) {}
+
+    var contents: StringBuilder = StringBuilder()
+}
+
+enum class RenderedKind { HTML, RAW }
+fun RenderedKind.buildConsumer() = when(this) {
+    RenderedKind.HTML -> createHTML()
+    RenderedKind.RAW -> RawTagConsumer()
+}
+
+private fun renderCommentClosed(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" closed his comment to "
         strong { +"submission #${body["submissionId"]}" }
@@ -20,8 +57,8 @@ private fun renderCommentClosed(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
-private fun renderCommentReopened(id: Int, body: JsonObject): RenderedData {
-    val node = createHTML().div {
+private fun renderCommentReopened(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" reopened his comment to "
         strong { +"submission #${body["submissionId"]}" }
@@ -30,8 +67,8 @@ private fun renderCommentReopened(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
-private fun renderNewComment(id: Int, body: JsonObject): RenderedData {
-    val node = createHTML().div {
+private fun renderNewComment(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" wrote a comment to "
         strong { +"submission #${body["submissionId"]}" }
@@ -40,8 +77,8 @@ private fun renderNewComment(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
-private fun renderCommentRepliedTo(id: Int, body: JsonObject): RenderedData {
-    val node = createHTML().div {
+private fun renderCommentRepliedTo(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" wrote a comment to "
         strong { +"submission #${body["submissionId"]}" }
@@ -50,8 +87,8 @@ private fun renderCommentRepliedTo(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
-private fun renderNewSubmissionResults(id: Int, body: JsonObject): RenderedData {
-    val node = createHTML().div {
+private fun renderNewSubmissionResults(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
         +"New results for "
         strong { +"submission #${body.safeNav("submissionId")}" }
     }
@@ -59,11 +96,11 @@ private fun renderNewSubmissionResults(id: Int, body: JsonObject): RenderedData 
     return RenderedData(id, node, link)
 }
 
-private fun renderResubmission(id: Int, body: JsonObject): RenderedData {
+private fun renderResubmission(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
     val times = (body["times"] as? Int)?.let {
         if (it == 1) "" else " $it times"
     } ?: ""
-    val node = createHTML().div {
+    val node = kind.buildConsumer().div {
         strong { +"${body.safeNav("author", "denizenId")}" }
         +" resubmitted his "
         strong { +"submission #${body["oldSubmissionId"]}" }
@@ -73,9 +110,9 @@ private fun renderResubmission(id: Int, body: JsonObject): RenderedData {
     return RenderedData(id, node, link)
 }
 
-private fun renderSubmissionUpdate(id: Int, body: JsonObject): RenderedData {
+private fun renderSubmissionUpdate(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
     val pastParticiple = if (body.safeNav("state").toString() == "open") "reopened" else "closed"
-    val node = createHTML().div {
+    val node = kind.buildConsumer().div {
         strong { +"Submission #${body["id"]}" }
         + " was $pastParticiple"
     }
@@ -95,10 +132,12 @@ internal val renderers by lazy {
     )
 }
 
-fun render(notification: NotificationRecord): RenderedData {
+fun render(notification: NotificationRecord): RenderedData = render(notification, RenderedKind.HTML)
+
+fun render(notification: NotificationRecord, kind: RenderedKind): RenderedData {
     val type = NotificationType.valueOf(notification.type)
     val body = notification.body.uncheckedCast<JsonObject>()
-    return renderers[type]!!(notification.id, body)
+    return renderers[type]!!(notification.id, body, kind)
 }
 
 

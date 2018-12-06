@@ -595,3 +595,6 @@ class CommentTemplateVerticle : CrudDatabaseVerticleWithReferences<CommentTempla
 @AutoDeployable
 class BuildTemplateVerticle : CrudDatabaseVerticleWithReferences<BuildTemplateRecord>(Tables.BUILD_TEMPLATE)
 
+@AutoDeployable
+class PushSubscriptionVerticle : CrudDatabaseVerticleWithReferences<PushSubscriptionRecord>(Tables.PUSH_SUBSCRIPTION)
+

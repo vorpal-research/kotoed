@@ -1,6 +1,16 @@
 package org.jetbrains.research.kotoed.data.notification
 
 import org.jetbrains.research.kotoed.util.Jsonable
+import java.util.*
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util.getCurve
+import org.bouncycastle.jce.ECNamedCurveTable
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.jce.spec.ECPublicKeySpec
+import java.security.KeyFactory
+import java.security.PublicKey
+import java.security.Security
+
 
 data class CurrentNotificationsQuery(val denizenId: Int) : Jsonable
 
@@ -35,3 +45,38 @@ data class RenderedData(
         val contents: String,
         val linkTo: LinkData
 ) : Jsonable
+
+data class WebNotificationSubscriptionKeys(
+        val p256dh: String,
+        val auth: String
+) : Jsonable
+
+private object BouncyCastleAccess {
+    val provider: BouncyCastleProvider = BouncyCastleProvider()
+
+    init {
+        Security.addProvider(provider)
+    }
+
+    val keyFactory = KeyFactory.getInstance("ECDH", BouncyCastleProvider.PROVIDER_NAME)
+}
+
+data class WebNotificationSubscription(
+        val denizenId: Int,
+        val endpoint: String,
+        val key: String,
+        val auth: String
+) : Jsonable {
+
+    fun getKeyBytes() = Base64.getDecoder().decode(key)
+    fun getAuthBytes() = Base64.getDecoder().decode(auth)
+
+    fun getUserPublicKey(): PublicKey {
+        val kf = BouncyCastleAccess.keyFactory
+        val ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1")
+        val point = ecSpec.curve.decodePoint(getKeyBytes())
+        val pubSpec = ECPublicKeySpec(point, ecSpec)
+
+        return kf.generatePublic(pubSpec)
+    }
+}
