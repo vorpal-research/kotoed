@@ -19,8 +19,8 @@ import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import ru.spbstu.ktuples.placeholders._0
@@ -62,9 +62,9 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .join("denizen", field = "denizen_id")
 
         val q = ComplexDatabaseQuery("submission")
-                .find(SubmissionRecord().apply {
-                    state = SubmissionState.open
-                })
+                .filter(
+                        "state in %s".formatToQuery(listOf(SubmissionState.open, SubmissionState.closed))
+                )
                 .join(projQ, field = "project_id")
 
         return sendJsonableCollectAsync(Address.DB.query("submission"), q)
@@ -278,7 +278,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             key == clone.submissionId to clone.denizenId ||
                                     key.second != clone.denizenId
                         }
-                    }.filterNot { it.isEmpty() }
+                    }.filterNot { it.size <= 1 }
                 }
                 .filterNot { it.value.isEmpty() }
 
@@ -297,20 +297,21 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     dbCreateAsync(SubmissionResultRecord().apply {
                         submissionId = cloneId.first
                         type = RESULT_TYPE
-                        // FIXME: akhin Make this stuff Jsonable or what?
-                        body = cloneClasses.map { cloneClass ->
-                            cloneClass.map { clone ->
-                                CloneInfo(
-                                    submissionId = clone.submissionId,
-                                    denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id"),
-                                    project = dataBySubmissionId[clone.submissionId].safeNav("project", "name"),
-                                    file = clone.file,
-                                    fromLine = clone.fromLine,
-                                    toLine = clone.toLine,
-                                    functionName = clone.functionName
-                                )
-                            }
-                        }
+                        body = cloneClasses
+                                .sortedBy { with(it.firstOrNull()) { this?.file?.path.orEmpty() + this?.fromLine } }
+                                .map { cloneClass ->
+                                    cloneClass.map { clone ->
+                                        CloneInfo(
+                                                submissionId = clone.submissionId,
+                                                denizen = dataBySubmissionId[clone.submissionId].safeNav("project", "denizen", "denizen_id"),
+                                                project = dataBySubmissionId[clone.submissionId].safeNav("project", "name"),
+                                                file = clone.file,
+                                                fromLine = clone.fromLine,
+                                                toLine = clone.toLine,
+                                                functionName = clone.functionName
+                                        )
+                                    }
+                                }
                     })
                 }
 
