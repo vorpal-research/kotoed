@@ -19,6 +19,7 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import java.io.ByteArrayInputStream
 import java.io.File
+import io.vertx.core.file.FileSystemException
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -143,7 +144,9 @@ class BuildVerticle : AbstractKotoedVerticle() {
                 }) // parens are here to enforce when exhaustiveness checking
             }
 
-            val res = fs.readFileAsync(File(randomName, "results.json").absolutePath).toJsonObject()
+            val res =
+                    try { fs.readFileAsync(File(randomName, "results.json").absolutePath).toJsonObject() }
+                    catch (ex: FileSystemException) { JsonObject("data" to emptyList<Any?>()) }
 
             val inspectionsFile = File(randomName, "report/inspections.xml")
 
