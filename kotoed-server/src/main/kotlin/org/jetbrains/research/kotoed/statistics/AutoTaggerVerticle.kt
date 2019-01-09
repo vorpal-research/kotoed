@@ -47,6 +47,9 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
     val staleId_ = byNameLazy("stale")
     suspend fun getStale() = staleId_.get()
 
+    val checkedId_ = byNameLazy("checked")
+    suspend fun getChecked() = checkedId_.get()
+
     suspend fun setTag(submissionId: Int, tagId: Int): Unit =
             try {
                 sendJsonableAsync(Address.Api.Submission.Tags.Create,
@@ -76,6 +79,7 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             removeTag(build.submissionId, getTestsFailed())
             removeTag(build.submissionId, getBuildOk())
             removeTag(build.submissionId, getEmptySub())
+            removeTag(build.submissionId, getChecked())
 
             val content: KotoedRunnerTestRun = build.results.snakeKeys().toJsonable()
 
@@ -101,6 +105,7 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             removeTag(build.submissionId, getTestsFailed())
             removeTag(build.submissionId, getBuildOk())
             removeTag(build.submissionId, getEmptySub())
+            removeTag(build.submissionId, getChecked())
 
             setTag(build.submissionId, getBuildFailed())
         }
