@@ -90,7 +90,8 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
                     } }) {
                 setTag(build.submissionId, getTestsFailed())
             } else {
-                if(content.data.all {
+                if(!content.data.isEmpty() && // empty data signifies no-result build
+                        content.data.all {
                             it.results.any { it.status != KotoedRunnerStatus.SUCCESSFUL } || "Example" in it.tags
                         }) {
                     setTag(build.submissionId, getEmptySub())
