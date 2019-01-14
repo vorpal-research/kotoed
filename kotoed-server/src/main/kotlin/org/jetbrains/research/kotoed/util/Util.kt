@@ -19,6 +19,7 @@ import java.lang.reflect.Method
 import java.net.URI
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.experimental.buildIterator
 import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 

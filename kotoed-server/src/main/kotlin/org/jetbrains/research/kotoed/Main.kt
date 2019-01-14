@@ -42,7 +42,7 @@ suspend fun startApplication(): Vertx {
         System.getProperties().load(it)
     }
 
-    val vertx = clusteredVertxAsync(
+    val vertx = localVertx(
             VertxOptions().also {
                 it.metricsOptions = DropwizardMetricsOptions(
                         enabled = Config.Debug.Metrics.Enabled,

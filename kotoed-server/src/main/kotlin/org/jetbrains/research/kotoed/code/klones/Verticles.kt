@@ -5,10 +5,14 @@ import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.run
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
 import org.jetbrains.kootstrap.FooBarCompiler
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import kotlin.collections.windowed
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
@@ -22,9 +26,13 @@ import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
+import org.kohsuke.randname.RandomNameGenerator
+import ru.spbstu.kparsec.*
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
+import java.util.concurrent.ThreadLocalRandom
 
 sealed class KloneRequest(val priority: Int) : Jsonable, Comparable<KloneRequest> {
     override fun compareTo(other: KloneRequest): Int = priority - other.priority
@@ -34,6 +42,8 @@ data class ProcessCourseBaseRepo(val course: CourseRecord) : KloneRequest(1)
 data class ProcessSubmission(val submissionData: JsonObject) : KloneRequest(2)
 data class BuildSubmissionReport(val submissionData: JsonObject) : KloneRequest(3)
 data class BuildCourseReport(val course: CourseRecord) : KloneRequest(4)
+
+private val randomnesss = RandomNameGenerator()
 
 @AutoDeployable
 class KloneVerticle : AbstractKotoedVerticle(), Loggable {
@@ -174,13 +184,23 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             return false
         }
 
-        val compilerEnv = run(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
-
         val allFiles = files.root?.toFileSeq().orEmpty()
 
+        processKtFiles(allFiles.filter { it.endsWith(".kt") }.toList(), mode, id, denizenId)
+        processHsFiles(allFiles.filter { it.endsWith(".hs") }.toList(), mode, id, denizenId)
+
+        processed.add(mode to id)
+
+        return true
+    }
+
+    // TODO: provide some abstraction over Kotlin/Java/Haskell/XML/etc here
+    private suspend fun processKtFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
+        if(allFiles.isEmpty()) return //no .kt files
+
+        val compilerEnv = run(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
+
         val ktFiles = allFiles
-                .filter { it.endsWith(".kt") }
-                .toList()
                 .map { filename ->
                     log.trace("filename = $filename")
                     val resp: Code.Submission.ReadResponse = when (mode) {
@@ -209,7 +229,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .map { method ->
                     method to method.dfs { children.asSequence() }
                             .filter(Token.DefaultFilter)
-                            .map((::makeAnonimizedToken)
+                            .map((::makeAnonimizedKtToken)
                                     .bind(_0, mode)
                                     .bind(_0, id)
                                     .bind(_0, denizenId))
@@ -221,10 +241,92 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 }
 
         run(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
+    }
 
-        processed.add(mode to id)
+    private suspend fun processHsFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
+        if(allFiles.isEmpty()) return //no .hs files
 
-        return true
+        loop@for (filename in allFiles) {
+
+            fun org.antlr.v4.runtime.Token.location() =
+                    org.jetbrains.research.kotoed.code.Location(
+                            filename = Filename(path = filename), col = charPositionInLine, line = line
+                    )
+
+            log.trace("filename = $filename")
+            val resp: Code.Submission.ReadResponse = when (mode) {
+                Mode.COURSE ->
+                    sendJsonableAsync(Address.Api.Course.Code.Read,
+                            Code.Course.ReadRequest(
+                                    courseId = id, path = filename))
+                Mode.SUBMISSION ->
+                    sendJsonableAsync(Address.Api.Submission.Code.Read,
+                            Code.Submission.ReadRequest(
+                                    submissionId = id, path = filename))
+            }
+
+            val res = run(ee) {
+                log.trace("Lexing!")
+                CommonTokenStream(HaskellLexer(CharStreams.fromString(resp.contents, filename)))
+                        .apply { fill() }
+                        .tokens
+                        .dropLast(1)
+                        .also { log.trace("Lexing finished") }
+            }
+
+            log.trace("res = ${res.map {"$it@(${it.location()})"}}")
+
+            if (res.isEmpty()) {
+                log.error("Cannot parse source: $filename")
+                continue@loop
+            }
+
+            val errTok = res.find { it.type == HaskellLexer.ERROR }
+
+            if (errTok != null) {
+                log.error("Cannot parse source: $filename: unexpected token: $errTok")
+                continue@loop
+            }
+
+            res.asSequence()
+                    .splitBy { it.type == HaskellLexer.SPACES && it.text.contains(Regex("""\n.*\n""")) }
+                    //.windowed(15) { it.flatten() }
+                    .forEach { chunk ->
+                        log.trace("chunk = $chunk")
+                        val lst =
+                                run(ee) {
+                                    chunk
+                                            .asSequence()
+                                            .filter {
+                                                it.type !in setOf(
+                                                        HaskellLexer.SPACES,
+                                                        HaskellLexer.EOF,
+                                                        HaskellLexer.LEFT_CURLY,
+                                                        HaskellLexer.RIGHT_CURLY,
+                                                        HaskellLexer.LEFT_PAREN,
+                                                        HaskellLexer.RIGHT_PAREN,
+                                                        HaskellLexer.SEMICOLON
+                                                )
+                                            }.mapTo(mutableListOf()) {
+                                                Token(mode,
+                                                        id,
+                                                        denizenId,
+                                                        HaskellLexer.VOCABULARY.getSymbolicName(it.type),
+                                                        it.location(),
+                                                        it.location().run { copy(col = col + it.text.length) },
+                                                        randomnesss.next()
+                                                )
+                                            }.apply {
+                                                if(isNotEmpty()) {
+                                                    add(0, first().copy(text = "\$BEGIN\$"))
+                                                    add(last().copy(text = "\$END\$"))
+                                                }
+                                            }
+                                }
+                        log.trace("lst = $lst")
+                        if(lst.isNotEmpty()) run(ee) { suffixTree.addSequence(lst.toList()) }
+                    }
+        }
     }
 
     suspend fun handleReport(data: List<JsonObject>): Boolean {

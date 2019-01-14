@@ -12,6 +12,7 @@ import org.jooq.SortField
 import org.jooq.Table
 import org.jooq.impl.DSL
 import ru.spbstu.kparsec.Failure
+import ru.spbstu.kparsec.NoSuccess
 import ru.spbstu.kparsec.Success
 import ru.spbstu.kparsec.parse
 import ru.spbstu.ktuples.converge
@@ -91,7 +92,7 @@ private fun convertAst(e: Expression, tables: (String) -> Table<*>): Condition =
 fun parseCondition(input: String, tables: (String) -> Table<*>): Condition {
     val e = ExpressionParsers.root.parse(input)
     when(e) {
-        is Failure -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
+        is NoSuccess -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
                 "expected ${e.expected} at ${e.location}")
         is Success -> return convertAst(e.result, tables)
     }
@@ -100,7 +101,7 @@ fun parseCondition(input: String, tables: (String) -> Table<*>): Condition {
 fun parseSortCriterion(input: String, tables: (String) -> Table<*>): SortField<*> {
     val e = ExpressionParsers.sortCriterion.parse(input)
     when(e) {
-        is Failure -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
+        is NoSuccess -> throw IllegalArgumentException("Failed to parse expression \"$input\": " +
                 "expected ${e.expected} at ${e.location}")
         is Success -> {
             val expr = convertPrimitive<Any?>(e.result.path, tables)
