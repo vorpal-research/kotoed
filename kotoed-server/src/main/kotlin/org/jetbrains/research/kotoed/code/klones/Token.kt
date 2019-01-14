@@ -12,10 +12,10 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 
-fun makeLiteralToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
+fun makeLiteralKtToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
         makeToken(type, submissionId, denizenId, origin) { if (children.isEmpty()) text else "${node.elementType}" }
 
-fun makeAnonimizedToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
+fun makeAnonimizedKtToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement) =
         makeToken(type, submissionId, denizenId, origin) { "${node.elementType}" }
 
 private inline fun makeToken(type: Any, submissionId: Int, denizenId: Int, origin: PsiElement, converter: PsiElement.() -> String): Token {
@@ -39,7 +39,7 @@ private inline fun makeToken(type: Any, submissionId: Int, denizenId: Int, origi
     return Token(type, submissionId, denizenId, text, from, to, fname.orEmpty())
 }
 
-class Token(
+data class Token(
         val type: Any,
         val submissionId: Int,
         val denizenId: Int,

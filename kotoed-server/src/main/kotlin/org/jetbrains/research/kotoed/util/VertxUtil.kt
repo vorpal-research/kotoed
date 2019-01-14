@@ -113,6 +113,8 @@ suspend fun Vertx.goToEventLoop(): Void =
 suspend fun clusteredVertxAsync(opts: VertxOptions = VertxOptions()): Vertx =
         vxa { Vertx.clusteredVertx(opts, it) }
 
+suspend fun localVertx(opts: VertxOptions = VertxOptions()): Vertx = Vertx.vertx(opts)
+
 suspend fun Vertx.delayAsync(delay: Long): Long =
         vxt { this.setTimer(delay, it) }
 
