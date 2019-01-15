@@ -9,10 +9,12 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.query
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
+import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProjectTextSearchRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -80,24 +82,23 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                 else Tables.PROJECT_RESTRICTED_TEXT_SEARCH.name
 
         val q = ComplexDatabaseQuery(tableName)
-                .find(ProjectRecord().apply{ deleted = false })
+                .find(ProjectRecord().apply {
+                    deleted = false
+                })
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
                 .rjoin(subQ, "project_id", "openSubmissions")
-                .find(ProjectRecord().apply {
+                .find(ProjectTextSearchRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
+                    if(query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
+                        empty = false
+                    }
                 })
+                .textSearch(query.text)
                 .setPageForQuery(query)
 
-        val qWithSearch = if (query.text == "")
-            q
-        else
-            q.filter("document matches %s".formatToQuery(query.text))
-
         val projects: List<JsonObject> =
-                sendJsonableCollectAsync(
-                        Address.DB.query(tableName),
-                        qWithSearch)
+                sendJsonableCollectAsync(Address.DB.query(tableName), q)
 
         val reqWithVerificationData = if (query.withVerificationData ?: false) {
             projects.map { json ->
@@ -130,13 +131,15 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery(tableName)
                 .find(ProjectRecord().apply{ deleted = false })
                 .join(Tables.DENIZEN.name)
-                .find(ProjectRecord().apply {
+                .find(ProjectTextSearchRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
+                    if(query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
+                        empty = false
+                    }
                 })
+                .textSearch(query.text)
 
-        val qWithSearch = if (query.text == "") q else q.filter("document matches %s".formatToQuery(query.text))
-
-        return sendJsonableAsync(Address.DB.count(tableName), qWithSearch)
+        return sendJsonableAsync(Address.DB.count(tableName), q)
     }
 }

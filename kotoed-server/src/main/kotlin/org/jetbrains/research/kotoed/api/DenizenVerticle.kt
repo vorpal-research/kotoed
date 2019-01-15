@@ -6,6 +6,7 @@ import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.LoginMsg
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
+import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.Tables.PROFILE
@@ -92,8 +93,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
         val req: List<JsonObject> = dbQueryAsync(DENIZEN_TEXT_SEARCH) {
             setPageForQuery(query)
             rjoin(PROFILE, field = "denizen_id")
-            if(query.text.isNotBlank())
-                filter("document matches %s".formatToQuery(query.text))
+            textSearch(query.text)
         }
 
         return JsonArray(req)
@@ -102,7 +102,6 @@ class DenizenVerticle: AbstractKotoedVerticle() {
     @JsonableEventBusConsumerFor(Address.Api.Denizen.SearchCount)
     suspend fun handleSearchCount(query: SearchQuery): JsonObject =
             dbCountAsync(DENIZEN_TEXT_SEARCH) {
-                if(query.text.isNotBlank())
-                    filter("document matches %s".formatToQuery(query.text))
+                textSearch(query.text)
             }
 }
