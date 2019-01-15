@@ -9,6 +9,7 @@ import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
+import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
@@ -171,7 +172,8 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
                 .join("submission")
-                .filter("document matches %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
+                .textSearch(query.text)
+                .filter("submission.state != %s".formatToQuery(SubmissionState.obsolete))
                 .setPageForQuery(query)
 
         val req: List<JsonObject> = sendJsonableCollectAsync(Address.DB.query("submission_comment_text_search"), q)
@@ -188,7 +190,8 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
                 .join("submission")
-                .filter("document matches %s and submission.state != %s".formatToQuery(query.text, SubmissionState.obsolete))
+                .textSearch(query.text)
+                .filter("submission.state != %s".formatToQuery(SubmissionState.obsolete))
 
         return sendJsonableAsync(Address.DB.count("submission_comment_text_search"), q)
     }

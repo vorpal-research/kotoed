@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.api.Magic
 import org.jetbrains.research.kotoed.data.api.PageableQuery
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.*
@@ -124,12 +125,31 @@ data class ComplexDatabaseQuery(
         return copy(find = find_, joins = joins_, rjoins = rjoins_, sortBy = sortBy_)
     }
 
-    fun filter(@Language("Kotlin") filter: String) = copy(filter = filter)
+    fun filter(@Language("Kotlin") filter: String) = when(this.filter) {
+        null -> copy(filter = filter)
+        else -> copy(filter = "(${this.filter}) and ($filter)")
+    }
     fun sortBy(@Language("Kotlin") expr: String) = copy(sortBy = sortBy.orEmpty() + expr)
 
     fun limit(limit: Int) = copy(limit = limit)
     fun offset(offset: Int) = copy(offset = offset)
 
+}
+
+fun ComplexDatabaseQuery.textSearch(value: String, fieldName: String = "document"): ComplexDatabaseQuery {
+    if(value.isBlank()) return this
+    var res = this
+    val (iterms, terms) = value
+            .split(Regex("""\s+"""))
+            .filter { it.isNotBlank() }
+            .partition { it.startsWith("!") }
+
+    if(terms.isNotEmpty())
+        res = res.filter("$fieldName matches %s".formatToQuery(terms.joinToString(" ")))
+    if(iterms.isNotEmpty())
+        res = res.filter(iterms.map { "!($fieldName matches %s)".formatToQuery( it.drop(1)) }.joinToString(" and "))
+
+    return res
 }
 
 fun <R : TableRecord<R>> ComplexDatabaseQuery(find: R) =
@@ -190,6 +210,10 @@ class TypedQueryBuilder<T : TableRecord<T>>(val table: Table<T>) {
     fun offset(offset: Int)  { query = query.offset(offset) }
     fun filter(@Language("Kotlin") filter: String) { query = query.filter(filter) }
     fun sortBy(@Language("Kotlin") expr: String) { query = query.sortBy(expr) }
+}
+
+fun <T: TableRecord<T>> TypedQueryBuilder<T>.textSearch(value: String, fieldName: String = "document") {
+    query = query.textSearch(value, fieldName)
 }
 
 fun <T: TableRecord<T>> query(table: Table<T>, body: TypedQueryBuilder<T>.() -> Unit): ComplexDatabaseQuery {
