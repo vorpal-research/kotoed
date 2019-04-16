@@ -202,6 +202,10 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
 
         val routeProto = makeRouteProto(annoEl)
 
+        annoEl.getAnnotation(NoBodyHandler::class.java) ?: run {
+            routeProto.addBodyHandler(routingConfig)
+        }
+
         if (annoEl.shouldEnableSessions()) {
             routeProto.enableSessions(routingConfig)
         }
@@ -214,10 +218,6 @@ fun Router.autoRegisterHandlers(routingConfig: RoutingConfig) {
         annoEl.getAnnotation(AuthorityRequired::class.java)?.apply {
             @Suppress("DEPRECATION")
             routeProto.requireAuthorityOnly(routingConfig, authority)
-        }
-
-        annoEl.getAnnotation(AddBodyHandler::class.java)?.apply {
-            routeProto.addBodyHandler(routingConfig)
         }
 
         annoEl.getAnnotation(JsonResponse::class.java)?.apply {
