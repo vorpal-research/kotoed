@@ -91,7 +91,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
 
         log.info("Alive and standing")
 
-        router.route().handler(BodyHandler.create())
+        //router.route().handler(BodyHandler.create())
 
         router.initRoutes()
 

@@ -44,3 +44,4 @@ annotation class LoginRequired
 annotation class AuthorityRequired(val authority: String)
 annotation class EnableSessions
 annotation class AddBodyHandler
+annotation class NoBodyHandler
