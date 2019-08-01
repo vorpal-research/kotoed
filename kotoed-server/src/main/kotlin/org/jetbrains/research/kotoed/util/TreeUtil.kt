@@ -1,12 +1,11 @@
 package org.jetbrains.research.kotoed.util
 
 import java.util.*
-import kotlin.coroutines.experimental.buildSequence
 
 fun <T> T.dfs(body: T.() -> Sequence<T>): Sequence<T> =
         sequenceOf(this) + body().flatMap{ it.dfs(body) }
 
-inline fun <T> T.rdfs(crossinline body: T.() -> Sequence<T>): Sequence<T> = buildSequence {
+inline fun <T> T.rdfs(crossinline body: T.() -> Sequence<T>): Sequence<T> = sequence {
     val stack: Stack<T> = Stack()
     stack += this@rdfs
     while (stack.isNotEmpty()) {
@@ -17,7 +16,7 @@ inline fun <T> T.rdfs(crossinline body: T.() -> Sequence<T>): Sequence<T> = buil
 }
 
 inline fun <T> T.bfs(crossinline queConstructor: () -> Queue<T>,
-                     crossinline body: T.() -> Sequence<T>) = buildSequence {
+                     crossinline body: T.() -> Sequence<T>) = sequence {
     val que: Queue<T> = queConstructor()
     que += this@bfs
     while (que.isNotEmpty()) {

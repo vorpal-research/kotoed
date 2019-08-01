@@ -3,16 +3,17 @@ package org.jetbrains.research.kotoed.code
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
-import com.intellij.psi.PsiElement
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.withContext
 import org.jetbrains.kootstrap.FooBarCompiler
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.diff.asJsonable
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
@@ -21,7 +22,10 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.code.*
+import org.jetbrains.research.kotoed.util.code.alignToLines
+import org.jetbrains.research.kotoed.util.code.location
+import org.jetbrains.research.kotoed.util.code.thisLine
+import org.jetbrains.research.kotoed.util.code.useEnv
 import org.wickedsource.diffparser.api.UnifiedDiffParser
 import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
@@ -34,7 +38,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         File(System.getProperty("user.dir"), Config.VCS.StoragePath)
     }
     private val ee by lazy {
-        newFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.dispatcher")
+        betterFixedThreadPoolContext(Config.VCS.PoolSize, "codeVerticle.dispatcher")
     }
     private val procs by lazy<Cache<String, RepositoryInfo>> {
         CacheBuilder
@@ -95,7 +99,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[message.uid], "Repository not found")
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val checkoutRes = run(ee) {
+        val checkoutRes = withContext(ee) {
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             if(rev == VcsRoot.Revision.Trunk) root.update()
             root.update()
@@ -113,7 +117,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[message.uid], "Repository not found")
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val catRes = run(ee) {
+        val catRes = withContext(ee) {
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             if(rev == VcsRoot.Revision.Trunk) root.update()
             root.cat(path, rev).recover {
@@ -135,7 +139,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val lsRes = run(ee) {
+        val lsRes = withContext(ee) {
             val rev = message.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             if(rev == VcsRoot.Revision.Trunk) root.update()
             root.ls(rev).recover {
@@ -159,7 +163,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 vcs = message.vcs ?: VCS.git
         )
 
-        val vcsRes = run(ee) { pendingResp.root.ping() }
+        val vcsRes = withContext(ee) { pendingResp.root.ping() }
 
         return PingResponse(vcsRes is VcsResult.Success)
     }
@@ -192,7 +196,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[request.uid], "Repository not found")
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val (revRes, brRes) = run(ee) {
+        val (revRes, brRes) = withContext(ee) {
             val rev = request.revision?.let { VcsRoot.Revision(it) } ?: VcsRoot.Revision.Trunk
             if(rev == VcsRoot.Revision.Trunk) root.update()
             root.info(rev, request.branch).recover {
@@ -239,7 +243,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         procs[url] = pendingResp
         info["$uid"] = message
 
-        run(ee) {
+        withContext(ee) {
             randomName.mkdirs()
         }
 
@@ -247,7 +251,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             run {
                 var resp = pendingResp
                 try {
-                    val res = run(ee) {
+                    val res = withContext(ee) {
                         if (pendingResp.vcs == null) {
                             resp = resp.copy(vcs = guessVcsType(message))
                         }
@@ -320,7 +324,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[message.uid], "Repository not found")
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val diffContents = run(ee) {
+        val diffContents = withContext(ee) {
             val from = message.from.let { VcsRoot.Revision(it) }
             val to = message.to?.let { VcsRoot.Revision(it) }
                     ?: VcsRoot.Revision.Trunk
@@ -402,7 +406,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val diffRes = run(ee) {
+        val diffRes = withContext(ee) {
             val from = message.fromRevision.let { VcsRoot.Revision(it) }
             val to = message.toRevision.let { VcsRoot.Revision(it) }
             root.diff(message.location.filename.path, from, to)
@@ -428,7 +432,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val res = run(ee) {
+        val res = withContext(ee) {
             root.date(message.path, message.fromLine, message.toLine)
         }.result
 

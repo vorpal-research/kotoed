@@ -1,22 +1,27 @@
 package org.jetbrains.research.kotoed.integration
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.sun.jersey.api.client.Client
 import com.sun.jersey.api.client.UniformInterfaceException
 import com.sun.jersey.api.client.config.DefaultClientConfig
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpMethod
-import kotlinx.coroutines.experimental.future.future
-import kotlinx.coroutines.experimental.newSingleThreadContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.future.future
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.startApplication
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.UriBuilder
 
 fun startServer(): Future<Vertx> {
     System.setProperty("kotoed.settingsFile", "testenvSettings.json")
-    val stc = newSingleThreadContext("kotoed.testing.tc")
-    return future(stc) { startApplication() } // FIXME: how to wait for a coroutine in a better way?
+    val stc = Executors.newSingleThreadExecutor(
+            ThreadFactoryBuilder().setNameFormat("kotoed.testing.tc").build()
+    ).asCoroutineDispatcher()
+    return CoroutineScope(stc).future { startApplication() } // FIXME: how to wait for a coroutine in a better way?
 }
 
 fun stopServer(vertx: Future<Vertx>) {

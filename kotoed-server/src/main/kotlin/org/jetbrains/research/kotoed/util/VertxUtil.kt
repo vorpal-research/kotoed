@@ -13,14 +13,13 @@ import io.vertx.core.shareddata.Shareable
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import io.vertx.ext.web.client.HttpResponse
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import org.reflections.Reflections
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.scanners.TypeAnnotationsScanner
 import org.slf4j.LoggerFactory
 import java.net.URI
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
@@ -155,7 +154,7 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
     suspend fun execute(timeoutCtx: CoroutineContext = LogExceptions() + VertxContext(vertx) + CoroutineName("timeout")) {
         var timedOut = false
         val timerId = vertx.setTimer(time) {
-            launch(timeoutCtx) {
+            CoroutineScope(timeoutCtx).launch {
                 vertx.goToEventLoop()
                 timedOut = true
                 onTimeoutSusp()
@@ -234,19 +233,20 @@ class DisposableVertxTimerHandle(
     override fun toString(): String = "DisposableVertxTimerHandle[$timerId]"
 }
 
+@UseExperimental(InternalCoroutinesApi::class)
 class VertxContext(val vertx: Vertx) : CoroutineDispatcher(), Delay {
     override fun dispatch(context: CoroutineContext, block: Runnable) =
-            vertx.runOnContext({ block.run() })
+            vertx.runOnContext { block.run() }
 
-    override fun scheduleResumeAfterDelay(time: Long, unit: TimeUnit, continuation: CancellableContinuation<Unit>) {
-        val id = vertx.setTimer(unit.toMillis(time), { ResumeUndispatchedRunnable(this, continuation).run() })
-        continuation.invokeOnCompletion { vertx.cancelTimer(id) }
+    override fun scheduleResumeAfterDelay(timeMillis: Long, continuation: CancellableContinuation<Unit>) {
+        val id = vertx.setTimer(timeMillis) { ResumeUndispatchedRunnable(this, continuation).run() }
+        continuation.invokeOnCancellation { vertx.cancelTimer(id) }
     }
 
-    override fun invokeOnTimeout(time: Long, unit: TimeUnit, block: Runnable): DisposableHandle =
+    override fun invokeOnTimeout(timeMillis: Long, block: Runnable): DisposableHandle =
             DisposableVertxTimerHandle(
                     vertx,
-                    vertx.setTimer(unit.toMillis(time), { block.run() }))
+                    vertx.setTimer(timeMillis) { block.run() })
 }
 
 /******************************************************************************/
