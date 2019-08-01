@@ -19,8 +19,6 @@ import java.lang.reflect.Method
 import java.net.URI
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.experimental.buildIterator
-import kotlin.coroutines.experimental.buildSequence
 import kotlin.reflect.KClass
 
 /******************************************************************************/
@@ -88,7 +86,7 @@ inline fun <T> T?.ignore(): Unit = Unit
 
 /******************************************************************************/
 
-fun BufferedReader.allLines() = buildSequence {
+fun BufferedReader.allLines() = sequence {
     var line = this@allLines.readLine()
     while (line != null) {
         yield(line)
@@ -119,7 +117,7 @@ fun Sequence<Char>.asInputStream(): InputStream =
 /******************************************************************************/
 
 fun <T> Sequence<T>.splitBy(predicate: (T) -> Boolean): Sequence<List<T>> =
-        buildSequence {
+        sequence {
             var mut = mutableListOf<T>()
             for (e in this@splitBy) {
                 if (predicate(e)) {

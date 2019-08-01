@@ -2,12 +2,12 @@ package org.jetbrains.research.kotoed.util.database
 
 import org.jetbrains.research.kotoed.util.expect
 import org.jetbrains.research.kotoed.util.snoc
-import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.*
 import org.jooq.impl.CustomField
 import org.jooq.impl.DSL
-import org.jooq.impl.DSL.inline
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 
 suspend fun Query.executeKAsync(): Int =
@@ -157,4 +157,3 @@ infix fun Field<Any>.documentMatchRankPlain(query: String): Field<Double> =
         FunctionCall("ts_rank", this, DSL.field("plainto_tsquery('russian', '$query')"))
 infix fun Field<Any>.documentMatchRank(query: Field<String>): Field<Double> =
         FunctionCall("ts_rank", this, query)
-

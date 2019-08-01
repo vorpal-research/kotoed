@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.web.routers
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.http.HttpMethod
-import io.vertx.core.http.HttpServerRequest
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.data.db.OAuthLoginMsg
 import org.jetbrains.research.kotoed.data.db.OAuthSignUpMsg
@@ -17,7 +16,6 @@ import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.handlers.JsonLoginHandler
 import org.jetbrains.research.kotoed.web.handlers.SignUpHandler
-import java.net.URI
 
 @HandlerFor(UrlPattern.Auth.Index)
 @EnableSessions
@@ -61,9 +59,7 @@ fun logoutHandlerFactory(cfg: RoutingConfig) = run {
 }
 
 private fun providerOrNull(name: String?, context: RoutingContext): AbstractOAuthProvider? {
-    name ?: run {
-        return null
-    }
+    name ?: return null
 
     return try {
         getOAuthProvider(name, context.vertx(), context.request().getRootUrl())
@@ -105,7 +101,7 @@ class OAuthCallbackHandler(cfg: RoutingConfig) : AsyncRoutingContextHandler() {
             return
         }
 
-        provider.code = code
+        provider.code = code!!
 
         val oAuthUserId = try {
             provider.getUserId()

@@ -1,12 +1,10 @@
 package org.jetbrains.research.kotoed.web.navigation
 
 import io.vertx.ext.auth.User
-import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.isAuthorisedAsync
 import org.jetbrains.research.kotoed.util.safeNav
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
-import kotlin.coroutines.experimental.buildSequence
 
 val NavBarContextName = "navbar"
 
@@ -42,7 +40,7 @@ suspend private fun User?.getUtilities() =
 suspend fun kotoedNavBar(user: User?): NavBar {
     val utils = user.getUtilities()
 
-    val leftElemsSeq = buildSequence {
+    val leftElemsSeq = sequence {
         if (utils.isNotEmpty())
             yield(NavBarMenu("Utilities", children = utils))
 

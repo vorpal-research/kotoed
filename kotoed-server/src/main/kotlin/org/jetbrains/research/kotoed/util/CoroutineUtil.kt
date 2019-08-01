@@ -1,19 +1,18 @@
-@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
+@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE, "ObsoleteExperimentalCoroutines")
 
 package org.jetbrains.research.kotoed.util
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.CoroutineExceptionHandler
-import kotlinx.coroutines.experimental.CoroutineName
-import java.lang.Error
+import kotlinx.coroutines.*
 import java.lang.reflect.Method
-import kotlin.coroutines.experimental.AbstractCoroutineContextElement
-import kotlin.coroutines.experimental.CoroutineContext
+import java.util.concurrent.Executors
+import kotlin.coroutines.*
 import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.experimental.migration.toContinuation
 import kotlin.reflect.KFunction
 
 /******************************************************************************/
@@ -81,16 +80,16 @@ fun Loggable.WithExceptions(ctx: RoutingContext) = WithExceptionsContext(
 
 inline suspend fun <R> KFunction<R>.callAsync(vararg args: Any?) =
         when {
-            isSuspend -> suspendCoroutineOrReturn<R> { call(*args, it) }
+            isSuspend -> suspendCoroutineOrReturn<R> { call(*args, it.toContinuation()) }
             else -> throw Error("$this cannot be called as async")
         }
 
 val Method.isKotlinSuspend
-    get() = parameters.lastOrNull()?.type == kotlin.coroutines.experimental.Continuation::class.java
+    get() = parameters.lastOrNull()?.type == Continuation::class.java
 
 inline suspend fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
         when {
-            isKotlinSuspend -> suspendCoroutineOrReturn<Any?> { invoke(receiver, *args, it) }
+            isKotlinSuspend -> suspendCoroutineOrReturn<Any?> { invoke(receiver, *args, it.toContinuation()) }
             else -> throw Error("$this cannot be invoked as async")
         }
 
@@ -107,3 +106,18 @@ class CoroLazy<T>(val generator: suspend () -> T) {
 }
 
 fun <T> coroLazy(generator: suspend () -> T) = CoroLazy(generator)
+
+/******************************************************************************/
+
+fun betterFixedThreadPoolContext(nThreads: Int, name: String): ExecutorCoroutineDispatcher =
+        Executors.newFixedThreadPool(
+                nThreads,
+                ThreadFactoryBuilder().setNameFormat("$name-%d").build()
+        ).asCoroutineDispatcher()
+
+/******************************************************************************/
+
+fun launchIn(
+        context: CoroutineContext,
+        block: suspend CoroutineScope.() -> Unit
+): Job = CoroutineScope(context).launch(block = block)

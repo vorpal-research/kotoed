@@ -1,7 +1,5 @@
 package org.jetbrains.research.kotoed.notification
 
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.run
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.notification.MessageFormat
 import org.jetbrains.research.kotoed.data.notification.NotificationMessage
