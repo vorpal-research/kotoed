@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonObject
+import nl.martijndwars.webpush.Encoding
 import nl.martijndwars.webpush.Notification
 import nl.martijndwars.webpush.PushService
 import org.apache.http.HttpResponse
@@ -21,7 +22,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 suspend fun PushService.sendSuspendable(notification: Notification): HttpResponse = suspendCoroutine { cont ->
-    preparePost(notification).also { post ->
+    preparePost(notification, Encoding.AESGCM).also { post ->
         val client = HttpAsyncClients.createSystem()
         client.start()
         client.execute(post, object: FutureCallback<HttpResponse> {

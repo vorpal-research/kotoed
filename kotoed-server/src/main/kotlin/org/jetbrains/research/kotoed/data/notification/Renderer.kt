@@ -9,7 +9,11 @@ import org.jetbrains.research.kotoed.util.safeNav
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.w3c.dom.events.Event
 
-class RawTagConsumer(): TagConsumer<String> {
+class RawTagConsumer : TagConsumer<String> {
+    override fun onTagComment(content: CharSequence) {
+        TODO("Comment tags are not supported")
+    }
+
     override fun finalize(): String = contents.toString()
 
     override fun onTagAttributeChange(tag: Tag, attribute: String, value: String?) {}
@@ -41,7 +45,8 @@ class RawTagConsumer(): TagConsumer<String> {
 }
 
 enum class RenderedKind { HTML, RAW }
-fun RenderedKind.buildConsumer() = when(this) {
+
+fun RenderedKind.buildConsumer() = when (this) {
     RenderedKind.HTML -> createHTML()
     RenderedKind.RAW -> RawTagConsumer()
 }
@@ -114,7 +119,7 @@ private fun renderSubmissionUpdate(id: Int, body: JsonObject, kind: RenderedKind
     val pastParticiple = if (body.safeNav("state").toString() == "open") "reopened" else "closed"
     val node = kind.buildConsumer().div {
         strong { +"Submission #${body["id"]}" }
-        + " was $pastParticiple"
+        +" was $pastParticiple"
     }
     val link = LinkData("submission", body["id"].toString())
     return RenderedData(id, node, link)
@@ -139,5 +144,3 @@ fun render(notification: NotificationRecord, kind: RenderedKind): RenderedData {
     val body = notification.body.uncheckedCast<JsonObject>()
     return renderers[type]!!(notification.id, body, kind)
 }
-
-

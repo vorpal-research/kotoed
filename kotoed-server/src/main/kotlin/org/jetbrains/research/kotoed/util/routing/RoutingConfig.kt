@@ -4,9 +4,12 @@ import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.*
+import io.vertx.ext.web.common.template.TemplateEngine
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.handler.CookieHandler
+import io.vertx.ext.web.handler.RedirectAuthHandler
+import io.vertx.ext.web.handler.UserSessionHandler
 import io.vertx.ext.web.sstore.SessionStore
-import io.vertx.ext.web.templ.TemplateEngine
 import kotlinx.Warnings
 import org.jetbrains.research.kotoed.util.RouteProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
