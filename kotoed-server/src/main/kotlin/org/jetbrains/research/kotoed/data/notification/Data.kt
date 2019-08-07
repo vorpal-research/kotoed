@@ -1,16 +1,13 @@
 package org.jetbrains.research.kotoed.data.notification
 
-import org.jetbrains.research.kotoed.util.Jsonable
-import java.util.*
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util.getCurve
 import org.bouncycastle.jce.ECNamedCurveTable
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECPublicKeySpec
+import org.jetbrains.research.kotoed.util.Jsonable
 import java.security.KeyFactory
 import java.security.PublicKey
 import java.security.Security
-
+import java.util.*
 
 data class CurrentNotificationsQuery(val denizenId: Int) : Jsonable
 

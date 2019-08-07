@@ -6,7 +6,7 @@ import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
-import io.vertx.ext.web.templ.JadeTemplateEngine
+import io.vertx.ext.web.templ.jade.JadeTemplateEngine
 import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -59,12 +59,14 @@ suspend fun startApplication(): Vertx {
 
     rootLog.info("Migrating the migrations")
 
-    val flyway = Flyway()
-    flyway.setSchemas(Public.PUBLIC.name)
-    flyway.dataSource = vertx.getSharedDataSource()
-    flyway.isBaselineOnMigrate = true
-    flyway.setBaselineVersionAsString("1")
-    flyway.sqlMigrationPrefix = "V"
+    val flyway = Flyway.configure()
+            .schemas(Public.PUBLIC.name)
+            .dataSource(vertx.getSharedDataSource())
+            .baselineOnMigrate(true)
+            .baselineVersion("1")
+            .sqlMigrationPrefix("V")
+            .load()
+
     flyway.migrate()
 
     rootLog.info("Migration successful")
@@ -112,7 +114,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
         val staticFilesHelper = StaticFilesHelper(vertx)
         val routingConfig = RoutingConfig(
                 vertx = vertx,
-                templateEngine = JadeTemplateEngine.create().apply {
+                templateEngine = JadeTemplateEngine.create(vertx).apply {
                     jadeConfiguration.isPrettyPrint = true
                 },
                 authProvider = UavAuthProvider(vertx),

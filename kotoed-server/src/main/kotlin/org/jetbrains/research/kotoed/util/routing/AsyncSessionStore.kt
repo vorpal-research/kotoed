@@ -11,7 +11,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.PRNG
 import io.vertx.ext.web.Session
 import io.vertx.ext.web.sstore.SessionStore
-import io.vertx.ext.web.sstore.impl.SessionImpl
+import io.vertx.ext.web.sstore.impl.SharedDataSessionImpl
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.WebSessionRecord
@@ -25,7 +25,7 @@ import org.jetbrains.research.kotoed.util.withRequestUUID
 
 private typealias MessageRes = AsyncResult<Message<JsonObject>>
 
-class MySessionImpl : SessionImpl {
+class MySessionImpl : SharedDataSessionImpl {
     constructor(store: AsyncSessionStore) :
             super()
     constructor(store: AsyncSessionStore, random: PRNG?) :
@@ -39,17 +39,21 @@ class MySessionImpl : SessionImpl {
         return this
     }
 
+    public override fun setVersion(version: Int) {
+        super.setVersion(version)
+    }
+
     override fun toString(): String = "Session{ " +
             "id = ${id()}, " +
             "lastAccessed = ${lastAccessed()}, " +
             "timeout = ${timeout()}, " +
-            "version = ${(this as SessionImpl).version()}, " +
+            "version = ${version()}, " +
             "data = ${data()} }"
 }
 
 class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     private fun Session.asRecord(): WebSessionRecord {
-        this as SessionImpl
+        this as SharedDataSessionImpl
         val buf = Buffer.buffer()
         writeToBuffer(buf)
         return WebSessionRecord().apply {
@@ -65,8 +69,8 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         val buf = Buffer.buffer(java.util.Base64.getDecoder().decode(data))
         val session = MySessionImpl(this@AsyncSessionStore, random)
         session.readFromBuffer(0, buf)
-        // yes, this is a bit stupid
-        while(session.version() != version) session.incrementVersion()
+
+        session.setVersion(version)
 
         return session
     }
@@ -76,10 +80,12 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
             "id = ${id()}, " +
             "lastAccessed = ${lastAccessed()}, " +
             "timeout = ${timeout()}, " +
-            "version = ${(this as SessionImpl).version()}, " +
+            "version = ${(this as SharedDataSessionImpl).version()}, " +
             "data = ${data()} }"
 
     private val random: PRNG = PRNG(vertx)
+
+    override fun init(vertx: Vertx, options: JsonObject?): SessionStore = this
 
     override fun createSession(timeout: Long): Session {
         return MySessionImpl(this, random, timeout, SessionStore.DEFAULT_SESSIONID_LENGTH)
@@ -95,15 +101,15 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 
     override fun close() {}
 
-    override fun clear(resultHandler: Handler<AsyncResult<Boolean>>) {
+    override fun clear(resultHandler: Handler<AsyncResult<Void>>) {
         // do not support clearing, it should clean itself
         // besides, there are no usages of this method anyways
-        resultHandler.handle(Future.succeededFuture(true))
+        resultHandler.handle(Future.succeededFuture())
     }
 
-    override fun put(session: Session, resultHandler: Handler<AsyncResult<Boolean>>) {
+    override fun put(session: Session, resultHandler: Handler<AsyncResult<Void>>) {
         val deliveryOptions = withRequestUUID()
-        session as SessionImpl
+        session as SharedDataSessionImpl
         log.info("Assigning ${deliveryOptions.requestUUID()} to put(${session.rep()})")
 
         log.info("Writing session")
@@ -117,9 +123,9 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
             val oldId = session.oldId()
             if(oldId != null) {
                 doDelete(oldId) {
-                    resultHandler.handle(mes.map(false))
+                    resultHandler.handle(mes.mapEmpty())
                 }
-            } else resultHandler.handle(mes.map(false))
+            } else resultHandler.handle(mes.mapEmpty())
         }
     }
 
@@ -159,7 +165,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         }
     }
 
-    fun doDelete(id: String, resultHandler: (AsyncResult<Boolean>) -> Unit) {
+    private fun doDelete(id: String, resultHandler: (AsyncResult<Void>) -> Unit) {
         val deliveryOptions = withRequestUUID()
         log.info("Assigning ${deliveryOptions.requestUUID()} to delete($id)")
 
@@ -169,11 +175,11 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
                 deliveryOptions
         ) { mes: MessageRes ->
             // supposed to be otherwise(false), but LocalSessionStorage never returns false
-            resultHandler(mes.map { true }.otherwise(true))
+            resultHandler(mes.mapEmpty())
         }
     }
 
-    override fun delete(id: String, resultHandler: Handler<AsyncResult<Boolean>>) {
+    override fun delete(id: String, resultHandler: Handler<AsyncResult<Void>>) {
         doDelete(id, resultHandler::handle)
     }
 }
@@ -181,18 +187,18 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 class EasyAsyncSessionStore(val vertx: Vertx, val delegate: SessionStore = AsyncSessionStore(vertx)) :
         SessionStore by delegate, Loggable {
 
-    val storage: MutableMap<String, SessionImpl> = mutableMapOf()
+    val storage: MutableMap<String, SharedDataSessionImpl> = mutableMapOf()
     override fun get(id: String, resultHandler: Handler<AsyncResult<Session>>) {
         if(id in storage) resultHandler.handle(Future.succeededFuture(storage[id]))
         else delegate.get(id, resultHandler)
     }
 
-    override fun put(session: Session, resultHandler: Handler<AsyncResult<Boolean>>) {
-        storage[session.id()] = session as SessionImpl
+    override fun put(session: Session, resultHandler: Handler<AsyncResult<Void>>) {
+        storage[session.id()] = session as SharedDataSessionImpl
         delegate.put(session, resultHandler)
     }
 
-    override fun delete(id: String, resultHandler: Handler<AsyncResult<Boolean>>) {
+    override fun delete(id: String, resultHandler: Handler<AsyncResult<Void>>) {
         storage.remove(id)
         delegate.delete(id, resultHandler)
     }

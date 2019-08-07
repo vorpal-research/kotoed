@@ -418,8 +418,8 @@ private fun AbstractVerticle.registerJsonableConsumer(
     }
 }
 
-object DebugInterceptor : Handler<SendContext<*>>, Loggable {
-    override fun handle(event: SendContext<*>) {
+object DebugInterceptor : Handler<DeliveryContext<*>>, Loggable {
+    override fun handle(event: DeliveryContext<*>) {
         val message = event.message()
         log.trace("Message to ${message.address()}[${message.replyAddress() ?: ""}]")
         event.next()

@@ -10,9 +10,8 @@ import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
 import org.jetbrains.research.kotoed.util.Loggable
 import org.simplejavamail.email.EmailBuilder
-import org.simplejavamail.mailer.Mailer
+import org.simplejavamail.mailer.MailerBuilder
 import org.simplejavamail.mailer.config.TransportStrategy
-
 
 @AutoDeployable
 class MailVerticle : AbstractNotificationVerticle(), Loggable {
@@ -20,19 +19,21 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
     private val transport by lazy {
         when {
             Config.Notifications.Mail.UseTLS -> TransportStrategy.SMTP_TLS
-            Config.Notifications.Mail.UseSSL -> TransportStrategy.SMTP_SSL
-            else -> TransportStrategy.SMTP_PLAIN
+            Config.Notifications.Mail.UseSSL -> TransportStrategy.SMTPS
+            else -> TransportStrategy.SMTP
         }
     }
 
     private val mailer by lazy {
-        Mailer(
-                Config.Notifications.Mail.ServerHost,
-                Config.Notifications.Mail.ServerPort,
-                Config.Notifications.Mail.User,
-                Config.Notifications.Mail.Password,
-                transport
-        )
+        MailerBuilder
+                .withSMTPServer(
+                        Config.Notifications.Mail.ServerHost,
+                        Config.Notifications.Mail.ServerPort,
+                        Config.Notifications.Mail.User,
+                        Config.Notifications.Mail.Password
+                )
+                .withTransportStrategy(transport)
+                .buildMailer()
     }
 
     @JsonableEventBusConsumerFor(Address.Notifications.Email.Send)
@@ -46,19 +47,20 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
             throw IllegalArgumentException("User ${denizen.denizenId} does not have a specified email")
 
         val email =
-                EmailBuilder()
+                EmailBuilder
+                        .startingBlank()
                         .to(denizen.denizenId, denizen.email)
                         .from(Config.Notifications.Mail.KotoedSignature, Config.Notifications.Mail.KotoedAddress)
-                        .replyTo(Config.Notifications.Mail.KotoedSignature, Config.Notifications.Mail.KotoedAddress)
-                        .subject(message.subject)
-                        .run {
+                        .withReplyTo(Config.Notifications.Mail.KotoedSignature, Config.Notifications.Mail.KotoedAddress)
+                        .withSubject(message.subject)
+                        .apply {
                             if(message.contentsFormat == MessageFormat.HTML) {
-                                textHTML(message.contents)
+                                withHTMLText(message.contents)
                             } else {
-                                text(message.contents)
+                                withPlainText(message.contents)
                             }
                         }
-                        .build()
+                        .buildEmail()
 
 
         log.info("Sending email to $denizen")
