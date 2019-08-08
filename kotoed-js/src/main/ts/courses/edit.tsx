@@ -15,11 +15,9 @@ import UrlPattern = Kotoed.UrlPattern;
 const params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Course.Edit, window.location.pathname) || new Map();
 const courseId = parseInt(params.get("id")) || -1;
 
-type WrapperState = {
-    loading: boolean
-    failed: boolean
-    course?: CourseToRead
-}
+type WrapperState = { loading: true, failed: false }
+                  | { loading: false, failed: true }
+                  | { loading: false, failed: false, course: CourseToRead }
 
 class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
     constructor(props: CourseToRead) {
@@ -109,7 +107,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
 class CourseEditorWrapper extends React.Component<WithId, WrapperState> {
     constructor(props: WithId) {
         super(props);
-        this.state = {loading: true, failed: false};
+        this.state = { loading: true, failed: false };
         this.tryLoad()
     }
     tryLoad = async () => {
@@ -117,7 +115,8 @@ class CourseEditorWrapper extends React.Component<WithId, WrapperState> {
         while (true) {
             remote = await fetchCourse(this.props.id);
             if(remote.verificationData.status == "Processed") {
-                this.setState({loading: false, course: remote.record});
+                const newState = { loading: false, failed: false, course: remote.record };
+                this.setState(newState);
                 return;
             }
             if(remote.verificationData.status == "Invalid") {
@@ -130,7 +129,7 @@ class CourseEditorWrapper extends React.Component<WithId, WrapperState> {
     render() {
         if(this.state.loading) return <SpinnerWithVeil/>;
         if(this.state.failed) return <h1>Cannot load course</h1>;
-        return <CourseEditor {...this.state.course!} />
+        return <CourseEditor {...this.state.course } />
     }
 }
 
