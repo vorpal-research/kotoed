@@ -65,13 +65,17 @@ function fromRemote(bt: any): BuildTemplate {
 }
 
 function qSplit(s: string): string[] {
-    let ss = s.trim().split(' ');
+    let ss = s.trim().split(/\s+/);
     let res = [];
     for(let i = 0; i < ss.length; ++i) {
         let cur = ss[i];
-        if(cur.startsWith("\"")) {
-            cur = "";
-            do { cur = cur + ss[i]; ++i } while(i < ss.length && !ss[i].endsWith("\""))
+        if(cur.startsWith("\"") && !cur.endsWith("\"")) {
+            ++i;
+            while(i < ss.length) {
+                cur = cur + " " + ss[i];
+                ++i;
+                if(cur.endsWith("\"")) break;
+            }
         }
         res.push(cur)
     }
@@ -344,10 +348,7 @@ export class BuildTemplateEditor extends ComponentWithLocalErrors<BuildTemplate,
     }
 }
 
-type WrapperState = {
-    loading: boolean
-    template?: BuildTemplate
-}
+type WrapperState = { loading: true } | { loading: false, template: BuildTemplate }
 
 export class BuildTemplateEditorWrapper extends React.Component<WithId, WrapperState> {
     constructor(props: {id: number}) {
@@ -361,14 +362,15 @@ export class BuildTemplateEditorWrapper extends React.Component<WithId, WrapperS
             const remote =
                 await eventBus.send(Kotoed.Address.Api.BuildTemplate.Read, this.props);
             const template = fromRemote(remote);
-            this.setState({loading: false, template: assignKeys(template)})
+            const newState = { loading: false, template: assignKeys(template) };
+            this.setState(newState);
         } catch (error) {
             throw error;
         }
     };
 
     render() {
-        if(this.state.template) {
+        if(!this.state.loading) {
             return <BuildTemplateEditor {...this.state.template} />
         } else return <SpinnerWithVeil/>
     }
