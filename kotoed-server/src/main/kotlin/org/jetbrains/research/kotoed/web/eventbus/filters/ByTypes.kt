@@ -1,7 +1,7 @@
 package org.jetbrains.research.kotoed.web.eventbus.filters
 
+import io.vertx.ext.bridge.BridgeEventType
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import java.util.*
 
 class ByTypes(vararg val types: BridgeEventType) : BridgeEventFilter {

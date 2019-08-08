@@ -5,14 +5,12 @@ import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.newSingleThreadContext
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.withContext
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.jetbrains.kootstrap.FooBarCompiler
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import kotlin.collections.windowed
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
@@ -29,10 +27,8 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
 import org.kohsuke.randname.RandomNameGenerator
-import ru.spbstu.kparsec.*
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
-import java.util.concurrent.ThreadLocalRandom
 
 sealed class KloneRequest(val priority: Int) : Jsonable, Comparable<KloneRequest> {
     override fun compareTo(other: KloneRequest): Int = priority - other.priority
@@ -198,7 +194,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     private suspend fun processKtFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
         if(allFiles.isEmpty()) return //no .kt files
 
-        val compilerEnv = run(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
+        val compilerEnv = withContext(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
 
         val ktFiles = allFiles
                 .map { filename ->
@@ -213,7 +209,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                                     Code.Submission.ReadRequest(
                                             submissionId = id, path = filename))
                     }
-                    run(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
+                    withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
                 }
 
         ktFiles.asSequence()
@@ -240,7 +236,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     val seqId = suffixTree.addSequence(lst)
                 }
 
-        run(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
+        withContext(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
     }
 
     private suspend fun processHsFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
@@ -265,7 +261,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                                     submissionId = id, path = filename))
             }
 
-            val res = run(ee) {
+            val res = withContext(ee) {
                 log.trace("Lexing!")
                 CommonTokenStream(HaskellLexer(CharStreams.fromString(resp.contents, filename)))
                         .apply { fill() }
@@ -294,7 +290,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     .forEach { chunk ->
                         log.trace("chunk = $chunk")
                         val lst =
-                                run(ee) {
+                                withContext(ee) {
                                     chunk
                                             .asSequence()
                                             .filter {
@@ -324,7 +320,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                                             }
                                 }
                         log.trace("lst = $lst")
-                        if(lst.isNotEmpty()) run(ee) { suffixTree.addSequence(lst.toList()) }
+                        if(lst.isNotEmpty()) withContext(ee) { suffixTree.addSequence(lst.toList()) }
                     }
         }
     }

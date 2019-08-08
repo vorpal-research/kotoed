@@ -21,10 +21,13 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.auth.AuthProvider;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.web.Cookie;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.SessionHandler;
+import io.vertx.ext.web.handler.impl.UserHolder;
 import io.vertx.ext.web.sstore.SessionStore;
 
 /**
@@ -33,21 +36,41 @@ import io.vertx.ext.web.sstore.SessionStore;
 public class SessionHandlerImpl implements SessionHandler {
 
     static SessionHandler create(SessionStore sessionStore) {
-        return new SessionHandlerImpl(DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_TIMEOUT, DEFAULT_NAG_HTTPS, DEFAULT_COOKIE_SECURE_FLAG, DEFAULT_COOKIE_HTTP_ONLY_FLAG, DEFAULT_SESSIONID_MIN_LENGTH, sessionStore);
+        return new SessionHandlerImpl(
+                DEFAULT_SESSION_COOKIE_NAME,
+                DEFAULT_SESSION_COOKIE_PATH,
+                DEFAULT_SESSION_TIMEOUT,
+                DEFAULT_NAG_HTTPS,
+                DEFAULT_COOKIE_SECURE_FLAG,
+                DEFAULT_COOKIE_HTTP_ONLY_FLAG,
+                DEFAULT_SESSIONID_MIN_LENGTH,
+                sessionStore);
     }
+
+    private static final String SESSION_USER_HOLDER_KEY = "__vertx.userHolder";
 
     private static final Logger log = LoggerFactory.getLogger(SessionHandlerImpl.class);
 
     private final SessionStore sessionStore;
     private String sessionCookieName;
+    private String sessionCookiePath;
     private long sessionTimeout;
     private boolean nagHttps;
     private boolean sessionCookieSecure;
     private boolean sessionCookieHttpOnly;
     private int minLength;
+    private AuthProvider authProvider;
 
-    public SessionHandlerImpl(String sessionCookieName, long sessionTimeout, boolean nagHttps, boolean sessionCookieSecure, boolean sessionCookieHttpOnly, int minLength, SessionStore sessionStore) {
+    public SessionHandlerImpl(String sessionCookieName,
+                              String sessionCookiePath,
+                              long sessionTimeout,
+                              boolean nagHttps,
+                              boolean sessionCookieSecure,
+                              boolean sessionCookieHttpOnly,
+                              int minLength,
+                              SessionStore sessionStore) {
         this.sessionCookieName = sessionCookieName;
+        this.sessionCookiePath = sessionCookiePath;
         this.sessionTimeout = sessionTimeout;
         this.nagHttps = nagHttps;
         this.sessionStore = sessionStore;
@@ -87,15 +110,25 @@ public class SessionHandlerImpl implements SessionHandler {
     }
 
     @Override
+    public SessionHandler setSessionCookiePath(String sessionCookiePath) {
+        this.sessionCookiePath = sessionCookiePath;
+        return this;
+    }
+
+    @Override
     public SessionHandler setMinLength(int minLength) {
         this.minLength = minLength;
         return this;
     }
 
     @Override
-    public void handle(RoutingContext context) {
-        context.response().ended();
+    public SessionHandler setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
+        return this;
+    }
 
+    @Override
+    public void handle(RoutingContext context) {
         if (nagHttps && log.isDebugEnabled()) {
             String uri = context.request().absoluteURI();
             if (!uri.startsWith("https:")) {
@@ -115,13 +148,38 @@ public class SessionHandlerImpl implements SessionHandler {
                         Session session = res.result();
                         if (session != null) {
                             context.setSession(session);
-                            session.setAccessed();
-                            addStoreSessionHandler(context);
+                            // attempt to load the user from the session if auth provider is known
+                            if (authProvider != null) {
+                                UserHolder holder = session.get(SESSION_USER_HOLDER_KEY);
+                                if (holder != null) {
+                                    User user = null;
+                                    RoutingContext prevContext = holder.context;
+                                    if (prevContext != null) {
+                                        user = prevContext.user();
+                                    } else if (holder.user != null) {
+                                        user = holder.user;
+                                        user.setAuthProvider(authProvider);
+                                        holder.context = context;
+                                        holder.user = null;
+                                    }
+                                    holder.context = context;
+                                    if (user != null) {
+                                        context.setUser(user);
+                                    }
+                                }
+                                addStoreSessionHandler(context, holder == null);
+                            } else {
+                                // never store user as there's no provider for auth
+                                addStoreSessionHandler(context, false);
+                            }
+
                         } else {
-                            // Cannot find session - either it timed out, or was explicitly destroyed at the server side on a
+                            // Cannot find session - either it timed out, or was explicitly destroyed at the
+                            // server side on a
                             // previous request.
 
-                            // OWASP clearly states that we shouldn't recreate the session as it allows session fixation.
+                            // OWASP clearly states that we shouldn't recreate the session as it allows
+                            // session fixation.
                             // create a new anonymous session.
                             createNewSession(context);
                         }
@@ -142,12 +200,17 @@ public class SessionHandlerImpl implements SessionHandler {
         doGetSession(vertx, System.currentTimeMillis(), sessionID, resultHandler);
     }
 
-    private void doGetSession(Vertx vertx, long startTime, String sessionID, Handler<AsyncResult<Session>> resultHandler) {
+    private void doGetSession(Vertx vertx,
+                              long startTime,
+                              String sessionID,
+                              Handler<AsyncResult<Session>> resultHandler) {
         sessionStore.get(sessionID, res -> {
             if (res.succeeded()) {
                 if (res.result() == null) {
-                    // Can't find it so retry. This is necessary for clustered sessions as it can take sometime for the session
-                    // to propagate across the cluster so if the next request for the session comes in quickly at a different
+                    // Can't find it so retry. This is necessary for clustered sessions as it can
+                    // take sometime for the session
+                    // to propagate across the cluster so if the next request for the session comes
+                    // in quickly at a different
                     // node there is a possibility it isn't available yet.
                     long retryTimeout = sessionStore.retryTimeout();
                     if (retryTimeout > 0 && System.currentTimeMillis() - startTime < retryTimeout) {
@@ -160,29 +223,42 @@ public class SessionHandlerImpl implements SessionHandler {
         });
     }
 
-    private void addStoreSessionHandler(RoutingContext context) {
+    private void addStoreSessionHandler(RoutingContext context, boolean storeUser) {
         context.addHeadersEndHandler(v -> {
             Session session = context.session();
             if (!session.isDestroyed()) {
                 final int currentStatusCode = context.response().getStatusCode();
                 // Store the session (only and only if there was no error)
                 if (currentStatusCode >= 200 && currentStatusCode < 400) {
+
+                    // store the current user into the session
+                    if (storeUser) {
+                        // during the request the user might have been removed
+                        if (context.user() != null) {
+                            session.put(SESSION_USER_HOLDER_KEY, new UserHolder(context));
+                        }
+                    }
+
                     session.setAccessed();
                     if (session.isRegenerated()) {
-                        // this means that a session id has been changed, usually it means a session upgrade
-                        // (e.g.: anonymous to authenticated) or that the security requirements have changed
-                        // see: https://www.owasp.org/index.php/Session_Management_Cheat_Sheet#Session_ID_Life_Cycle
+                        // this means that a session id has been changed, usually it means a session
+                        // upgrade
+                        // (e.g.: anonymous to authenticated) or that the security requirements have
+                        // changed
+                        // see:
+                        // https://www.owasp.org/index.php/Session_Management_Cheat_Sheet#Session_ID_Life_Cycle
 
                         // the session cookie needs to be updated to the new id
                         final Cookie cookie = context.getCookie(sessionCookieName);
                         // restore defaults
-                        cookie
-                                .setValue(session.id())
+                        cookie.setValue(session.value())
                                 .setPath("/")
                                 .setSecure(sessionCookieSecure)
                                 .setHttpOnly(sessionCookieHttpOnly);
 
+                        // !!!
                         // In vertx.web, this was vice versa: first delete, then put. Why???
+                        // !!!
                         sessionStore.put(session, res -> {
                             if (res.failed()) {
                                 log.error("Failed to store session", res.cause());
@@ -194,7 +270,6 @@ public class SessionHandlerImpl implements SessionHandler {
                                 });
                             }
                         });
-
                     } else {
                         sessionStore.put(session, res -> {
                             if (res.failed()) {
@@ -204,9 +279,13 @@ public class SessionHandlerImpl implements SessionHandler {
                     }
                 } else {
                     // don't send a cookie if status is not 2xx or 3xx
-                    context.removeCookie(sessionCookieName);
+                    // remove it from the set (do not invalidate)
+                    context.removeCookie(sessionCookieName, false);
                 }
             } else {
+                // invalidate the cookie as the session has been destroyed
+                context.removeCookie(sessionCookieName);
+                // delete from the storage
                 sessionStore.delete(session.id(), res -> {
                     if (res.failed()) {
                         log.error("Failed to delete session", res.cause());
@@ -219,12 +298,13 @@ public class SessionHandlerImpl implements SessionHandler {
     private void createNewSession(RoutingContext context) {
         Session session = sessionStore.createSession(sessionTimeout, minLength);
         context.setSession(session);
-        Cookie cookie = Cookie.cookie(sessionCookieName, session.id());
-        cookie.setPath("/");
+        Cookie cookie = Cookie.cookie(sessionCookieName, session.value());
+        cookie.setPath(sessionCookiePath);
         cookie.setSecure(sessionCookieSecure);
         cookie.setHttpOnly(sessionCookieHttpOnly);
         // Don't set max age - it's a session cookie
         context.addCookie(cookie);
-        addStoreSessionHandler(context);
+        // only store the user if there's a auth provider
+        addStoreSessionHandler(context, authProvider != null);
     }
 }

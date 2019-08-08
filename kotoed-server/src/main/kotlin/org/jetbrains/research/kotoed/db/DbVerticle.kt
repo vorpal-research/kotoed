@@ -4,7 +4,9 @@ import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
@@ -16,7 +18,6 @@ import org.jetbrains.research.kotoed.db.condition.lang.parseSortCriterion
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.JsonWalker.Companion.defaultObjectCallback
-import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.database.*
 import org.jooq.*
 import org.jooq.exception.DataAccessException
@@ -24,8 +25,9 @@ import org.jooq.impl.DSL
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.Tuple5
 import ru.spbstu.ktuples.plus
-import kotlin.coroutines.experimental.buildSequence
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 import kotlin.sequences.Sequence
 
@@ -36,7 +38,7 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
 
     companion object {
         val DBPool =
-                newFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
+                betterFixedThreadPoolContext(Config.Debug.Database.PoolSize, "dbVerticles.dispatcher")
     }
 
     val dataSource get() = vertx.getSharedDataSource()
@@ -48,10 +50,10 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
     val recordClass: KClass<R> = table.recordType.kotlin.uncheckedCast()
 
     protected suspend fun <T> db(body: DSLContext.() -> T) =
-            run(DBPool) { jooq(dataSource).use(body) }
+            withContext(DBPool) { jooq(dataSource).use(body) }
 
     protected suspend fun <T> dbAsync(body: suspend DSLContext.() -> T) =
-            run(DBPool) { jooq(dataSource).use { it.body() } }
+            withContext(DBPool) { jooq(dataSource).use { it.body() } }
 
     protected fun DataAccessException.unwrapRollbackException() =
             (if ("Rollback caused" == message) cause else this) ?: this
@@ -289,7 +291,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
     private fun ComplexDatabaseQuery.joinSequence(tbl: Table<out Record> = tableByName(table!!)!!)
             : Sequence<Tuple5<Table<out Record>, String, Table<out Record>, JsonObject, String?>> =
-            buildSequence {
+            sequence {
                 for ((query, field, resultField, key) in joins!!) {
                     val qtable = when {
                         (query?.table == null) -> tbl.tableReferencedBy(tbl.field(field))
@@ -507,7 +509,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
             "$readAddress.for.${fk.key.table.name.toLowerCase()}"
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
-        launch(WithExceptions(msg) + VertxContext(vertx) + CoroutineName(msg.requestUUID())) {
+        launchIn(WithExceptions(msg) + VertxContext(vertx) + CoroutineName(msg.requestUUID())) {
             val fkField = fk.fields.first().uncheckedCast<Field<Any>>()
 
             val id = msg.body().getValue(fkField.name)
@@ -597,4 +599,3 @@ class BuildTemplateVerticle : CrudDatabaseVerticleWithReferences<BuildTemplateRe
 
 @AutoDeployable
 class PushSubscriptionVerticle : CrudDatabaseVerticleWithReferences<PushSubscriptionRecord>(Tables.PUSH_SUBSCRIPTION)
-

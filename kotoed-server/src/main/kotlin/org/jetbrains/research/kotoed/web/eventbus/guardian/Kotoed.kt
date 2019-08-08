@@ -2,8 +2,8 @@ package org.jetbrains.research.kotoed.web.eventbus.guardian
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import io.vertx.ext.bridge.BridgeEventType
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.KOTOED_REQUEST_UUID
 import org.jetbrains.research.kotoed.util.currentCoroutineName

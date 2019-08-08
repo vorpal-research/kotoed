@@ -1,12 +1,12 @@
 package org.jetbrains.research.kotoed.notification
 
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
+import org.jetbrains.research.kotoed.util.betterFixedThreadPoolContext
 
 abstract class AbstractNotificationVerticle : AbstractKotoedVerticle() {
     protected companion object {
         val Pool =
-                newFixedThreadPoolContext(Config.Notifications.PoolSize, "notifications.dispatcher")
+                betterFixedThreadPoolContext(Config.Notifications.PoolSize, "notifications.dispatcher")
     }
 }

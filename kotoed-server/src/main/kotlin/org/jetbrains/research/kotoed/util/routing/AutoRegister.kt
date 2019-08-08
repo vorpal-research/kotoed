@@ -3,8 +3,7 @@ package org.jetbrains.research.kotoed.util.routing
 import io.vertx.core.Handler
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.CoroutineName
 import org.jetbrains.research.kotoed.util.*
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
@@ -27,7 +26,7 @@ private fun funToHandler(method: Method, chain: Boolean = false): Handler<Routin
         method.isKotlinSuspend -> Handler {
             val coroname = newRequestUUID()
             DelegateLoggable(method.declaringClass).log.trace("Assigning $coroname to $method")
-            launch(DelegateLoggable(method.declaringClass).WithExceptions(it) +
+            launchIn(DelegateLoggable(method.declaringClass).WithExceptions(it) +
                     VertxContext(it.vertx()) +
                     CoroutineName(coroname)) {
                 unwrapITE {

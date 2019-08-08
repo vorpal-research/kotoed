@@ -1,9 +1,9 @@
 package org.jetbrains.research.kotoed.buildSystem
 
 import io.vertx.core.Future
+import io.vertx.core.file.FileSystemException
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.code.vcs.CommandLine
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.buildSystem.*
@@ -19,7 +19,6 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import java.io.ByteArrayInputStream
 import java.io.File
-import io.vertx.core.file.FileSystemException
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -38,7 +37,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
         File(System.getProperty("user.dir"), Config.BuildSystem.StoragePath)
     }
     private val ee by lazy {
-        newFixedThreadPoolContext(Config.BuildSystem.PoolSize, "buildVerticle.dispatcher")
+        betterFixedThreadPoolContext(Config.BuildSystem.PoolSize, "buildVerticle.dispatcher")
     }
 
     var currentBuildId = 0
@@ -123,7 +122,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
                 (when (command.type) {
                     BuildCommandType.SHELL -> {
                         val result =
-                                run(ee) {
+                                withContext(ee) {
                                     CommandLine(command.commandLine)
                                             .execute(randomName, env = env).complete()
                                 }

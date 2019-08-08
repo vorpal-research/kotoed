@@ -1,28 +1,28 @@
 package org.jetbrains.research.kotoed.api
 
-import io.vertx.core.http.HttpMethod
-import io.vertx.core.http.RequestOptions
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.client.WebClient
-import kotlinx.coroutines.experimental.JobSupport
+import nl.martijndwars.webpush.Encoding
 import nl.martijndwars.webpush.Notification
 import nl.martijndwars.webpush.PushService
 import org.apache.http.HttpResponse
 import org.apache.http.concurrent.FutureCallback
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient
 import org.apache.http.impl.nio.client.HttpAsyncClients
 import org.jetbrains.research.kotoed.config.Config
-import org.jetbrains.research.kotoed.data.notification.*
+import org.jetbrains.research.kotoed.data.notification.CurrentNotificationsQuery
+import org.jetbrains.research.kotoed.data.notification.RenderedKind
+import org.jetbrains.research.kotoed.data.notification.WebNotificationSubscription
+import org.jetbrains.research.kotoed.data.notification.render
 import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.database.tables.records.PushSubscriptionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import java.lang.Exception
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 suspend fun PushService.sendSuspendable(notification: Notification): HttpResponse = suspendCoroutine { cont ->
-    preparePost(notification).also { post ->
+    preparePost(notification, Encoding.AESGCM).also { post ->
         val client = HttpAsyncClients.createSystem()
         client.start()
         client.execute(post, object: FutureCallback<HttpResponse> {

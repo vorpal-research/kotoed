@@ -3,7 +3,7 @@ package org.jetbrains.research.kotoed.util.template
 import io.vertx.core.Handler
 import io.vertx.core.http.HttpHeaders
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.templ.TemplateEngine
+import io.vertx.ext.web.common.template.TemplateEngine
 import org.jetbrains.research.kotoed.util.HttpHeaderValuesEx
 import java.nio.file.Paths
 
@@ -16,13 +16,15 @@ class NamedTemplateHandler private constructor(
 
     override fun handle(context: RoutingContext) {
         val file = Paths.get(templateDirectory, templateName).toString()
-        engine.render(context, file, { res ->
+        val data = context.data().toMutableMap()
+        data["context"] = context
+        engine.render(data, file) { res ->
             if (res.succeeded()) {
                 context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType).end(res.result())
             } else {
                 context.fail(res.cause())
             }
-        })
+        }
     }
 
     companion object {
