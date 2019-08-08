@@ -1,8 +1,8 @@
 package org.jetbrains.research.kotoed.db
 
 import io.vertx.core.Future
-import kotlinx.coroutines.experimental.sync.Mutex
-import kotlinx.coroutines.experimental.sync.withMutex
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.WebSession
 import org.jetbrains.research.kotoed.database.tables.records.WebSessionRecord
@@ -41,21 +41,21 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
     // differently from what vert.x-web expects it to do
     val mutex = Mutex()
 
-    override suspend fun handleRead(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+    override suspend fun handleRead(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
         super.handleRead(message)
     }
 
-    override suspend fun handleUpdate(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+    override suspend fun handleUpdate(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
         log.trace("Update requested in table ${table.name}:\n$message")
         handleCreateOrUpdate(message)
     }
 
-    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
         log.trace("Create requested in table ${table.name}:\n$message")
         handleCreateOrUpdate(message)
     }
 
-    override suspend fun handleDelete(message: WebSessionRecord): WebSessionRecord = mutex.withMutex {
+    override suspend fun handleDelete(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
         super.handleDelete(message)
     }
 

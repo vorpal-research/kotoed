@@ -3,8 +3,7 @@ package org.jetbrains.research.kotoed.web.eventbus
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.CoroutineName
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
 import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUpBody
@@ -23,7 +22,7 @@ class BridgeGuardian(val vertx: Vertx,
             context += CoroutineName(uuid)
         }
 
-        launch(context) coro@ {
+        launchIn(context) coro@ {
             if (!filter.isAllowed(be)) {
                 be.complete(false)
                 return@coro

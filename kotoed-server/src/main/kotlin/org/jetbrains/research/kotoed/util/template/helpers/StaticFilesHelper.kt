@@ -1,14 +1,11 @@
 package org.jetbrains.research.kotoed.util.template.helpers
 
-import io.vertx.core.Handler
 import io.vertx.core.Vertx
-import io.vertx.core.impl.FileResolver
+import io.vertx.core.file.impl.FileResolver
 import org.apache.commons.codec.digest.DigestUtils
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.template.TemplateHelper
-import java.io.Closeable
 import java.io.FileInputStream
-import java.io.OutputStreamWriter
 import java.nio.file.Paths
 
 class StaticFilesHelper(vertx: Vertx,
@@ -23,9 +20,9 @@ class StaticFilesHelper(vertx: Vertx,
     private val staticHashes: Map<String, String>
 
     init {
-        // XXX Using io.vertx.core.impl.FileResolver is a bit fucked up
-        // but there is no other way to walk static files the way StaticHandler does
-        val fr = FileResolver(vertx)
+        // TODO: Does this thing work the same as StaticHandler?
+        // TODO: Does caching work as intended?
+        val fr = FileResolver(/*enableCaching=*/true)
         try {
             val dir = fr.resolveFile(staticLocalBase)
             log.trace("Calculating static files hashes")
@@ -42,7 +39,7 @@ class StaticFilesHelper(vertx: Vertx,
                         }
                     }.toMap()
         } finally {
-            fr.close { }
+            fr.close()
         }
 
     }

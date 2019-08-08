@@ -7,8 +7,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.CoroutineName
 import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUp
 
 abstract class AsyncAuthProvider(val vertx: Vertx) : AuthProvider, Loggable {
@@ -17,7 +16,7 @@ abstract class AsyncAuthProvider(val vertx: Vertx) : AuthProvider, Loggable {
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
         val uuid = newRequestUUID()
         log.trace("Assigning $uuid to ${authInfo.cleanUp().toString().truncateAt(500)}")
-        launch(WithExceptions(handler) + VertxContext(vertx) + CoroutineName(uuid)) coro@ {
+        launchIn(WithExceptions(handler) + VertxContext(vertx) + CoroutineName(uuid)) coro@ {
             handler.handle(Future.succeededFuture(doAuthenticateAsync(authInfo)))
         }
     }

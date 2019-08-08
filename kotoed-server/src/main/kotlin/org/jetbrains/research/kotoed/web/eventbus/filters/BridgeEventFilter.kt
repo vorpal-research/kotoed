@@ -1,9 +1,8 @@
 package org.jetbrains.research.kotoed.web.eventbus.filters
 
+import io.vertx.ext.bridge.BridgeEventType
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import io.vertx.ext.web.handler.sockjs.BridgeEventType
 import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.removeFields
 import org.jetbrains.research.kotoed.util.truncateAt
 import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUpBody
 

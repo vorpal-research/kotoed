@@ -236,7 +236,7 @@ suspend fun RoutingContext.handleDebugEventBus() {
         eb.publish(address, body, withRequestUUID(uuid))
         response().end("{}")
     } else {
-        val res = eb.sendAsync<Any>(address, body, withRequestUUID(uuid))
+        val res = eb.sendAsync<Any>(address!!, body, withRequestUUID(uuid))
         response().end("${res.body()}")
     }
 }

@@ -44,7 +44,7 @@ class UavUser() : User, Loggable, ClusterSerializable {
         buffer.appendInt(id)
     }
 
-    override fun isAuthorised(authority: String, handler: Handler<AsyncResult<Boolean>>): User = apply {
+    override fun isAuthorized(authority: String, handler: Handler<AsyncResult<Boolean>>): User = apply {
         val uuid = newRequestUUID()
         log.trace("Assigning $uuid to authority request for $authority")
         vertx.eventBus().send(

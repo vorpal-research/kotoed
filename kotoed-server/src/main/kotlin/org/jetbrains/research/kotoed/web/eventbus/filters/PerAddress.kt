@@ -1,7 +1,7 @@
 package org.jetbrains.research.kotoed.web.eventbus.filters
 
+import io.vertx.ext.bridge.PermittedOptions
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
-import io.vertx.ext.web.handler.sockjs.PermittedOptions
 import org.jetbrains.research.kotoed.util.get
 
 class PerAddress(
@@ -27,4 +27,3 @@ class PerAddress(
             filtersByAddress.keys.map { PermittedOptions().setAddress(it) }
 
 }
-
