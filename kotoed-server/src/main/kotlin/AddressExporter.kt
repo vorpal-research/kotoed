@@ -1,5 +1,5 @@
 import io.vertx.core.json.Json
-import kotlinx.Warnings
+import kotlinx.warnings.Warnings
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.unquote
 import org.jetbrains.research.kotoed.web.UrlPattern

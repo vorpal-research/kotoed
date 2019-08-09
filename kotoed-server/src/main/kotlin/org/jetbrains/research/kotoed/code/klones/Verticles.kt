@@ -1,6 +1,8 @@
 package org.jetbrains.research.kotoed.code.klones
 
 import com.google.common.collect.Queues
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
 import io.vertx.core.Future
@@ -9,7 +11,8 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.jetbrains.kootstrap.FooBarCompiler
+import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
@@ -26,6 +29,7 @@ import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.code.temporaryEnv
 import org.kohsuke.randname.RandomNameGenerator
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
@@ -192,57 +196,56 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     // TODO: provide some abstraction over Kotlin/Java/Haskell/XML/etc here
     private suspend fun processKtFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
-        if(allFiles.isEmpty()) return //no .kt files
+        if (allFiles.isEmpty()) return //no .kt files
 
-        val compilerEnv = withContext(ee) { FooBarCompiler.setupMyEnv(CompilerConfiguration()) }
-
-        val ktFiles = allFiles
-                .map { filename ->
-                    log.trace("filename = $filename")
-                    val resp: Code.Submission.ReadResponse = when (mode) {
-                        Mode.COURSE ->
-                            sendJsonableAsync(Address.Api.Course.Code.Read,
-                                    Code.Course.ReadRequest(
-                                            courseId = id, path = filename))
-                        Mode.SUBMISSION ->
-                            sendJsonableAsync(Address.Api.Submission.Code.Read,
-                                    Code.Submission.ReadRequest(
-                                            submissionId = id, path = filename))
+        temporaryEnv { compilerEnv ->
+            val ktFiles = allFiles
+                    .map { filename ->
+                        log.trace("filename = $filename")
+                        val resp: Code.Submission.ReadResponse = when (mode) {
+                            Mode.COURSE ->
+                                sendJsonableAsync(Address.Api.Course.Code.Read,
+                                        Code.Course.ReadRequest(
+                                                courseId = id, path = filename))
+                            Mode.SUBMISSION ->
+                                sendJsonableAsync(Address.Api.Submission.Code.Read,
+                                        Code.Submission.ReadRequest(
+                                                submissionId = id, path = filename))
+                        }
+                        withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
                     }
-                    withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
-                }
 
-        ktFiles.asSequence()
-                .flatMap { file ->
-                    file.collectDescendantsOfType<KtNamedFunction>().asSequence()
-                }
-                .filter { method ->
-                    method.annotationEntries.all { anno -> "@Test" != anno.text }
-                }
-                .map {
-                    it as PsiElement
-                }
-                .map { method ->
-                    method to method.dfs { children.asSequence() }
-                            .filter(Token.DefaultFilter)
-                            .map((::makeAnonimizedKtToken)
-                                    .bind(_0, mode)
-                                    .bind(_0, id)
-                                    .bind(_0, denizenId))
-                }
-                .forEach { (_, tokens) ->
-                    val lst = tokens.toList()
-                    log.trace("lst = $lst")
-                    val seqId = suffixTree.addSequence(lst)
-                }
+            ktFiles.asSequence()
+                    .flatMap { file ->
+                        file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                    }
+                    .filter { method ->
+                        method.annotationEntries.all { anno -> "@Test" != anno.text }
+                    }
+                    .map {
+                        it as PsiElement
+                    }
+                    .map { method ->
+                        method to method.dfs { children.asSequence() }
+                                .filter(Token.DefaultFilter)
+                                .map((::makeAnonimizedKtToken)
+                                        .bind(_0, mode)
+                                        .bind(_0, id)
+                                        .bind(_0, denizenId))
+                    }
+                    .forEach { (_, tokens) ->
+                        val lst = tokens.toList()
+                        log.trace("lst = $lst")
+                        val seqId = suffixTree.addSequence(lst)
+                    }
+        }
 
-        withContext(ee) { FooBarCompiler.tearDownMyEnv(compilerEnv) }
     }
 
     private suspend fun processHsFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
-        if(allFiles.isEmpty()) return //no .hs files
+        if (allFiles.isEmpty()) return //no .hs files
 
-        loop@for (filename in allFiles) {
+        loop@ for (filename in allFiles) {
 
             fun org.antlr.v4.runtime.Token.location() =
                     org.jetbrains.research.kotoed.code.Location(
@@ -270,7 +273,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         .also { log.trace("Lexing finished") }
             }
 
-            log.trace("res = ${res.map {"$it@(${it.location()})"}}")
+            log.trace("res = ${res.map { "$it@(${it.location()})" }}")
 
             if (res.isEmpty()) {
                 log.error("Cannot parse source: $filename")
@@ -313,14 +316,14 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                                                         randomnesss.next()
                                                 )
                                             }.apply {
-                                                if(isNotEmpty()) {
+                                                if (isNotEmpty()) {
                                                     add(0, first().copy(text = "\$BEGIN\$"))
                                                     add(last().copy(text = "\$END\$"))
                                                 }
                                             }
                                 }
                         log.trace("lst = $lst")
-                        if(lst.isNotEmpty()) withContext(ee) { suffixTree.addSequence(lst.toList()) }
+                        if (lst.isNotEmpty()) withContext(ee) { suffixTree.addSequence(lst.toList()) }
                     }
         }
     }

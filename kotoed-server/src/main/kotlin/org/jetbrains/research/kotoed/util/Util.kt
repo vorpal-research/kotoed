@@ -1,4 +1,4 @@
-@file:Suppress(kotlinx.Warnings.NOTHING_TO_INLINE)
+@file:Suppress(kotlinx.warnings.Warnings.NOTHING_TO_INLINE)
 
 package org.jetbrains.research.kotoed.util
 
@@ -9,9 +9,9 @@ import com.hazelcast.util.Base64
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
-import kotlinx.Warnings.NOTHING_TO_INLINE
-import kotlinx.Warnings.UNCHECKED_CAST
-import kotlinx.Warnings.UNUSED_PARAMETER
+import kotlinx.warnings.Warnings.NOTHING_TO_INLINE
+import kotlinx.warnings.Warnings.UNCHECKED_CAST
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import java.io.BufferedReader
 import java.io.InputStream
 import java.lang.invoke.MethodHandles

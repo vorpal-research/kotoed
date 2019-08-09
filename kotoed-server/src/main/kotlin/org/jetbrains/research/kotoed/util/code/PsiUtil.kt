@@ -1,8 +1,10 @@
 package org.jetbrains.research.kotoed.util.code
 
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
-import org.jetbrains.kootstrap.FooBarCompiler
+import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
@@ -55,8 +57,16 @@ fun KtFile.blockByLocation(loc: Location): PsiElement {
     return this
 }
 
-@Synchronized
-inline fun<R> FooBarCompiler.useEnv(body: (KotlinCoreEnvironment) -> R): R {
-    val env = this.setupMyEnv(org.jetbrains.kotlin.config.CompilerConfiguration())
-    return try { body(env) } finally { tearDownMyEnv(env) }
+inline fun <R> temporaryEnv(body: (KotlinCoreEnvironment) -> R): R {
+    val disposable = Disposer.newDisposable()
+    val env = KotlinCoreEnvironment.createForProduction(
+            disposable,
+            CompilerConfiguration(),
+            EnvironmentConfigFiles.JVM_CONFIG_FILES
+    )
+    try {
+        return body(env)
+    } finally {
+        disposable.dispose()
+    }
 }

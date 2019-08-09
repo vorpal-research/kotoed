@@ -1,7 +1,7 @@
 package org.jetbrains.research.kotoed.data.db
 
 import io.vertx.core.json.JsonObject
-import kotlinx.Warnings.NOTHING_TO_INLINE
+import kotlinx.warnings.Warnings.NOTHING_TO_INLINE
 import org.intellij.lang.annotations.Language
 import org.jetbrains.research.kotoed.api.Magic
 import org.jetbrains.research.kotoed.data.api.PageableQuery

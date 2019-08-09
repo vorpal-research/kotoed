@@ -20,3 +20,5 @@ RUNNING_PID
 /kotoed-js/src/main/ts/**/*.js.map
 
 /.mvn
+
+*.tokens

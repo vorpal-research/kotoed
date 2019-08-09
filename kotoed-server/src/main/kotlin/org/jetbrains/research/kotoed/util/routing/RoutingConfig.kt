@@ -10,7 +10,7 @@ import io.vertx.ext.web.handler.CookieHandler
 import io.vertx.ext.web.handler.RedirectAuthHandler
 import io.vertx.ext.web.handler.UserSessionHandler
 import io.vertx.ext.web.sstore.SessionStore
-import kotlinx.Warnings
+import kotlinx.warnings.Warnings
 import org.jetbrains.research.kotoed.util.RouteProto
 import org.jetbrains.research.kotoed.util.template.NamedTemplateHandler
 import org.jetbrains.research.kotoed.util.template.TemplateHelper

@@ -3,12 +3,12 @@ package org.jetbrains.research.kotoed.code
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
+import com.intellij.openapi.util.Disposer
 import io.vertx.core.Future
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.withContext
-import org.jetbrains.kootstrap.FooBarCompiler
+import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtFile
@@ -24,8 +24,8 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.code.alignToLines
 import org.jetbrains.research.kotoed.util.code.location
+import org.jetbrains.research.kotoed.util.code.temporaryEnv
 import org.jetbrains.research.kotoed.util.code.thisLine
-import org.jetbrains.research.kotoed.util.code.useEnv
 import org.wickedsource.diffparser.api.UnifiedDiffParser
 import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
@@ -346,7 +346,6 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 .map { it.asJsonable() })
     }
 
-    fun getCompilerEnv() = FooBarCompiler.setupMyEnv(CompilerConfiguration())
 
     suspend fun getPsi(compiler: KotlinCoreEnvironment, request: ReadRequest): KtFile? {
         val read = try { handleRead(request) } catch(ex: VcsException) { return null }
@@ -379,7 +378,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
 
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
 
-        val res = FooBarCompiler.useEnv { compiler ->
+        val res = temporaryEnv { compiler ->
             val fromFile =
                     getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.fromRevision)) ?: return null
             val toFile =

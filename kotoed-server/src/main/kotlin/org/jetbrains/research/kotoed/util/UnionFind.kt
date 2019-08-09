@@ -1,6 +1,6 @@
 package org.jetbrains.research.kotoed.util
 
-import kotlinx.Warnings
+import kotlinx.warnings.Warnings
 
 class Subset<T>(val value: T) {
     private var parent: Subset<T>? = null
