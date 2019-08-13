@@ -30,6 +30,7 @@ class UnionFind<T> private constructor(val mapping: MutableMap<T, Subset<T>>): S
     fun add(value: T): Subset<T> = mapping.getOrPut(value) { Subset(value) }
     fun find(value: T): Subset<T>? = mapping[value]?.head
 
+    @Suppress(Warnings.NOTHING_TO_INLINE)
     inline operator fun get(value: T)=
             find(value) ?: throw NoSuchElementException("No such value: $value")
     fun join(lhv: T, rhv: T): Subset<T> = get(lhv) union get(rhv)

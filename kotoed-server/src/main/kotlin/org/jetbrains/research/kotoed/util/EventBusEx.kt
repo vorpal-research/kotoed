@@ -47,12 +47,13 @@ fun DeliveryOptions.requestUUID() = headers[KOTOED_REQUEST_UUID] ?: "UNKNOWN"
 
 /******************************************************************************/
 
+// TODO(rename to requestAsync)
 suspend fun <ReturnType> EventBus.sendAsync(address: String, message: Any, deliveryOptions: DeliveryOptions = DeliveryOptions()): Message<ReturnType> {
     if (true != deliveryOptions.headers?.contains(KOTOED_REQUEST_UUID)) {
         deliveryOptions.addHeader(KOTOED_REQUEST_UUID,
                 currentCoroutineName().name)
     }
-    return vxa { send(address, message, deliveryOptions, it) }
+    return vxa { request(address, message, deliveryOptions, it) }
 }
 
 @JvmName("sendJsonAsync")

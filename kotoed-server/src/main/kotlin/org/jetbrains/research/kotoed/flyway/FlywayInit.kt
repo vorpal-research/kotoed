@@ -7,14 +7,17 @@ import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 
 object FlywayInit {
     fun doit(vertx: Vertx) {
-        Flyway().run {
-            dataSource = vertx.getSharedDataSource(
-                    Config.Debug.Database.DataSourceId,
-                    Config.Debug.Database.Url,
-                    Config.Debug.Database.User,
-                    Config.Debug.Database.Password
-            )
-            migrate()
-        }
+        val flyway = Flyway.configure()
+                .dataSource(
+                        vertx.getSharedDataSource(
+                                Config.Debug.Database.DataSourceId,
+                                Config.Debug.Database.Url,
+                                Config.Debug.Database.User,
+                                Config.Debug.Database.Password
+                        )
+                )
+                .load()
+
+        flyway.migrate()
     }
 }

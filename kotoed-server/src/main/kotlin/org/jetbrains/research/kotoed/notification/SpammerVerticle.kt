@@ -1,6 +1,6 @@
 package org.jetbrains.research.kotoed.notification
 
-import io.vertx.core.Future
+import io.vertx.core.Promise
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
@@ -19,12 +19,11 @@ import java.time.ZoneOffset
 
 @AutoDeployable
 class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
-    override fun start(startFuture: Future<Void>) {
-        super.start(startFuture)
+    override fun start(startPromise: Promise<Void>) {
+        super.start(startPromise)
         spawn {
             setNext()
         }
-
     }
 
     suspend fun setNext() {

@@ -205,9 +205,9 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
             .map { klass ->
                 log.trace("Auto-deploying $klass")
 
-                val f = Future.future<String>()
-                vertx.deployVerticle(klass.canonicalName, f)
-                f
+                val p = Promise.promise<String>()
+                vertx.deployVerticle(klass.canonicalName, p)
+                p.future()
             }
     CompositeFuture.all(fs).setHandler(handler)
 }
@@ -218,6 +218,7 @@ class ResumeUndispatchedRunnable(
         private val dispatcher: CoroutineDispatcher,
         private val continuation: CancellableContinuation<Unit>
 ) : Runnable {
+    @UseExperimental(ExperimentalCoroutinesApi::class)
     override fun run() {
         with(continuation) { dispatcher.resumeUndispatched(Unit) }
     }

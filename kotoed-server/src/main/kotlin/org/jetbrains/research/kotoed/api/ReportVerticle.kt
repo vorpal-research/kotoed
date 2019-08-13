@@ -135,7 +135,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         }
 
         val header = listOf(listOf("") + tags + listOf("Score"))
-        val data = fullLessonData.keys.sorted().mapIndexed { i, lesson ->
+        val data = fullLessonData.keys.sorted().mapIndexed { _, lesson ->
             listOf(lesson) + tags.map { tag -> tableData[lesson to tag] ?: "" } + listOf(scores[lesson].orZero().fmt)
         }
         val footer = listOf(listOf("Total") + tags.map { "" } + scores.values.average().toString())

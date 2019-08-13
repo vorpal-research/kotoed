@@ -1,6 +1,6 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.Future
+import io.vertx.core.Promise
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -494,15 +494,15 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
         entityName: String = table.name.toLowerCase()
 ) : CrudDatabaseVerticle<R>(table, entityName) {
 
-    override fun start(startFuture: Future<Void>) {
+    override fun start(startPromise: Promise<Void>) {
         val eb = vertx.eventBus()
 
         table.references
                 .forEach {
-                    eb.consumer<JsonObject>(addressFor(it), handlerFor(it))
+                    eb.consumer(addressFor(it), handlerFor(it))
                 }
 
-        super.start(startFuture)
+        super.start(startPromise)
     }
 
     internal fun addressFor(fk: ForeignKey<R, *>) =

@@ -1,10 +1,8 @@
 package org.jetbrains.research.kotoed.code.vcs
 
-import org.jetbrains.research.kotoed.rootLog
 import org.jetbrains.research.kotoed.util.DelegateLoggable
 import java.io.File
 import java.time.Instant
-import java.time.OffsetDateTime
 
 sealed class VcsResult<out T> {
     data class Success<out T>(val v: T) : VcsResult<T>()
@@ -71,9 +69,9 @@ class Git(remote: String, local: String) : VcsRoot(remote, local) {
     override fun update(): VcsResult<Unit> {
         val res = CommandLine(git, "fetch", "origin", "*:*", "--force").execute(File(local)).complete()
 
-        val die = { res: CommandLine.Output ->
-            VcsResult.Failure(res.cerr)
-                    .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $res") }
+        val die = { out: CommandLine.Output ->
+            VcsResult.Failure(out.cerr)
+                    .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $out") }
         }
 
         if (res.rcode.get() != 0) return die(res)

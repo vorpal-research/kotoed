@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.util.template.helpers
 
-import io.vertx.core.Vertx
 import io.vertx.core.file.impl.FileResolver
 import org.apache.commons.codec.digest.DigestUtils
 import org.jetbrains.research.kotoed.util.Loggable
@@ -8,8 +7,7 @@ import org.jetbrains.research.kotoed.util.template.TemplateHelper
 import java.io.FileInputStream
 import java.nio.file.Paths
 
-class StaticFilesHelper(vertx: Vertx,
-                        val staticWebBase: String = "/static",
+class StaticFilesHelper(val staticWebBase: String = "/static",
                         staticLocalBase: String = "webroot/static",
                         val jsBundlePattern: String = "js/%s.bundle.js",
                         val cssBundlePattern: String = "css/%s.css"

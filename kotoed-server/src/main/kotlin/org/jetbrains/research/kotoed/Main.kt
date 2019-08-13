@@ -7,7 +7,7 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.templ.jade.JadeTemplateEngine
-import io.vertx.kotlin.ext.dropwizard.DropwizardMetricsOptions
+import io.vertx.kotlin.ext.dropwizard.dropwizardMetricsOptionsOf
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +45,7 @@ suspend fun startApplication(): Vertx {
 
     val vertx = localVertx(
             VertxOptions().also {
-                it.metricsOptions = DropwizardMetricsOptions(
+                it.metricsOptions = dropwizardMetricsOptionsOf(
                         enabled = Config.Debug.Metrics.Enabled,
                         jmxEnabled = Config.Debug.Metrics.Enabled
                 )
@@ -53,7 +53,7 @@ suspend fun startApplication(): Vertx {
     )
 
     rootLog.info("Warming up DB connection")
-    try { vertx.getSharedDataSource().getConnection().close() } catch (ex: Exception) {
+    try { vertx.getSharedDataSource().connection.close() } catch (ex: Exception) {
         rootLog.error("", ex)
     }
 
@@ -88,7 +88,7 @@ suspend fun startApplication(): Vertx {
 @AutoDeployable
 class RootVerticle : AbstractVerticle(), Loggable {
 
-    override fun start(startFuture: Future<Void>) {
+    override fun start(startPromise: Promise<Void>) {
         val router = Router.router(vertx)
 
         log.info("Alive and standing")
@@ -103,15 +103,15 @@ class RootVerticle : AbstractVerticle(), Loggable {
                     isDecompressionSupported = true
                 }
         )
-                .requestHandler({ router.accept(it) })
+                .requestHandler(router)
                 .listen(Config.Root.Port)
 
-        startFuture.complete()
+        startPromise.complete()
     }
 
 
     fun Router.initRoutes() {
-        val staticFilesHelper = StaticFilesHelper(vertx)
+        val staticFilesHelper = StaticFilesHelper()
         val routingConfig = RoutingConfig(
                 vertx = vertx,
                 templateEngine = JadeTemplateEngine.create(vertx).apply {

@@ -1,7 +1,7 @@
 package org.jetbrains.research.kotoed.web.routers
 
-import io.vertx.ext.web.handler.sockjs.PermittedOptions
-import io.vertx.kotlin.ext.web.handler.sockjs.BridgeOptions
+import io.vertx.ext.bridge.PermittedOptions
+import io.vertx.kotlin.ext.web.handler.sockjs.bridgeOptionsOf
 import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.BridgeGuardian
@@ -16,7 +16,7 @@ import org.jetbrains.research.kotoed.web.eventbus.guardian.kotoedPatcher
 fun eventBusHandlerFactory(cfg: RoutingConfig) = with(cfg) {
     val filter = KotoedFilter(vertx)
 
-    val bo = BridgeOptions().apply {
+    val bo = bridgeOptionsOf().apply {
         for (po in filter.makePermittedOptions())
             addInboundPermitted(po)
 

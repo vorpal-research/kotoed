@@ -1,6 +1,6 @@
 package org.jetbrains.research.kotoed.db
 
-import io.vertx.core.Future
+import io.vertx.core.Promise
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.research.kotoed.database.Tables
@@ -13,14 +13,14 @@ import org.jetbrains.research.kotoed.util.database.into
 class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SESSION) {
     private var timerId: Long = -1
 
-    override fun start(startFuture: Future<Void>) {
-        super.start(startFuture)
+    override fun start(startPromise: Promise<Void>) {
+        super.start(startPromise)
         timerId = vertx.setPeriodic(1000 * 60 * 20) { handleTick() }
     }
 
-    override fun stop(stopFuture: Future<Void>?) {
+    override fun stop(stopPromise: Promise<Void>?) {
         vertx.cancelTimer(timerId)
-        super.stop(stopFuture)
+        super.stop(stopPromise)
     }
 
     fun handleTick() {

@@ -113,7 +113,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         log.info("Assigning ${deliveryOptions.requestUUID()} to put(${session.rep()})")
 
         log.info("Writing session")
-        vertx.eventBus().send(
+        vertx.eventBus().request(
                 Address.DB.update(Tables.WEB_SESSION.name),
                 session.asRecord().toJson(),
                 deliveryOptions
@@ -132,7 +132,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
     override fun size(resultHandler: Handler<AsyncResult<Int>>) {
         val deliveryOptions = withRequestUUID()
         log.info("Assigning ${deliveryOptions.requestUUID()} to size request")
-        vertx.eventBus().send(
+        vertx.eventBus().request(
                 Address.DB.count(Tables.WEB_SESSION.name),
                 ComplexDatabaseQuery(Tables.WEB_SESSION).toJson(),
                 deliveryOptions
@@ -152,7 +152,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 
     fun innerGet(id: String, deliveryOptions: DeliveryOptions,
                  resultHandler: (AsyncResult<Session?>) -> Unit) {
-        vertx.eventBus().send(
+        vertx.eventBus().request(
                 Address.DB.read(Tables.WEB_SESSION.name),
                 WebSessionRecord().apply { this.id = id }.toJson(),
                 deliveryOptions
@@ -169,7 +169,7 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         val deliveryOptions = withRequestUUID()
         log.info("Assigning ${deliveryOptions.requestUUID()} to delete($id)")
 
-        vertx.eventBus().send(
+        vertx.eventBus().request(
                 Address.DB.delete(Tables.WEB_SESSION.name),
                 WebSessionRecord().apply { this.id = id }.toJson(),
                 deliveryOptions

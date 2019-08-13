@@ -8,7 +8,6 @@ import io.vertx.ext.web.common.template.TemplateEngine
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.CookieHandler
 import io.vertx.ext.web.handler.RedirectAuthHandler
-import io.vertx.ext.web.handler.UserSessionHandler
 import io.vertx.ext.web.sstore.SessionStore
 import kotlinx.warnings.Warnings
 import org.jetbrains.research.kotoed.util.RouteProto
@@ -37,7 +36,7 @@ class RoutingConfig(
     private val sessionHandler = SessionHandlerImpl
             .create(sessionStore)
             .setSessionTimeout(30L * 24L * 60L * 60L * 1000L)
-    private val userSessionHandler = UserSessionHandler.create(authProvider)
+            .setAuthProvider(authProvider)
     private val redirectAuthHandler = RedirectAuthHandler.create(authProvider, loginPath)
     private val rejectAuthHandler = RejectAnonymousHandler.create(authProvider)
     private val sessionProlongator = SessionProlongator.create()
@@ -46,7 +45,6 @@ class RoutingConfig(
     fun enableSessions(routeProto: RouteProto) {
         routeProto.makeRoute().handler(cookieHandler)
         routeProto.makeRoute().handler(sessionHandler)
-        routeProto.makeRoute().handler(userSessionHandler)
         routeProto.makeRoute().handler(sessionProlongator)
     }
 

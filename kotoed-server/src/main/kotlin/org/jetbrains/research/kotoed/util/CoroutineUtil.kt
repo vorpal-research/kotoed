@@ -78,7 +78,7 @@ fun Loggable.WithExceptions(ctx: RoutingContext) = WithExceptionsContext(
 // however, suspendCoroutine<>, the only alternative, does *not* work correctly if suspend fun has no
 // suspension points.
 
-inline suspend fun <R> KFunction<R>.callAsync(vararg args: Any?) =
+suspend inline fun <R> KFunction<R>.callAsync(vararg args: Any?) =
         when {
             isSuspend -> suspendCoroutineOrReturn<R> { call(*args, it.toContinuation()) }
             else -> throw Error("$this cannot be called as async")
@@ -87,7 +87,7 @@ inline suspend fun <R> KFunction<R>.callAsync(vararg args: Any?) =
 val Method.isKotlinSuspend
     get() = parameters.lastOrNull()?.type == Continuation::class.java
 
-inline suspend fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
+suspend inline fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
         when {
             isKotlinSuspend -> suspendCoroutineOrReturn<Any?> { invoke(receiver, *args, it.toContinuation()) }
             else -> throw Error("$this cannot be invoked as async")
@@ -113,6 +113,11 @@ fun betterFixedThreadPoolContext(nThreads: Int, name: String): ExecutorCoroutine
         Executors.newFixedThreadPool(
                 nThreads,
                 ThreadFactoryBuilder().setNameFormat("$name-%d").build()
+        ).asCoroutineDispatcher()
+
+fun betterSingleThreadContext(name: String): ExecutorCoroutineDispatcher =
+        Executors.newSingleThreadExecutor(
+                ThreadFactoryBuilder().setNameFormat(name).build()
         ).asCoroutineDispatcher()
 
 /******************************************************************************/

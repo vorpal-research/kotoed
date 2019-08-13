@@ -1,19 +1,13 @@
 package org.jetbrains.research.kotoed.code.klones
 
 import com.google.common.collect.Queues
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
@@ -55,7 +49,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         SUBMISSION
     }
 
-    private val ee by lazy { newSingleThreadContext("kloneVerticle.executor") }
+    private val ee by lazy { betterSingleThreadContext("kloneVerticle.executor") }
 
     private val suffixTree = SuffixTree<Token>()
     private val processed = mutableSetOf<Pair<Mode, Int>>()

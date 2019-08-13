@@ -14,9 +14,6 @@ class DenizenVerticle : CrudDatabaseVerticle<DenizenRecord>(Tables.DENIZEN) {
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "fullAddress")
     suspend fun handleFull(query: DenizenRecord): JsonObject {
-        val table = Tables.DENIZEN
-
         return query.toJson()
-
     }
 }

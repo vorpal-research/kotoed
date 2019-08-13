@@ -3,14 +3,11 @@ package org.jetbrains.research.kotoed.code
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalNotification
-import com.intellij.openapi.util.Disposer
-import io.vertx.core.Future
+import io.vertx.core.Promise
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
-import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
@@ -70,18 +67,18 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                 log.info("Repository $uid deleted")
             }
 
-    override fun start(startFuture: Future<Void>) = spawn {
+    override fun start(startPromise: Promise<Void>) = spawn {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
-        super.start(startFuture)
+        super.start(startPromise)
     }
 
-    override fun stop(stopFuture: Future<Void>) = spawn {
+    override fun stop(stopPromise: Promise<Void>) = spawn {
         procs.cleanUp()
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
-        super.stop(stopFuture)
+        super.stop(stopPromise)
     }
 
     private val <T> VcsResult<T>.result

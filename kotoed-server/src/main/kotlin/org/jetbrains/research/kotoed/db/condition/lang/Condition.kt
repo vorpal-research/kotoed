@@ -1,6 +1,6 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.jetbrains.research.kotoed.util.database.FunctionCall
 import org.jetbrains.research.kotoed.util.database.documentMatch
 import org.jetbrains.research.kotoed.util.database.jsonGet
@@ -11,7 +11,6 @@ import org.jooq.Field
 import org.jooq.SortField
 import org.jooq.Table
 import org.jooq.impl.DSL
-import ru.spbstu.kparsec.Failure
 import ru.spbstu.kparsec.NoSuccess
 import ru.spbstu.kparsec.Success
 import ru.spbstu.kparsec.parse

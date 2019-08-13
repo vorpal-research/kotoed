@@ -81,7 +81,7 @@ class OAuthTestIntegration {
                             """
             ).let(::JsonObject)
         }.also {
-            assertEquals(403, it.response.clientResponseStatus.statusCode)
+            assertEquals(403, it.response.statusInfo.statusCode)
         }
 
 
