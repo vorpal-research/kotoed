@@ -109,15 +109,19 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
 
     override fun put(session: Session, resultHandler: Handler<AsyncResult<Void>>) {
         val deliveryOptions = withRequestUUID()
-        session as SharedDataSessionImpl
+        session as MySessionImpl
         log.info("Assigning ${deliveryOptions.requestUUID()} to put(${session.rep()})")
+
+        log.info("Incrementing session version: before ${session.version()}")
+        session.incrementVersion()
+        log.info("Incrementing session version: after ${session.version()}")
 
         log.info("Writing session")
         vertx.eventBus().request(
                 Address.DB.update(Tables.WEB_SESSION.name),
                 session.asRecord().toJson(),
                 deliveryOptions
-        ) { mes: AsyncResult<Message<JsonObject>> ->
+        ) { mes: MessageRes ->
             if(mes.succeeded()) log.info("Returned: ${mes.result().body().asSession().rep()}")
 
             val oldId = session.oldId()
@@ -194,6 +198,8 @@ class EasyAsyncSessionStore(val vertx: Vertx, val delegate: SessionStore = Async
     }
 
     override fun put(session: Session, resultHandler: Handler<AsyncResult<Void>>) {
+        session as MySessionImpl
+        session.incrementVersion()
         storage[session.id()] = session as SharedDataSessionImpl
         delegate.put(session, resultHandler)
     }
