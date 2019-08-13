@@ -124,6 +124,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.ListCount to ProjectOwnerOrTeacherForFilter(vertx),
 
             Address.Api.Submission.Result.Read to SubmissionOwnerOrTeacher(vertx, "id"),
+            Address.Api.Submission.Report to SubmissionOwnerOrTeacher(vertx, "id"),
 
             Address.Api.Submission.Verification.Clean to AuthorityRequired(Authority.Teacher),
 

@@ -30,8 +30,21 @@ export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
     loadPermissions = () => fetchPermissions(this.props.id);
 
     loadResults = () => {
-        return sendAsync<IdRequest, GenericResponse<ResultT>>
-        (Kotoed.Address.Api.Submission.Result.Read, {"id": this.props.id})
+        let subResults = sendAsync<IdRequest, GenericResponse<ResultT>>
+        (Kotoed.Address.Api.Submission.Result.Read, {"id": this.props.id});
+        let subReport = sendAsync<IdRequest, { data: string[][] }>
+        (Kotoed.Address.Api.Submission.Report, {"id": this.props.id});
+
+        return Promise.all([subResults, subReport]).then(([res, rep]) => {
+            const sum: GenericResponse<ResultT> = {
+                records: _.concat(res.records, {
+                    type: "submission.statistics",
+                    data: rep.data
+                } as any),
+                verificationData: res.verificationData
+            };
+            return sum;
+        });
     };
 }
 
@@ -156,112 +169,27 @@ namespace BuildLogs {
 namespace Statistics {
 
     export function selector(result: any): boolean {
-        return KFirst.selector(result)
-    }
-
-    function lesson2score(lesson: number[]): number {
-        let lessonScore;
-
-        switch (lesson.length) {
-            case 0:
-                lessonScore = 0.0;
-                break;
-            case 1:
-                lessonScore = lesson[0];
-                break;
-            default: {
-                let [first, second] = lesson;
-                if (first == second) lessonScore = first + 1;
-                else lessonScore = first;
-                break;
-            }
-        }
-
-        return lessonScore;
-    }
-
-    function getLessonPoints(packageData: Map<string, { solved: number, total: number }>): string {
-        let solvedScores = _.concat(
-            _.times((packageData.get("Impossible") || {solved: 0}).solved, () => 10),
-            _.times((packageData.get("Hard") || {solved: 0}).solved, () => 7),
-            _.times((packageData.get("Normal") || {solved: 0}).solved, () => 4),
-            _.times((packageData.get("Easy") || {solved: 0}).solved, () => 1),
-            _.times((packageData.get("Trivial") || {solved: 0}).solved, () => 0),
-        );
-
-        let totalScores = _.concat(
-            _.times((packageData.get("Impossible") || {total: 0}).total, () => 10),
-            _.times((packageData.get("Hard") || {total: 0}).total, () => 7),
-            _.times((packageData.get("Normal") || {total: 0}).total, () => 4),
-            _.times((packageData.get("Easy") || {total: 0}).total, () => 1),
-            _.times((packageData.get("Trivial") || {total: 0}).total, () => 0),
-        );
-
-        let res = lesson2score(solvedScores) / lesson2score(totalScores);
-
-        return (isFinite(res) ? res : 0.0).toFixed(2);
+        return result["type"].match(/submission\.statistics/)
     }
 
     export function transformer(result: any): any[] {
-        let data = result.body.data;
+        let res: any[] = [];
 
-        let packageMap = new Map<string, { taskName: string, tag: string, status: boolean }[]>();
-        let processedPackageMap = new Map<string, Map<string, { solved: number, total: number }>>();
+        let data: string[][] = result.data;
+        let header = data[0];
 
-        data.forEach((datum: any) => {
-            let packageName = datum.packageName.substr(
-                0, datum.packageName.indexOf("."));
-            let taskName = `${packageName}.${datum.methodName}`;
+        for (let i = 1; i < data.length; ++i) {
+            let r = {};
+            let d = data[i];
 
-            let tag = datum.tags[0] || "None";
-
-            let status = !!datum.results.every((r: TestData) => "SUCCESSFUL" == r.status);
-
-            packageMap.set(packageName, (packageMap.get(packageName) || []).concat([{
-                taskName: taskName,
-                tag: tag,
-                status: status
-            }]));
-        });
-
-        packageMap.forEach((packageData, packageName) => {
-            let taskMap = new Map<string, { tag: string, status: boolean }[]>();
-            let processedTaskMap = new Map<string, { tag: string, status: boolean }>();
-            let tagMap = new Map<string, { solved: number, total: number }>();
-
-            packageData.forEach(({taskName, tag, status}) => {
-                taskMap.set(taskName, (taskMap.get(taskName) || []).concat([{
-                    tag: tag,
-                    status: status
-                }]));
+            header.map((h, j) => {
+                _.set(r, h, d[j]);
             });
 
-            taskMap.forEach((taskData, taskName) => {
-                processedTaskMap.set(taskName, {
-                    tag: taskData[0].tag,
-                    status: taskData.every(({_, status}: any) => status)
-                });
-            });
+            res = res.concat(r)
+        }
 
-            processedTaskMap.forEach(({tag, status}, _) => {
-                let oldValue = tagMap.get(tag) || {solved: 0, total: 0};
-                tagMap.set(tag, {
-                    solved: oldValue.solved + (status ? 1 : 0),
-                    total: oldValue.total + 1
-                });
-            });
-
-            processedPackageMap.set(packageName, tagMap);
-        });
-
-        return [...processedPackageMap.entries()].map(([packageName, packageData]) => {
-            let res = {packageName: packageName};
-            packageData.forEach((stats, tag) => {
-                _.set(res, tag, `${stats.solved} / ${stats.total}`);
-            });
-            _.set(res, "Points", getLessonPoints(packageData));
-            return res;
-        });
+        return res;
     }
 
     export function merger(results: any[]): any[] {
@@ -270,7 +198,7 @@ namespace Statistics {
 
     export let rowDefinition =
         <RowDefinition>
-            <ColumnDefinition id="packageName"
+            <ColumnDefinition id=""
                               title="Package"/>
             <ColumnDefinition id="Trivial"
                               title="Trivial"/>
@@ -282,8 +210,8 @@ namespace Statistics {
                               title="Hard"/>
             <ColumnDefinition id="Impossible"
                               title="Impossible"/>
-            <ColumnDefinition id="Points"
-                              title="Points"/>
+            <ColumnDefinition id="Score"
+                              title="Score"/>
         </RowDefinition> as any
 
 } // namespace Statistics
