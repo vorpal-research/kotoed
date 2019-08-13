@@ -1,13 +1,10 @@
 package org.jetbrains.research.kotoed.statistics
 
-import io.vertx.core.Future
-import io.vertx.core.json.JsonObject
+import io.vertx.core.Promise
 import org.jetbrains.research.kotoed.data.buildSystem.BuildResponse
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerStatus
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerTestRun
-import org.jetbrains.research.kotoed.data.buildbot.build.LogContent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionTagRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
@@ -18,9 +15,9 @@ import java.time.OffsetDateTime
 @AutoDeployable
 class AutoTaggerVerticle: AbstractKotoedVerticle() {
 
-    override fun start(startFuture: Future<Void>) {
+    override fun start(startPromise: Promise<Void>) {
         vertx.setPeriodic(java.time.Duration.ofHours(2).toMillis()) { handleHeartbeat() }
-        super.start(startFuture)
+        super.start(startPromise)
     }
 
     fun byNameLazy(name: String) =
