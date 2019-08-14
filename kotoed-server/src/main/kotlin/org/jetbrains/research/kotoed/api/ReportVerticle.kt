@@ -49,7 +49,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         }
 
     private val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
-    private fun Double?.orZero() = this ?: 0.0
+    private fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
 
     private fun calcScore(sr: SubmissionResultRecord): Double {
         if (template !in sr.type) return 0.0
@@ -138,7 +138,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         val data = fullLessonData.keys.sorted().mapIndexed { _, lesson ->
             listOf(lesson) + tags.map { tag -> tableData[lesson to tag] ?: "" } + listOf(scores[lesson].orZero().fmt)
         }
-        val footer = listOf(listOf("Total") + tags.map { "" } + scores.values.average().toString())
+        val footer = listOf(listOf("Total") + tags.map { "" } + scores.values.average().orZero().toString())
 
         return header + data + footer
     }
