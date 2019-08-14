@@ -76,8 +76,10 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
 
                     require(prev == null || prev.version == message.version) { "Conflict" }
 
-                    // FIXME: Should be managed from the session store?
-                    // ++message.version
+                    // Negative version means we should bump it
+                    if (message.version < 0) {
+                        message.version = -message.version + 1
+                    }
 
                     insertInto(table)
                             .set(message)

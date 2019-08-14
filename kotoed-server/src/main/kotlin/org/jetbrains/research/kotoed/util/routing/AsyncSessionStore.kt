@@ -43,6 +43,8 @@ class MySessionImpl : SharedDataSessionImpl {
         super.setVersion(version)
     }
 
+    fun shouldIncrementVersion(): Boolean = crc() != checksum()
+
     override fun toString(): String = "Session{ " +
             "id = ${id()}, " +
             "lastAccessed = ${lastAccessed()}, " +
@@ -112,17 +114,19 @@ class AsyncSessionStore(val vertx: Vertx) : SessionStore, Loggable {
         session as MySessionImpl
         log.info("Assigning ${deliveryOptions.requestUUID()} to put(${session.rep()})")
 
-        log.info("Incrementing session version: before ${session.version()}")
-        session.incrementVersion()
-        log.info("Incrementing session version: after ${session.version()}")
+        val shouldIncrementVersion = session.shouldIncrementVersion()
+        log.info("Should increment session version: $shouldIncrementVersion")
 
         log.info("Writing session")
         vertx.eventBus().request(
                 Address.DB.update(Tables.WEB_SESSION.name),
-                session.asRecord().toJson(),
+                session.asRecord().apply { if (shouldIncrementVersion) version = -version }.toJson(),
                 deliveryOptions
         ) { mes: MessageRes ->
-            if(mes.succeeded()) log.info("Returned: ${mes.result().body().asSession().rep()}")
+            if(mes.succeeded()) {
+                log.info("Returned: ${mes.result().body().asSession().rep()}")
+                session.incrementVersion()
+            }
 
             val oldId = session.oldId()
             if(oldId != null) {
