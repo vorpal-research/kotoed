@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.launch
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -106,7 +107,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
 
         val ret = DbRecordWrapper(res, VerificationData.Processed)
 
-        launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+        launch(LogExceptions() + currentCoroutineName()) {
             notifyCreated(res)
         }
 
@@ -158,7 +159,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
         val res = DbRecordWrapper(dbUpdateAsync(comment), VerificationData.Processed)
 
         if(comment.state != existing.state) {
-            launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            launch(LogExceptions() + currentCoroutineName()) {
                 notifyStateChanged(existing, comment)
             }
         }

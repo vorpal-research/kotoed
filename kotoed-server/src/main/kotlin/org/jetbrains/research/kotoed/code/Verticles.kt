@@ -244,7 +244,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             randomName.mkdirs()
         }
 
-        vertx.timedOut(Config.VCS.PendingTimeout, timeoutCtx = LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+        timedOut(Config.VCS.PendingTimeout, timeoutCtx = coroutineContext + LogExceptions() + currentCoroutineName()) {
             run {
                 var resp = pendingResp
                 try {

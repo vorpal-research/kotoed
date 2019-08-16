@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
@@ -100,7 +101,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         dbProcessAsync(res)
         val ret = DbRecordWrapper(res)
 
-        launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+        launch(LogExceptions() + currentCoroutineName()) {
             notifyCreated(res)
         }
 
@@ -166,7 +167,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
         val updated = dbUpdateAsync(submission)
 
         if (transitionIsValid)
-            launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            launch(LogExceptions() + currentCoroutineName()) {
                 notifyUpdated(updated)
             }
         return handleRead(updated)

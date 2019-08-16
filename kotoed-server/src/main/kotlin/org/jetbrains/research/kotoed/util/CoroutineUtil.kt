@@ -7,6 +7,7 @@ import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.Message
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.*
 import java.lang.reflect.Method
 import java.util.concurrent.Executors
@@ -18,8 +19,7 @@ import kotlin.reflect.KFunction
 /******************************************************************************/
 
 suspend fun currentCoroutineName() =
-        suspendCoroutine<CoroutineContext> { c -> c.resume(c.context) }[CoroutineName.Key]
-                ?: CoroutineName(newRequestUUID())
+        coroutineContext[CoroutineName.Key] ?: CoroutineName(newRequestUUID())
 
 /******************************************************************************/
 
@@ -100,7 +100,7 @@ class CoroLazy<T>(val generator: suspend () -> T) {
 
     fun isInitialized() = backer != null
     suspend fun get(): T {
-        if(!isInitialized()) backer = generator()
+        if (!isInitialized()) backer = generator()
         return backer!!
     }
 }
@@ -122,7 +122,8 @@ fun betterSingleThreadContext(name: String): ExecutorCoroutineDispatcher =
 
 /******************************************************************************/
 
-fun launchIn(
-        context: CoroutineContext,
-        block: suspend CoroutineScope.() -> Unit
-): Job = CoroutineScope(context).launch(block = block)
+fun RoutingContext.launch(
+        context: CoroutineContext = vertx().dispatcher(),
+        block: suspend CoroutineScope.() -> Unit) {
+    CoroutineScope(context).launch(block = block)
+}

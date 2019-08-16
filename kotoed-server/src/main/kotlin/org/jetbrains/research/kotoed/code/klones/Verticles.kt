@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.code.klones
 import com.google.common.collect.Queues
 import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
-import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
 import org.antlr.v4.runtime.CharStreams
@@ -86,9 +85,9 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         }
     }
 
-    override fun start(startFuture: Future<Void>) {
+    override suspend fun start() {
         vertx.setTimer(5000, this::handleRequest)
-        super.start(startFuture)
+        super.start()
     }
 
     fun handleRequest(timerId: Long) {
@@ -101,22 +100,19 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         val req = kloneRequests.poll()
         when (req) {
             is ProcessCourseBaseRepo -> {
-                spawn(VertxContext(vertx) +
-                        WithExceptions(::handleException)) {
+                spawn(WithExceptions(::handleException)) {
                     if (!handleBase(req.course)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)
                 }
             }
             is ProcessSubmission -> {
-                spawn(VertxContext(vertx) +
-                        WithExceptions(::handleException)) {
+                spawn(WithExceptions(::handleException)) {
                     if (!handleSub(req.submissionData)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)
                 }
             }
             is BuildCourseReport -> {
-                spawn(VertxContext(vertx) +
-                        WithExceptions(::handleException)) {
+                spawn(WithExceptions(::handleException)) {
                     val data = courseSubmissionData(req.course)
                     if (!handleReport(data)) kloneRequests.offer(req)
                     vertx.setTimer(100, this::handleRequest)

@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.buildSystem
 
-import io.vertx.core.Future
 import io.vertx.core.file.FileSystemException
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
@@ -26,11 +25,11 @@ import java.util.*
 
 @AutoDeployable
 class BuildVerticle : AbstractKotoedVerticle() {
-    override fun start(startFuture: Future<Void>) = spawn {
+    override suspend fun start() {
         val fs = vertx.fileSystem()
         if (dir.exists()) fs.deleteRecursiveAsync(dir.absolutePath)
         dir.mkdir()
-        super.start(startFuture)
+        super.start()
     }
 
     private val dir by lazy {
