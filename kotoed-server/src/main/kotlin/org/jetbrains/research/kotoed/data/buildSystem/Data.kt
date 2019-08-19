@@ -3,6 +3,8 @@ package org.jetbrains.research.kotoed.data.buildSystem
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 import org.jetbrains.research.kotoed.util.JsonableSealed
+import java.time.Clock
+import java.time.Instant
 
 enum class BuildCommandType { SHELL }
 
@@ -31,7 +33,16 @@ sealed class BuildResponse : JsonableSealed {
                            val log: String) : BuildResponse()
 }
 
-data class BuildAck(val buildId: Int) : Jsonable
+data class BuildAck(val buildId: Int): Jsonable
+data class BuildStatusRequest(val buildId: Int): Jsonable
+enum class BuildCommandState { RUNNING, FINISHED, WAITING }
+data class BuildCommandStatus(val commandLine: String,
+                              var state: BuildCommandState,
+                              var output: String?): Jsonable
+data class BuildStatus(val request: BuildRequest,
+                       val descriptor: String,
+                       val commands: List<BuildCommandStatus>,
+                       val startTime: Instant = Clock.systemUTC().instant()): Jsonable
 
 data class KotoedRunnerFailure(
         val nestedException: String

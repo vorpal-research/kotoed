@@ -366,12 +366,11 @@ private fun AbstractVerticle.registerJsonableConsumer(
                     "using function $function"
     )
 
-    // TODO handle parameterless consumers
     // first parameter is the receiver, we need the second one
-    val parameterType = function.parameters[1].type
+    val parameterType = function.parameters.getOrNull(1)?.type
     val resultType = function.returnType
     val toJson = getToJsonConverter(resultType)
-    val fromJson = getFromJsonConverter(parameterType)
+    val fromJson = getFromJsonConverter(parameterType ?: (Unit::class).starProjectedType)
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
@@ -379,8 +378,10 @@ private fun AbstractVerticle.registerJsonableConsumer(
                     + VertxContext(vertx)
                     + CoroutineName(msg.requestUUID())) {
                 val argument = fromJson(msg.body())
-                val res = expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
-
+                val res = when (parameterType) {
+                    null -> expectNotNull(function.callAsync(this@registerJsonableConsumer))
+                    else -> expectNotNull(function.callAsync(this@registerJsonableConsumer, argument))
+                }
                 val delOps = DeliveryOptions()
                 if(isNonCopy) {
                     delOps.codecName = when {
@@ -399,8 +400,10 @@ private fun AbstractVerticle.registerJsonableConsumer(
                 Thread.currentThread().name = msg.requestUUID()
                 DelegateLoggable(klass.java).withExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields)) {
                     val argument = fromJson(msg.body())
-                    val res = expectNotNull(function.call(this@registerJsonableConsumer, argument))
-
+                    val res = when (parameterType) {
+                        null -> expectNotNull(function.call(this@registerJsonableConsumer))
+                        else -> expectNotNull(function.call(this@registerJsonableConsumer, argument))
+                    }
                     val delOps = DeliveryOptions()
                     if(isNonCopy) {
                         delOps.codecName = when {

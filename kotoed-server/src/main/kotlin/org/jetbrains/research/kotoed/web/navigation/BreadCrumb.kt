@@ -35,6 +35,22 @@ fun BuildTemplateBreadCrumbElement(active: Boolean, buildTemplate: BuildTemplate
             href = UrlPattern.reverse(UrlPattern.Course.Index, mapOf("id" to buildTemplate.id)))
 }
 
+fun BuildSystemBreadCrumbElement(active: Boolean): BreadCrumbElement {
+    return BreadCrumbElement(
+            text = "Builds",
+            active = active,
+            href = UrlPattern.BuildSystem.Summary
+    )
+}
+
+fun BuildSystemStatusBreadCrumbElement(active: Boolean, id: Int): BreadCrumbElement {
+    return BreadCrumbElement(
+            text = "Build # ${id}",
+            active = active,
+            href = UrlPattern.reverse(UrlPattern.BuildSystem.Status, mapOf("id" to id))
+    )
+}
+
 fun ProjectBreadCrumbElement(active: Boolean,
                              author: DenizenRecord,
                              authorProfile: ProfileRecord?,
@@ -127,6 +143,12 @@ fun CourseBreadCrumb(course: CourseRecord) = RootBreadCrumbElement(false) + Cour
 fun BuildTemplateBreadCrumb(buildTemplate: BuildTemplateRecord) =
         RootBreadCrumbElement(false) + BuildTemplateBreadCrumbElement(true, buildTemplate)
 
+fun BuildSystemBreadCrumb() =
+        RootBreadCrumbElement(false) + BuildSystemBreadCrumbElement(true)
+fun BuildSystemStatusBreadCrumb(id: Int) =
+        RootBreadCrumbElement(false) +
+        BuildSystemBreadCrumbElement(false) +
+        BuildSystemStatusBreadCrumbElement(true, id)
 
 fun ProjectBreadCrumb(course: CourseRecord,
                       author: DenizenRecord,

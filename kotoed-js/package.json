@@ -16,7 +16,7 @@
     "@types/radium": "~0.18.22",
     "@types/react": "~15.6.7",
     "@types/react-autosuggest": "^8.0.2",
-    "@types/react-bootstrap": "^0.31.0",
+    "@types/react-bootstrap": "^0.31.2",
     "@types/react-copy-to-clipboard": "~4.2.6",
     "@types/react-dates": "~17.1.2",
     "@types/react-dom": "~15.5.1",

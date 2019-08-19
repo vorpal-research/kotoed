@@ -10,6 +10,12 @@ export namespace Generated {
             read: (entity: string) => {
                 return `kotoed.api.${entity}.read`;
             },
+            BuildSystem: {
+                Build: {
+                    Status: "kotoed.api.build.status",
+                    Summary: "kotoed.api.build.summary",
+                },
+            },
             BuildTemplate: {
                 Create: "kotoed.api.buildTemplate.create",
                 Read: "kotoed.api.buildTemplate.read",
@@ -161,6 +167,10 @@ export namespace Generated {
             RootPerms: "/auth/perms/root",
             SubmissionPerms: "/auth/perms/submission/:id",
             WhoAmI: "/auth/whoAmI",
+        },
+        BuildSystem: {
+            Status: "/build/:id",
+            Summary: "/builds",
         },
         BuildTemplate: {
             Edit: "/buildTemplate/edit/:id",

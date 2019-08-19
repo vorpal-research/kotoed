@@ -1,0 +1,7 @@
+extends ./baseWithNav
+
+append content
+    div(id="build-status-app" data-id=context.get("id"))
+
+block title
+    +kotoedTitleFromContext()

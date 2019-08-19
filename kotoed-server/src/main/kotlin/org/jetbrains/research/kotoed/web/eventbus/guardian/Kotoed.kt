@@ -75,6 +75,9 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.BuildTemplate.Update to AuthorityRequired(Authority.Teacher),
             Address.Api.BuildTemplate.Create to AuthorityRequired(Authority.Teacher),
 
+            Address.Api.BuildSystem.Build.Status to AuthorityRequired(Authority.Teacher),
+            Address.Api.BuildSystem.Build.Summary to AuthorityRequired(Authority.Teacher),
+
             Address.Api.Notification.Current to Permissive,
             Address.Api.Notification.MarkRead to ShouldBeNotificationTarget(vertx),
             Address.Api.Notification.MarkAllRead to Permissive, // patcher covers our asses

@@ -52,6 +52,11 @@ object UrlPattern {
         const val Edit = "/buildTemplate/edit/:id"
     }
 
+    object BuildSystem {
+        const val Summary = "/builds"
+        const val Status = "/build/:id"
+    }
+
     object Project {
         const val Index = "/project/:id"
         const val Search = "/search/project"

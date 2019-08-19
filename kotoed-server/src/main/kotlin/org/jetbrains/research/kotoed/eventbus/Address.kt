@@ -154,6 +154,13 @@ object Address {
         object OAuthProvider {
             const val List = "kotoed.api.oAuthProvider.list"
         }
+
+        object BuildSystem {
+            object Build {
+                const val Status = "kotoed.api.build.status"
+                const val Summary = "kotoed.api.build.summary"
+            }
+        }
     }
 
     object BuildSystem {

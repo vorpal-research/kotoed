@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.buildSystem
 import io.vertx.core.Future
 import io.vertx.core.file.FileSystemException
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.code.vcs.CommandLine
 import org.jetbrains.research.kotoed.config.Config
@@ -17,12 +18,14 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRec
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
+import ru.spbstu.ktuples.Tuple
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
+import kotlin.NoSuchElementException
 
 @AutoDeployable
 class BuildVerticle : AbstractKotoedVerticle() {
@@ -42,57 +45,69 @@ class BuildVerticle : AbstractKotoedVerticle() {
 
     var currentBuildId = 0
 
+    val buildStatusTable: MutableMap<Int, BuildStatus> = mutableMapOf()
+    val submissionBuilds: MutableMap<Int, Int> = mutableMapOf()
+
     @JsonableEventBusConsumerFor(Address.BuildSystem.Build.Submission.Request)
     suspend fun handleBuildSubmission(submission: SubmissionRecord): BuildAck {
         val buildId = currentBuildId++
         spawn {
-            val explodedSubmission = dbQueryAsync(
-                    ComplexDatabaseQuery(Tables.SUBMISSION)
-                            .find(submission)
-                            .join(ComplexDatabaseQuery(Tables.PROJECT)
-                                    .join(ComplexDatabaseQuery(Tables.COURSE).join(Tables.BUILD_TEMPLATE))))
-                    .first()
-
-            val rev = explodedSubmission.getString("revision")
-            val repo = explodedSubmission.getJsonObject("project").getString("repo_url")
-            val denizenId = explodedSubmission.getJsonObject("project").getInteger("denizen_id")
-            val template = explodedSubmission.getJsonObject("project")
-                    .getJsonObject("course")
-                    .getJsonObject("build_template")
-            val pattern = template
-                    .getJsonArray("command_line")
-                    .map { fromJson<BuildCommand>(it as JsonObject) }
-                    .map {
-                        it.copy(commandLine = it.commandLine.map {
-                            when (it) {
-                                "\$REPO" -> repo
-                                "\$REVISION" -> rev
-                                else -> it
-                            }
-                        })
+            if (submission.id in submissionBuilds) {
+                log.error("Build for submission ${submission.id} already running")
+                // XXX: do something about it?
+            } else try {
+                submissionBuilds[submission.id] = buildId
+                val explodedSubmission = dbQueryAsync(Tables.SUBMISSION) {
+                    find(submission)
+                    join(Tables.PROJECT) {
+                        join(Tables.COURSE) {
+                            join(Tables.BUILD_TEMPLATE)
+                        }
                     }
+                }.single()
 
-            val env = template.getJsonObject("environment")
-                    .map.mapValues { (_, v) -> "$v" }
+                val rev = explodedSubmission.getString("revision")
+                val repo = explodedSubmission.getJsonObject("project").getString("repo_url")
+                val denizenId = explodedSubmission.getJsonObject("project").getInteger("denizen_id")
+                val template = explodedSubmission.getJsonObject("project")
+                        .getJsonObject("course")
+                        .getJsonObject("build_template")
+                val pattern = template
+                        .getJsonArray("command_line")
+                        .map { fromJson<BuildCommand>(it as JsonObject) }
+                        .map {
+                            it.copy(commandLine = it.commandLine.map {
+                                when (it) {
+                                    "\$REPO" -> repo
+                                    "\$REVISION" -> rev
+                                    else -> it
+                                }
+                            })
+                        }
 
-            val res = executeBuild(BuildRequest(submission.id, buildId, pattern, env))
+                val env = template.getJsonObject("environment")
+                        .map.mapValues { (_, v) -> "$v" }
 
-            res.forEach {
-                publishJsonable(Address.BuildSystem.Build.Result, it)
+                val res = executeBuild(BuildRequest(submission.id, buildId, pattern, env))
+
+                res.forEach {
+                    publishJsonable(Address.BuildSystem.Build.Result, it)
+                }
+
+                createNotification(
+                        NotificationRecord().apply {
+                            this.type = NotificationType.NEW_SUBMISSION_RESULTS.name
+                            this.denizenId = denizenId
+                            this.body = BuildRecord().apply {
+                                // XXX: fetch an actual BuildRecord here?
+                                this.buildRequestId = buildId;
+                                this.submissionId = submission.id
+                            }.toJson()
+                        }
+                )
+            } finally {
+                submissionBuilds.remove(submission.id)
             }
-
-            createNotification(
-                    NotificationRecord().apply {
-                        this.type = NotificationType.NEW_SUBMISSION_RESULTS.name
-                        this.denizenId = denizenId
-                        this.body = BuildRecord().apply {
-                            // XXX: fetch an actual BuildRecord here?
-                            this.buildRequestId = buildId;
-                            this.submissionId = submission.id
-                        }.toJson()
-                    }
-            )
-
         }
         return BuildAck(buildId)
     }
@@ -116,16 +131,35 @@ class BuildVerticle : AbstractKotoedVerticle() {
         val env = request.env.orEmpty()
 
         try {
+            val status = BuildStatus(
+                    request,
+                    "$uid",
+                    request.buildScript.map {
+                        BuildCommandStatus(
+                                it.commandLine.joinToString(" "),
+                                BuildCommandState.WAITING,
+                                null
+                        )
+                    }
+            )
             log.info("Build request assigned to directory $randomName")
 
-            for (command in request.buildScript) {
+            buildStatusTable += request.buildId to status
+
+            for ((i, command) in request.buildScript.withIndex()) {
+                val cmdStatus = buildStatusTable.getValue(request.buildId).commands[i]
                 (when (command.type) {
                     BuildCommandType.SHELL -> {
                         val result =
                                 withContext(ee) {
-                                    CommandLine(command.commandLine)
+                                    cmdStatus.state = BuildCommandState.RUNNING
+                                    val cl = CommandLine(command.commandLine)
                                             .execute(randomName, env = env).complete()
+                                    cmdStatus.state = BuildCommandState.FINISHED
+                                    cl
                                 }
+                        buildStatusTable.getValue(request.buildId).commands[i].output =
+                                (result.cout + result.cerr).joinToString("\n")
 
                         if (result.rcode.get() != 0) {
                             log.error("[$randomName] " + result.cout.joinToString("\n"))
@@ -144,8 +178,11 @@ class BuildVerticle : AbstractKotoedVerticle() {
             }
 
             val res =
-                    try { fs.readFileAsync(File(randomName, "results.json").absolutePath).toJsonObject() }
-                    catch (ex: FileSystemException) { JsonObject("data" to emptyList<Any?>()) }
+                    try {
+                        fs.readFileAsync(File(randomName, "results.json").absolutePath).toJsonObject()
+                    } catch (ex: FileSystemException) {
+                        JsonObject("data" to emptyList<Any?>())
+                    }
 
             val inspectionsFile = File(randomName, "report/inspections.xml")
 
@@ -184,8 +221,18 @@ class BuildVerticle : AbstractKotoedVerticle() {
             throw ex
         } finally {
             fs.deleteRecursiveAsync(randomName.absolutePath)
+            delay(60000)
+            buildStatusTable.remove(request.buildId)
         }
     }
+
+    @JsonableEventBusConsumerFor(Address.Api.BuildSystem.Build.Status)
+    fun handleStatus(statusRequest: BuildStatusRequest) =
+            buildStatusTable[statusRequest.buildId] ?:
+                throw NoSuchElementException("No build currently running for id ${statusRequest.buildId}")
+
+    @JsonableEventBusConsumerFor(Address.Api.BuildSystem.Build.Summary)
+    fun handleSummary() = buildStatusTable.values.toList()
 }
 
 @AutoDeployable
