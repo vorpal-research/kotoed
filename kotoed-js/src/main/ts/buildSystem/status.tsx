@@ -30,7 +30,7 @@ class BuildStatusView extends React.Component<WithId, BuildStatusState> {
         poll({
             action: this.tryLoad,
             isGoodEnough: () => false,
-            strategy: new SimplePollingStrategy({ interval: 5000, shouldGiveUp: () => false })
+            strategy: new SimplePollingStrategy({ interval: 1000, shouldGiveUp: () => false })
         })
     }
 
