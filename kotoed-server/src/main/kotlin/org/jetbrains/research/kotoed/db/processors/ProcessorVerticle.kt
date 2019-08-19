@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.db.processors
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.launch
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
@@ -49,7 +50,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            launch(LogExceptions() + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
                 process(data)
             }
@@ -62,7 +63,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            launch(LogExceptions() + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
             }
         }
@@ -74,7 +75,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         val id: Int by msg.delegate
         val data = db { selectById(id) }?.toJson()
         return cache[id].bang().also {
-            launchIn(LogExceptions() + VertxContext(vertx) + currentCoroutineName()) {
+            launch(LogExceptions() + currentCoroutineName()) {
                 verifyIfNeeded(id, data)
                 clean(data)
             }

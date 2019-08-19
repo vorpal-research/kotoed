@@ -1,14 +1,14 @@
 package org.jetbrains.research.kotoed.util
 
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.coroutines.CoroutineVerticle
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.warnings.Warnings.DEPRECATION
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
@@ -317,7 +317,7 @@ fun AbstractKotoedVerticle.registerAllConsumers() {
     }
 }
 
-private fun AbstractVerticle.registerRawConsumer(
+private fun CoroutineVerticle.registerRawConsumer(
         function: KFunction<*>,
         address: String,
         cleanupJsonFields: Array<String>
@@ -331,8 +331,7 @@ private fun AbstractVerticle.registerRawConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launchIn(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
-                    + VertxContext(vertx)
+            launch(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
                     + CoroutineName(msg.requestUUID())) {
                 function.callAsync(this@registerRawConsumer, msg)
             }
@@ -352,7 +351,7 @@ private fun AbstractVerticle.registerRawConsumer(
     }
 }
 
-private fun AbstractVerticle.registerJsonableConsumer(
+private fun CoroutineVerticle.registerJsonableConsumer(
         function: KFunction<*>,
         address: String,
         isNonCopy: Boolean,
@@ -374,8 +373,7 @@ private fun AbstractVerticle.registerJsonableConsumer(
 
     if (function.isSuspend) {
         eb.consumer<JsonObject>(address) { msg ->
-            launchIn(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
-                    + VertxContext(vertx)
+            launch(DelegateLoggable(klass.java).WithExceptions(CleanedUpMessageWrapper(msg, cleanupJsonFields))
                     + CoroutineName(msg.requestUUID())) {
                 val argument = fromJson(msg.body())
                 val res = when (parameterType) {
@@ -430,26 +428,26 @@ object DebugInterceptor : Handler<DeliveryContext<*>>, Loggable {
     }
 }
 
-open class AbstractKotoedVerticle : AbstractVerticle(), Loggable {
-    override fun start(startFuture: Future<Void>) {
+open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable {
+    override suspend fun start() {
         registerAllConsumers()
-        super.start(startFuture)
+        super.start()
     }
 
-    suspend fun<R> async(dispatcher: CoroutineContext = VertxContext(vertx), body: suspend () -> R) =
-            CoroutineScope(LogExceptions() + dispatcher + currentCoroutineName()).async {
+    suspend fun<R> async(dispatcher: CoroutineContext = coroutineContext, body: suspend () -> R) =
+            (this as CoroutineScope).async(dispatcher + LogExceptions() + currentCoroutineName()) {
                 body()
             }
 
-    fun<R> spawn(dispatcher: CoroutineContext = VertxContext(vertx), body: suspend () -> R) {
-        var context = LogExceptions() + dispatcher
+    fun<R> spawn(dispatcher: CoroutineContext = coroutineContext, body: suspend () -> R) {
+        var context = dispatcher + LogExceptions()
         if(context[CoroutineName.Key] == null) {
             val name = newRequestUUID()
             log.trace("Assigning $name to spawned call of $body")
             context += CoroutineName(name)
         }
 
-        launchIn(context) { body() }
+        launch(context) { body() }
     }
 
     // all this debauchery is here due to a kotlin compiler bug:

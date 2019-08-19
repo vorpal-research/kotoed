@@ -13,7 +13,11 @@ import io.vertx.core.shareddata.Shareable
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import io.vertx.ext.web.client.HttpResponse
-import kotlinx.coroutines.*
+import io.vertx.kotlin.coroutines.CoroutineVerticle
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.reflections.Reflections
 import org.reflections.scanners.SubTypesScanner
 import org.reflections.scanners.TypeAnnotationsScanner
@@ -145,13 +149,14 @@ suspend fun FileSystem.deleteRecursiveAsync(path: String, recursive: Boolean = t
 
 /******************************************************************************/
 
+// TODO: Complete rewrite?
 data class VertxTimeoutProcessing(val vertx: Vertx,
                                   val time: Long,
                                   private var onTimeoutSusp: suspend () -> Unit = {},
                                   private var onSuccessSusp: suspend () -> Unit = {},
                                   private var bodySusp: suspend () -> Unit = {}) : Loggable {
 
-    suspend fun execute(timeoutCtx: CoroutineContext = LogExceptions() + VertxContext(vertx) + CoroutineName("timeout")) {
+    suspend fun execute(timeoutCtx: CoroutineContext = vertx.dispatcher() + LogExceptions() + CoroutineName("timeout")) {
         var timedOut = false
         val timerId = vertx.setTimer(time) {
             CoroutineScope(timeoutCtx).launch {
@@ -183,13 +188,13 @@ data class VertxTimeoutProcessing(val vertx: Vertx,
     }
 }
 
-suspend fun Vertx.timedOut(
+suspend fun CoroutineVerticle.timedOut(
         time: Long,
         timeoutCtx: CoroutineContext =
-            DelegateLoggable(VertxTimeoutProcessing::class.java).LogExceptions() + VertxContext(this),
+            coroutineContext + DelegateLoggable(VertxTimeoutProcessing::class.java).LogExceptions(),
         builder: VertxTimeoutProcessing.() -> Unit
 ) {
-    val vtop = VertxTimeoutProcessing(this, time)
+    val vtop = VertxTimeoutProcessing(vertx, time)
     vtop.builder()
     vtop.execute(timeoutCtx)
 }
@@ -210,44 +215,6 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
                 p.future()
             }
     CompositeFuture.all(fs).setHandler(handler)
-}
-
-/******************************************************************************/
-
-class ResumeUndispatchedRunnable(
-        private val dispatcher: CoroutineDispatcher,
-        private val continuation: CancellableContinuation<Unit>
-) : Runnable {
-    @UseExperimental(ExperimentalCoroutinesApi::class)
-    override fun run() {
-        with(continuation) { dispatcher.resumeUndispatched(Unit) }
-    }
-}
-
-class DisposableVertxTimerHandle(
-        private val vertx: Vertx,
-        private val timerId: Long) : DisposableHandle {
-    override fun dispose() {
-        vertx.cancelTimer(timerId)
-    }
-
-    override fun toString(): String = "DisposableVertxTimerHandle[$timerId]"
-}
-
-@UseExperimental(InternalCoroutinesApi::class)
-class VertxContext(val vertx: Vertx) : CoroutineDispatcher(), Delay {
-    override fun dispatch(context: CoroutineContext, block: Runnable) =
-            vertx.runOnContext { block.run() }
-
-    override fun scheduleResumeAfterDelay(timeMillis: Long, continuation: CancellableContinuation<Unit>) {
-        val id = vertx.setTimer(timeMillis) { ResumeUndispatchedRunnable(this, continuation).run() }
-        continuation.invokeOnCancellation { vertx.cancelTimer(id) }
-    }
-
-    override fun invokeOnTimeout(timeMillis: Long, block: Runnable): DisposableHandle =
-            DisposableVertxTimerHandle(
-                    vertx,
-                    vertx.setTimer(timeMillis) { block.run() })
 }
 
 /******************************************************************************/

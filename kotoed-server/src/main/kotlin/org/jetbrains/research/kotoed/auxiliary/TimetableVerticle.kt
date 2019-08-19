@@ -1,6 +1,5 @@
 package org.jetbrains.research.kotoed.auxiliary
 
-import io.vertx.core.Future
 import org.jetbrains.research.kotoed.auxiliary.data.TimetableMessage
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -13,9 +12,9 @@ class TimetableVerticle: AbstractKotoedVerticle(), Loggable {
 
     private val que = PriorityQueue<TimetableMessage>(compareBy{ it.time })
 
-    override fun start(startFuture: Future<Void>) {
-        super.start(startFuture)
+    override suspend fun start() {
         vertx.setPeriodic(1000L * 60L){ handleTick() }
+        super.start()
     }
 
     private fun handleTick() = spawn {

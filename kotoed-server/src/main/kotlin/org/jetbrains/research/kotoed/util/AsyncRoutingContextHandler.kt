@@ -9,7 +9,7 @@ abstract class AsyncRoutingContextHandler : Handler<RoutingContext>, Loggable {
     override fun handle(context: RoutingContext) {
         val coroName = newRequestUUID().let(::CoroutineName)
         log.trace("Assigning ${coroName.name} to $this.doHandleAsync()")
-        launchIn(WithExceptions(context) + VertxContext(context.vertx()) + coroName) {
+        context.launch(WithExceptions(context) + coroName) {
             doHandleAsync(context)
         }
     }

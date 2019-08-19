@@ -5,6 +5,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.config.Config
@@ -509,7 +510,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
             "$readAddress.for.${fk.key.table.name.toLowerCase()}"
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
-        launchIn(WithExceptions(msg) + VertxContext(vertx) + CoroutineName(msg.requestUUID())) {
+        launch(WithExceptions(msg) + CoroutineName(msg.requestUUID())) {
             val fkField = fk.fields.first().uncheckedCast<Field<Any>>()
 
             val id = msg.body().getValue(fkField.name)

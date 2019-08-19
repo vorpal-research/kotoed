@@ -26,8 +26,7 @@ private fun funToHandler(method: Method, chain: Boolean = false): Handler<Routin
         method.isKotlinSuspend -> Handler {
             val coroname = newRequestUUID()
             DelegateLoggable(method.declaringClass).log.trace("Assigning $coroname to $method")
-            launchIn(DelegateLoggable(method.declaringClass).WithExceptions(it) +
-                    VertxContext(it.vertx()) +
+            it.launch(DelegateLoggable(method.declaringClass).WithExceptions(it) +
                     CoroutineName(coroname)) {
                 unwrapITE {
                     method.invokeAsync(null, it)
