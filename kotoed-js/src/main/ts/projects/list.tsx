@@ -1,8 +1,10 @@
 import * as React from "react";
-import {Table,
+import {
+    Table,
     Glyphicon,
     Tooltip,
-    OverlayTrigger, Row} from "react-bootstrap";
+    OverlayTrigger, Row, Button
+} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import * as Spinner from "react-spinkit"
@@ -29,6 +31,8 @@ import {
 } from "../submissions/util";
 import {BloatDenizen, Denizen} from "../data/denizen";
 import {makeFullName, makeGroup, makeProfileLink, makeRealName} from "../util/denizen";
+import UrlPattern = Kotoed.UrlPattern;
+import * as ButtonToolbar from "react-bootstrap/lib/ButtonToolbar";
 
 type ProjectWithVer = JumboProject & WithVerificationData & { cb: SearchCallback }
 
@@ -139,6 +143,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
 interface ProjectSearchProps {
     canCreateProject: boolean,
+    canEditCourse: boolean,
     course?: DbRecordWrapper<CourseToRead>
 }
 
@@ -158,7 +163,8 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
     constructor(props: {}) {
         super(props);
         this.state = {
-            canCreateProject: false
+            canCreateProject: false,
+            canEditCourse: false
         };
     }
 
@@ -179,15 +185,21 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
         }).then(() => {
             return fetchPermissions(id_)
         }).then((perms) =>
-            this.setState({canCreateProject: perms.createProject})
+            this.setState({canCreateProject: perms.createProject, canEditCourse: perms.editCourse})
         )
     }
 
     toolbarComponent = (redoSearch: () => void) => {
-        if (this.state.canCreateProject)
-            return <ProjectCreate onCreate={redoSearch} courseId={id_}/>;
-        else
-            return null;
+        return <ButtonToolbar>
+            { this.state.canEditCourse &&
+                <Button bsStyle={"link"} href={UrlPattern.reverse(UrlPattern.Course.Edit, {id: id_})}>
+                    Edit course
+                </Button>
+            }
+            { this.state.canCreateProject &&
+                <ProjectCreate onCreate={redoSearch} courseId={id_}/>
+            }
+        </ButtonToolbar>;
     };
 
 

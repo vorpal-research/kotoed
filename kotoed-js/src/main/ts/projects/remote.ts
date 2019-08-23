@@ -4,7 +4,8 @@ import {Kotoed} from "../util/kotoed-api";
 import {keysToCamelCase} from "../util/stringCase";
 
 interface CoursePermissions {
-    createProject: boolean
+    createProject: boolean,
+    editCourse: boolean
 }
 
 export async function fetchPermissions(id: number): Promise<CoursePermissions> {

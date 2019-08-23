@@ -84,10 +84,11 @@ class BuildVerticle : AbstractKotoedVerticle() {
                             })
                         }
 
+                val defaultEnv = Config.BuildSystem.DefaultEnvironment
                 val env = template.getJsonObject("environment")
                         .map.mapValues { (_, v) -> "$v" }
 
-                val res = executeBuild(BuildRequest(submission.id, buildId, pattern, env))
+                val res = executeBuild(BuildRequest(submission.id, buildId, pattern, defaultEnv + env))
 
                 res.forEach {
                     publishJsonable(Address.BuildSystem.Build.Result, it)
@@ -220,8 +221,9 @@ class BuildVerticle : AbstractKotoedVerticle() {
             throw ex
         } finally {
             fs.deleteRecursiveAsync(randomName.absolutePath)
-            delay(60000)
-            buildStatusTable.remove(request.buildId)
+            vertx.setTimer(300000) {
+                buildStatusTable.remove(request.buildId)
+            }
         }
     }
 

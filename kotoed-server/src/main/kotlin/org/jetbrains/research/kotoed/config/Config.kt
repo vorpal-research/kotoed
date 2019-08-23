@@ -49,6 +49,13 @@ class GlobalConfig : Configuration() {
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
 
         val MaxDiffHunkLines: Int by 5000
+
+        val DefaultEnvironment: Map<String, String> by {
+            mapOf(
+                    "GIT_ASKPASS" to "true",
+                    "SSH_ASKPASS" to "true"
+            )
+        }
     }
 
     val VCS by VCSConfig()
@@ -56,6 +63,13 @@ class GlobalConfig : Configuration() {
     class BuildSystemConfig : Configuration() {
         val StoragePath: String by "builds"
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() }
+
+        val DefaultEnvironment: Map<String, String> by {
+            mapOf(
+                    "GIT_ASKPASS" to "true",
+                    "SSH_ASKPASS" to "true"
+            )
+        }
     }
     val BuildSystem by BuildSystemConfig()
 

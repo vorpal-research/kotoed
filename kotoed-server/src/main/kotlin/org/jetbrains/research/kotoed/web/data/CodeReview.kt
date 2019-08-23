@@ -5,7 +5,7 @@ import org.jetbrains.research.kotoed.util.Jsonable
 
 object Permissions {
     data class Root(val createCourse: Boolean = false): Jsonable
-    data class Course(val createProject: Boolean = false): Jsonable
+    data class Course(val createProject: Boolean = false, val editCourse: Boolean = false): Jsonable
     data class Project(val createSubmission: Boolean = false, val deleteProject: Boolean = false): Jsonable
     data class Submission(val editOwnComments: Boolean = false,
                           val editAllComments: Boolean = false,

@@ -131,8 +131,10 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
     handleEnter = (event: KeyboardEvent<FormControl>) => event.key === "Enter" && this.handleSubmit();
 
     render() {
-        return <div>
-            <Button bsStyle="success" onClick={this.showModal}>Create project</Button>
+        // do not attempt to wrap in <div> as button groups don't work unless top-level element is a button
+        // or a button group
+        return <Button bsStyle="success" onClick={this.showModal}>
+            Create project
             <Modal show={this.state.showModal} onHide={this.hideModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>Create new project</Modal.Title>
@@ -148,13 +150,13 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 type="text"
                                 value={this.state.name}
                                 placeholder="Name"
-                                onChange={(e: ChangeEvent<any>)  => {
+                                onChange={(e: ChangeEvent<any>) => {
                                     this.unsetError("emptyName");
                                     this.setState({name: e.target.value as string || ""})
                                 }}
                                 onKeyPress={this.handleEnter}
                             />
-                            <FormControl.Feedback />
+                            <FormControl.Feedback/>
                         </FormGroup>
                         <FormGroup controlId="project-repo-type">
                             <ControlLabel>Repo type</ControlLabel>
@@ -177,7 +179,7 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                         <FormGroup
                             controlId="repo-url"
                             validationState={
-                                this.state.localErrors.emptyUrl  || this.state.localErrors.badUrl ?
+                                this.state.localErrors.emptyUrl || this.state.localErrors.badUrl ?
                                     "error" :
                                     undefined}>
                             <ControlLabel>Repo URL</ControlLabel>
@@ -186,14 +188,14 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 value={this.state.repoUrl}
                                 placeholder="URL"
                                 inputRef={ref => this.urlField = ref!}
-                                onChange={(e: ChangeEvent<any>)  => {
+                                onChange={(e: ChangeEvent<any>) => {
                                     this.unsetError("emptyUrl");
                                     this.unsetError("badUrl");
                                     this.setState({repoUrl: e.target.value as string || ""})
                                 }}
                                 onKeyPress={this.handleEnter}
                             />
-                            <FormControl.Feedback />
+                            <FormControl.Feedback/>
                         </FormGroup>
                     </Form>
                 </Modal.Body>
@@ -201,6 +203,6 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                     <Button bsStyle="success" onClick={() => this.handleSubmit()}>Create</Button>
                 </Modal.Footer>
             </Modal>
-        </div>;
+        </Button>;
     }
 }

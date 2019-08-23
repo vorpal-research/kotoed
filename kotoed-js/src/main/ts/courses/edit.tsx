@@ -46,7 +46,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
                    htmlFor={`input-${field}`}>{label}</label>
             <div className="col-sm-10">
                 <input
-                    className="form-control"
+                    className={ type === "file"? `form-control-file` : `form-control` }
                     id={`input-${field}`}
                     type={type}
                     value={this.state[field] || ""}

@@ -10,6 +10,7 @@ import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.COURSE_TEXT_SEARCH
+import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
@@ -23,6 +24,15 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Course.Create)
     suspend fun handleCreate(course: CourseRecord): DbRecordWrapper {
         course.name = course.name.truncateAt(1024)
+
+        if(course.buildTemplateId == null) {
+            // first, create a new build template
+            val build = dbCreateAsync(BuildTemplateRecord().apply {
+                commandLine = JsonArray()
+                environment = JsonObject()
+            })
+            course.buildTemplateId = build.id
+        }
 
         val res: CourseRecord = dbCreateAsync(course)
         dbProcessAsync(res)

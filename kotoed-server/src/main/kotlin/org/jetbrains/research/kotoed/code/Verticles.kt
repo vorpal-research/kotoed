@@ -47,9 +47,11 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     }
     private val info = mutableMapOf<String, RemoteRequest>()
 
+    private val defaultEnv by lazy { Config.VCS.DefaultEnvironment }
+
     private val RepositoryInfo.root get() = when (vcs) {
-        VCS.git -> Git(url, File(dir, uid).absolutePath)
-        VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath)
+        VCS.git -> Git(url, File(dir, uid).absolutePath, defaultEnv)
+        VCS.mercurial -> Mercurial(url, File(dir, uid).absolutePath, defaultEnv)
         null -> throw IllegalArgumentException("No supported vcs found at $url")
     }
 
@@ -243,6 +245,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         withContext(ee) {
             randomName.mkdirs()
         }
+
 
         timedOut(Config.VCS.PendingTimeout, timeoutCtx = coroutineContext + LogExceptions() + currentCoroutineName()) {
             run {
