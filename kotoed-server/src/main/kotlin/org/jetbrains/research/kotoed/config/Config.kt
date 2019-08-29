@@ -117,6 +117,7 @@ class GlobalConfig : Configuration() {
     class RootConfig : Configuration() {
         val Host: String by "http://localhost"
         val Port: Int by 9000
+        val PublicUrl: String by "http://localhost:9000"
     }
 
     val Root by RootConfig()

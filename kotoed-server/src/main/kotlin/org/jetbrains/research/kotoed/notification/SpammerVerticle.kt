@@ -63,7 +63,7 @@ class SpammerVerticle : AbstractNotificationVerticle(), Loggable {
         val allDenizens = dbQueryAsync(Tables.PROFILE) { join(Tables.DENIZEN) }
 
         fun makeLink(link: RenderedData): String {
-            return "${Config.Root.Host}:${Config.Root.Port}" + UrlPattern.reverse(
+            return Config.Root.PublicUrl + UrlPattern.reverse(
                     UrlPattern.Notification.ById,
                     mapOf("id" to link.id)
             )
