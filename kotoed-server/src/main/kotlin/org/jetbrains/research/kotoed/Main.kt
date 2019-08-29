@@ -104,7 +104,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 }
         )
                 .requestHandler(router)
-                .listen(Config.Root.Port)
+                .listen(Config.Root.ListenPort)
 
         startPromise.complete()
     }
