@@ -4,6 +4,7 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.core.eventbus.ReplyException
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.RoutingContext
+import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.db.OAuthLoginMsg
 import org.jetbrains.research.kotoed.data.db.OAuthSignUpMsg
 import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
@@ -62,7 +63,7 @@ private fun providerOrNull(name: String?, context: RoutingContext): AbstractOAut
     name ?: return null
 
     return try {
-        getOAuthProvider(name, context.vertx(), context.request().getRootUrl())
+        getOAuthProvider(name, context.vertx(), Config.Root.PublicUrl)
     } catch (ex: OAuthException) {
         return null
     }
