@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.data.notification
 
 import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.core.json.jsonObjectOf
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
@@ -125,6 +126,22 @@ private fun renderSubmissionUpdate(id: Int, body: JsonObject, kind: RenderedKind
     return RenderedData(id, node, link)
 }
 
+private fun renderCustomNotification(id: Int, body: JsonObject, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().pre {
+        +body.encodePrettily()
+    }
+    val link = LinkData(".", ".")
+    return RenderedData(id, node, link)
+}
+
+private fun renderInvalid(id: Int, kind: RenderedKind = RenderedKind.HTML): RenderedData {
+    val node = kind.buildConsumer().div {
+        strong { +"Invalid notification" }
+    }
+    val link = LinkData(".", ".")
+    return RenderedData(id, node, link)
+}
+
 internal val renderers by lazy {
     mapOf(
             NotificationType.COMMENT_CLOSED to ::renderCommentClosed,
@@ -133,7 +150,8 @@ internal val renderers by lazy {
             NotificationType.COMMENT_REPLIED_TO to ::renderCommentRepliedTo,
             NotificationType.NEW_SUBMISSION_RESULTS to ::renderNewSubmissionResults,
             NotificationType.RESUBMISSION to ::renderResubmission,
-            NotificationType.SUBMISSION_UPDATE to ::renderSubmissionUpdate
+            NotificationType.SUBMISSION_UPDATE to ::renderSubmissionUpdate,
+            NotificationType.CUSTOM_NOTIFICATION to ::renderCustomNotification
     )
 }
 
@@ -141,6 +159,10 @@ fun render(notification: NotificationRecord): RenderedData = render(notification
 
 fun render(notification: NotificationRecord, kind: RenderedKind): RenderedData {
     val type = NotificationType.valueOf(notification.type)
-    val body = notification.body.uncheckedCast<JsonObject>()
-    return renderers[type]!!(notification.id, body, kind)
+    val body = notification.body as? JsonObject ?: jsonObjectOf("data" to notification.body)
+    return try {
+        renderers[type]!!(notification.id, body, kind)
+    } catch (ex: Exception) {
+        renderInvalid(notification.id, kind)
+    }
 }
