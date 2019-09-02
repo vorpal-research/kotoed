@@ -9,9 +9,11 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
 import org.jetbrains.research.kotoed.util.Loggable
+import org.simplejavamail.email.Email
 import org.simplejavamail.email.EmailBuilder
 import org.simplejavamail.mailer.MailerBuilder
 import org.simplejavamail.mailer.config.TransportStrategy
+import java.util.concurrent.LinkedBlockingQueue
 
 @AutoDeployable
 class MailVerticle : AbstractNotificationVerticle(), Loggable {
@@ -34,6 +36,33 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
                 )
                 .withTransportStrategy(transport)
                 .buildMailer()
+    }
+
+    private val queue = LinkedBlockingQueue<Email>()
+    private enum class State { FREE, WORKING, PENDING }
+    private var state = State.FREE
+
+    fun sendPending() {
+        state = State.WORKING
+        log.info("Sending emails")
+
+        while(queue.isNotEmpty()) {
+            val current = queue.peek() ?: break
+            try { mailer.sendMail(current, true) }
+            catch(ex: Exception) {
+                log.error("Error while trying to send mail", ex)
+                break
+            }
+            queue.remove()
+        }
+
+        if(queue.isNotEmpty()) {
+            log.warn("Pending emails found, reattempt in 2 minutes...")
+            state = State.PENDING
+            spawn(Pool) { sendPending() }
+        } else {
+            state = State.FREE
+        }
     }
 
     @JsonableEventBusConsumerFor(Address.Notifications.Email.Send)
@@ -62,10 +91,11 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
                         }
                         .buildEmail()
 
+        log.info("Queueing email to $denizen")
 
-        log.info("Sending email to $denizen")
+        queue.add(email)
 
-        spawn(Pool) { try{ mailer.sendMail(email, true) } catch(ex: Exception) { log.error("", ex) } }
+        if (state == State.FREE) spawn(Pool) { sendPending() }
     }
 
 }
