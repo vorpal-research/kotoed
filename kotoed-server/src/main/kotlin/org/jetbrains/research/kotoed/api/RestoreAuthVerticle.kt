@@ -31,7 +31,7 @@ class RestoreAuthVerticle : AbstractKotoedVerticle(), Loggable {
         val uid = UUID.randomUUID()
         requestCache.put(denizen.denizenId, uid)
 
-        val callback = "${Config.Root.Host}:${Config.Root.Port}" +
+        val callback = Config.Root.PublicUrl +
                 UrlPattern.reverse(
                         UrlPattern.Auth.RestorePassword,
                         mapOf("uid" to uid)

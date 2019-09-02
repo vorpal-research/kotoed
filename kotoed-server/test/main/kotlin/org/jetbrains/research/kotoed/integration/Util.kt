@@ -33,7 +33,7 @@ fun wdoit(method: HttpMethod,
           mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
           params: Iterable<Pair<String, Any?>> = listOf(),
           payload: String? = null,
-          port: Int = Config.Root.Port,
+          port: Int = Config.Root.ListenPort,
           additionalHeaders: Map<String, String> = mapOf()): String {
     val config = DefaultClientConfig()
     val client = Client.create(config)
@@ -58,12 +58,12 @@ fun wget(path: String,
 fun wpost(path: String,
           mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
           payload: String = "",
-          port: Int = Config.Root.Port,
+          port: Int = Config.Root.ListenPort,
           additionalHeaders: Map<String, String> = mapOf()): String =
         wdoit(HttpMethod.POST, path, mediaType, payload = payload, port = port, additionalHeaders = additionalHeaders)
 
 fun wdelete(path: String,
             mediaType: MediaType = MediaType.APPLICATION_JSON_TYPE,
-            port: Int = Config.Root.Port,
+            port: Int = Config.Root.ListenPort,
             additionalHeaders: Map<String, String> = mapOf()): String =
         wdoit(HttpMethod.DELETE, path, mediaType, port = port, additionalHeaders = additionalHeaders)
