@@ -6,6 +6,7 @@ object UrlPattern {
     const val Index = "/"
 
     object Redirect {
+        const val Root = "/redirect/"
         const val ById = "/redirect/:entity/:id"
     }
 

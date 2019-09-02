@@ -12,6 +12,12 @@ import org.jetbrains.research.kotoed.util.routing.LoginRequired
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.eventbus.commentByIdOrNull
 
+@HandlerFor(UrlPattern.Redirect.Root)
+@LoginRequired
+suspend fun handleRedirectRoot(context: RoutingContext) {
+    context.response().redirect(UrlPattern.Index)
+}
+
 @HandlerFor(UrlPattern.Notification.ById)
 @LoginRequired
 suspend fun handleNotificationById(context: RoutingContext) {
