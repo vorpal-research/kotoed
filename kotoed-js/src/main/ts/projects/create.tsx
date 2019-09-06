@@ -172,7 +172,8 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 name="repo-type"
                                 value="mercurial"
                                 checked={this.state.repoType === "mercurial"}
-                                onChange={this.handleRepoTypeChange}>
+                                onChange={this.handleRepoTypeChange}
+                                disabled={true}>
                                 Mercurial
                             </Radio>
                         </FormGroup>
