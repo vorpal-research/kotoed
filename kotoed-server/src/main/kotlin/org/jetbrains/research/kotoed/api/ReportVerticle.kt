@@ -203,7 +203,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Report)
     suspend fun handleSubmission(record: ReportRequest): ReportResponse = withContext(reportPool) {
-        val result = dbFindAsync(SubmissionResultRecord().apply { submissionId = record.id }).firstOrNull()
+        val result = dbFindAsync(SubmissionResultRecord().apply { submissionId = record.id }).firstOrNull { template in it.type }
 
         result ?: return@withContext ReportResponse(listOf())
 
@@ -212,7 +212,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Result.Report)
     suspend fun handleSubmissionResult(record: ReportRequest): ReportResponse = withContext(reportPool) {
-        val result = dbFindAsync(SubmissionResultRecord().apply { id = record.id }).firstOrNull()
+        val result = dbFindAsync(SubmissionResultRecord().apply { id = record.id }).firstOrNull { template in it.type }
 
         result ?: return@withContext ReportResponse(listOf())
 
