@@ -20,7 +20,7 @@ import ru.spbstu.ktuples.map1
 
 private fun<T> convertConstant(e: Expression): Field<T> = when (e) {
     is IntConstant -> DSL.inline(e.value).uncheckedCast()
-    is StringConstant -> DSL.inline(StringEscapeUtils.unescapeJava(e.value)).uncheckedCast()
+    is StringConstant -> DSL.inline(e.value).uncheckedCast()
     is NullConstant -> DSL.field("NULL").uncheckedCast()
     else -> error("convertConstant() is for constants only!")
 }
