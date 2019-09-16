@@ -3,6 +3,8 @@ package org.jetbrains.research.kotoed.buildSystem
 import io.vertx.core.file.FileSystemException
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.code.vcs.CommandLine
 import org.jetbrains.research.kotoed.config.Config
@@ -122,6 +124,8 @@ class BuildVerticle : AbstractKotoedVerticle() {
         return BuildAck(request.buildId)
     }
 
+    private val schedulingSemaphore = Semaphore(Config.BuildSystem.MaxProcesses)
+
     suspend fun executeBuild(request: BuildRequest): List<BuildResponse> {
         val fs = vertx.fileSystem()
         val uid = UUID.randomUUID()
@@ -138,13 +142,16 @@ class BuildVerticle : AbstractKotoedVerticle() {
                         BuildCommandStatus(
                                 it.commandLine.joinToString(" "),
                                 BuildCommandState.WAITING,
-                                null
+                                StringBuilder(),
+                                StringBuilder()
                         )
                     }
             )
             log.info("Build request assigned to directory $randomName")
 
             buildStatusTable += request.buildId to status
+
+            schedulingSemaphore.acquire()
 
             for ((i, command) in request.buildScript.withIndex()) {
                 val cmdStatus = buildStatusTable.getValue(request.buildId).commands[i]
@@ -153,24 +160,20 @@ class BuildVerticle : AbstractKotoedVerticle() {
                         val result =
                                 withContext(ee) {
                                     cmdStatus.state = BuildCommandState.RUNNING
-                                    val cl = CommandLine(command.commandLine)
+                                    val cl = CommandLine(command.commandLine, cmdStatus.cout, cmdStatus.cerr)
                                             .execute(randomName, env = env).complete()
                                     cmdStatus.state = BuildCommandState.FINISHED
                                     cl
                                 }
-                        buildStatusTable.getValue(request.buildId).commands[i].output =
-                                (result.cout + result.cerr).joinToString("\n")
-
-                        if (result.rcode.get() != 0) {
-                            log.error("[$randomName] " + result.cout.joinToString("\n"))
-                            log.error("[$randomName] " + result.cerr.joinToString("\n"))
-                            log.info("[$randomName] " + "Build failed, exit code is ${result.rcode.get()}")
+                        if (result.rcode.await() != 0) {
+                            log.error("[$randomName] " + result.cout)
+                            log.error("[$randomName] " + result.cerr)
+                            log.info("[$randomName] " + "Build failed, exit code is ${result.rcode.await()}")
 
                             return listOf(BuildResponse.BuildFailed(
                                     request.submissionId,
                                     request.buildId,
-                                    result.cout.joinToString("\n") +
-                                            result.cerr.joinToString("\n")))
+                                    "${result.cout}\n${result.cerr}\n"))
                         }
                         Unit
                     }
@@ -221,6 +224,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
             throw ex
         } finally {
             fs.deleteRecursiveAsync(randomName.absolutePath)
+            schedulingSemaphore.release()
             vertx.setTimer(300000) {
                 buildStatusTable.remove(request.buildId)
             }

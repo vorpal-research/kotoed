@@ -7,7 +7,8 @@ type BuildRequest = {
 type BuildCommandStatus = {
     commandLine: string,
     state: 'RUNNING' | 'FINISHED' | 'WAITING',
-    output: string | null
+    cout: string,
+    cerr: string
 }
 
 type BuildStatus = {

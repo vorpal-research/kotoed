@@ -38,7 +38,8 @@ data class BuildStatusRequest(val buildId: Int): Jsonable
 enum class BuildCommandState { RUNNING, FINISHED, WAITING }
 data class BuildCommandStatus(val commandLine: String,
                               var state: BuildCommandState,
-                              var output: String?): Jsonable
+                              val cout: StringBuilder,
+                              val cerr: StringBuilder): Jsonable
 data class BuildStatus(val request: BuildRequest,
                        val descriptor: String,
                        val commands: List<BuildCommandStatus>,

@@ -90,7 +90,7 @@ object Code {
 
     object Course {
         data class ReadRequest(val courseId: Int, val path: String) : Jsonable
-        data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
+        data class ReadResponse(val contents: CharSequence, val status: CloneStatus) : Jsonable
         data class ListRequest(val courseId: Int) : Jsonable
     }
 

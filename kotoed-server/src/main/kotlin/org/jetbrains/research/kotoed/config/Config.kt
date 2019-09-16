@@ -63,6 +63,7 @@ class GlobalConfig : Configuration() {
     class BuildSystemConfig : Configuration() {
         val StoragePath: String by "builds"
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() }
+        val MaxProcesses: Int by { Runtime.getRuntime().availableProcessors() * 2 }
 
         val DefaultEnvironment: Map<String, String> by {
             mapOf(

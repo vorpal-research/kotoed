@@ -382,6 +382,12 @@
             <artifactId>antlr4-runtime</artifactId>
             <version>${antlr4.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>nuprocess</artifactId>
+            <version>1.2.3</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -5,7 +5,7 @@ import org.jetbrains.research.kotoed.code.diff.DiffJsonable
 import org.jetbrains.research.kotoed.util.Jsonable
 import java.time.Instant
 
-data class VcsException(val messages: List<String>): Jsonable, Exception(messages.joinToString("\n"))
+data class VcsException(val messages: String): Jsonable, Exception(messages)
 
 enum class VCS { git, mercurial }
 enum class CloneStatus { done, failed, pending }
@@ -22,7 +22,7 @@ data class RepositoryInfo(
 ) : Jsonable
 
 data class ReadRequest(val uid: String, val path: String, val revision: String? = null) : Jsonable
-data class ReadResponse(val contents: String) : Jsonable
+data class ReadResponse(val contents: CharSequence) : Jsonable
 
 data class ListRequest(val uid: String, val revision: String?) : Jsonable
 data class ListResponse(val files: List<String>) : Jsonable

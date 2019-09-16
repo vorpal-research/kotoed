@@ -86,7 +86,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     private val <T> VcsResult<T>.result
         get() = when (this) {
             is VcsResult.Success -> v
-            is VcsResult.Failure -> throw VcsException(output.toList())
+            is VcsResult.Failure -> throw VcsException("$output")
         }
 
     @JsonableEventBusConsumerFor(Address.Code.Checkout)
@@ -125,7 +125,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             }
         }.result
 
-        return ReadResponse(contents = catRes.joinToString("\n"))
+        return ReadResponse(contents = catRes)
     }
 
     @JsonableEventBusConsumerFor(Address.Code.List)
@@ -147,7 +147,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             }
         }.result
 
-        return ListResponse(files = lsRes.toList())
+        return ListResponse(files = lsRes.lines())
     }
 
     @JsonableEventBusConsumerFor(Address.Code.Ping)
@@ -272,7 +272,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
                                         is VcsResult.Success -> CloneStatus.done
                                         else -> CloneStatus.failed
                                     },
-                                    errors = (res as? VcsResult.Failure)?.run { output.toList() }.orEmpty()
+                                    errors = (res as? VcsResult.Failure)?.run { output.lines() }.orEmpty()
                             )
 
                     log.trace("Cloning request for $url status: ${resp.status}")
@@ -332,7 +332,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             val vcsRes = if (message.path != null) root.diff(message.path, from, to)
             else root.diffAll(from, to)
 
-            parseGitDiff(vcsRes.result)
+            parseGitDiff(vcsRes.result.lineSequence())
         }
 
         return DiffResponse(contents = diffContents
@@ -351,7 +351,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val read = try { handleRead(request) } catch(ex: VcsException) { return null }
         val psiFactory = KtPsiFactory(compiler.project)
 
-        return psiFactory.createFile(request.path, read.contents)
+        return psiFactory.createFile(request.path, read.contents.toString())
     }
 
     fun findCorrespondingFunction(location: Location, fromFile: KtFile, toFile: KtFile): Pair<KtNamedFunction, KtNamedFunction>? {
@@ -411,7 +411,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             root.diff(message.location.filename.path, from, to)
         }.result
 
-        return LocationResponse(location = message.location.applyDiffs(parseGitDiff(diffRes)))
+        return LocationResponse(location = message.location.applyDiffs(parseGitDiff(diffRes.lineSequence())))
     }
 
     @JsonableEventBusConsumerFor(Address.Code.LocationDiff)

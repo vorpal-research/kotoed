@@ -224,6 +224,7 @@ internal fun Any?.tryToJson(): Any? =
             is Tuple -> JsonArray(toArray().map { it.tryToJson() })
             is VariantBase -> JsonObject("index" to index, "value" to value.tryToJson())
             is Number, is String, is Boolean -> this
+            is CharSequence -> toString()
             is Enum<*> -> toString()
             is Date -> time
             is Instant -> this.toEpochMilli()
@@ -334,7 +335,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
         is String ->
             when {
                 erasure.isSubclassOf(Enum::class) -> Enum.valueOf(this, erasure)
-                erasure.isSubclassOf(String::class) -> this
+                erasure.isSuperclassOf(String::class) -> this
                 else -> die()
             }
         is Number ->

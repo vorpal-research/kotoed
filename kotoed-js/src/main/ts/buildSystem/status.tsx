@@ -51,7 +51,7 @@ class BuildStatusView extends React.Component<WithId, BuildStatusState> {
                            collapsible defaultExpanded={false}
                            header={<pre>{v.commandLine}</pre>}
                            bsStyle={this.bsClassFor(v)}
-                    > { v.output && <pre>{v.output}</pre> }
+                    > { <pre>{v.cout}{'\n'}{v.cerr}</pre> }
                     </Panel>
                 )
             }
