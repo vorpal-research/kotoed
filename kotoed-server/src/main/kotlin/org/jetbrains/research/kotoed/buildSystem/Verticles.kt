@@ -237,7 +237,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
                 throw NoSuchElementException("No build currently running for id ${statusRequest.buildId}")
 
     @JsonableEventBusConsumerFor(Address.Api.BuildSystem.Build.Summary)
-    fun handleSummary() = buildStatusTable.values.toList()
+    fun handleSummary() = buildStatusTable.values.toList().sortedByDescending { it.startTime }
 }
 
 @AutoDeployable
