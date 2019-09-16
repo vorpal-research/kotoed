@@ -20,6 +20,7 @@ import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toJson
 import ru.spbstu.ktuples.Tuple
+import ru.spbstu.ktuples.joinToString
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant
@@ -173,7 +174,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
                             return listOf(BuildResponse.BuildFailed(
                                     request.submissionId,
                                     request.buildId,
-                                    "${result.cout}\n${result.cerr}\n"))
+                                    Tuple(result.cout, result.cerr).joinToString("\n")))
                         }
                         Unit
                     }

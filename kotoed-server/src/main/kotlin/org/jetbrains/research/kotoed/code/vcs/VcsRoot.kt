@@ -63,7 +63,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
     override suspend fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
         val res = CommandLine(git, "clone", "--bare", remote, local).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.await() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -75,7 +75,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
                     .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $out") }
         }
 
-        if (res.rcode.get() != 0) return die(res)
+        if (res.rcode.await() != 0) return die(res)
 
         return VcsResult.Success(Unit)
     }
@@ -101,27 +101,27 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
 
     override suspend fun cat(path: String, revision: Revision): VcsResult<CharSequence> {
         val res = CommandLine(git, "show", "${revision.rep}:$path").execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun diff(path: String, from: Revision, to: Revision): VcsResult<CharSequence> {
         val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol",
                 "${from.rep}..${to.rep}", "--", path).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun diffAll(from: Revision, to: Revision): VcsResult<CharSequence> {
         val res = CommandLine(git, "diff", "--minimal", "--ignore-space-at-eol",
                 "${from.rep}..${to.rep}").execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun ls(rev: Revision): VcsResult<CharSequence> {
         val res = CommandLine(git, "ls-tree", rev.rep, "-r", "--name-only").execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -137,7 +137,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
 
         val res = CommandLine(commands).execute(File(local), defaultEnv).complete()
 
-        if (res.rcode.get() == 0) {
+        if (res.rcode.await() == 0) {
             val rr = res.cout.lineSequence().first()
             val (frev, fbranch) = rr.split("+")
             val (fbranchName) = fbranch.split(", ")
@@ -147,7 +147,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
 
     override suspend fun ping(): VcsResult<Unit> {
         val res = CommandLine(git, "ls-remote", "-h", remote).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.await() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure("")
     }
 
@@ -156,7 +156,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
         val to = toLine ?: ""
         val res = CommandLine(git, "blame", "--date", "unix", "-L", "$from,$to", "--", path)
                 .execute(File(local), defaultEnv).complete()
-        if(res.rcode.get() == 0) {
+        if(res.rcode.await() == 0) {
             val output = res.cout.lineSequence().map { it.split(' ').filter { it.isNotEmpty() }[2].toLong() }
                     .min()?.let { Instant.ofEpochSecond(it) }
             return VcsResult.Success(output!!)
@@ -177,7 +177,7 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
     override suspend fun clone(): VcsResult<Unit> {
         File(local).mkdirs()
         val res = CommandLine(mercurial, "clone", "-U", remote, local).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.await() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -195,13 +195,13 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
 
         val res = CommandLine(commands).execute(File(local), defaultEnv).complete()
 
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout.lines().last().split(" ").let { Pair(it[0], it[1]) })
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout.lines().last().split(" ").let { Pair(it[0], it[1]) })
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun update(): VcsResult<Unit> {
         val res = CommandLine(mercurial, "pull").execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.await() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -211,14 +211,14 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
         val res = CommandLine(mercurial, "clone", "-r", revision.rep, local, targetDirectory)
                 .execute(File(targetDirectory), defaultEnv).complete()
 
-        if(res.rcode.get() != 0) return VcsResult.Failure(res.cerr)
+        if(res.rcode.await() != 0) return VcsResult.Failure(res.cerr)
 
         return VcsResult.Success(Unit)
     }
 
     override suspend fun cat(path: String, revision: Revision): VcsResult<CharSequence> {
         val res = CommandLine(mercurial, "cat", "-r", revision.rep, path).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -227,7 +227,7 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
                 mercurial, "diff",
                 "--git",
                 "-r", from.rep, "-r", to.rep, path).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
@@ -236,19 +236,19 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
                 mercurial, "diff",
                 "--git",
                 "-r", from.rep, "-r", to.rep).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun ls(rev: Revision): VcsResult<CharSequence> {
         val res = CommandLine(mercurial, "files", "-q", "-r", rev.rep).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(res.cout)
+        if (res.rcode.await() == 0) return VcsResult.Success(res.cout)
         else return VcsResult.Failure(res.cerr)
     }
 
     override suspend fun ping(): VcsResult<Unit> {
         val res = CommandLine(mercurial, "identify", remote).execute(File(local), defaultEnv).complete()
-        if (res.rcode.get() == 0) return VcsResult.Success(Unit)
+        if (res.rcode.await() == 0) return VcsResult.Success(Unit)
         else return VcsResult.Failure(res.cerr)
     }
 
