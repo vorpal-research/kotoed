@@ -41,8 +41,6 @@
         <javax-annotation.version>1.3.2</javax-annotation.version>
         <javax-activation.version>1.2.0</javax-activation.version>
 
-        <freemarker.version>2.3.28</freemarker.version>
-        <vcsreader.version>1.0.0</vcsreader.version>
         <diffparser.version>1.2</diffparser.version>
         <validation-api.version>2.0.1.Final</validation-api.version>
         <jersey-client.version>1.19.4</jersey-client.version>
@@ -58,13 +56,12 @@
         <wordnet-random-name.version>1.3</wordnet-random-name.version>
 
         <diff.version>1.1.11</diff.version>
-        <zt-process-killer.version>1.10</zt-process-killer.version>
-        <zt-exec.version>1.11</zt-exec.version>
         <commons-text.version>1.7</commons-text.version>
         <httpclient.version>4.5.9</httpclient.version>
         <web-push.version>5.0.2</web-push.version>
         <bcprov-jdk15on.version>1.62</bcprov-jdk15on.version>
         <antlr4.version>4.7.2</antlr4.version>
+        <nuprocess.version>1.2.3</nuprocess.version>
 
         <!--
             Properties overriten in db.properties
@@ -142,13 +139,6 @@
             <artifactId>vertx-dropwizard-metrics</artifactId>
             <version>${vertx.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>${freemarker.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
@@ -197,11 +187,6 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>${reflections.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.funktionale</groupId>
-            <artifactId>funktionale-all</artifactId>
-            <version>${funktionale.version}</version>
         </dependency>
 
         <dependency>
@@ -281,11 +266,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.vcsreader</groupId>
-            <artifactId>vcsreader</artifactId>
-            <version>${vcsreader.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.wickedsource</groupId>
             <artifactId>diffparser</artifactId>
             <version>${diffparser.version}</version>
@@ -337,24 +317,11 @@
             <artifactId>wordnet-random-name</artifactId>
             <version>${wordnet-random-name.version}</version>
         </dependency>
-
         <dependency>
             <groupId>com.sksamuel.diff</groupId>
             <artifactId>diff</artifactId>
             <version>${diff.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.zeroturnaround</groupId>
-            <artifactId>zt-exec</artifactId>
-            <version>${zt-exec.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zeroturnaround</groupId>
-            <artifactId>zt-process-killer</artifactId>
-            <version>${zt-process-killer.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
@@ -386,7 +353,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>nuprocess</artifactId>
-            <version>1.2.3</version>
+            <version>${nuprocess.version}</version>
         </dependency>
     </dependencies>
 
