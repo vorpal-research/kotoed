@@ -147,7 +147,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             }
         }.result
 
-        return ListResponse(files = lsRes.lines())
+        return ListResponse(files = lsRes.lines().filter { it.isNotEmpty() })
     }
 
     @JsonableEventBusConsumerFor(Address.Code.Ping)
