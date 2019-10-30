@@ -59,14 +59,15 @@ suspend fun handleCoursePerms(context: RoutingContext) {
 
     val course: CourseRecord = courseWrapper.record.toRecord()
 
-    val isValid = courseWrapper.verificationData.status == VerificationStatus.Processed
-            && course.state == CourseState.open
+    val isProcessed = courseWrapper.verificationData.status == VerificationStatus.Processed
+
+    val isOpen = course.state == CourseState.open
 
     val userIsTeacher = context.user().isAuthorisedAsync(Authority.Teacher)
 
     context.response().end(Permissions.Course(
-            createProject = isValid,
-            editCourse = isValid && userIsTeacher
+            createProject = isProcessed && isOpen,
+            editCourse = isProcessed && userIsTeacher
     ))
 }
 

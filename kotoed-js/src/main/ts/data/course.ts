@@ -1,12 +1,14 @@
 
 import {WithId} from "./common";
 
+export type CourseState =  "open" | "closed" | "frozen"
+
 export interface Course {
     name: string
     baseRepoUrl?: string
     baseRevision?: string
     buildTemplateId?: number
-    state: "open" | "closed" | "frozen"
+    state: CourseState
     icon?: string
 }
 

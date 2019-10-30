@@ -6,7 +6,7 @@ import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import {render} from "react-dom";
 import Row = require("react-bootstrap/lib/Row");
 import Panel = require("react-bootstrap/lib/Panel");
-import {CourseToRead} from "../data/course";
+import {CourseState, CourseToRead} from "../data/course";
 import {fetchCourse} from "./remote";
 import {WithId} from "../data/common";
 import {DbRecordWrapper} from "../data/verification";
@@ -39,6 +39,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
         reader.readAsBinaryString(e.target.files[0])
     };
 
+
     mkInputFor = (label: string, field: keyof CourseToRead, type = "input",
                   accept: string | undefined = undefined, onChange = this.bindInput(field)) =>
         <div className="form-group">
@@ -49,11 +50,34 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
                     className={ type === "file"? `form-control-file` : `form-control` }
                     id={`input-${field}`}
                     type={type}
-                    value={this.state[field] || ""}
+                    value={type === "file" ? "" : (this.state[field] || "")}
                     placeholder="not specified"
                     onChange={onChange}
                     accept={accept}
                 />
+            </div>
+        </div>;
+
+    // TODO make more generic if needed
+    mkStateSelect = () =>
+        <div className="form-group">
+            <label className="control-label col-sm-2"
+                   htmlFor={`input-state`}>State</label>
+            <div className="col-sm-10">
+                <select
+                    className="form-control"
+                    id={`input-state`}
+                    value={this.state.state}
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                        this.setState({
+                            state: e.target.value as CourseState
+                        })
+                    }}
+                >
+                    <option value="open">Open</option>
+                    <option value="frozen">Frozen</option>
+                    <option value="closed">Closed</option>
+                </select>
             </div>
         </div>;
 
@@ -89,6 +113,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
                         {this.mkInputFor("Build template ID", "buildTemplateId", "number")}
                         {this.mkInputFor("Icon file (*.png)", "icon", "file",
                         "image/png", this.bindFileInput("icon"))}
+                        {this.mkStateSelect()}
                         <div className="form-group">
                             <div className="col-sm-offset-2 col-sm-1">
                                 <a className="btn btn-primary btn-block" onClick={this.onSave}>Save</a>
