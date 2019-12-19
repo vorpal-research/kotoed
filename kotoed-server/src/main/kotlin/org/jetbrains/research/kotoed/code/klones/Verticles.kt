@@ -205,29 +205,31 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
                     }
 
-            ktFiles.asSequence()
-                    .flatMap { file ->
-                        file.collectDescendantsOfType<KtNamedFunction>().asSequence()
-                    }
-                    .filter { method ->
-                        method.annotationEntries.all { anno -> "@Test" != anno.text }
-                    }
-                    .map {
-                        it as PsiElement
-                    }
-                    .map { method ->
-                        method to method.dfs { children.asSequence() }
-                                .filter(Token.DefaultFilter)
-                                .map((::makeAnonimizedKtToken)
-                                        .bind(_0, mode)
-                                        .bind(_0, id)
-                                        .bind(_0, denizenId))
-                    }
-                    .forEach { (_, tokens) ->
-                        val lst = tokens.toList()
-                        log.trace("lst = $lst")
-                        val seqId = suffixTree.addSequence(lst)
-                    }
+            withContext(ee) {
+                ktFiles.asSequence()
+                        .flatMap { file ->
+                            file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                        }
+                        .filter { method ->
+                            method.annotationEntries.all { anno -> "@Test" != anno.text }
+                        }
+                        .map {
+                            it as PsiElement
+                        }
+                        .map { method ->
+                            method to method.dfs { children.asSequence() }
+                                    .filter(Token.DefaultFilter)
+                                    .map((::makeAnonimizedKtToken)
+                                            .bind(_0, mode)
+                                            .bind(_0, id)
+                                            .bind(_0, denizenId))
+                        }
+                        .forEach { (_, tokens) ->
+                            val lst = tokens.toList()
+                            log.trace("lst = ${lst.take(32)}")
+                            val seqId = suffixTree.addSequence(lst)
+                        }
+            }
         }
 
     }
