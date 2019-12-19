@@ -106,21 +106,30 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         when (req) {
             is ProcessCourseBaseRepo -> {
                 spawn(WithExceptions(::handleException)) {
-                    if (!handleBase(req.course)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        if (!handleBase(req.course)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             is ProcessSubmission -> {
                 spawn(WithExceptions(::handleException)) {
-                    if (!handleSub(req.submissionData)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        if (!handleSub(req.submissionData)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             is BuildCourseReport -> {
                 spawn(WithExceptions(::handleException)) {
-                    val data = courseSubmissionData(req.course)
-                    if (!handleReport(data)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        val data = courseSubmissionData(req.course)
+                        if (!handleReport(data)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             else -> {
@@ -174,19 +183,26 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
         if (mode to id in processed) return true
 
-        if (files.status != CloneStatus.done) {
-            log.trace("Repository not cloned yet")
-            return false
+        when (files.status) {
+            CloneStatus.failed -> {
+                log.trace("Repository cloning failed")
+                return false
+            }
+            CloneStatus.pending -> {
+                log.trace("Repository not cloned yet")
+                return false
+            }
+            CloneStatus.done -> {
+                val allFiles = files.root?.toFileSeq().orEmpty()
+
+                processKtFiles(allFiles.filter { it.endsWith(".kt") }.toList(), mode, id, denizenId)
+                processHsFiles(allFiles.filter { it.endsWith(".hs") }.toList(), mode, id, denizenId)
+
+                processed.add(mode to id)
+
+                return true
+            }
         }
-
-        val allFiles = files.root?.toFileSeq().orEmpty()
-
-        processKtFiles(allFiles.filter { it.endsWith(".kt") }.toList(), mode, id, denizenId)
-        processHsFiles(allFiles.filter { it.endsWith(".hs") }.toList(), mode, id, denizenId)
-
-        processed.add(mode to id)
-
-        return true
     }
 
     // TODO: provide some abstraction over Kotlin/Java/Haskell/XML/etc here
