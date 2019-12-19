@@ -97,6 +97,11 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             vertx.setTimer(5000, this::handleRequest)
         }
 
+        val left = kloneRequests.size
+        if (left % 10 == 1) {
+            log.trace("$left klone requests left")
+        }
+
         val req = kloneRequests.poll()
         when (req) {
             is ProcessCourseBaseRepo -> {
@@ -226,7 +231,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         }
                         .forEach { (_, tokens) ->
                             val lst = tokens.toList()
-                            log.trace("lst = ${lst.take(32)}")
+                            log.trace("lst = ${lst.joinToString(limit = 32)}")
                             val seqId = suffixTree.addSequence(lst)
                         }
             }
@@ -322,6 +327,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     suspend fun handleReport(data: List<JsonObject>): Boolean {
 
+        log.trace("Handling report...")
+
         val dataBySubmissionId = data.map { it.getInteger("id") to it }.toMap()
 
         val clones =
@@ -337,7 +344,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     0 == node.parentEdges.lastOrNull()?.begin
                 }
 
-        log.trace(clones.joinToString("\n"))
+        log.trace(clones.joinToString(separator = "\n", limit = 32))
 
         val filtered = clones
                 .map(::CloneClass)
