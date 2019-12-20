@@ -320,10 +320,10 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         return DSL.and(queryFields.map { table.field(it).eq(record[it]) })
     }
 
-    private fun jsonb_build_object(args: List<QueryPart>) =
+    private fun jsonb_build_object(args: List<QueryPart>): Field<Any?> =
             FunctionCall<Any>("jsonb_build_object", Any::class, args).coerce(PostgresDataTypeEx.JSONB)
 
-    private fun to_jsonb(arg: QueryPart) =
+    private fun to_jsonb(arg: QueryPart): Field<Any?> =
             FunctionCall<Any>("to_jsonb", arg).coerce(PostgresDataTypeEx.JSONB)
 
     private fun array(arg: QueryPart) =
