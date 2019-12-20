@@ -383,6 +383,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             log.trace(builder)
         }
 
+        // TODO: Better filtering of the same person clones
         val clonesBySubmission = filtered
                 .flatMap { cloneClass ->
                     cloneClass.clones.map { clone -> clone.submissionId to clone.denizenId to cloneClass }
