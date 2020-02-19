@@ -15,7 +15,7 @@ cd "$ME_DIR"
 
 # So we can rebuild kotoed jar while running
 COPY_DIR=$(mktemp -d --suffix=-kotoed)
-cp -f kotoed-server/target/kotoed-server-*-SNAPSHOT-fat.jar ${COPY_DIR}/kotoed.jar
+cp -f kotoed-all/target/kotoed-all-*-SNAPSHOT-fat.jar ${COPY_DIR}/kotoed.jar
 
 java \
     -Dkotlinx.coroutines.debug \

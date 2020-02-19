@@ -206,6 +206,7 @@ export namespace Generated {
         },
         Redirect: {
             ById: "/redirect/:entity/:id",
+            Root: "/redirect/",
         },
         Submission: {
             Index: "/submission/:id",

@@ -39,7 +39,7 @@ if [[ -z "${DIE_REQUESTED}" ]]; then
         -Dkotlinx.coroutines.debug \
         -Djava.net.preferIPv4Stack=true \
         -Dkotoed.settingsFile=deploySettings.json \
-        -jar kotoed-server/target/kotoed-server-0.1.0-SNAPSHOT-fat.jar &
+        -jar kotoed-all/target/kotoed-all-0.1.0-SNAPSHOT-fat.jar &
     KOTOED_PID=$!
 fi
 sleep 10 # Is it enough to vertx to extract cache?
