@@ -5,6 +5,7 @@ import {eventBus, SoftError} from "../eventBus";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ErrorMessages} from "../login/util";
 import {ChangeEvent, FormEvent, KeyboardEvent} from "react";
+import {sendAsync} from "../views/components/common";
 
 type LocalErrors = {
     emptyName: false
@@ -76,7 +77,7 @@ export class CourseCreate extends ComponentWithLocalErrors<CourseCreateProps, Co
 
     tryCreate = async () => {
         try {
-            await eventBus.send(Kotoed.Address.Api.Course.Create, {
+            await sendAsync(Kotoed.Address.Api.Course.Create, {
                 name: this.state.name
             });
             this.props.onCreate();

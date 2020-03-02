@@ -21,7 +21,7 @@ export async function fetchPermissions(id: number): Promise<ProjectPermissions> 
 }
 
 export async function fetchProject(id: number): Promise<DbRecordWrapper<ProjectToRead>> {
-    return await sendAsync<WithId, DbRecordWrapper<ProjectToRead>>(
+    return await sendAsync(
         Kotoed.Address.Api.Project.Read, {
             id
         });

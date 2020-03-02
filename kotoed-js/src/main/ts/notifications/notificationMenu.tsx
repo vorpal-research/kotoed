@@ -26,7 +26,9 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
     }
 
     invalidate = async () => {
-        let data = await sendAsync<{}, any[]>(Kotoed.Address.Api.Notification.RenderCurrent, {});
+        let data = await sendAsync(Kotoed.Address.Api.Notification.RenderCurrent,
+            { denizenId: -1 }// actually filled out in bridge filter
+        );
         await setStateAsync(this,{ currentNotifications: data });
     };
 
@@ -45,7 +47,7 @@ class NotificationMenu extends React.Component<NotificationMenuProps, Notificati
     }
 
     markAllRead = async () => {
-        await sendAsync<{}, {}>(Kotoed.Address.Api.Notification.MarkAllRead, {});
+        await sendAsync(Kotoed.Address.Api.Notification.MarkAllRead, {});
         this.invalidate();
     };
 

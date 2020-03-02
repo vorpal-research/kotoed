@@ -22,11 +22,11 @@ import org.jetbrains.research.kotoed.util.*
 class DenizenVerticle: AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Create)
-    suspend fun handleCreate(denizen: DenizenRecord): DbRecordWrapper =
+    suspend fun handleCreate(denizen: DenizenRecord): DbRecordWrapper<DenizenRecord> =
             DbRecordWrapper(dbCreateAsync(denizen), VerificationData.Processed)
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Read)
-    suspend fun handleRead(denizen: DenizenRecord): DbRecordWrapper =
+    suspend fun handleRead(denizen: DenizenRecord): DbRecordWrapper<DenizenRecord> =
             DbRecordWrapper(dbFetchAsync(denizen), VerificationData.Processed)
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.Read)
@@ -81,7 +81,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.Profile.UpdatePassword)
-    suspend fun handlePasswordUpdate(update: PasswordChangeRequest): Unit {
+    suspend fun handlePasswordUpdate(update: PasswordChangeRequest) {
         run<Unit> { sendJsonableAsync(Address.User.Auth.Login, LoginMsg(update.initiatorDenizenId, update.initiatorPassword)) }
         val target = dbFetchAsync(DenizenRecord().apply{ id = update.targetId })
         run<Unit> { sendJsonableAsync(Address.User.Auth.SetPassword, LoginMsg(target.denizenId, update.newPassword)) }
@@ -100,7 +100,7 @@ class DenizenVerticle: AbstractKotoedVerticle() {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Denizen.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject =
+    suspend fun handleSearchCount(query: SearchQuery): CountResponse =
             dbCountAsync(DENIZEN_TEXT_SEARCH) {
                 textSearch(query.text)
             }

@@ -21,7 +21,7 @@ class BuildSummaryView extends React.Component<{}, BuildSummaryState> {
     }
 
     tryLoad = async () => {
-        const remote = await sendAsync(Kotoed.Address.Api.BuildSystem.Build.Summary, {}) as BuildStatus[];
+        const remote = await sendAsync(Kotoed.Address.Api.BuildSystem.Build.Summary, undefined);
         const newState = {loading: false, summary: remote};
         this.setState(newState);
     };

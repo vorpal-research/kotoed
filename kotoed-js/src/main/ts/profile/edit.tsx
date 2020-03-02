@@ -21,20 +21,19 @@ let userId = parseInt(params.get("id")) || -1;
 
 interface EditableProfileInfo {
     id: number
-    denizenId?: string
+    denizenId: string
     email?: string
-    oauth?: [string, string | null][]
+    oauth?: [string, string][]
     firstName?: string
     lastName?: string
     group?: string
-    powerMode: boolean
     emailNotifications: boolean
 }
 
 interface EditablePasswordInfo {
     targetId: number
-    initiatorPassword?: string
-    newPassword?: string
+    initiatorPassword: string
+    newPassword: string
 }
 
 interface ProfileComponentProps {
@@ -146,7 +145,9 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         await setStateAsync(this, { disabled: true, success: false });
 
         try {
-            await sendAsync(Address.Api.Denizen.Profile.UpdatePassword, this.state.password, fallThroughErrorHandler);
+            await sendAsync(Address.Api.Denizen.Profile.UpdatePassword,
+                Object.assign(this.state.password, {initiatorDenizenId: "..."} /* actually filled out in bridge filter */),
+                fallThroughErrorHandler);
             await setStateAsync(this, { disabled: false, success: true })
         } catch(_) {
             this.setError("incorrectPassword");
@@ -276,8 +277,7 @@ class ProfileWrapper extends React.Component<{}, ProfileWrapperState> {
 
     loadDenizen = async () => {
         let profile =
-            await sendAsync<WithId, EditableProfileInfo>(Kotoed.Address.Api.Denizen.Profile.Read,
-                {id: userId});
+            await sendAsync(Kotoed.Address.Api.Denizen.Profile.Read, {id: userId});
         this.setState({denizen: profile})
     };
 

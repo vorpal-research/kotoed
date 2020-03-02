@@ -3,6 +3,7 @@ import {EventBusError} from "../../util/vertx";
 import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
+import {sendAsync} from "../../views/components/common";
 
 export type FileType = "file" | "directory"
 
@@ -10,14 +11,14 @@ export interface File {
     type: FileType;
     name: string,
     changed: boolean,
-    children: Array<File> | null
+    children?: Array<File>
 }
 
 
 type RootDirRequest = SubmissionIdRequest
 
 interface RootDirResponse extends ResponseWithStatus {
-    root: File
+    root?: File
 }
 
 interface FileRequest extends SubmissionIdRequest {
@@ -47,20 +48,20 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
 
 export async function fetchRootDir(submissionId: number): Promise<File> {
     let res = await repeatTillReady<RootDirResponse>(() => {
-        return eventBus.send(Kotoed.Address.Api.Submission.Code.List, {
+        return sendAsync(Kotoed.Address.Api.Submission.Code.List, {
             submissionId: submissionId
         })
     });
-    return res.root;
+    return res.root!;
 }
 
 export async function fetchFile(submissionId: number,
                                 path: string,
-                                fromLine: number | null = null,
-                                toLine: number | null = null): Promise<string> {
+                                fromLine: number | undefined = undefined,
+                                toLine: number | undefined = undefined): Promise<string> {
 
     let res = await repeatTillReady<FileResponse>(() => {
-        return eventBus.send(Kotoed.Address.Api.Submission.Code.Read, {
+        return sendAsync(Kotoed.Address.Api.Submission.Code.Read, {
             submissionId: submissionId,
             path: path,
             fromLine: fromLine,
@@ -72,7 +73,7 @@ export async function fetchFile(submissionId: number,
 
 export async function waitTillReady(submissionId: number): Promise<void> {
     await repeatTillReady<IsReadyResponse>(() => {
-        return eventBus.send(Kotoed.Address.Api.Submission.Code.Download, {
+        return sendAsync(Kotoed.Address.Api.Submission.Code.Download, {
             submissionId: submissionId,
         })
     });

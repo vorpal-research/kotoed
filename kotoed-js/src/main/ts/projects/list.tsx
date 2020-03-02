@@ -33,6 +33,7 @@ import {BloatDenizen, Denizen} from "../data/denizen";
 import {makeFullName, makeGroup, makeProfileLink, makeRealName} from "../util/denizen";
 import UrlPattern = Kotoed.UrlPattern;
 import * as ButtonToolbar from "react-bootstrap/lib/ButtonToolbar";
+import {sendAsync} from "../views/components/common";
 
 type ProjectWithVer = JumboProject & WithVerificationData & { cb: SearchCallback }
 
@@ -53,7 +54,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
     private cleanSubmission(submissionId: number) {
         eventBus.awaitOpen().then(_ => {
-            return eventBus.send(
+            return sendAsync(
                 Kotoed.Address.Api.Submission.Verification.Clean,
                 {"id": submissionId}
             )
@@ -132,7 +133,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     render() {
         return <tr>
             <td>{this.linkify(this.props.id.toString())}</td>
-            <td>{this.linkify(truncateString(this.props.name, 30))}{" "}{this.renderIcon()}</td>
+            <td>{this.linkify(truncateString(this.props.name || "", 30))}{" "}{this.renderIcon()}</td>
             <td>{this.renderProfileLinks(this.props.denizen)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
             <td>{this.renderOpenSubmissions()}</td>

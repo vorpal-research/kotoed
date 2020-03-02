@@ -79,9 +79,8 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
     protected processResults = (response: GenericResponse<ResultT>): Promise<any> => {
         let records = Promise.resolve(response.records);
         let errors = 0 < response.verificationData.errors.length
-            ? sendAsync<VerificationData, ErrorDesc[]>
-            (Kotoed.Address.Api.Submission.Error, response.verificationData)
-            : Promise.resolve([] as ErrorDesc[]);
+            ? sendAsync(Kotoed.Address.Api.Submission.Error, response.verificationData)
+            : Promise.resolve([]);
 
         return Promise.all([records, errors])
             .then(res => {
@@ -96,8 +95,8 @@ export abstract class ResultListHolder<ResultT> extends Component<ResultListHold
                 });
 
                 let shouldRetry =
-                    VerificationStatus[VerificationStatus.NotReady] == response.verificationData.status
-                    || VerificationStatus[VerificationStatus.Unknown] == response.verificationData.status
+                    "NotReady" == response.verificationData.status
+                    || "Unknown" == response.verificationData.status
                     || 0 == r.length + e.length;
 
                 if (shouldRetry) {

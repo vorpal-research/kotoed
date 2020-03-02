@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.CountResponse
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -22,7 +23,7 @@ import org.jetbrains.research.kotoed.util.database.toRecord
 class CourseVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Create)
-    suspend fun handleCreate(course: CourseRecord): DbRecordWrapper {
+    suspend fun handleCreate(course: CourseRecord): DbRecordWrapper<CourseRecord> {
         course.name = course.name.truncateAt(1024)
 
         if(course.buildTemplateId == null) {
@@ -40,14 +41,14 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Read)
-    suspend fun handleRead(course: CourseRecord): DbRecordWrapper {
+    suspend fun handleRead(course: CourseRecord): DbRecordWrapper<CourseRecord> {
         val res: CourseRecord = dbFetchAsync(course)
         val status: VerificationData = dbProcessAsync(res)
         return DbRecordWrapper(res, status)
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Update)
-    suspend fun handleUpdate(course: CourseRecord): DbRecordWrapper {
+    suspend fun handleUpdate(course: CourseRecord): DbRecordWrapper<CourseRecord> {
         val res: CourseRecord = dbUpdateAsync(course)
         val status: VerificationData = dbProcessAsync(res)
         return DbRecordWrapper(res, status)
@@ -83,7 +84,7 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
+    suspend fun handleSearchCount(query: SearchQuery): CountResponse {
         val q = ComplexDatabaseQuery("course_text_search").textSearch(query.text)
 
         return sendJsonableAsync(Address.DB.count("course_text_search"), q)

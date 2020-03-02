@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.config.Config
+import org.jetbrains.research.kotoed.data.api.CountResponse
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Public
@@ -442,8 +443,6 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
                     }
         }.let(::JsonArray)
     }
-
-    data class CountResponse(val count: Int) : Jsonable
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "queryCountAddress")
     suspend fun handleQueryCountWrapper(message: JsonObject) =

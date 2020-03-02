@@ -3,10 +3,7 @@ package org.jetbrains.research.kotoed.api
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.launch
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.SearchQuery
-import org.jetbrains.research.kotoed.data.api.VerificationData
-import org.jetbrains.research.kotoed.data.api.VerificationStatus
+import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.db.textSearch
@@ -73,7 +70,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Create)
-    suspend fun handleCreate(comment: SubmissionCommentRecord): DbRecordWrapper {
+    suspend fun handleCreate(comment: SubmissionCommentRecord): DbRecordWrapper<SubmissionCommentRecord> {
         comment.id = null
         comment.originalSubmissionId = comment.submissionId // NOTE: this is unconditional for a reason
         comment.state = SubmissionCommentState.open
@@ -84,7 +81,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
             SubmissionState.obsolete -> {
                 log.warn("Comment request for an obsolete submission received: " +
                         "Submission id = ${submission.id}")
-                val wrappedSuccessor: DbRecordWrapper =
+                val wrappedSuccessor: DbRecordWrapper<SubmissionRecord> =
                         sendJsonableAsync(
                                 Address.Api.Submission.Last,
                                 submission
@@ -92,7 +89,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
                 if(wrappedSuccessor.verificationData.status == VerificationStatus.Invalid) {
                     throw IllegalArgumentException("Applying comment to an incorrect submission")
                 }
-                val successor: SubmissionRecord = wrappedSuccessor.record.toRecord()
+                val successor: SubmissionRecord = wrappedSuccessor.record
                 log.trace("Newer submission found: id = ${successor.id}")
                 comment.submissionId = successor.id
                 // recursive message
@@ -144,7 +141,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.Update)
-    suspend fun handleUpdate(comment: SubmissionCommentRecord): DbRecordWrapper {
+    suspend fun handleUpdate(comment: SubmissionCommentRecord): DbRecordWrapper<SubmissionCommentRecord> {
         val existing = fetchByIdAsync(Tables.SUBMISSION_COMMENT, comment.id)
         existing.id ?: throw NotFound("Comment ${comment.id} not found")
         if(comment.text == null && existing.text != null) comment.text = existing.text
@@ -186,7 +183,7 @@ class SubmissionCommentVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Comment.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject {
+    suspend fun handleSearchCount(query: SearchQuery): CountResponse {
         val q = ComplexDatabaseQuery("submission_comment_text_search")
                 .join(table = "denizen", field = "author_id")
                 .join("submission")

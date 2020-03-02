@@ -2,10 +2,10 @@ import * as React from "react";
 import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Modal, Radio} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus, SoftError} from "../eventBus";
-import {RepoType} from "../data/project";
 import {ChangeEvent, KeyboardEvent} from "react";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ErrorMessages} from "../login/util";
+import {sendAsync} from "../views/components/common";
 
 type LocalErrors = {
     emptyName: boolean
@@ -23,7 +23,7 @@ interface ProjectCreateState {
     showModal: boolean
     remoteError?: string
     name: string
-    repoType: RepoType
+    repoType: string
     repoUrl: string
 }
 
@@ -102,7 +102,7 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
 
     tryCreate = async () => {
         try {
-            await eventBus.send(Kotoed.Address.Api.Project.Create, {
+            await sendAsync(Kotoed.Address.Api.Project.Create, {
                 name: this.state.name,
                 repoType: this.state.repoType,
                 repoUrl: this.state.repoUrl,
@@ -124,7 +124,7 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
 
     handleRepoTypeChange = (changeEvent: ChangeEvent<any>) => {
         this.setState({
-            repoType: changeEvent.target.value as RepoType
+            repoType: changeEvent.target.value as string
         });
     };
 
