@@ -1,32 +1,53 @@
 @import "./kotoed-bootstrap/variables.less";
 
 .login-wrapper {
+  margin: 0 auto;
+  justify-content: center;
+  align-items: center;
+  padding-top: 30vh;
+
+  @media (min-width: @screen-xs-min) {
     max-width: 330px;
-    margin: 0 auto;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-top: 30vh
+  }
 }
 
 .btn-toolbar.social-btn-toolbar > * {
-    float: none;
+  float: none;
 }
 
 .react-tabs > .login-tab.login-tab-selected {
-    border-left: 1px solid @nav-tabs-border-color;
-    border-right: 1px solid @nav-tabs-border-color;
-    border-bottom: 1px solid @nav-tabs-border-color;
-    border-bottom-left-radius: @border-radius-base;
-    border-bottom-right-radius: @border-radius-base;
-    padding: 10px;
+  border-left: 1px solid @nav-tabs-border-color;
+  border-right: 1px solid @nav-tabs-border-color;
+  border-bottom: 1px solid @nav-tabs-border-color;
+  border-bottom-left-radius: @border-radius-base;
+  border-bottom-right-radius: @border-radius-base;
+  padding: 10px;
 
-    @media (max-width: @screen-sm-min) {
-        border-top-left-radius: @border-radius-base !important;
-        border-top-right-radius: @border-radius-base !important;
-    }
+  @media (max-width: @screen-sm-min) {
+    border-top-left-radius: @border-radius-base !important;
+    border-top-right-radius: @border-radius-base !important;
+  }
 
-    @media (max-width: @screen-sm-min) {
-        border-top: 1px solid @nav-tabs-border-color;
-    }
+  @media (max-width: @screen-sm-min) {
+    border-top: 1px solid @nav-tabs-border-color;
+  }
+}
+
+.final-login > li > a {
+  margin-right: 0;
+}
+
+.nav-tabs {
+  text-align: center;
+  @media (max-width: @screen-sm-min) {
+    border-bottom: 0;
+  }
+  border-bottom: -1px;
+}
+
+.final-login li {
+  width: 50%;
+  border-bottom: 0;
+  margin-bottom: -2px;
 }

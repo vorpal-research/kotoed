@@ -1,5 +1,5 @@
 import * as React from "react"
-import SignInForm, {SignInFormProps} from "./SignInForm";
+import SignInForm from "./SignInForm";
 import {Tab, TabList, TabPanel, Tabs} from "react-tabs";
 import 'react-tabs/style/react-tabs.less';
 import SignUpForm from "./SignUpForm";
@@ -18,11 +18,12 @@ export interface SignInOrUpProps {
 
 export interface SignInOrUpCallbacks {
     onSignIn: (login: string, password: string) => void
-    onSignUp: (login: string, password: string, email: string|null) => void
+    onSignUp: (login: string, password: string, email: string | null) => void
     onTabSelect: (index: number) => void
     onStartOAuth: (provider: string) => void
     onMount: () => void
 }
+
 export default class SignInOrUp extends React.Component<RouteComponentProps<{}> & SignInOrUpProps & SignInOrUpCallbacks> {
 
     componentDidMount() {
@@ -58,7 +59,7 @@ export default class SignInOrUp extends React.Component<RouteComponentProps<{}> 
                     onSelect={index => this.props.onTabSelect(index)}
                     selectedTabClassName="active"
                     disabledTabClassName="disabled">
-                    <TabList className="nav nav-tabs nav-justified">
+                    <TabList className="nav nav-tabs final-login">
                         <Tab className="" disabled={this.props.disabled}><a>Sign In</a></Tab>
                         <Tab className="" disabled={this.props.disabled}><a>Sign Up</a></Tab>
                     </TabList>

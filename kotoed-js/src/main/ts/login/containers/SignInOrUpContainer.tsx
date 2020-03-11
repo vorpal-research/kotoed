@@ -27,7 +27,6 @@ const mapDispatchToProps = function(dispatch: Dispatch<SignInOrUpState>,
                                     ownProps: RouteComponentProps<{}>): SignInOrUpCallbacks {
     let qs = queryString.parse(ownProps.location.search);
     let provider = qs.andThenOAuthWith || undefined;
-    let conflict = qs.conflict || undefined;
     return {
         onSignIn: (username, password) => {
             dispatch(resetErrors({}));
