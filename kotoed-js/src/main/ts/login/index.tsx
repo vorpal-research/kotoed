@@ -4,6 +4,7 @@ import createHistory from 'history/createBrowserHistory'
 
 import "less/kotoed-bootstrap/bootstrap.less"
 import "less/login.less"
+import "less/modal.less"
 import {reducer} from "./reducers";
 import {applyMiddleware, createStore} from "redux";
 import thunk from "redux-thunk";
