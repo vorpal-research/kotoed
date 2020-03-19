@@ -1,17 +1,17 @@
 import * as React from "react";
-import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Row, Col, Modal, Label} from "react-bootstrap";
+import {Button, Thumbnail, Row, Col} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {embeddedImage, imagePath} from "../images";
-import {ChoosyByVerDataSearchTable, SearchTable} from "../views/components/search";
-import {eventBus, isSnafu, SoftError} from "../eventBus";
+import {ChoosyByVerDataSearchTable} from "../views/components/search";
 import {fetchPermissions} from "./remote";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import Planks from "../views/components/Planks";
 import {isStatusFinal, WithVerificationData} from "../data/verification";
-import {Course, CourseToRead} from "../data/course";
+import {CourseToRead} from "../data/course";
 import {CourseCreate} from "./create";
 
+import "less/modal.less"
 import "less/courses.less"
 
 type CourseWithVer = CourseToRead & WithVerificationData
@@ -19,8 +19,6 @@ type CourseWithVer = CourseToRead & WithVerificationData
 type CourseProps = CourseWithVer & {
     canCrushPlanks: boolean
 }
-
-const N_PLANKS = 7;
 
 class CourseComponent extends React.PureComponent<CourseProps> {
     constructor(props: CourseProps) {
@@ -69,7 +67,7 @@ class CourseComponent extends React.PureComponent<CourseProps> {
 }
 
 
-class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
+class CoursesSearch extends React.Component<{}, { canCreateCourse: boolean }> {
     constructor(props: {}) {
         super(props);
         this.state = {
@@ -104,9 +102,9 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
                 countAddress={Kotoed.Address.Api.Course.SearchCount}
                 elementComponent={(key, c: CourseWithVer) => <CourseComponent
                     canCrushPlanks={this.state.canCreateCourse} // TODO this is fucked up but adding `canCrushPlanks permission`
-                                                                // TODO to the backend is also fucked up
+                    // TODO to the backend is also fucked up
                     {...c}
-                    key={key} />}
+                    key={key}/>}
                 group={{
                     by: Infinity,
                     using: this.renderRow
