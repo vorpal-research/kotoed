@@ -11,6 +11,8 @@ import {WithId} from "../data/common";
 import ComponentWithLoading, {LoadingProperty} from "../views/components/ComponentWithLoading";
 import UrlPattern = Kotoed.UrlPattern;
 import SocialButton from "../login/components/SocialButton";
+import "less/modal.less"
+import "less/profile.less"
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Index, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -44,54 +46,53 @@ export class ProfileComponent extends ComponentWithLoading<ProfileComponentProps
         return <div className="panel">
             <div className="panel-heading">
                 <div className="row">
-                    <div className="col-sm-offset-1 col-sm-11">
+                    <div className="col-sm-12 text-center">
                         <h2>{this.props.denizen!.denizenId}</h2>
                     </div>
                 </div>
             </div>
+            <div>
+                <hr></hr>
+            </div>
             <div className="panel-body">
-                <form className="form-horizontal">
+                <div className="card-body">
                     <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputEmail">Email</label>
+                        <small className="control-label text-muted col-sm-2">Email</small>
                         <div className="col-sm-10">
                             <p className="form-control-static">{this.props.denizen!.email || "not specified"}</p>
                         </div>
                     </div>
                     <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputFirstName">First name</label>
+                        <small className="control-label text-muted col-sm-2">First name</small>
                         <div className="col-sm-10">
                             <p className="form-control-static">{this.props.denizen!.firstName || "not specified"}</p>
                         </div>
                     </div>
                     <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputLastName">Last name</label>
+                        <small className="control-label text-muted col-sm-2">Last name</small>
                         <div className="col-sm-10">
                             <p className="form-control-static">{this.props.denizen!.lastName || "not specified"}</p>
                         </div>
                     </div>
                     <div className="form-group">
-                        <label className="control-label col-sm-2"
-                               htmlFor="inputGroup">Group #</label>
+                        <small className="control-label text-muted col-sm-2">Group #</small>
                         <div className="col-sm-10">
                             <p className="form-control-static">{this.props.denizen!.group || "not specified"}</p>
                         </div>
                     </div>
                     <div className="form-group">
-                        <div className="col-sm-offset-2 col-sm-10">
+                        <div className="col-4 text-center">
                             <a className="btn btn-default" href={this.editUrl}>Edit</a>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     };
 
     render() {
         return <div className="row">
-            { this.props.loading? this.renderVeil(): this.renderBody() }
+            {this.props.loading ? this.renderVeil() : this.renderBody()}
         </div>
     }
 }

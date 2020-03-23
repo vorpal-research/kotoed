@@ -15,6 +15,8 @@ import {fallThroughErrorHandler} from "../eventBus";
 import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
 import {pick, typedKeys} from "../util/common";
 import * as _ from "lodash";
+import "less/profile.less"
+import "less/modal.less"
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -41,7 +43,7 @@ interface ProfileComponentProps {
     denizen: EditableProfileInfo
 }
 
-let noErrors = { badEmail: false, passwordsDontMatch: false, emptyPassword: false, incorrectPassword: false };
+let noErrors = {badEmail: false, passwordsDontMatch: false, emptyPassword: false, incorrectPassword: false};
 type LocalErrors = typeof noErrors;
 
 interface ProfileComponentState {
@@ -87,76 +89,76 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
 
     commitErrorsAsync = async (...picker: (keyof LocalErrors)[]) => {
         picker = picker || typedKeys(this.shadowErrors);
-        let newErrors = { ...this.state.localErrors, ...pick(this.shadowErrors, picker) };
-        await setStateAsync(this, { localErrors: newErrors });
+        let newErrors = {...this.state.localErrors, ...pick(this.shadowErrors, picker)};
+        await setStateAsync(this, {localErrors: newErrors});
     };
 
-    setDenizen = <K extends keyof EditableProfileInfo>(pick: Pick<EditableProfileInfo,K>) => {
-        this.setState({ success: false, denizen: Object.assign(this.state.denizen, pick) });
+    setDenizen = <K extends keyof EditableProfileInfo>(pick: Pick<EditableProfileInfo, K>) => {
+        this.setState({success: false, denizen: Object.assign(this.state.denizen, pick)});
     };
 
-    setPassword = <K extends keyof EditablePasswordInfo>(pick: Pick<EditablePasswordInfo,K>, errors: PasswordErrors) => {
-        this.setState({ success: false, password: Object.assign(this.state.password, pick) },
+    setPassword = <K extends keyof EditablePasswordInfo>(pick: Pick<EditablePasswordInfo, K>, errors: PasswordErrors) => {
+        this.setState({success: false, password: Object.assign(this.state.password, pick)},
             () => {
                 this.unsetError("emptyPassword");
                 this.unsetError("passwordsDontMatch");
                 this.unsetError("incorrectPassword");
-                if(errors.emptyPassword || errors.emptyPassword2) {
+                if (errors.emptyPassword || errors.emptyPassword2) {
                     this.setError("emptyPassword")
                 }
-                if(errors.passwordsDoNotMatch) {
+                if (errors.passwordsDoNotMatch) {
                     this.setError("passwordsDontMatch");
                 }
             });
     };
 
     bindInput = <K extends keyof EditableProfileInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
-        this.setDenizen({ [key]: e.target.value } as Pick<EditableProfileInfo, K>)
+        this.setDenizen({[key]: e.target.value} as Pick<EditableProfileInfo, K>)
     };
 
-    bindPassword = <K extends keyof EditablePasswordInfo>(key: K) => (password:  string, errors: PasswordErrors) => {
-        this.setPassword({ [key]: password } as Pick<EditablePasswordInfo, K>, errors)
+    bindPassword = <K extends keyof EditablePasswordInfo>(key: K) => (password: string, errors: PasswordErrors) => {
+        this.setPassword({[key]: password} as Pick<EditablePasswordInfo, K>, errors)
     };
 
     bindCheckbox = <K extends keyof EditableProfileInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
-        this.setDenizen({ [key]: e.target.checked } as Pick<EditableProfileInfo, K>)
+        this.setDenizen({[key]: e.target.checked} as Pick<EditableProfileInfo, K>)
     };
 
     onEmailChanged = (e: ChangeEvent<HTMLInputElement>) => {
         this.unsetError("badEmail");
-        if(e.target.value && !e.target.checkValidity()) this.setError("badEmail");
-        this.setDenizen({ email: e.target.value || undefined })
+        if (e.target.value && !e.target.checkValidity()) this.setError("badEmail");
+        this.setDenizen({email: e.target.value || undefined})
     };
 
     onSave = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         await this.commitErrorsAsync("badEmail");
-        if(this.hasErrors()) return;
+        if (this.hasErrors()) return;
 
-        await setStateAsync(this, { disabled: true, success: false });
+        await setStateAsync(this, {disabled: true, success: false});
         await sendAsync(Address.Api.Denizen.Profile.Update, this.state.denizen);
-        await setStateAsync(this, { disabled: false, success: true });
+        await setStateAsync(this, {disabled: false, success: true});
     };
 
     onSavePassword = async (e: MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         await this.commitErrorsAsync("emptyPassword", "incorrectPassword", "passwordsDontMatch");
-        if(this.hasErrors()) return;
+        if (this.hasErrors()) return;
 
-        await setStateAsync(this, { disabled: true, success: false });
+        await setStateAsync(this, {disabled: true, success: false});
 
         try {
             await sendAsync(Address.Api.Denizen.Profile.UpdatePassword, this.state.password, fallThroughErrorHandler);
-            await setStateAsync(this, { disabled: false, success: true })
-        } catch(_) {
+            await setStateAsync(this, {disabled: false, success: true})
+        } catch (_) {
             this.setError("incorrectPassword");
             await this.commitErrorsAsync("emptyPassword", "incorrectPassword", "passwordsDontMatch");
-            await setStateAsync(this, { disabled: false, success: false });
+            await setStateAsync(this, {disabled: false, success: false});
         }
     };
 
     renderSuccess = () => {
-        if(this.state.success) {
+        if (this.state.success) {
             return <div className="alert alert-success">The profile updated successfully</div>;
         } else return null;
     };
@@ -203,24 +205,24 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         return <div className="panel">
             <div className="panel-heading">
                 <div className="row">
-                    <div className="col-sm-offset-1 col-sm-11">
+                    <div className="col-sm-12 text-center">
                         <h2>{this.props.denizen!.denizenId}</h2>
                     </div>
                 </div>
             </div>
             <div className={`panel-body`}>
-                <form className={`form-horizontal ${this.state.disabled? "disabled":""}`}>
-                    <div className="col-sm-offset-1 col-sm-11">
-                        { this.renderSuccess() }
-                        { this.renderErrors() }
+                <form className={`form-horizontal ${this.state.disabled ? "disabled" : ""}`}>
+                    <div className="text-center">
+                        {this.renderSuccess()}
+                        {this.renderErrors()}
                     </div>
-                    { this.mkInputFor("Email", "email", "email", this.onEmailChanged) }
-                    { this.renderCheckBox() }
-                    { this.mkInputFor("First name", "firstName") }
-                    { this.mkInputFor("Last name", "lastName") }
-                    { this.mkInputFor("Group #", "group") }
+                    {this.mkInputFor("Email", "email", "email", this.onEmailChanged)}
+                    {this.renderCheckBox()}
+                    {this.mkInputFor("First name", "firstName")}
+                    {this.mkInputFor("Last name", "lastName")}
+                    {this.mkInputFor("Group #", "group")}
                     <div className="form-group">
-                        <div className="col-sm-offset-2 col-sm-10">
+                        <div className="text-center">
                             <a className="btn btn-default" onClick={this.onSave}>Save</a>
                         </div>
                     </div>
@@ -228,7 +230,8 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                         setPassword={false}
                         prefix="initiator-"
                         onChange={this.bindPassword("initiatorPassword")}
-                        onEnter={() => {}}
+                        onEnter={() => {
+                        }}
                         classNames={{
                             label: "control-label col-sm-2",
                             inputWrapper: "col-sm-10"
@@ -240,7 +243,8 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                         setPassword={true}
                         prefix="target-"
                         onChange={this.bindPassword("newPassword")}
-                        onEnter={() => {}}
+                        onEnter={() => {
+                        }}
                         classNames={{
                             label: "control-label col-sm-2",
                             inputWrapper: "col-sm-10"
@@ -250,7 +254,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                         placeholderRepeat="not specified"
                     />
                     <div className="form-group">
-                        <div className="col-sm-offset-2 col-sm-10">
+                        <div className="text-center">
                             <a className="btn btn-default" onClick={this.onSavePassword}>Change password</a>
                         </div>
                     </div>
