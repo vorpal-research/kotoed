@@ -11,7 +11,6 @@ import {WithId} from "../data/common";
 import ComponentWithLoading, {LoadingProperty} from "../views/components/ComponentWithLoading";
 import UrlPattern = Kotoed.UrlPattern;
 import SocialButton from "../login/components/SocialButton";
-import "less/modal.less"
 import "less/profile.less"
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Index, window.location.pathname) || new Map();

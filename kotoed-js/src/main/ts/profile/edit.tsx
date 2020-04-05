@@ -16,7 +16,6 @@ import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
 import {pick, typedKeys} from "../util/common";
 import * as _ from "lodash";
 import "less/profile.less"
-import "less/modal.less"
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -255,7 +254,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                     />
                     <div className="form-group">
                         <div className="text-center">
-                            <a className="btn btn-default" onClick={this.onSavePassword}>Change password</a>
+                            <a className="btn btn-default" onClick={this.onSavePassword}>Change</a>
                         </div>
                     </div>
                 </form>

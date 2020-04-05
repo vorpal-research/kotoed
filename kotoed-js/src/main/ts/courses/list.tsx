@@ -11,7 +11,6 @@ import {isStatusFinal, WithVerificationData} from "../data/verification";
 import {CourseToRead} from "../data/course";
 import {CourseCreate} from "./create";
 
-import "less/modal.less"
 import "less/courses.less"
 
 type CourseWithVer = CourseToRead & WithVerificationData
