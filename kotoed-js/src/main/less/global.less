@@ -4,6 +4,13 @@ html, body {
   overflow-x: hidden;
 }
 
+.container-sm {
+  @media (min-width: 768px) {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+}
+
 #notifications-menu {
   min-width: 500px;
 }
@@ -91,4 +98,9 @@ img.emoji.bigger {
 #snafu-good-luck-dialog-okay {
   width: 50%;
   text-align: center;
+}
+
+.row {
+  margin-right: 0;
+  margin-left: 0;
 }
