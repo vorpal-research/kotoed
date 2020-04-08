@@ -6,6 +6,7 @@ import {ChangeEvent, KeyboardEvent} from "react";
 import {CreateRequest, SubmissionToRead} from "../data/submission";
 import {DbRecordWrapper} from "../data/verification";
 import {sendAsync} from "../views/components/common";
+import "less/newSubmission.less"
 
 interface SubmissionCreateProps {
     onCreate: (newId: number) => void
@@ -209,6 +210,8 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
                     <Button disabled={this.state.disabled} bsStyle="danger" onClick={() => this.tryCreate(this.state.revision)}>
                         Submit anyway
                     </Button>
+                    <div className="vspace-10">
+                    </div>
                     <Button onClick={() => {
                         this.hideAreYouSureModal();
                         this.dismissState();

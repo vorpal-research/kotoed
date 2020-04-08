@@ -67,8 +67,8 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
 
     private renderReviewList = (): JSX.Element => {
         if (isSubmissionAvalable({
-                ...this.props.submission.record as SubmissionToRead,
-                verificationData: this.props.submission.verificationData
+            ...this.props.submission.record as SubmissionToRead,
+            verificationData: this.props.submission.verificationData
         }))
             return <a href={makeSubmissionReviewUrl(this.props.submission.record.id)}>Link</a>;
         else
@@ -91,7 +91,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
     };
 
     private renderLabel = (): JSX.Element | null => {
-        switch(this.props.submission.verificationData.status) {
+        switch (this.props.submission.verificationData.status) {
             case "Unknown":
             case "NotReady":
                 return <Spinner name="three-bounce" color="gray" fadeIn="none" className="display-inline"/>;
@@ -145,14 +145,14 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
         if (!this.props.permissions.changeState)  // Separate permission would be nice, but I am too lazy
             return null;
         else if (this.props.submission.record.state != "open" &&
-                this.props.submission.record.state != "closed" &&
-                this.props.submission.record.state != "invalid")
+            this.props.submission.record.state != "closed" &&
+            this.props.submission.record.state != "invalid")
             return null;
         else
             return <OverlayTrigger trigger="click" placement="bottom" overlay={
                 <Popover id="can-delete-popover">
                     <strong>Are you sure?</strong>
-                    <br />
+                    <br/>
                     <Button bsStyle="danger"
                             block
                             onClick={this.props.onDelete}>
@@ -206,7 +206,7 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                     obj={this.props.submission} gaveUp={false}/>
             </Row>
             <Row>
-                <div className="pull-right">
+                <div className="pull-left">
                     <ButtonToolbar>
                         {this.renderDelete()}
                         {this.renderClean()}
@@ -228,8 +228,9 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                         {this.renderLabel()}
                     </h3>
                     {this.renderTagList()}
-                    <Table className="submission-details">
-                        <tbody>
+                    <div className="table-responsive">
+                        <Table className="submission-details">
+                            <tbody>
                             <tr>
                                 <td className="col-md-3">Created at</td>
                                 <td className="col-md-9">{moment(this.props.submission.record.datetime).format('LLLL')}</td>
@@ -240,7 +241,8 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                             </tr>
                             <tr>
                                 <td className="col-md-3">Repo</td>
-                                <td className="col-md-9"><a href={this.props.submission.record.project.repoUrl}>Link</a></td>
+                                <td className="col-md-9"><a href={this.props.submission.record.project.repoUrl}>Link</a>
+                                </td>
                             </tr>
                             <tr>
                                 <td className="col-md-3">Author</td>
@@ -270,8 +272,9 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
                                     <AggregatesLabel {...this.props.comments}/>
                                 </td>
                             </tr>
-                        </tbody>
-                    </Table>
+                            </tbody>
+                        </Table>
+                    </div>
                 </Well>
             </Row>
             {this.props.history.length > 0 && <Row>

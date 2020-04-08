@@ -159,7 +159,7 @@ export class SearchTable<DataType, QueryType = {}> extends
         if (props.toolbarComponent !== undefined) {
             let tbc = props.toolbarComponent;
             this.renderToolbar =  () => <div className="search-toolbar">
-                <div className="pull-right">
+                <div className="pull-left">
                     {tbc(this.redoSearch)}
                 </div>
                 <div className="clearfix"/>
