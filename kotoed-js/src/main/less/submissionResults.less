@@ -1,5 +1,6 @@
 @import "./kotoed-bootstrap/bootstrap";
 @import "./kotoed-bootstrap/variables.less";
+@import "./mobile-global.less";
 
 .test-data-column {
   div.collapse[aria-hidden="true"], div.collapse[aria-expanded="false"] {
@@ -7,7 +8,29 @@
     height: 92px !important;
     overflow: hidden;
   }
+
   div.collapsing[aria-hidden="true"], div.collapsing[aria-expanded="false"] {
     height: 92px !important;
   }
+}
+
+.btn {
+  font-size: 2rem;
+}
+
+.well > h3 {
+  font-size: 3rem;
+}
+
+.react-tabs__tab-list, .btn-default, .pagination {
+  font-size: 2rem;
+}
+
+.form-control {
+  font-size: 2rem;
+  height: 4rem;
+}
+
+.alert-warning, .table-bordered {
+  font-size: 1.7rem;
 }
