@@ -62,8 +62,14 @@ interface CodeReviewPropsFromRouting {
     scrollTo: ScrollTo
 }
 
+interface ToggleState {
+    isToggleOn: boolean
+    value: string
+    name: string
+}
+
 export interface CodeReviewCallbacks {
-    editor : {
+    editor: {
         onMarkerExpand: (file: string, lineNumber: number) => void
         onMarkerCollapse: (file: string, lineNumber: number) => void
     }
@@ -91,7 +97,24 @@ export interface CodeReviewCallbacks {
 
 export type CodeReviewPropsAndCallbacks = CodeReviewProps & CodeReviewCallbacks
 
-export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting> {
+export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting, ToggleState> {
+    constructor() {
+        super();
+        this.state = {
+            isToggleOn: true,
+            value: "none",
+            name: "Show menu"
+        };
+        this.handleClick = this.handleClick.bind(this);
+    }
+
+    handleClick() {
+        this.setState({
+            isToggleOn: !this.state.isToggleOn,
+            value: this.state.isToggleOn ? "flex" : "none",
+            name: this.state.isToggleOn ? "Hide menu" : "Show menu"
+        })
+    }
 
     makeOriginalLinkOrUndefined = (comment: BaseCommentToRead) => {
         if (this.props.comments.makeOriginalLink && comment.submissionId !== this.props.submissionId)
@@ -136,7 +159,9 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                                        codeAnnotations={this.props.annotations.get(this.props.editor.file) || []}
                     />;
                 else
-                    return <div className="no-file-chosen"><div>Please choose file</div></div>
+                    return <div className="no-file-chosen">
+                        <div>Please choose file</div>
+                    </div>
         }
     };
 
@@ -149,27 +174,39 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
 
 
     renderReview = () => {
-        return <div className="row code-review">
-            <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
-                {this.renderFileTreeVeil()}
-                <div className="code-review-tree-container">
-                    <FileTree root={this.props.fileTree.root}
-                              onDirExpand={this.props.fileTree.onDirExpand}
-                              onDirCollapse={this.props.fileTree.onDirCollapse}
-                              onFileSelect={this.props.fileTree.onFileSelect}
-                              loading={this.props.fileTree.loading}
-                              lostFoundAggregate={this.props.lostFound.aggregate}
-                    />
-                    <div className="lost-found-button-container">
-                        <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
-                            Lost + Found {" "}
-                            <AggregatesLabel {...this.props.lostFound.aggregate}/>
-                        </Button>
+        return <div>
+            <div className="row">
+                <button className="btn btn-default" onClick={this.handleClick}>{this.state.name}</button>
+            </div>
+            <div className="vspace-10">
+            </div>
+            <div className="row code-review">
+                <div className="col-xs-6 col-sm-4 col-md-3 col-lg-2 col-xl-2" id="code-review-left"
+                     style={{display: this.state.value}}>
+                    {this.renderFileTreeVeil()}
+                    <div className="code-review-tree-container">
+                        <FileTree root={this.props.fileTree.root}
+                                  onDirExpand={this.props.fileTree.onDirExpand}
+                                  onDirCollapse={this.props.fileTree.onDirCollapse}
+                                  onFileSelect={this.props.fileTree.onFileSelect}
+                                  loading={this.props.fileTree.loading}
+                                  lostFoundAggregate={this.props.lostFound.aggregate}
+                        />
+                        <div className="lost-found-button-container">
+                            <Button bsStyle="warning" className="lost-found-button"
+                                    onClick={this.props.lostFound.onSelect}>
+                                Lost + Found {" "}
+                                <AggregatesLabel {...this.props.lostFound.aggregate}/>
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
-                {this.renderRightSide()}
+                <div>
+                    <AggregatesLabel {...this.props.lostFound.aggregate} />
+                </div>
+                <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
+                    {this.renderRightSide()}
+                </div>
             </div>
         </div>
     };

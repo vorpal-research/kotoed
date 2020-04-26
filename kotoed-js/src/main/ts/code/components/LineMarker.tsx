@@ -40,6 +40,7 @@ interface LineMarkerState {
 export default class LineMarkerComponent extends React.Component<LineMarkerProps, LineMarkerState> {
     private widget: LineWidget | undefined;
     private container: HTMLDivElement = document.createElement("div");
+
     constructor(props: LineMarkerProps) {
         super(props);
         this.widget = undefined;
@@ -61,7 +62,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
         return this.state.expanded ? "review-shown" : "review-hidden";
     };
 
-    
+
     handleLineWidgetChanged = () => {
         if (this.widget)
             this.widget.changed();
@@ -99,7 +100,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
 
     private doCollapse = () => {
         unmountComponentAtNode(this.container);
-        let li = this.props.editor.lineInfo(this.props.lineNumber  - 1);
+        let li = this.props.editor.lineInfo(this.props.lineNumber - 1);
         li.widgets[0].clear();
         this.widget = undefined;
     };
@@ -125,7 +126,7 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             this.doCollapse();
             this.props.onCollapse(this.props.lineNumber);
         }
-        this.setState({ expanded: false });
+        this.setState({expanded: false});
     };
 
     getPencilWrapperClasses = () => {
