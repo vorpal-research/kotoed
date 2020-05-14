@@ -136,23 +136,31 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             return "comment-form-hidden";
     };
 
+    renderPencil() {
+        let glyphicon = window.innerWidth < 769 ? <Glyphicon glyph="pencil" onTouchStart={this.onClick}/> :
+            <Glyphicon glyph="pencil" onClick={this.onClick}/>;
+
+        return (
+            <div className={`comments-pencil-wrapper ${this.getPencilWrapperClasses()}`}>
+                {glyphicon}
+            </div>
+        );
+    }
+
     renderCounter() {
         let agg: CommentAggregate = {
             open: this.props.comments.filter((c: Comment) => c.state === "open").count(),
             closed: this.props.comments.filter((c: Comment) => c.state === "closed").count()
         };
-        return (
-            <div className="comments-counter-wrapper" onClick={this.onClick}>
-                <AggregatesLabel {...agg}/>
-            </div>
-        );
-    }
 
-    renderPencil() {
+        let res = window.innerWidth < 769 ? <div className="comments-counter-wrapper" onTouchStart={this.onClick}>
+            <AggregatesLabel {...agg}/>
+        </div> : <div className="comments-counter-wrapper" onClick={this.onClick}>
+            <AggregatesLabel {...agg}/>
+        </div>;
+
         return (
-            <div className={`comments-pencil-wrapper ${this.getPencilWrapperClasses()}`}>
-                <Glyphicon glyph="pencil" onClick={this.onClick}/>
-            </div>
+            res
         );
     }
 

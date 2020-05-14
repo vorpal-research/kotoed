@@ -47,7 +47,8 @@ export class TextEditor extends React.Component<TextEditorProps> {
     private sortedTemplates: CommentTemplates;
 
     constructor(props: TextEditorProps) {
-        super(props)
+        super(props);
+        this.focus = this.focus.bind(this);
     }
 
     componentWillMount() {
@@ -302,7 +303,12 @@ export class TextEditor extends React.Component<TextEditorProps> {
 
     }
 
+    componentDidUpdate() {
+        this.focus()
+    }
+
     componentDidMount() {
+        this.focus();
         this.mousetrap = new Mousetrap(this.textArea);
         this.mousetrap.bind("mod+enter", () =>
             this.props.disabled || this.props.onCtrlEnter());
