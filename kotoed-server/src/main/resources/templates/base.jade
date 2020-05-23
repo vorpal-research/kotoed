@@ -21,5 +21,6 @@ html
 
         if context.vendorJs
             script(type="text/javascript", src=context.vendorJs)
+            script(type="text/javascript", src=static.staticPath("static/register.js", true))
         if context.js
             script(type="text/javascript", src=context.js)

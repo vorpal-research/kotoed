@@ -59,7 +59,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         let labels: Array<JSX.Element> = [];
 
         if (this.props.state === "closed")
-            labels.push(<Label key="resolved"  bsStyle="default">Resolved</Label>);
+            labels.push(<Label key="resolved" bsStyle="default">Resolved</Label>);
 
         if (this.state.editState === "preview")
             labels.push(<Label key="preview" bsStyle="warning">Preview</Label>);
@@ -208,13 +208,13 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
 
     renderPreviewPanelBodyContent = () => {
         return <ReactMarkdown
-                source={this.state.editText}
-                className="comment-markdown"
-                renderers={{
-                    CodeBlock: CmrmCodeBlock,
-                    Text: twemojifyNode
-                }}
-                escapeHtml={true}
+            source={this.state.editText}
+            className="comment-markdown"
+            renderers={{
+                CodeBlock: CmrmCodeBlock,
+                Text: twemojifyNode
+            }}
+            escapeHtml={true}
         />;
     };
 
@@ -230,24 +230,27 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
         }
     };
 
+    btn = (style: string, text: String, onEdit: () => void) => {
+        return window.innerWidth < 992 ?
+            <Button bsStyle={style}
+                    onTouchStart={onEdit}>{text}</Button> :
+            <Button bsStyle={style}
+                    onClick={onEdit}>{text}</Button>
+    };
+
     renderEditPreviewPanelFooter = () => {
         return <p>
-            <Button bsStyle="success"
-                    onClick={async () => {
-                        await setStateAsync(this, {editState: "display"});
-                        this.props.onEdit(this.props.id, this.state.editText);
-                    }}>
-                Save
-            </Button>
+            {this.btn("success", "Save",
+                async () => {
+                    await setStateAsync(this, {editState: "display"});
+                    this.props.onEdit(this.props.id, this.state.editText);
+                })}
             {" "}
-            <Button bsStyle="danger"
-                    onClick={async () => {
-                        await setStateAsync(this, {editState: "display"});
-                        this.props.onCancelEdit && this.props.onCancelEdit(this.props.id, this.state.editText);
-                    }}>
-                Cancel
-            </Button>
-
+            {this.btn("danger", "Cancel",
+                async () => {
+                    await setStateAsync(this, {editState: "display"});
+                    this.props.onCancelEdit && this.props.onCancelEdit(this.props.id, this.state.editText);
+                })}
         </p>;
     };
 
@@ -275,7 +278,7 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     }
 
     getTextAreaStyle = () => {
-        switch(this.state.editState) {
+        switch (this.state.editState) {
             case "display":
             case "preview":
                 return {
@@ -294,7 +297,8 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
                 onChange={(text) => setStateAsync(this, {editText: text})}
                 panelDisabled={this.state.editState !== "edit"}
                 disabled={false}
-                onEscape={() => {}}
+                onEscape={() => {
+                }}
                 onCtrlEnter={() => this.props.onEdit(this.props.id, this.state.editText)}
                 commentTemplates={this.props.commentTemplates}
             />

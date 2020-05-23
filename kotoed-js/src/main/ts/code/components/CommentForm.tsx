@@ -24,7 +24,7 @@ interface CommentFormProps {
 
 interface CommentFormState {
     editText: string
-    editState: "edit"|"preview"
+    editState: "edit" | "preview"
 }
 
 export default class CommentForm extends React.Component<CommentFormProps, CommentFormState> {
@@ -53,11 +53,13 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         this.setState((prev) => {
             switch (prev.editState) {
                 case "preview":
+                    this.editor.focus();
                     return {
                         ...prev,
                         editState: "edit"
                     };
                 case "edit":
+                    this.editor.focus();
                     return {
                         ...prev,
                         editState: "preview"
@@ -132,18 +134,22 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
         }
     };
 
-
     renderPanelFooter = () => {
-        return <ButtonToolbar>
-            <Button bsStyle="success"
-                    onClick={() => this.props.onSubmit(this.state.editText)}
-                    disabled={this.props.formState.processing}>
-                Send
-            </Button>
-        </ButtonToolbar>
+        let button = window.innerWidth < 992 ? <Button bsStyle="success"
+                                                       onTouchStart={() => this.props.onSubmit(this.state.editText)}
+                                                       disabled={this.props.formState.processing}>
+            Send
+        </Button> : <Button bsStyle="success"
+                            onClick={() => this.props.onSubmit(this.state.editText)}
+                            disabled={this.props.formState.processing}>
+            Send
+        </Button>;
+
+        return <ButtonToolbar> {button} </ButtonToolbar>
     };
 
     private mousetrap: MousetrapInstance | undefined;
+
     componentWillUnmount() {
     }
 
@@ -164,7 +170,7 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     }
 
     getTextAreaStyle = () => {
-        switch(this.state.editState) {
+        switch (this.state.editState) {
             case "preview":
                 return {
                     display: "none"
@@ -177,16 +183,16 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     renderEditArea = (): JSX.Element => {
         return <div style={this.getTextAreaStyle()}>
             <TextEditor
-                    ref={(ref) => this.editor = ref!}
-                    text={this.state.editText}
-                    onChange={(text) => setStateAsync(this, {editText: text})}
-                    panelDisabled={this.state.editState !== "edit"}
-                    disabled={this.props.formState.processing}
-                    onEscape={this.props.onCancel}
-                    onCtrlEnter={() => this.props.onSubmit(this.state.editText)}
-                    commentTemplates={this.props.commentTemplates}
+                ref={(ref) => this.editor = ref!}
+                text={this.state.editText}
+                onChange={(text) => setStateAsync(this, {editText: text})}
+                panelDisabled={this.state.editState !== "edit"}
+                disabled={this.props.formState.processing}
+                onEscape={this.props.onCancel}
+                onCtrlEnter={() => this.props.onSubmit(this.state.editText)}
+                commentTemplates={this.props.commentTemplates}
             />
-            </div>
+        </div>
     };
 
     render() {

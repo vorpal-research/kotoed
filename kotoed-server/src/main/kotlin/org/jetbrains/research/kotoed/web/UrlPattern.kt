@@ -88,6 +88,10 @@ object UrlPattern {
         const val ById = "/notification/:id"
     }
 
+    object CacheWorker {
+        const val Index = "/cachingWorker.js"
+    }
+
     const val EventBus = "/eventbus/*"
     const val Static = "/static/*"
 
