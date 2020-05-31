@@ -58,8 +58,8 @@ const config: webpack.Configuration = {
         courseReport: kotoedEntry("./ts/views/courseReport.tsx"),
         images: "./ts/images.ts",
         serviceWorker: "./ts/notifications/serviceWorker.js",
-        sw: "./ts/caching/sw.js",
-        register: "./ts/caching/register.js"
+        sw: "./js/caching/sw.js",
+        register: "./js/caching/register.js"
     },
     output: {
         path: dstPath,
