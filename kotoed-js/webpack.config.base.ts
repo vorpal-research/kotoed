@@ -28,6 +28,7 @@ function kotoedEntry(root: string, notifications: boolean = true): string[] {
 
         yield root;
     }
+
     return [...gen()]
 }
 
@@ -57,7 +58,7 @@ const config: webpack.Configuration = {
         courseReport: kotoedEntry("./ts/views/courseReport.tsx"),
         images: "./ts/images.ts",
         serviceWorker: "./ts/notifications/serviceWorker.js",
-        cachingWorker: "./ts/caching/cachingWorker.js",
+        sw: "./ts/caching/sw.js",
         register: "./ts/caching/register.js"
     },
     output: {
@@ -72,7 +73,6 @@ const config: webpack.Configuration = {
             js: path.resolve(srcMain, "js"),
             less: path.resolve(srcMain, "less"),
             res: path.resolve(src, "resources")
-
         }
     },
     module: {
@@ -139,7 +139,7 @@ const config: webpack.Configuration = {
                 }
             },
             {
-                test: /(cachingWorker)\.js$/,
+                test: /(sw)\.js$/,
                 loader: "file-loader",
                 options: {
                     name: "[name].[ext]"
@@ -163,8 +163,6 @@ const config: webpack.Configuration = {
                     publicPath: '/static/'
                 }
             },
-
-
         ]
     },
     plugins: [

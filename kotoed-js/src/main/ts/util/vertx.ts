@@ -1,4 +1,3 @@
-
 import * as EventBus from "vertx3-eventbus-client";
 import {identity} from "./common";
 
@@ -26,7 +25,7 @@ export interface EventBusReply<T> {
     type: string
 }
 
-const RECONNECT_RETRIES = 10;
+const RECONNECT_RETRIES = 5;
 
 export interface ReplyError {
     failureCode: number
@@ -103,16 +102,11 @@ export class AsyncEventBus {
         };
 
 
-
         for (let handler of this.handlers) {
             this.eb.registerHandler(handler.address, handler.headers, handler.callback);
         }
 
     };
-
-    get isOpen() {
-        return this._isOpen;
-    }
 
     registerHandler(address: string, headers: EventBusHeaders, callback: (error: Error, message: EventbusMessage) => void): void {
         this.handlers.push({

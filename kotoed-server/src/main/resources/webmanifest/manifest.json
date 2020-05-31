@@ -1,0 +1,15 @@
+{
+  "name": "Kotoed",
+  "short_name": "Kotoed",
+  "description": "Kotoed educational platform",
+  "lang": "en-GB",
+  "start_url": "/",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "static/img/kotoed_no_cats.png",
+      "sizes": "748x873",
+      "type": "image/png"
+    }
+  ]
+}

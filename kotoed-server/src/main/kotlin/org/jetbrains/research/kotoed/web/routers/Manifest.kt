@@ -6,11 +6,11 @@ import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.setStatus
 import org.jetbrains.research.kotoed.web.UrlPattern
 
-@HandlerFor(UrlPattern.CacheWorker.Index)
-fun cacheWorker(context: RoutingContext) {
+@HandlerFor(UrlPattern.Manifest.Index)
+fun manifestHandler(context: RoutingContext) {
     val resp = context.response()
     resp.setStatus(HttpResponseStatus.OK)
-            .putHeader("content-type", "application/javascript")
+            .putHeader("content-type", "application/json")
             .putHeader("accept-ranges", "bytes")
-            .sendFile("webroot/static/sw.js", 0L)
+            .sendFile("webmanifest/manifest.json", 0L)
 }

@@ -89,7 +89,11 @@ object UrlPattern {
     }
 
     object CacheWorker {
-        const val Index = "/cachingWorker.js"
+        const val Index = "/sw.js"
+    }
+
+    object Manifest {
+        const val Index = "/webmanifest/manifest.json"
     }
 
     const val EventBus = "/eventbus/*"

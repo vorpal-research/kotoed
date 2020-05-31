@@ -8,10 +8,25 @@ doctype html
 html
     head
         meta(name="viewport", content="width=device-width, initial-scale=1, shrink-to-fit=no")
+
+        <!-- Add to home screen for Safari on iOS -->
+        meta(name="mobile-web-app-capable" content="yes")
+        meta(name="apple-mobile-web-app-capable" content="yes")
+        meta(name="application-name" content="Kotoed")
+        meta(name="apple-mobile-web-app-title" content="Kotoed")
+        link(rel="apple-touch-icon" href="/static/img/kotoed_no_cats.png")
+
+        <!-- Windows Phone -->
+        meta(name="msapplication-TileImage" content="/static/img/kotoed_no_cats.png")
+
+        <!-- Something else -->
+        link(rel="icon" type="image/png" href="/static/img/kotoed_no_cats.png")
+
         if context.vendorCss
             link(rel="stylesheet", href=context.vendorCss)
         if context.css
             link(rel="stylesheet", href=context.css)
+        link(rel="manifest" href="/webmanifest/manifest.json")
         block title
 
     body
