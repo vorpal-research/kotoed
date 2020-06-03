@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.warnings.Warnings.DEPRECATION
+import org.jetbrains.research.kotoed.data.api.CountResponse
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
@@ -23,10 +24,7 @@ import org.jooq.Table
 import org.jooq.TableRecord
 import org.kohsuke.randname.RandomNameGenerator
 import kotlin.coroutines.CoroutineContext
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KType
-import kotlin.reflect.KTypeProjection
+import kotlin.reflect.*
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 
@@ -111,11 +109,27 @@ internal suspend fun <Argument : Any> EventBus.publishJsonable(
 internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
         address: String,
         value: Argument,
-        argClass: KClass<out Argument>,
+        argClass: KClass<out Argument> = value::class,
         resultClass: KClass<out Result>
 ): Result {
     val toJson = getToJsonConverter(argClass.starProjectedType)
     val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+    return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
+}
+
+@PublishedApi
+@Deprecated("Do not call directly")
+internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
+        address: String,
+        value: Argument,
+        argType: KType? = null,
+        resultType: KType
+): Result {
+    GlobalLogging.log.trace("argType = ${argType}")
+    GlobalLogging.log.trace("resultType = ${resultType}")
+
+    val toJson = getToJsonConverter(argType ?: value::class.starProjectedType)
+    val fromJson = getFromJsonConverter(resultType)
     return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
 }
 
@@ -174,12 +188,13 @@ inline suspend fun <
     return publishJsonable(address, value, Argument::class)
 }
 
+@UseExperimental(ExperimentalStdlibApi::class)
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
         > EventBus.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
-    return sendJsonableAsync(address, value, Argument::class, Result::class)
+    return sendJsonableAsync(address, value, typeOf<Argument>(), typeOf<Result>())
 }
 
 inline suspend fun <
@@ -251,7 +266,7 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
             { it.expectingIs<JsonObject>() }
         }
         klazz.isSubclassOf(Jsonable::class) -> {
-            { fromJson(it.expectingIs<JsonObject>(), klazz) }
+            { fromJson(it.expectingIs<JsonObject>(), type) }
         }
         klazz.isSubclassOf(Record::class) -> {
             { it.expectingIs<JsonObject>().toRecord(klazz.uncheckedCast<KClass<out Record>>()) }
@@ -501,9 +516,9 @@ open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable {
                                                             builderBody: TypedQueryBuilder<R>.() -> Unit) =
             dbQueryAsync(TypedQueryBuilder(table).apply(builderBody).query)
 
-    protected suspend fun dbCountAsync(q: ComplexDatabaseQuery): JsonObject =
+    protected suspend fun dbCountAsync(q: ComplexDatabaseQuery): CountResponse =
             @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, JsonObject::class)
+            vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, CountResponse::class)
 
     protected suspend fun <R : TableRecord<R>> dbCountAsync(table: Table<R>,
                                                             builderBody: TypedQueryBuilder<R>.() -> Unit) =

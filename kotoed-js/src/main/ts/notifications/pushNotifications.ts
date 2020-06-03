@@ -19,10 +19,10 @@ export async function subscribeToPushNotifications() {
 
     if(Notification_.permission !== 'default') return;
 
-    const serverKey = (await sendAsync<{}, any>(Address.Api.Notification.Web.PublicKey, {})).key;
+    const serverKey = (await sendAsync(Address.Api.Notification.Web.PublicKey, undefined)).key;
 
     if(!serverKey) {
-        console.log("Notification keys not set, web push is not available =(")
+        console.log("Notification keys not set, web push is not available =(");
         return;
     }
 
@@ -46,6 +46,7 @@ export async function subscribeToPushNotifications() {
                 const auth = auth_ && btoa(String.fromCharCode.apply(null, new Uint8Array(auth_))) || '';
 
                 await sendAsync(Address.Api.Notification.Web.Subscribe, {
+                    denizenId: -1, // actually filled out in bridge filter
                     endpoint: sub.endpoint,
                     key: key,
                     auth: auth

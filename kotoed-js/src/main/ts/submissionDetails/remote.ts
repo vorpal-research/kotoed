@@ -34,14 +34,14 @@ export interface SubmissionTagRequest {
 }
 
 export async function fetchSubmission(submissionId: number): Promise<DbRecordWrapper<BloatSubmission>> {
-    return eventBus.send<WithId, DbRecordWrapper<BloatSubmission>>(Kotoed.Address.Api.Submission.Read, {
+    return sendAsync(Kotoed.Address.Api.Submission.Read, {
         id: submissionId
     })
 }
 
 export async function updateSubmission(submissionId: number,
                                        state: SubmissionState): Promise<DbRecordWrapper<BloatSubmission>> {
-    return eventBus.send<SubmissionUpdateRequest, DbRecordWrapper<BloatSubmission>>(Kotoed.Address.Api.Submission.Update, {
+    return sendAsync(Kotoed.Address.Api.Submission.Update, {
         id: submissionId,
         state: state
     })
@@ -62,21 +62,21 @@ interface HistoryRequest {
 }
 
 export async function fetchHistory(start: number, limit: number) {
-    return eventBus.send<HistoryRequest, Array<SubmissionToRead>>(Kotoed.Address.Api.Submission.History, {
+    return sendAsync(Kotoed.Address.Api.Submission.History, {
         submissionId: start,
         limit
     })
 }
 
 export async function fetchCommentsTotal(submissionId: number): Promise<CommentAggregate> {
-    return eventBus.send<WithId, CommentAggregate>(Kotoed.Address.Api.Submission.CommentsTotal, {
+    return sendAsync(Kotoed.Address.Api.Submission.CommentsTotal, {
         id: submissionId
     })
 }
 
 
 export async function fetchTagList(submissionId: number): Promise<Tag[]> {
-    return eventBus.send<WithId, Tag[]>(Kotoed.Address.Api.Submission.Tags.Read, {
+    return sendAsync(Kotoed.Address.Api.Submission.Tags.Read, {
         id: submissionId
     }).then(tags => {
         return tags
@@ -84,26 +84,26 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
 }
 
 export async function fetchAvailableTags(): Promise<Tag[]> {
-    return eventBus.send<{}, Tag[]>(Kotoed.Address.Api.Tag.List, {})
+    return sendAsync(Kotoed.Address.Api.Tag.List, undefined)
         .then(tags => {
             return _.sortBy(tags, t => t.name);
         });
 }
 
 export async function addSubmissionTag(tagId: number, submissionId: number): Promise<any> {
-    return eventBus.send<SubmissionTagRequest, Tag[]>(Kotoed.Address.Api.Submission.Tags.Create, {
+    return sendAsync(Kotoed.Address.Api.Submission.Tags.Create, {
         tagId, submissionId
     });
 }
 
 export async function deleteSubmissionTag(tagId: number, submissionId: number): Promise<any> {
-    return eventBus.send<SubmissionTagRequest, Tag[]>(Kotoed.Address.Api.Submission.Tags.Delete, {
+    return sendAsync(Kotoed.Address.Api.Submission.Tags.Delete, {
         tagId, submissionId
     });
 }
 
 export async function cleanSubmission(submissionId: number): Promise<void> {
-    return await sendAsync<WithId, void>(
+    await sendAsync(
         Kotoed.Address.Api.Submission.Verification.Clean,
         {
             id: submissionId

@@ -62,9 +62,8 @@ suspend fun startApplication(): Vertx {
     val flyway = Flyway.configure()
             .schemas(Public.PUBLIC.name)
             .dataSource(vertx.getSharedDataSource())
-            .baselineOnMigrate(true)
-            .baselineVersion("1")
             .sqlMigrationPrefix("V")
+            .configuration(System.getProperties())
             .load()
 
     flyway.migrate()

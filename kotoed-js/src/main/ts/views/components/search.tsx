@@ -208,7 +208,7 @@ export class SearchTable<DataType, QueryType = {}> extends
         };
         let message: SearchQuery & Partial<QueryType> = Object.assign({}, searchQuery, this.makeBaseQuery());
 
-        return sendAsync<SearchQuery & Partial<QueryType>, CountResponse>(this.props.countAddress, message);
+        return await sendAsync(this.props.countAddress, message);
     };
 
     protected queryCount = async () => {
@@ -228,7 +228,7 @@ export class SearchTable<DataType, QueryType = {}> extends
         };
 
         let message: SearchQuery & Partial<QueryType> = Object.assign({}, searchQuery, this.makeBaseQuery());
-        return sendAsync<SearchQuery & Partial<QueryType>, Array<DataType>>(this.props.searchAddress, message);
+        return await sendAsync(this.props.searchAddress, message) as Array<DataType>;
     };
 
     protected queryData = async () => {

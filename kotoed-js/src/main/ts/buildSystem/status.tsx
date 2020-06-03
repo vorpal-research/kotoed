@@ -21,7 +21,7 @@ class BuildStatusView extends React.Component<WithId, BuildStatusState> {
         const remote = await sendAsync(
             Kotoed.Address.Api.BuildSystem.Build.Status,
             { buildId: this.props.id }
-            ) as BuildStatus;
+            );
         const newState = { loading: false, status: remote };
         this.setState(newState);
     };

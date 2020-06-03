@@ -108,8 +108,7 @@ class ProfileWrapper extends React.Component<{}, ProfileWrapperState> {
 
     loadDenizen = async () => {
         let profile =
-            await sendAsync<WithId, ProfileInfo>(Kotoed.Address.Api.Denizen.Profile.Read,
-                {id: userId});
+            await sendAsync(Kotoed.Address.Api.Denizen.Profile.Read, {id: userId});
         this.setState({denizen: profile})
     };
 

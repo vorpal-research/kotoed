@@ -15,25 +15,25 @@ import java.sql.Types
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
-object JsonConverter : Converter<Any?, Any?> {
+object JsonConverter : Converter<JSONB, Any?> {
     override fun toType(): Class<Any?> {
         return Any::class.java.uncheckedCast()
     }
 
-    override fun fromType(): Class<Any?> {
-        return Any::class.java.uncheckedCast()
+    override fun fromType(): Class<JSONB> {
+        return JSONB::class.java.uncheckedCast()
     }
 
-    override fun from(databaseObject: Any?): Any? {
+    override fun from(databaseObject: JSONB?): Any? {
         // this is not very good, but vertx json api sucks
         databaseObject ?: return null
 
-        return JsonEx.decode("$databaseObject")
+        return JsonEx.decode(databaseObject.data())
     }
 
-    override fun to(userObject: Any?): Any? {
+    override fun to(userObject: Any?): JSONB? {
         userObject ?: return null
-        return Json.encode(userObject)
+        return JSONB.valueOf(Json.encode(userObject))
     }
 }
 
@@ -59,8 +59,51 @@ object NoConverter : Converter<Any?, Any?> {
     }
 }
 
-interface PostgresBindingBase : Binding<Any?, Any?> {
-    val typename: String
+class PostgresJSONBBinding : Binding<JSONB, Any?> {
+    val typename: String = "jsonb"
+
+    override fun converter(): Converter<JSONB, Any?> = JsonConverter
+
+    override fun get(ctx: BindingGetStatementContext<Any?>) {
+        ctx.convert(converter()).value(
+                JSONB.valueOf(ctx.statement().getString(ctx.index())))
+    }
+
+    override fun get(ctx: BindingGetResultSetContext<Any?>) {
+        ctx.convert(converter()).value(
+                JSONB.valueOf(ctx.resultSet().getString(ctx.index())))
+    }
+
+    override fun get(ctx: BindingGetSQLInputContext<Any?>?) {
+        throw SQLFeatureNotSupportedException()
+    }
+
+    override fun sql(ctx: BindingSQLContext<Any?>) {
+        ctx.render().visit(DSL.`val`(ctx.convert(converter()).value())).sql("::$typename")
+    }
+
+    override fun set(ctx: BindingSetSQLOutputContext<Any?>?) {
+        throw SQLFeatureNotSupportedException()
+    }
+
+    override fun set(ctx: BindingSetStatementContext<Any?>) {
+        ctx.statement().setString(ctx.index(), ctx.convert(converter()).value().data())
+    }
+
+    override fun register(ctx: BindingRegisterContext<Any?>) {
+        ctx.statement().registerOutParameter(ctx.index(), Types.VARCHAR)
+    }
+}
+
+//class PostgresJSONBinding : PostgresBindingBase<JSON> {
+//    override fun converter() = JsonConverter
+//    override val typename = "json"
+//}
+
+class PostgresTSVectorBinding : Binding<Any?, Any?> {
+    val typename: String = "tsvector"
+
+    override fun converter(): Converter<Any?, Any?> = NoConverter
 
     override fun get(ctx: BindingGetStatementContext<Any?>) {
         ctx.convert(converter()).value(ctx.statement().getString(ctx.index()))
@@ -91,26 +134,11 @@ interface PostgresBindingBase : Binding<Any?, Any?> {
     }
 }
 
-class PostgresJSONBBinding : PostgresBindingBase {
-    override fun converter() = JsonConverter
-    override val typename = "jsonb"
-}
-
-class PostgresJSONBinding : PostgresBindingBase {
-    override fun converter() = JsonConverter
-    override val typename = "json"
-}
-
-class PostgresTSVectorBinding : PostgresBindingBase {
-    override fun converter() = NoConverter
-    override val typename = "tsvector"
-}
-
-data class WrappedRecord(val table: Table<*>, val record: Record): Record by record, Jsonable {
+data class WrappedRecord(val table: Table<*>, val record: Record) : Record by record, Jsonable {
     override fun toJson() =
             record.toJson().apply { this["table"] = table.name }
 
-    companion object: JsonableCompanion<WrappedRecord> {
+    companion object : JsonableCompanion<WrappedRecord> {
         override val dataklass = WrappedRecord::class
         override fun fromJson(json: JsonObject): WrappedRecord? {
             val table = Public.PUBLIC.tables.find { it.name == json["table"] }
@@ -122,7 +150,7 @@ data class WrappedRecord(val table: Table<*>, val record: Record): Record by rec
     }
 }
 
-fun<R: Record> R.toJson(): JsonObject =
+fun <R : Record> R.toJson(): JsonObject =
         JsonObject().apply {
             for (field in fields()) {
                 val fieldVal = field.getValue(this@toJson)
@@ -130,10 +158,10 @@ fun<R: Record> R.toJson(): JsonObject =
             }
         }
 
-fun<R: Record> JsonObject.toRecord(klazz: KClass<R>): R =
+fun <R : Record> JsonObject.toRecord(klazz: KClass<R>): R =
         klazz.createInstance().apply { from(this@toRecord.map) }
 
-inline fun<reified R: Record> JsonObject.toRecord() = toRecord(R::class)
+inline fun <reified R : Record> JsonObject.toRecord() = toRecord(R::class)
 
 val postgresRecordMappers: RecordMapperProvider =
         object : RecordMapperProvider {
@@ -146,7 +174,7 @@ val postgresRecordMappers: RecordMapperProvider =
         }
 
 object PostgresDataTypeEx {
-    val JSONB = DefaultDataType(SQLDialect.POSTGRES_9_5, SQLDataType.OTHER, "jsonb")
+    val JSONB = DefaultDataType(SQLDialect.POSTGRES, SQLDataType.JSONB, "jsonb")
             .asConvertedDataType(PostgresJSONBBinding())
 }
 

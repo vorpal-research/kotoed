@@ -18,7 +18,7 @@ export async function fetchPermissions(): Promise<RootPermissions> {
 }
 
 export async function fetchCourse(id: number): Promise<DbRecordWrapper<CourseToRead>> {
-    return await sendAsync<WithId, DbRecordWrapper<CourseToRead>>(
+    return await sendAsync(
         Kotoed.Address.Api.Course.Read, {
             id
         });

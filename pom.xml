@@ -28,6 +28,7 @@
     <modules>
         <module>kotoed-server</module>
         <module>kotoed-js</module>
+        <module>kotoed-all</module>
     </modules>
 
     <build>

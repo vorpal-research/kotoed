@@ -11,6 +11,7 @@ import {fetchCourse} from "./remote";
 import {WithId} from "../data/common";
 import {DbRecordWrapper} from "../data/verification";
 import UrlPattern = Kotoed.UrlPattern;
+import {sendAsync} from "../views/components/common";
 
 const params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Course.Edit, window.location.pathname) || new Map();
 const courseId = parseInt(params.get("id")) || -1;
@@ -83,7 +84,7 @@ class CourseEditor extends React.Component<CourseToRead, CourseToRead> {
 
     onSave = async () => {
         try {
-            await eventBus.send(Kotoed.Address.Api.Course.Update, this.state);
+            await sendAsync(Kotoed.Address.Api.Course.Update, this.state);
         } catch (error) {
             throw error;
         }

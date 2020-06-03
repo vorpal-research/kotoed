@@ -56,20 +56,22 @@ data class VerificationData(
 
 }
 
-data class DbRecordWrapper(
-        val record: JsonObject,
-        val verificationData: VerificationData
+data class DbRecordWrapper<R>(
+        val record: R,
+        val verificationData: VerificationData = VerificationData.Unknown
 ) : Jsonable
 
-inline fun <reified R : Record> DbRecordWrapper(
-        record: R,
-        verificationData: VerificationData = VerificationData.Unknown
-) = DbRecordWrapper(record.toJson(), verificationData)
+//inline fun <reified R : Record> DbRecordWrapper(
+//        record: R,
+//        verificationData: VerificationData = VerificationData.Unknown
+//) = DbRecordWrapper(record.toJson(), verificationData)
 
 data class DbRecordListWrapper(
         val records: JsonArray,
         val verificationData: VerificationData
 ) : Jsonable
+
+data class CountResponse(val count: Int) : Jsonable
 
 inline fun <reified R : Record> DbRecordListWrapper(
         records: List<R>,
@@ -127,7 +129,7 @@ object SubmissionComments {
     data class CommentAggregate(
             private val map: MutableMap<SubmissionCommentState, Int> =
             EnumMap<SubmissionCommentState, Int>(SubmissionCommentState::class.java)) :
-            MutableMap<SubmissionCommentState, Int> by map, Jsonable {
+            MutableMap<SubmissionCommentState, Int> by map, Jsonable, SerializedAsObject<SubmissionCommentState, Int> {
 
         init {
             for (state in SubmissionCommentState.values()) {
@@ -142,13 +144,11 @@ object SubmissionComments {
         override fun toJson() = JsonObject(map.mapKeys { (k, _) -> k.toString() })
     }
 
-    data class CommentAggregates(val byFile: Map<String, CommentAggregate>, val lost: CommentAggregate) : Jsonable {
-        override fun toJson() = JsonObject(
-                "by_file" to JsonArray(byFile.entries.map { e ->
-                    JsonObject("file" to e.key, "aggregate" to e.value)
-                }),
-                "lost" to lost.toJson()
-        )
+    class CommentAggregates(byFile: Map<String, CommentAggregate>, lost: CommentAggregate) : Jsonable {
+        data class Entry(val file: String, val aggregate: CommentAggregate) : Jsonable
+
+        val byFile = byFile.entries.map { e -> Entry(file = e.key, aggregate = e.value) }
+        val lost = lost
     }
 
     data class LastSeenResponse(val location: SubmissionCommentRecord? = null) : Jsonable
@@ -211,7 +211,7 @@ data class ProfileInfoUpdate(
         val id: Int,
         val denizenId: String,
         val email: String?,
-        val oauth: Map<String, String?>,
+        val oauth: Map<String, String?>?,
         val firstName: String?,
         val lastName: String?,
         val group: String?,

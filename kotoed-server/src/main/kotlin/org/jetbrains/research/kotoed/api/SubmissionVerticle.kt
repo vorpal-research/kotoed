@@ -14,6 +14,7 @@ import org.jetbrains.research.kotoed.database.enums.NotificationStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
+import org.jetbrains.research.kotoed.db.CrudDatabaseVerticle
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -85,7 +86,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Create)
-    suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper {
+    suspend fun handleCreate(submission: SubmissionRecord): DbRecordWrapper<SubmissionRecord> {
         submission.id = null
         submission.datetime = null
         submission.state = SubmissionState.pending
@@ -111,7 +112,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Read)
-    suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper {
+    suspend fun handleRead(submission: SubmissionRecord): DbRecordWrapper<JsonObject> {
         val everything = dbQueryAsync(
                 ComplexDatabaseQuery(Tables.SUBMISSION)
                         .find(SubmissionRecord().apply { id = submission.id })
@@ -147,7 +148,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     )
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Update)
-    suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper {
+    suspend fun handleUpdate(submission: SubmissionRecord): DbRecordWrapper<JsonObject> {
         val existing = fetchByIdAsync(Tables.SUBMISSION, submission.id)
 
         val transitionIsValid = Pair(existing.state, submission.state) in validStateTransitions
@@ -184,7 +185,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Last)
-    suspend fun handleLast(submission: SubmissionRecord): DbRecordWrapper {
+    suspend fun handleLast(submission: SubmissionRecord): DbRecordWrapper<SubmissionRecord> {
         val res: SubmissionRecord = dbFetchAsync(submission)
         val last = findSuccessorAsync(res)
         val status: VerificationData = dbProcessAsync(last)
@@ -298,14 +299,14 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
                                                     .find(SubmissionCommentRecord().apply {
                                                         submissionId = message.id
                                                         state = SubmissionCommentState.open
-                                                    })).getInteger("count"),
+                                                    })).count,
                             SubmissionCommentState.closed to
                                     dbCountAsync(
                                             ComplexDatabaseQuery(Tables.SUBMISSION_COMMENT)
                                                     .find(SubmissionCommentRecord().apply {
                                                         submissionId = message.id
                                                         state = SubmissionCommentState.closed
-                                                    })).getInteger("count")
+                                                    })).count
 
                     )
 
@@ -345,7 +346,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.ListCount)
-    suspend fun handleListCount(query: SearchQueryWithTags): JsonObject {
+    suspend fun handleListCount(query: SearchQueryWithTags): CountResponse {
         val q = ComplexDatabaseQuery(Tables.SUBMISSION.name)
                 .find(SubmissionRecord().apply {
                     projectId = query.find?.getInteger(Tables.SUBMISSION.PROJECT_ID.name)
@@ -529,7 +530,7 @@ class SubmissionVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Tags.SearchCount)
-    suspend fun handleSearchForTagCount(query: SearchQuery): JsonObject {
+    suspend fun handleSearchForTagCount(query: SearchQuery): CountResponse {
         val denizenQ = ComplexDatabaseQuery("project")
                 .join("denizen")
 

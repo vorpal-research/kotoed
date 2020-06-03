@@ -132,6 +132,7 @@ const config: webpack.Configuration = {
             },
             {
                 test: /(serviceWorker|register)\.js$/,
+                exclude: path.resolve(__dirname, "node_modules/"),
                 loader: "file-loader",
                 options: {
                     name: "static/[name].[ext]",

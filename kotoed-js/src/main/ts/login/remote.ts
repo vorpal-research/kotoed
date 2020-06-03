@@ -4,6 +4,7 @@ import {keysToCamelCase, keysToSnakeCase} from "../util/stringCase";
 import {eventBus} from "../eventBus";
 import UrlPattern = Kotoed.UrlPattern;
 import {setTimeout} from "timers";
+import {sendAsync} from "../views/components/common";
 
 export interface SignInResponse {
     succeeded: boolean
@@ -91,7 +92,6 @@ export let myDatabaseId = asyncCached(
 );
 
 export async function fetchOAuthProviders(): Promise<OAuthProvidersResponse> {
-    return await
-        eventBus.send<OAuthProvidersRequest, OAuthProvidersResponse>(Kotoed.Address.Api.OAuthProvider.List, {});
+    return await sendAsync(Kotoed.Address.Api.OAuthProvider.List, undefined);
 
 }

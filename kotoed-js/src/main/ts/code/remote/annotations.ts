@@ -5,9 +5,7 @@ import {Kotoed} from "../../util/kotoed-api";
 import Address = Kotoed.Address;
 
 interface AnnotationResponse {
-    map: {
-        [key: string]: CodeAnnotation[]
-    }
+    map: [[string, CodeAnnotation[]]]
 }
 
 export async function fetchAnnotations(submissionId: number): Promise<ReviewAnnotations> {

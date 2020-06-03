@@ -1,19 +1,25 @@
 import {defaultErrorHandler, eventBus} from "../../eventBus";
+import {Generated} from "../../util/kotoed-generated";
+import ApiBindingInputs = Generated.ApiBindingInputs;
+import ApiBindingOutputs = Generated.ApiBindingOutputs;
+import {PPartial} from "../../util/types";
 
 export interface ErrorDesc {
     id: number
-    data: any
+    data?: any
 }
 
-export enum VerificationStatus {
-    Processed,
-    NotReady,
-    Invalid,
-    Unknown
+export type VerificationStatus =
+    "Processed" | "NotReady" | "Invalid" | "Unknown"
+export namespace VerificationStatus {
+    const Processed : "Processed" = "Processed";
+    const NotReady : "NotReady" = "NotReady";
+    const Invalid : "Invalid" = "Invalid";
+    const Unknown : "Unknown" = "Unknown";
 }
 
 export interface VerificationData {
-    status: string
+    status: VerificationStatus
     errors: number[]
 }
 
@@ -26,10 +32,11 @@ export interface GenericResponse<ResultT> {
     verificationData: VerificationData
 }
 
-export function sendAsync<Request, Response>(address: string, request: Request,
-                                             onError?: typeof defaultErrorHandler): Promise<Response> {
+export function sendAsync<Address extends string>(address: Address, request: ApiBindingInputs[Address],
+                                             onError?: typeof defaultErrorHandler): Promise<ApiBindingOutputs[Address]> {
+    request = (request == null)? {} : request;
     return eventBus.awaitOpen().then(_ =>
-        eventBus.send<Request, Response>(address, request, undefined, onError)
+        eventBus.send<PPartial<ApiBindingOutputs[Address]>, ApiBindingInputs[Address]>(address, request, undefined, onError)
     );
 }
 

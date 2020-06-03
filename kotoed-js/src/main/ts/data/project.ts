@@ -3,12 +3,10 @@ import {WithId} from "./common";
 import {WithBloatDenizen, WithDenizen} from "./denizen";
 import {WithCourse} from "./course";
 
-export type RepoType = "mercurial" | "git"
-
 export interface Project {
     denizenId: number
     courseId: number
-    repoType: RepoType
+    repoType: string
     repoUrl: string
     name: string
 }

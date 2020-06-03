@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.CountResponse
 import org.jetbrains.research.kotoed.data.api.SearchQuery
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.database.Tables
@@ -39,7 +40,7 @@ class CommentTemplateVerticle: AbstractKotoedVerticle() {
             }
 
     @JsonableEventBusConsumerFor(Address.Api.CommentTemplate.SearchCount)
-    suspend fun handleSearchCount(query: SearchQuery): JsonObject =
+    suspend fun handleSearchCount(query: SearchQuery): CountResponse =
             dbCountAsync(Tables.COMMENT_TEMPLATE) {
                 filter("denizen_id == %s and (text iContains %s or name iContains %s)"
                         .formatToQuery(query.denizenId, query.text, query.text))

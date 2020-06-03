@@ -2,20 +2,14 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.SearchQuery
-import org.jetbrains.research.kotoed.data.api.SearchQueryWithTags
-import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.query
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectStatusRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectTextSearchRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
@@ -27,7 +21,7 @@ import org.jooq.TableRecord
 class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Project.Create)
-    suspend fun handleCreate(project: ProjectRecord): DbRecordWrapper {
+    suspend fun handleCreate(project: ProjectRecord): DbRecordWrapper<ProjectRecord> {
         project.name = project.name.truncateAt(1024)
         project.id = null
         expect(project.courseId is Int)
@@ -39,7 +33,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Project.Read)
-    suspend fun handleRead(project: ProjectRecord): DbRecordWrapper {
+    suspend fun handleRead(project: ProjectRecord): DbRecordWrapper<ProjectRecord> {
         val res: ProjectRecord = dbFetchAsync(project)
         val status: VerificationData = dbProcessAsync(res)
         return DbRecordWrapper(res, status)
@@ -121,7 +115,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
-    suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): JsonObject {
+    suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): CountResponse {
         val tableName =
                 if(query.withTags == true)
                     Tables.PROJECT_TEXT_SEARCH.name

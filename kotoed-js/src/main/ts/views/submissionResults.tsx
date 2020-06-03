@@ -30,10 +30,8 @@ export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
     loadPermissions = () => fetchPermissions(this.props.id);
 
     loadResults = () => {
-        let subResults = sendAsync<IdRequest, GenericResponse<ResultT>>
-        (Kotoed.Address.Api.Submission.Result.Read, {"id": this.props.id});
-        let subReport = sendAsync<IdRequest, { data: string[][] }>
-        (Kotoed.Address.Api.Submission.Report, {"id": this.props.id});
+        let subResults = sendAsync(Kotoed.Address.Api.Submission.Result.Read, {"id": this.props.id});
+        let subReport = sendAsync(Kotoed.Address.Api.Submission.Report, {"id": this.props.id});
 
         return Promise.all([subResults, subReport]).then(([res, rep]) => {
             const sum: GenericResponse<ResultT> = {

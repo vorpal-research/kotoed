@@ -1,7 +1,6 @@
 import * as React from "react";
 import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Modal} from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
-import {eventBus, SoftError} from "../eventBus";
 import {ComponentWithLocalErrors} from "../views/components/ComponentWithLocalErrors";
 import {ErrorMessages} from "../login/util";
 import {ChangeEvent, FormEvent, KeyboardEvent} from "react";
@@ -16,6 +15,7 @@ import Panel = require("react-bootstrap/lib/Panel");
 import {Redirect} from "react-router";
 import UrlPattern = Kotoed.UrlPattern;
 import {WithId} from "../data/common";
+import {sendAsync} from "../views/components/common";
 
 let uniqueId: number = 100000;
 function nextUniqueId() {
@@ -40,7 +40,7 @@ interface BuildTemplate {
     commandLine: Immutable.List<CommandTemplate>
 }
 
-function toRemote(bt: BuildTemplate): object {
+function toRemote(bt: BuildTemplate) {
     return {
         id: bt.id,
         environment : bt.environment.toArray(),
@@ -276,7 +276,7 @@ export class BuildTemplateEditor extends ComponentWithLocalErrors<BuildTemplate,
 
     trySubmit = async () => {
         try {
-            await eventBus.send(Kotoed.Address.Api.BuildTemplate.Update, toRemote(this.state));
+            await sendAsync(Kotoed.Address.Api.BuildTemplate.Update, toRemote(this.state));
         } catch (error) {
             throw error;
         }
@@ -284,7 +284,7 @@ export class BuildTemplateEditor extends ComponentWithLocalErrors<BuildTemplate,
 
     tryCopy = async () => {
         try {
-            const newBT = await eventBus.send(Kotoed.Address.Api.BuildTemplate.Create, toRemote(this.state));
+            const newBT = await sendAsync(Kotoed.Address.Api.BuildTemplate.Create, toRemote(this.state));
             window.location.href = UrlPattern.reverse(UrlPattern.BuildTemplate.Edit, newBT as {id: number})
         } catch (error) {
             throw error;
@@ -360,7 +360,7 @@ export class BuildTemplateEditorWrapper extends React.Component<WithId, WrapperS
     tryLoad = async () => {
         try {
             const remote =
-                await eventBus.send(Kotoed.Address.Api.BuildTemplate.Read, this.props);
+                await sendAsync(Kotoed.Address.Api.BuildTemplate.Read, this.props);
             const template = fromRemote(remote);
             const newState = { loading: false, template: assignKeys(template) };
             this.setState(newState);

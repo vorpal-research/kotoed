@@ -97,25 +97,39 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             vertx.setTimer(5000, this::handleRequest)
         }
 
+        val left = kloneRequests.size
+        if (left % 10 == 1) {
+            log.trace("$left klone requests left")
+        }
+
         val req = kloneRequests.poll()
         when (req) {
             is ProcessCourseBaseRepo -> {
                 spawn(WithExceptions(::handleException)) {
-                    if (!handleBase(req.course)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        if (!handleBase(req.course)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             is ProcessSubmission -> {
                 spawn(WithExceptions(::handleException)) {
-                    if (!handleSub(req.submissionData)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        if (!handleSub(req.submissionData)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             is BuildCourseReport -> {
                 spawn(WithExceptions(::handleException)) {
-                    val data = courseSubmissionData(req.course)
-                    if (!handleReport(data)) kloneRequests.offer(req)
-                    vertx.setTimer(100, this::handleRequest)
+                    try {
+                        val data = courseSubmissionData(req.course)
+                        if (!handleReport(data)) kloneRequests.offer(req)
+                    } finally {
+                        vertx.setTimer(100, this::handleRequest)
+                    }
                 }
             }
             else -> {
@@ -169,19 +183,26 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
         if (mode to id in processed) return true
 
-        if (files.status != CloneStatus.done) {
-            log.trace("Repository not cloned yet")
-            return false
+        when (files.status) {
+            CloneStatus.failed -> {
+                log.trace("Repository cloning failed")
+                return false
+            }
+            CloneStatus.pending -> {
+                log.trace("Repository not cloned yet")
+                return false
+            }
+            CloneStatus.done -> {
+                val allFiles = files.root?.toFileSeq().orEmpty()
+
+                processKtFiles(allFiles.filter { it.endsWith(".kt") }.toList(), mode, id, denizenId)
+                processHsFiles(allFiles.filter { it.endsWith(".hs") }.toList(), mode, id, denizenId)
+
+                processed.add(mode to id)
+
+                return true
+            }
         }
-
-        val allFiles = files.root?.toFileSeq().orEmpty()
-
-        processKtFiles(allFiles.filter { it.endsWith(".kt") }.toList(), mode, id, denizenId)
-        processHsFiles(allFiles.filter { it.endsWith(".hs") }.toList(), mode, id, denizenId)
-
-        processed.add(mode to id)
-
-        return true
     }
 
     // TODO: provide some abstraction over Kotlin/Java/Haskell/XML/etc here
@@ -205,29 +226,31 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                         withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
                     }
 
-            ktFiles.asSequence()
-                    .flatMap { file ->
-                        file.collectDescendantsOfType<KtNamedFunction>().asSequence()
-                    }
-                    .filter { method ->
-                        method.annotationEntries.all { anno -> "@Test" != anno.text }
-                    }
-                    .map {
-                        it as PsiElement
-                    }
-                    .map { method ->
-                        method to method.dfs { children.asSequence() }
-                                .filter(Token.DefaultFilter)
-                                .map((::makeAnonimizedKtToken)
-                                        .bind(_0, mode)
-                                        .bind(_0, id)
-                                        .bind(_0, denizenId))
-                    }
-                    .forEach { (_, tokens) ->
-                        val lst = tokens.toList()
-                        log.trace("lst = $lst")
-                        val seqId = suffixTree.addSequence(lst)
-                    }
+            withContext(ee) {
+                ktFiles.asSequence()
+                        .flatMap { file ->
+                            file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                        }
+                        .filter { method ->
+                            method.annotationEntries.all { anno -> "@Test" != anno.text }
+                        }
+                        .map {
+                            it as PsiElement
+                        }
+                        .map { method ->
+                            method to method.dfs { children.asSequence() }
+                                    .filter(Token.DefaultFilter)
+                                    .map((::makeAnonimizedKtToken)
+                                            .bind(_0, mode)
+                                            .bind(_0, id)
+                                            .bind(_0, denizenId))
+                        }
+                        .forEach { (_, tokens) ->
+                            val lst = tokens.toList()
+                            log.trace("lst = ${lst.joinToString(limit = 32)}")
+                            val seqId = suffixTree.addSequence(lst)
+                        }
+            }
         }
 
     }
@@ -320,6 +343,8 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
     suspend fun handleReport(data: List<JsonObject>): Boolean {
 
+        log.trace("Handling report...")
+
         val dataBySubmissionId = data.map { it.getInteger("id") to it }.toMap()
 
         val clones =
@@ -335,7 +360,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     0 == node.parentEdges.lastOrNull()?.begin
                 }
 
-        log.trace(clones.joinToString("\n"))
+        log.trace(clones.joinToString(separator = "\n", limit = 32))
 
         val filtered = clones
                 .map(::CloneClass)
@@ -358,6 +383,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
             log.trace(builder)
         }
 
+        // TODO: Better filtering of the same person clones
         val clonesBySubmission = filtered
                 .flatMap { cloneClass ->
                     cloneClass.clones.map { clone -> clone.submissionId to clone.denizenId to cloneClass }

@@ -18,7 +18,7 @@ interface SubmissionCreateProps {
 interface SubmissionCreateState {
     showRevisionModal: boolean
     showAreYouSureModal: boolean,
-    suggestedParent: number | null,
+    suggestedParent?: number,
     remoteError?: string
     revision: string
     disabled: boolean
@@ -32,7 +32,7 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
             showRevisionModal: false,
             showAreYouSureModal: false,
             revision: "",
-            suggestedParent: null,
+            suggestedParent: undefined,
             disabled: false
         }
     }
@@ -58,7 +58,7 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
         });
     };
 
-    showAreYouSureModal = (suggestedParent: number | null) => {
+    showAreYouSureModal = (suggestedParent: number | undefined) => {
         this.setState({
             showAreYouSureModal: true,
             suggestedParent
@@ -68,7 +68,7 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
     hideAreYouSureModal = () => {
         this.setState({
             showAreYouSureModal: false,
-            suggestedParent: null
+            suggestedParent: undefined
         });
     };
 
@@ -79,16 +79,16 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
     dismissState = () => {
         this.setState({
             revision: "",
-            suggestedParent: null
+            suggestedParent: undefined
         })
     };
 
 
-    checkExistingOrTryCreate = async (revision: string | null = null) => {
+    checkExistingOrTryCreate = async (revision: string | undefined = undefined) => {
         if (this.props.parentSubmission)
             await this.tryCreate(revision);
 
-        let existing = await sendAsync<any, Array<SubmissionToRead>>(Kotoed.Address.Api.Submission.List, {
+        let existing = await sendAsync(Kotoed.Address.Api.Submission.List, {
             pageSize: 2,
             currentPage: 0,
             text: "",
@@ -110,15 +110,15 @@ export class SubmissionCreate extends React.Component<SubmissionCreateProps, Sub
         }
     };
 
-    tryCreate = async (revision: string | null = null, parentSubmission: number | null = null) => {
-        if (revision !== null && revision.trim() === "")
-            revision = null;
+    tryCreate = async (revision: string | undefined = undefined, parentSubmission: number | undefined = undefined) => {
+        if (revision != null && revision.trim() === "")
+            revision = undefined;
 
         try {
-            let newSub = await eventBus.send<CreateRequest, DbRecordWrapper<SubmissionToRead>>(Kotoed.Address.Api.Submission.Create, {
+            let newSub = await sendAsync(Kotoed.Address.Api.Submission.Create, {
                 revision: revision,
                 projectId: this.props.projectId,
-                parentSubmissionId: parentSubmission || this.props.parentSubmission || null
+                parentSubmissionId: parentSubmission || this.props.parentSubmission
             });
             this.hideRevisionModal();
             this.hideAreYouSureModal();

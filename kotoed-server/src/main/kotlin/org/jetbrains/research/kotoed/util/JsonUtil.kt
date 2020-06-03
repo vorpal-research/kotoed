@@ -10,6 +10,7 @@ import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec
 import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Field
@@ -201,8 +202,12 @@ interface Jsonable {
 interface JsonableCompanion<T : Any> {
     val dataklass: KClass<T>
 
-    fun fromJson(json: JsonObject): T? = objectFromJson(json, dataklass)
+    fun fromJson(json: JsonObject): T? = objectFromJson(json, dataklass.starProjectedType)
 }
+
+// marker interfaces for remote communications
+interface SerializedAsObject<K, V>
+interface SerializedAsArray<E>
 
 /******************************************************************************/
 
@@ -275,7 +280,7 @@ private fun Any?.tryFromJson(klass: KType): Any? {
                     Variant(index, value.tryFromJson(klass.arguments[index].type!!))
                 }
                 companion is JsonableCompanion<*> -> companion.fromJson(this)
-                klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, erasure)
+                klass.jvmErasure.isSubclassOf(Jsonable::class) -> objectFromJson(this, klass)
                 klass.jvmErasure.isSubclassOf(Record::class) ->
                     toRecord<Record>(klass.jvmErasure.uncheckedCast<KClass<Record>>())
                 else -> die()
@@ -358,14 +363,16 @@ private fun Any?.tryFromJson(klass: KType): Any? {
     }
 }
 
-private fun <T : Any> objectFromJson(data: JsonObject, klass: KClass<T>): T {
+private fun <T : Any> objectFromJson(data: JsonObject, ktype: KType): T {
+    val klass: KClass<T> = ktype.jvmErasure.uncheckedCast()
+    val pmapping = ktype.parameterMapping
     if (klass.isSealed && klass.isSubclassOf(JsonableSealed::class)) return sealedFromJson(data, klass)
     val asMap = declaredMemberPropertyCache[klass].map {
         val key = camelToKey(it.name)
         val value = data.getValue(key)
         if (value == null && !it.returnType.isMarkedNullable)
             throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: required field ${it.name} is missing")
-        else Pair(it.name, value.tryFromJson(it.returnType))
+        else Pair(it.name, value.tryFromJson(it.returnType.applyMapping(pmapping)))
     }.toMap()
 
     return try {
@@ -396,12 +403,14 @@ private fun <T : Any> sealedFromJson(data: JsonObject, klass: KClass<T>): T {
     val childClass = descendants[discriminator]
             ?: throw IllegalArgumentException("Unknown child class: $discriminator")
 
-    return objectFromJson(data, childClass)
+    return objectFromJson(data, childClass.starProjectedType)
 }
 
 /******************************************************************************/
 
-fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
+fun <T : Any> fromJson(data: JsonObject, kclass: KClass<T>): T = fromJson(data, kclass.starProjectedType)
+fun <T : Any> fromJson(data: JsonObject, ktype: KType): T {
+    val klass = ktype.jvmErasure as KClass<T>
     if (klass.isSubclassOf(JsonObject::class)) return data.uncheckedCast<T>()
     klass.staticFunctions.firstOrNull { it.name == "fromJson" }?.let {
         return it.call(data).uncheckedCast<T>()
@@ -411,12 +420,14 @@ fun <T : Any> fromJson(data: JsonObject, klass: KClass<T>): T {
     return when (companion) {
         is JsonableCompanion<*> -> klass.safeCast(companion.fromJson(data))
                 ?: throw IllegalArgumentException("Cannot convert \"$data\" to type $klass: companion method failed")
-        else -> objectFromJson(data, klass)
+        else -> objectFromJson(data, ktype)
     }
 }
 
-inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson(data, T::class)
-inline fun <reified T : Jsonable> JsonObject.toJsonable() = fromJson(this, T::class)
+@UseExperimental(ExperimentalStdlibApi::class)
+inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson<T>(data, typeOf<T>())
+@UseExperimental(ExperimentalStdlibApi::class)
+inline fun <reified T : Jsonable> JsonObject.toJsonable() = fromJson<T>(this, typeOf<T>())
 
 /******************************************************************************/
 

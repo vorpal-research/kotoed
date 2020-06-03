@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.database.enums.CourseState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -18,6 +19,7 @@ import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.data.Permissions
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
+import kotlin.reflect.typeOf
 
 @HandlerFor(UrlPattern.AuthHelpers.WhoAmI)
 @JsonResponse
@@ -50,14 +52,14 @@ suspend fun handleCoursePerms(context: RoutingContext) {
         return
     }
 
-    val courseWrapper: DbRecordWrapper =
+    val courseWrapper: DbRecordWrapper<CourseRecord> =
             context.vertx().eventBus().sendJsonableAsync(
                     Address.Api.Course.Read,
                     CourseRecord().apply {
                         this.id = intId
                     })
 
-    val course: CourseRecord = courseWrapper.record.toRecord()
+    val course: CourseRecord = courseWrapper.record
 
     val isProcessed = courseWrapper.verificationData.status == VerificationStatus.Processed
 
@@ -86,23 +88,23 @@ suspend fun handleProjectPerms(context: RoutingContext) {
         return
     }
 
-    val projectWrapper: DbRecordWrapper =
+    val projectWrapper: DbRecordWrapper<ProjectRecord> =
             context.vertx().eventBus().sendJsonableAsync(
                     Address.Api.Project.Read,
                     ProjectRecord().apply {
                         this.id = intId
                     })
 
-    val project: ProjectRecord = projectWrapper.record.toRecord()
+    val project: ProjectRecord = projectWrapper.record
 
-    val courseWrapper: DbRecordWrapper =
+    val courseWrapper: DbRecordWrapper<CourseRecord> =
             context.vertx().eventBus().sendJsonableAsync(
                     Address.Api.Course.Read,
                     CourseRecord().apply {
                         this.id = project.courseId
                     })
 
-    val course: CourseRecord = courseWrapper.record.toRecord()
+    val course: CourseRecord = courseWrapper.record
 
     context.response().end(Permissions.Project(
             createSubmission = projectWrapper.verificationData.status == VerificationStatus.Processed

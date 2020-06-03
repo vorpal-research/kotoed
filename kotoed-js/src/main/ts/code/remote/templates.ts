@@ -14,5 +14,5 @@ export type CommentTemplates = CommentTemplate[]
 export const CommentTemplates = () => [];
 
 export async function fetchCommentTemplates(): Promise<CommentTemplates> {
-    return sendAsync<{}, CommentTemplates>(Kotoed.Address.Api.CommentTemplate.ReadAll, {});
+    return sendAsync(Kotoed.Address.Api.CommentTemplate.ReadAll, {});
 }
