@@ -137,12 +137,9 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
     };
 
     renderPencil() {
-        let glyphicon = window.innerWidth < 992 ? <Glyphicon glyph="pencil" onTouchStart={this.onClick}/> :
-            <Glyphicon glyph="pencil" onClick={this.onClick}/>;
-
         return (
             <div className={`comments-pencil-wrapper ${this.getPencilWrapperClasses()}`}>
-                {glyphicon}
+                <Glyphicon glyph="pencil" onClick={this.onClick} onTouchStart={this.onClick}/>;
             </div>
         );
     }
@@ -153,14 +150,10 @@ export default class LineMarkerComponent extends React.Component<LineMarkerProps
             closed: this.props.comments.filter((c: Comment) => c.state === "closed").count()
         };
 
-        let res = window.innerWidth < 992 ? <div className="comments-counter-wrapper" onTouchStart={this.onClick}>
-            <AggregatesLabel {...agg}/>
-        </div> : <div className="comments-counter-wrapper" onClick={this.onClick}>
-            <AggregatesLabel {...agg}/>
-        </div>;
-
         return (
-            res
+            <div className="comments-counter-wrapper" onClick={this.onClick} onTouchStart={this.onClick}>
+                <AggregatesLabel {...agg}/>
+            </div>
         );
     }
 

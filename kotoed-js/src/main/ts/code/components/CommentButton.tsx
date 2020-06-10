@@ -14,17 +14,13 @@ export class CommentButton extends React.Component<CommentButtonProps> {
 
 
     render() {
-        let span = window.innerWidth < 992 ? <span
-            className="comment-button"
-            onTouchStart={this.props.onClick}>
-                    <Glyphicon glyph={this.props.icon}/>
-                </span> : <span className="comment-button"
-                                onClick={this.props.onClick}>
-                    <Glyphicon glyph={this.props.icon}/>
-                </span>;
         return (
             <OverlayTrigger placement="left" overlay={this.makeTooltip()}>
-                {span}
+                <span className="comment-button"
+                      onClick={this.props.onClick}
+                      onTouchStart={this.props.onClick}>
+                    <Glyphicon glyph={this.props.icon}/>
+                </span>
             </OverlayTrigger>)
     }
 

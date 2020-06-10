@@ -7,7 +7,6 @@ import {FormState} from "../state/forms";
 
 import Mousetrap, {MousetrapInstance} from "../../util/mousetrap"
 import {CommentTemplates} from "../remote/templates";
-import {SimpleAutoSuggest} from "../../views/components/tags/SimpleAutosuggest";
 import "less/autosuggest.less"
 import {TextEditor} from "../../views/components/TextEditor";
 import {setStateAsync} from "../../views/components/common";
@@ -135,17 +134,14 @@ export default class CommentForm extends React.Component<CommentFormProps, Comme
     };
 
     renderPanelFooter = () => {
-        let button = window.innerWidth < 992 ? <Button bsStyle="success"
-                                                       onTouchStart={() => this.props.onSubmit(this.state.editText)}
-                                                       disabled={this.props.formState.processing}>
-            Send
-        </Button> : <Button bsStyle="success"
-                            onClick={() => this.props.onSubmit(this.state.editText)}
-                            disabled={this.props.formState.processing}>
-            Send
-        </Button>;
-
-        return <ButtonToolbar> {button} </ButtonToolbar>
+        return <ButtonToolbar>
+            <Button bsStyle="success"
+                    onClick={() => this.props.onSubmit(this.state.editText)}
+                    onTouchStart={() => this.props.onSubmit(this.state.editText)}
+                    disabled={this.props.formState.processing}>
+                Send
+            </Button>
+        </ButtonToolbar>
     };
 
     private mousetrap: MousetrapInstance | undefined;

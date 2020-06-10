@@ -12,7 +12,6 @@ import {BaseCommentToRead} from "../../data/comment";
 import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 import {setStateAsync} from "../../views/components/common";
 import {twemojifyNode} from "../../views/components/emoji";
-import {Picker} from "emoji-mart";
 
 import 'emoji-mart/css/emoji-mart.css'
 import {TextEditor} from "../../views/components/TextEditor";
@@ -231,11 +230,12 @@ export default class CommentComponent extends React.Component<CommentProps, Comm
     };
 
     btn = (style: string, text: String, onEdit: () => void) => {
-        return window.innerWidth < 992 ?
+        return (
             <Button bsStyle={style}
-                    onTouchStart={onEdit}>{text}</Button> :
-            <Button bsStyle={style}
-                    onClick={onEdit}>{text}</Button>
+                    onTouchStart={onEdit}
+                    onClick={onEdit}>{text}
+            </Button>
+        );
     };
 
     renderEditPreviewPanelFooter = () => {
