@@ -20,7 +20,6 @@ RUNNING_PID
 
 node_modules
 
-kotoed-js/src/main/ts/**/*.js
 kotoed-js/src/main/ts/**/*.js.map
 
 .mvn/*
