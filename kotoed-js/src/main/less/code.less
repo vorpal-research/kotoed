@@ -8,6 +8,14 @@
   font-family: Consolas, Menlo, Courier, monospace;
 }
 
+.container-sm {
+  @media (min-width: 768px) {
+    padding: 0;
+    margin-right: 0;
+    margin-left: 0;
+  }
+}
+
 #editor {
   height: 800px;
 }
@@ -97,7 +105,6 @@
   overflow-y: auto;
   white-space: nowrap;
   overflow-x: scroll;
-  display: flex;
 }
 
 .codemirror-with-veil {
@@ -133,6 +140,7 @@
   &:not(:hover):not(.comment-form-shown) {
     opacity: 0;
   }
+
   text-align: center;
 }
 
