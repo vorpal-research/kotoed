@@ -18,6 +18,7 @@ RUNNING_PID
 
 /kotoed-js/src/main/ts/**/*.js
 /kotoed-js/src/main/ts/**/*.js.map
+/kotoed-js/src/main/ts/util/kotoed-generated.ts
 
 /.mvn
 
