@@ -697,11 +697,11 @@
     <repositories>
         <repository>
             <id>bintray-jcenter</id>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <repository>
             <id>bintray-vorpal-research-kotlin-maven</id>
-            <url>http://dl.bintray.com/vorpal-research/kotlin-maven</url>
+            <url>https://dl.bintray.com/vorpal-research/kotlin-maven</url>
         </repository>
     </repositories>
 
