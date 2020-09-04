@@ -29,10 +29,14 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val ignoredTags = listOf("Example")
 
     private val List<Int>.grade: Int
-        get() = this.singleOrNull() ?: 1 // 1 is a default grade
+        get() = when {
+            this.isEmpty() -> 1 // default grade
+            this.size == 1 -> this.single()
+            else -> throw Exception("Two or more grade tags")
+        }
 
     private val Iterable<String>.onlyNumbers: List<Int>
-        get() = this.mapNotNull { it.toIntOrNull() }
+        get() = this.mapNotNull { it.toIntOrNull() }.distinct()
 
     private val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
     private fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
@@ -48,10 +52,10 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val TAKE_N_HIGHEST_GRADE_TASKS = 2
     private val TAKE_N_HIGHEST_GRADE_LESSONS = 5
 
-    private fun calcHighestGradesLessons(lessonGrades: List<Pair<String, Int>>) =
+    fun calcHighestGradeLessons(lessonGrades: List<Pair<String, Int>>) =
             lessonGrades.sortedByDescending { it.second }.filter { it.second > 0.0 }.take(TAKE_N_HIGHEST_GRADE_LESSONS)
 
-    private fun calcHighestGradeTasks(tasks: Map<String, List<KotoedRunnerTestMethodRun>>): List<Pair<String, Int>> {
+    fun calcHighestGradeTasks(tasks: Map<String, List<KotoedRunnerTestMethodRun>>): List<Pair<String, Int>> {
         val solvableTasks = tasks.filter { it.value.flatMap { it.tags }.intersect(ignoredTags).isEmpty() }
         val successfulTasks = solvableTasks.filterValues { it.flatMap { it.results }.all { it.status == successfulStatus } }
         val taskGrades = successfulTasks.mapValues { it.value.flatMap { it.tags }.onlyNumbers.grade }
@@ -71,7 +75,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             lesson to highestGrades.sumBy { it.second }
         }
 
-        val highestGradesLessons = calcHighestGradesLessons(lessonsGrade)
+        val highestGradesLessons = calcHighestGradeLessons(lessonsGrade)
         val totalScore = highestGradesLessons.sumBy { it.second }
 
         return totalScore.toDouble() // TODO: Change type to Int everywhere
@@ -93,7 +97,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             scoreDescriptions[lesson] = highestGrades.joinToString(separator = " + ") { "${it.second} points for ${it.first}" }
         }
 
-        val highestGradesLessons = calcHighestGradesLessons(scores.toList())
+        val highestGradesLessons = calcHighestGradeLessons(scores.toList())
         val totalScore = highestGradesLessons.sumBy { it.second }
         val totalScoreDescription = highestGradesLessons.joinToString(separator = " + ") { it.first }
 
