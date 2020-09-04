@@ -29,7 +29,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val ignoredTags = listOf("Example")
 
     private val List<Int>.grade: Int
-        get() = this.singleOrNull() ?: 1 //  1 is a default grade
+        get() = this.singleOrNull() ?: 1 // 1 is a default grade
 
     private val Iterable<String>.onlyNumbers: List<Int>
         get() = this.mapNotNull { it.toIntOrNull() }
