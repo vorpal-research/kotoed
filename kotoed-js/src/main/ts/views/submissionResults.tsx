@@ -198,18 +198,10 @@ namespace Statistics {
         <RowDefinition>
             <ColumnDefinition id=""
                               title="Package"/>
-            <ColumnDefinition id="Trivial"
-                              title="Trivial"/>
-            <ColumnDefinition id="Easy"
-                              title="Easy"/>
-            <ColumnDefinition id="Normal"
-                              title="Normal"/>
-            <ColumnDefinition id="Hard"
-                              title="Hard"/>
-            <ColumnDefinition id="Impossible"
-                              title="Impossible"/>
             <ColumnDefinition id="Score"
                               title="Score"/>
+            <ColumnDefinition id="Description"
+                              title="Description"/>
         </RowDefinition> as any
 
 } // namespace Statistics

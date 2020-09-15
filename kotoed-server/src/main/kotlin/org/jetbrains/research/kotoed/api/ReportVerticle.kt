@@ -3,6 +3,7 @@ package org.jetbrains.research.kotoed.api
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerStatus
+import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerTestMethodRun
 import org.jetbrains.research.kotoed.data.buildSystem.KotoedRunnerTestRun
 import org.jetbrains.research.kotoed.data.statistics.ReportResponse
 import org.jetbrains.research.kotoed.database.Tables
@@ -25,120 +26,87 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val template = "results\\.json".toRegex()
     private val successfulStatus = KotoedRunnerStatus.SUCCESSFUL
 
-    private val tagging = mapOf(
-            "Example" to null,
-            "Trivial" to 0.0,
-            "Easy" to 1.0,
-            "Normal" to 4.0,
-            "Hard" to 7.0,
-            "Impossible" to 10.0
-    )
-    private val tags = tagging.entries.sortedBy { it.value }.map { it.key }
+    private val ignoredTags = listOf("Example")
 
-    private val String?.grade: Double?
-        get() = tagging[this]
-
-    private val List<Double>.grade: Double
-        get() = when (size) {
-            0 -> 0.0
-            1 -> this[0]
-            else -> {
-                val (first, second) = this
-                if (first == second) first + 1.0 else first
-            }
+    private val List<Int>.grade: Int
+        get() = when {
+            this.isEmpty() -> 1 // default grade
+            this.size == 1 -> this.single()
+            else -> throw Exception("Two or more grade tags")
         }
+
+    private val Iterable<String>.onlyNumbers: List<Int>
+        get() = this.mapNotNull { it.toIntOrNull() }.distinct()
 
     private val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
     private fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
 
+    private fun extractLessonsFromTestResults(content: KotoedRunnerTestRun): Map<String, Map<String, List<KotoedRunnerTestMethodRun>>> {
+        return content.data
+                .groupBy { it.packageName.split('.').first() }
+                .mapValues { (_, results) ->
+                    results.groupBy { it.methodName }
+                }
+    }
+
+    private val TAKE_N_HIGHEST_GRADE_TASKS = 2
+    private val TAKE_N_HIGHEST_GRADE_LESSONS = 5
+
+    fun calcHighestGradeLessons(lessonGrades: List<Pair<String, Int>>) =
+            lessonGrades.sortedByDescending { it.second }.filter { it.second > 0.0 }.take(TAKE_N_HIGHEST_GRADE_LESSONS)
+
+    fun calcHighestGradeTasks(tasks: Map<String, List<KotoedRunnerTestMethodRun>>): List<Pair<String, Int>> {
+        val solvableTasks = tasks.filter { it.value.flatMap { it.tags }.intersect(ignoredTags).isEmpty() }
+        val successfulTasks = solvableTasks.filterValues { it.flatMap { it.results }.all { it.status == successfulStatus } }
+        val taskGrades = successfulTasks.mapValues { it.value.flatMap { it.tags }.onlyNumbers.grade }
+        return taskGrades.toList().sortedByDescending { it.second }.take(TAKE_N_HIGHEST_GRADE_TASKS)
+    }
+
+    // TODO: Probably incompatible with the new grading system
     private fun calcScore(sr: SubmissionResultRecord): Double {
         if (template !in sr.type) return 0.0
 
         val content: KotoedRunnerTestRun = (sr.body as JsonObject).snakeKeys().toJsonable()
 
-        val goodLessonData: Map<String, List<Double>> =
-                content.data
-                        .groupBy { it.packageName.split('.').first() }
-                        .mapValues { (_, results) ->
-                            results.groupBy { it.methodName }
-                                    .filter { (_, v) -> v.flatMap { it.results }.all { it.status == successfulStatus } }
-                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
-                                    .sortedDescending()
-                        }
+        val groupedLessonData = extractLessonsFromTestResults(content)
 
-        val fullLessonData: Map<String, List<Double>> =
-                content.data
-                        .groupBy { it.packageName.split('.').first() }
-                        .mapValues { (_, results) ->
-                            results.groupBy { it.methodName }
-                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull().grade }
-                                    .sortedDescending()
-                        }
-
-        val lessonData: Map<String, Pair<List<Double>, List<Double>>> =
-                fullLessonData.entries.fold(mutableMapOf()) { acc, (id, fullData) ->
-                    acc.also {
-                        it[id] = (goodLessonData[id] ?: emptyList()) to fullData
-                    }
-                }
-
-        var total = 0.0
-
-        for ((_, data) in lessonData) {
-            val (goodData, fullData) = data
-            val score = if (0.0 == fullData.grade) 0.0 else goodData.grade / fullData.grade
-            total += score
+        val lessonsGrade = groupedLessonData.map { (lesson, tasks) ->
+            val highestGrades = calcHighestGradeTasks(tasks)
+            lesson to highestGrades.sumBy { it.second }
         }
-        total /= lessonData.size
 
-        return total
+        val highestGradesLessons = calcHighestGradeLessons(lessonsGrade)
+        val totalScore = highestGradesLessons.sumBy { it.second }
+
+        return totalScore.toDouble() // TODO: Change type to Int everywhere
     }
 
     private fun calcAllScores(sr: SubmissionResultRecord): List<List<String>> {
         if (template !in sr.type) return listOf()
 
-        val tableData: MutableMap<Pair<String, String>, String> = mutableMapOf()
-        val scores: MutableMap<String, Double> = mutableMapOf()
+        val scoreDescriptions: MutableMap<String, String> = mutableMapOf()
+        val scores: MutableMap<String, Int> = mutableMapOf()
 
         val content: KotoedRunnerTestRun = (sr.body as JsonObject).snakeKeys().toJsonable()
 
-        val goodLessonData: Map<String, List<String>> =
-                content.data
-                        .groupBy { it.packageName.split('.').first() }
-                        .mapValues { (_, results) ->
-                            results.groupBy { it.methodName }
-                                    .filter { (_, v) -> v.flatMap { it.results }.all { it.status == successfulStatus } }
-                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull() }
-                                    .sortedByDescending { it.grade }
-                        }
+        val groupedLessonData = extractLessonsFromTestResults(content)
 
-        val fullLessonData: Map<String, List<String>> =
-                content.data
-                        .groupBy { it.packageName.split('.').first() }
-                        .mapValues { (_, results) ->
-                            results.groupBy { it.methodName }
-                                    .mapNotNull { (_, v) -> v.flatMap { it.tags }.firstOrNull() }
-                                    .sortedByDescending { it.grade }
-                        }
-
-        fullLessonData.keys.forEach { lesson ->
-            val goodLesson = goodLessonData[lesson].orEmpty()
-            val fullLesson = fullLessonData[lesson].orEmpty()
-            tags.forEach { tag ->
-                val good = goodLesson.count { it == tag }
-                val total = fullLesson.count { it == tag }
-                tableData[lesson to tag] = "$good/$total"
-            }
-            val goodScore = goodLesson.mapNotNull { it.grade }.grade
-            val fullScore = fullLesson.mapNotNull { it.grade }.grade
-            scores[lesson] = goodScore / fullScore
+        groupedLessonData.forEach { (lesson, tasks) ->
+            val highestGrades = calcHighestGradeTasks(tasks)
+            scores[lesson] = highestGrades.sumBy { it.second }
+            scoreDescriptions[lesson] = highestGrades.joinToString(separator = " + ") { "${it.second} points for ${it.first}" }
         }
 
-        val header = listOf(listOf("") + tags + listOf("Score"))
-        val data = fullLessonData.keys.sorted().mapIndexed { _, lesson ->
-            listOf(lesson) + tags.map { tag -> tableData[lesson to tag] ?: "" } + listOf(scores[lesson].orZero().fmt)
+        val highestGradesLessons = calcHighestGradeLessons(scores.toList())
+        val totalScore = highestGradesLessons.sumBy { it.second }
+        val totalScoreDescription = highestGradesLessons.joinToString(separator = " + ") { it.first }
+
+        val header = listOf(listOf("", "Score", "Description"))
+        val lessons = groupedLessonData.keys
+        val data = lessons.sorted().mapIndexed { _, lesson ->
+            listOf(lesson, scores[lesson]?.toString() ?: "", scoreDescriptions[lesson] ?: "")
         }
-        val footer = listOf(listOf("Total") + tags.map { "" } + scores.values.average().orZero().toString())
+        val footer = listOf(listOf("Total", totalScore.toString(), totalScoreDescription))
 
         return header + data + footer
     }
