@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.util.database
 
 import org.jetbrains.research.kotoed.database.Public
+import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jooq.Field
 import org.jooq.Table
 
@@ -10,3 +11,6 @@ val Table<*>.primaryKeyField get() =
 
 fun Table<*>.tableReferencedBy(f: Field<*>) =
         references.find { setOf(f.name) == it.fieldsArray.map { it.name }.toSet() }?.key?.table
+
+fun NotificationRecord.fixTitle(): NotificationRecord =
+        if (title != null) this else this.apply { title = type }

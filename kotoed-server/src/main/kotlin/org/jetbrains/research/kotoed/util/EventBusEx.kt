@@ -17,6 +17,7 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.TypedQueryBuilder
 import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.eventbus.Address
+import org.jetbrains.research.kotoed.util.database.fixTitle
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Record
@@ -547,7 +548,7 @@ open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable {
     protected suspend fun createNotification(record: NotificationRecord) =
             sendJsonable(
                     Address.Api.Notification.Create,
-                    record
+                    record.fixTitle()
             )
 }
 
