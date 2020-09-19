@@ -5,7 +5,8 @@ import {keysToCamelCase} from "../util/stringCase";
 
 interface CoursePermissions {
     createProject: boolean,
-    editCourse: boolean
+    editCourse: boolean,
+    viewTags: boolean
 }
 
 export async function fetchPermissions(id: number): Promise<CoursePermissions> {

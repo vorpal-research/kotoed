@@ -105,7 +105,7 @@ interface GroupProps {
     using: (children: Array<JSX.Element>) => JSX.Element
 }
 
-export type SearchCallback = () => { oldKey: String, toggleSearch: (key?: string) => void }
+export type SearchCallback = () => { oldKey: string, toggleSearch: (key?: string) => void }
 
 export interface SearchTableProps<DataType, QueryType = {}> {
     searchAddress: string,
@@ -117,7 +117,7 @@ export interface SearchTableProps<DataType, QueryType = {}> {
     pageSize?: number
     wrapResults?: (children: Array<JSX.Element>) => JSX.Element // Wanna table? This is for you!
     group?: GroupProps // Wanna group to columns or something other?
-    toolbarComponent?: (toggleSearch: () => void) => JSX.Element | null
+    toolbarComponent?: (searchCallback: SearchCallback) => JSX.Element | null
     withSearch?: boolean
 }
 
@@ -147,7 +147,6 @@ export class SearchTable<DataType, QueryType = {}> extends
     protected makeBaseQuery: MakeBaseQuery<Partial<QueryType>>;
     private wrapResults: (children: Array<JSX.Element>) => JSX.Element | Array<JSX.Element>; // Array if if we're doing no wrap
     private pageSize: number;
-    private renderToolbar: () => JSX.Element | null;
     private withSearch: boolean;
 
     private setPrivateFields(props: SearchTableProps<DataType, QueryType> ) {
@@ -156,18 +155,6 @@ export class SearchTable<DataType, QueryType = {}> extends
         this.wrapResults = props.wrapResults || identity;
         this.pageSize = props.pageSize || PAGESIZE;
         this.withSearch = props.withSearch === undefined ? true : props.withSearch;
-        if (props.toolbarComponent !== undefined) {
-            let tbc = props.toolbarComponent;
-            this.renderToolbar =  () => <div className="search-toolbar">
-                <div className="pull-right">
-                    {tbc(this.redoSearch)}
-                </div>
-                <div className="clearfix"/>
-                <div className="vspace-10"/>
-            </div>;
-        } else {
-            this.renderToolbar = () => null
-        }
     }
 
     constructor(props: SearchTableProps<DataType, QueryType>) {
@@ -254,13 +241,6 @@ export class SearchTable<DataType, QueryType = {}> extends
         });
 
 
-    };
-
-
-    redoSearch = () => {
-        this.setState({currentPage: 0}, () => {
-            this.query()
-        });
     };
 
     onSearchStateChanged = (state: SearchBarState) => {
@@ -368,7 +348,12 @@ export class SearchTable<DataType, QueryType = {}> extends
     render() {
         return (
             <div>
-                {this.renderToolbar()}
+                {this.props.toolbarComponent && this.props.toolbarComponent(() => { return {
+                    oldKey: this.state.text,
+                    toggleSearch: (key?: string) => {
+                        this.onSearchStateChanged({ text: key != null? key : this.state.text })
+                    }
+                }})}
                 {this.withSearch && <SearchBar
                     initialText={this.state.text}
                     onChange={this.onSearchStateChanged}

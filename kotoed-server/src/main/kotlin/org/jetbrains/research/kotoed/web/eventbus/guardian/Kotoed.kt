@@ -138,7 +138,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
             Address.Api.Submission.Tags.Search to AuthorityRequired(Authority.Teacher),
             Address.Api.Submission.Tags.SearchCount to AuthorityRequired(Authority.Teacher),
 
-            Address.Api.Tag.List to Permissive,
+            Address.Api.Tag.List to AuthorityRequired(Authority.Teacher),
 
             Address.Api.CommentTemplate.Create to Permissive,
             Address.Api.CommentTemplate.ReadAll to Permissive,

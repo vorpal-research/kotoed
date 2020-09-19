@@ -3,7 +3,7 @@ import {Alert, Button, Form, FormGroup, ControlLabel, FormControl, Thumbnail, Ro
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
 import {embeddedImage, imagePath} from "../images";
-import {ChoosyByVerDataSearchTable, SearchTable} from "../views/components/search";
+import {ChoosyByVerDataSearchTable, SearchCallback, SearchTable} from "../views/components/search";
 import {eventBus, isSnafu, SoftError} from "../eventBus";
 import {fetchPermissions} from "./remote";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
@@ -83,9 +83,18 @@ class CoursesSearch extends React.Component<{}, {canCreateCourse: boolean}> {
         );
     }
 
-    toolbarComponent = (redoSearch: () => void) => {
+    toolbarComponent = (cb: SearchCallback) => {
         if (this.state.canCreateCourse)
-            return <CourseCreate onCreate={redoSearch}/>;
+            return <div className="search-toolbar">
+                <div className="pull-right">
+                    <CourseCreate onCreate={() => {
+                        const search = cb();
+                        search.toggleSearch(search.oldKey)
+                    }}/>
+                </div>
+                <div className="clearfix"/>
+                <div className="vspace-10"/>
+            </div>
         else
             return null;
     };

@@ -3,7 +3,7 @@ import {
     Table,
     Glyphicon,
     Tooltip,
-    OverlayTrigger, Row, Button
+    OverlayTrigger, Row, Button, Col
 } from "react-bootstrap";
 import {Kotoed} from "../util/kotoed-api";
 import {render} from "react-dom";
@@ -13,7 +13,7 @@ import {fetchPermissions} from "./remote";
 import {DbRecordWrapper, isStatusFinal, WithVerificationData} from "../data/verification";
 import snafuDialog from "../util/snafuDialog";
 import {ProjectCreate} from "./create";
-import {JumboProject, SubmissionToRead} from "../data/submission";
+import {JumboProject, SubmissionToRead, Tag} from "../data/submission";
 
 import "less/projects.less"
 import {makeSubmissionResultsUrl, makeSubmissionReviewUrl} from "../util/url";
@@ -21,6 +21,7 @@ import {eventBus} from "../eventBus";
 import {CourseToRead} from "../data/course";
 import {SpinnerWithBigVeil} from "../views/components/SpinnerWithVeil";
 import VerificationDataAlert from "../views/components/VerificationDataAlert";
+import {Tag as TagComponent} from "../views/components/tags/Tag"
 import {pollDespairing} from "../util/poll";
 import {truncateString} from "../util/string";
 import {fetchCourse} from "../courses/remote";
@@ -34,6 +35,8 @@ import {makeFullName, makeGroup, makeProfileLink, makeRealName} from "../util/de
 import UrlPattern = Kotoed.UrlPattern;
 import * as ButtonToolbar from "react-bootstrap/lib/ButtonToolbar";
 import {sendAsync} from "../views/components/common";
+import {fetchAvailableTags} from "../submissionDetails/remote";
+import {intersperse} from "../util/common";
 
 type ProjectWithVer = JumboProject & WithVerificationData & { cb: SearchCallback }
 
@@ -142,10 +145,11 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
 
 }
 
-interface ProjectSearchProps {
+interface ProjectSearchState {
     canCreateProject: boolean,
     canEditCourse: boolean,
     course?: DbRecordWrapper<CourseToRead>
+    tags: Array<Tag>
 }
 
 class ProjectsSearchTable extends ChoosyByVerDataSearchTable<JumboProject & WithVerificationData,
@@ -160,16 +164,17 @@ class ProjectsSearchTable extends ChoosyByVerDataSearchTable<JumboProject & With
     }
 }
 
-class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
+class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
     constructor(props: {}) {
         super(props);
         this.state = {
             canCreateProject: false,
-            canEditCourse: false
+            canEditCourse: false,
+            tags: []
         };
     }
 
-    componentDidMount() {
+    async componentDidMount() {
 
         const processCourse = (course: DbRecordWrapper<CourseToRead>) => {
             this.setState({
@@ -177,20 +182,23 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
             })
         };
 
-        pollDespairing({
+        await pollDespairing({
             action: async () => await fetchCourse(id_),
             isGoodEnough: ((course: DbRecordWrapper<CourseToRead>) => isStatusFinal(course.verificationData.status)),
             onIntermediate: processCourse,
             onGiveUp: processCourse,
             onFinal: processCourse
-        }).then(() => {
-            return fetchPermissions(id_)
-        }).then((perms) =>
-            this.setState({canCreateProject: perms.createProject, canEditCourse: perms.editCourse})
-        )
+        });
+        const perms = await fetchPermissions(id_);
+        let tags: Array<Tag>
+        if (perms.viewTags)
+            tags = await fetchAvailableTags();
+        else
+            tags = []
+        this.setState({canCreateProject: perms.createProject, canEditCourse: perms.editCourse, tags})
     }
 
-    toolbarComponent = (redoSearch: () => void) => {
+    toolbarButtons = (cb: SearchCallback) => {
         return <ButtonToolbar>
             { this.state.canEditCourse &&
                 <Button bsStyle={"link"} href={UrlPattern.reverse(UrlPattern.Course.Edit, {id: id_})}>
@@ -198,11 +206,49 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
                 </Button>
             }
             { this.state.canCreateProject &&
-                <ProjectCreate onCreate={redoSearch} courseId={id_}/>
+                <ProjectCreate onCreate={() => {
+                    const search = cb();
+                    search.toggleSearch(search.oldKey)
+                }} courseId={id_}/>
             }
         </ButtonToolbar>;
     };
 
+    tagCloug = (cb: SearchCallback) => {
+        return this.state.tags.length !== 0 && <Row>
+            <Col xs={12} sm={12} md={12} lg={12}>
+                {intersperse<JSX.Element | string>(this.state.tags.map(tag => <TagComponent key={tag.id} tag={tag} removable={false} onClick={() => {
+                    const searchState = cb();
+                    // XXX: we can do better
+                    // XXX: also it's a copy-paste from ProjectComponent
+                    if(!searchState.oldKey.includes(tag.name)) {
+                        searchState.toggleSearch(searchState.oldKey + " " + tag.name)
+                    }
+                }}/>), " ")}
+            </Col>
+        </Row>;
+    };
+
+    toolbar = (cb: SearchCallback) => {
+        return <div>
+            <Row>
+                <Col xs={12} sm={12} md={12} lg={12}>
+                    <div className="search-toolbar">
+                        <div className="pull-right">
+                            {this.toolbarButtons(cb)}
+                        </div>
+                        <div className="clearfix"/>
+                        <div className="vspace-10"/>
+                    </div>
+                </Col>
+            </Row>
+            <Row className="tag-cloud">
+                <Col xs={12} sm={12} md={12} lg={12}>
+                    {this.tagCloug(cb)}
+                </Col>
+            </Row>
+        </div>
+    }
 
     renderTable = (children: Array<JSX.Element>): JSX.Element => {
         return (
@@ -248,7 +294,7 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchProps> {
                         }}
                         wrapResults={this.renderTable}
                         elementComponent={(key, c: ProjectWithVer, cb: SearchCallback) => <ProjectComponent {...c} key={key} cb={cb} />}
-                        toolbarComponent={this.toolbarComponent}
+                        toolbarComponent={this.toolbar}
                     />
                 </Row>
             </div>

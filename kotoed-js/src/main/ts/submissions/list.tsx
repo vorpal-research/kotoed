@@ -19,6 +19,7 @@ import {ChoosyByVerDataSearchTable} from "../views/components/search";
 import {sendAsync} from "../views/components/common";
 import Address = Kotoed.Address;
 import * as Popover from "react-bootstrap/lib/Popover";
+import {CourseCreate} from "../courses/create";
 
 interface SubmissionListState {
     canCreateSubmission: boolean
@@ -71,7 +72,7 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
 
     };
 
-    toolbarComponent = () => {
+    toolbarInner = () => {
         return <ButtonToolbar>
             {this.state.project &&
                 <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip">New tab</Tooltip>}>
@@ -140,7 +141,15 @@ class SubmissionList extends React.Component<{}, SubmissionListState> {
                             <SubmissionComponent {...c}
                                                  key={key}
                                                  pendingIsAvailable={false}/>}
-                        toolbarComponent={this.toolbarComponent}
+                        toolbarComponent={() => {
+                            return <div className="search-toolbar">
+                                <div className="pull-right">
+                                    {this.toolbarInner()}
+                                </div>
+                                <div className="clearfix"/>
+                                <div className="vspace-10"/>
+                            </div>
+                        }}
                     />
                 </Row>
             </div>

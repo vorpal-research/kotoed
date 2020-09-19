@@ -69,7 +69,8 @@ suspend fun handleCoursePerms(context: RoutingContext) {
 
     context.response().end(Permissions.Course(
             createProject = isProcessed && isOpen,
-            editCourse = isProcessed && userIsTeacher
+            editCourse = isProcessed && userIsTeacher,
+            viewTags = userIsTeacher
     ))
 }
 
