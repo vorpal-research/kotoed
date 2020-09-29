@@ -1,10 +1,7 @@
 package org.jetbrains.research.kotoed.db.condition.lang
 
 import org.apache.commons.text.StringEscapeUtils
-import org.jetbrains.research.kotoed.util.database.FunctionCall
-import org.jetbrains.research.kotoed.util.database.documentMatch
-import org.jetbrains.research.kotoed.util.database.jsonGet
-import org.jetbrains.research.kotoed.util.database.toPlainTSQuery
+import org.jetbrains.research.kotoed.util.database.*
 import org.jetbrains.research.kotoed.util.uncheckedCast
 import org.jooq.Condition
 import org.jooq.Field
@@ -54,11 +51,12 @@ private fun<T> convertCompareExpression(cmp: CompareExpression, tables: (String)
     CompareOp.GE -> convertPrimitive<T>(cmp.lhv, tables).ge(convertPrimitive<T>(cmp.rhv, tables))
     CompareOp.LT -> convertPrimitive<T>(cmp.lhv, tables).lt(convertPrimitive<T>(cmp.rhv, tables))
     CompareOp.LE -> convertPrimitive<T>(cmp.lhv, tables).le(convertPrimitive<T>(cmp.rhv, tables))
-    CompareOp.MATCH -> {
+    CompareOp.MATCH, CompareOp.MATCH_EXACT -> {
+        val convertQuery = if(cmp.op == CompareOp.MATCH_EXACT) ::toPlainTSQuerySimple else ::toPlainTSQuery
         var lhv = convertPrimitive<T>(cmp.lhv, tables).uncheckedCast<Field<Any>>()
         var rhv = convertPrimitive<T>(cmp.rhv, tables).uncheckedCast<Field<Any>>()
         if(lhv.dataType.typeName !in listOf("tsvector", "\"pg_catalog\".\"tsvector\"")) lhv = FunctionCall("to_tsvector", lhv)
-        if(rhv.dataType.typeName !in listOf("tsquery", "\"pg_catalog\".\"tsquery\"")) rhv = toPlainTSQuery(rhv.uncheckedCast())
+        if(rhv.dataType.typeName !in listOf("tsquery", "\"pg_catalog\".\"tsquery\"")) rhv = convertQuery(rhv.uncheckedCast())
         DSL.condition(lhv documentMatch rhv)
     }
     CompareOp.CONTAINS -> convertPrimitive<T>(cmp.lhv, tables).contains(convertPrimitive<T>(cmp.rhv, tables))
