@@ -110,7 +110,7 @@ class GlobalConfig : Configuration() {
     val Notifications by NotificationsConfig()
 
     class ProcessorsConfig : Configuration() {
-        val CacheExpiration: Long by 30L
+        val CacheExpiration: Long by 60L
     }
 
     val Processors by ProcessorsConfig()
