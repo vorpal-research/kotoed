@@ -62,7 +62,6 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return taskGrades.toList().sortedByDescending { it.second }.take(TAKE_N_HIGHEST_GRADE_TASKS)
     }
 
-    // TODO: Probably incompatible with the new grading system
     private fun calcScore(sr: SubmissionResultRecord): Double {
         if (template !in sr.type) return 0.0
 
@@ -139,9 +138,9 @@ class ReportVerticle : AbstractKotoedVerticle() {
             val tag = result
                     .getJsonObject("submission")
                     ?.getJsonArray("tags")
-                    ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toDoubleOrNull() }
+                    ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toIntOrNull()?.toDouble() }
                     ?.firstOrNull()
-                    ?: 0.75
+                    ?: 0.0
 
             denizen.denizenId to (rec to tag)
         }}
@@ -161,7 +160,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             listOf(
                     it,
                     open[it]?.first.orZero().fmt,
-                    (open[it]?.second ?: 0.75).fmt,
+                    (open[it]?.second ?: 0.0).fmt,
                     closed[it]?.first.orZero().fmt
             )
         }
