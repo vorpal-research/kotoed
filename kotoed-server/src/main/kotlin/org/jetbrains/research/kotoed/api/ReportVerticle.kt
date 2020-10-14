@@ -161,7 +161,6 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
     private data class Score(val student: String,
                              val open: Double?, val adjustment: Adjustment, val closed: Double?,
-                             val defaultPenalty: Double = -1.0,
                              val total: Double = max(
                                      open.orZero() + adjustment.toDouble(),
                                      closed.orZero()
