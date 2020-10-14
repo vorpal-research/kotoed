@@ -40,7 +40,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         get() = this.mapNotNull { it.toIntOrNull() }.distinct()
 
     companion object {
-        val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
+        val Double.fmt get() = String.format(Locale.ROOT, if (this % 1 == 0.0) "%.0f" else "%.2f", this)
         fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
     }
 
