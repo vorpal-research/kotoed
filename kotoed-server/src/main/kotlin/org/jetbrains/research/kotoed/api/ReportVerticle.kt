@@ -179,7 +179,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                     student = it,
                     open = open[it]?.first,
                     adjustment = Adjustment(open[it]?.second),
-                    closed = closed[it]?.first)
+                    closed = closed[it]?.first
+            )
         }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
         val header = listOf(
                 listOf("Student", "Score (open)", "Adjustment", "Score (closed)", "Total", "Comment")
