@@ -15,6 +15,7 @@ import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 import java.time.OffsetDateTime
 import java.util.*
+import kotlin.math.max
 
 data class ReportRequest(val id: Int, val timestamp: OffsetDateTime?) : Jsonable
 
@@ -38,8 +39,10 @@ class ReportVerticle : AbstractKotoedVerticle() {
     private val Iterable<String>.onlyNumbers: List<Int>
         get() = this.mapNotNull { it.toIntOrNull() }.distinct()
 
-    private val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
-    private fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
+    companion object {
+        val Double.fmt get() = String.format(Locale.ROOT, "%.2f", this)
+        fun Double?.orZero() = if (this?.isNaN() == false) this else 0.0
+    }
 
     private fun extractLessonsFromTestResults(content: KotoedRunnerTestRun): Map<String, Map<String, List<KotoedRunnerTestMethodRun>>> {
         return content.data
@@ -110,43 +113,61 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return header + data + footer
     }
 
-    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, Double>> {
+    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, Double?>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
-        return dbFindAsync(DenizenRecord()).map { denizen -> async(reportPool) iter@{
-            val result = dbQueryAsync(Tables.SUBMISSION_RESULT) {
-                join(Tables.SUBMISSION) {
-                    join(Tables.PROJECT) {
-                        join(Tables.DENIZEN, field = "denizen_id") {
-                            find { id = denizen.id }
+        return dbFindAsync(DenizenRecord()).map { denizen ->
+            async(reportPool) iter@{
+                val result = dbQueryAsync(Tables.SUBMISSION_RESULT) {
+                    join(Tables.SUBMISSION) {
+                        join(Tables.PROJECT) {
+                            join(Tables.DENIZEN, field = "denizen_id") {
+                                find { id = denizen.id }
+                            }
+                        }
+
+                        rjoin(Tables.SUBMISSION_TAG, resultField = "tags") {
+                            join(Tables.TAG)
                         }
                     }
+                    filter("(submission.project.course_id == ${request.id}) and " +
+                            "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ") and " +
+                            "type == \"results.json\"")
+                }.sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
+                        .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
+                        .firstOrNull()
 
-                    rjoin(Tables.SUBMISSION_TAG, resultField = "tags") {
-                        join(Tables.TAG)
-                    }
-                }
-                filter("(submission.project.course_id == ${request.id}) and " +
-                        "(" + subStates.map { "submission.state == \"$it\"" }.joinToString(" or ") + ") and " +
-                        "type == \"results.json\"")
-            }.sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
-                    .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
-                    .firstOrNull()
+                val rec = result?.toRecord<SubmissionResultRecord>()?.let(this::calcScore)
+                        ?: return@iter null
+                val tag = result
+                        .getJsonObject("submission")
+                        ?.getJsonArray("tags")
+                        ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toIntOrNull()?.toDouble() }
+                        ?.singleOrNull()
 
-            val rec = result?.toRecord<SubmissionResultRecord>()?.let(this::calcScore)
-                    ?: return@iter null
-            val tag = result
-                    .getJsonObject("submission")
-                    ?.getJsonArray("tags")
-                    ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toIntOrNull()?.toDouble() }
-                    ?.firstOrNull()
-                    ?: 0.0
-
-            denizen.denizenId to (rec to tag)
-        }}
+                denizen.denizenId to (rec to tag)
+            }
+        }
                 .mapNotNull { it.await() }
                 .toMap()
     }
+
+    private data class Adjustment(val value: Double?) {
+        val defaultPenalty: Double = -1.0
+
+        fun toDouble() = value ?: defaultPenalty
+        fun isSet() = value != null
+    }
+
+    private data class Score(val student: String,
+                             val open: Double?, val adjustment: Adjustment, val closed: Double?,
+                             val defaultPenalty: Double = -1.0,
+                             val total: Double = max(
+                                     open.orZero() + adjustment.toDouble(),
+                                     closed.orZero()
+                             ),
+                             val hasBeenChecked: Boolean = adjustment.isSet() || (closed != null && open == null),
+                             val comment: String = if (hasBeenChecked) "" else "Not checked")
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
     suspend fun handleReport(request: ReportRequest): ReportResponse = withContext(reportPool) {
@@ -154,16 +175,27 @@ class ReportVerticle : AbstractKotoedVerticle() {
         val closed = makeReport(request, listOf("closed"))
 
         val students = open.keys + closed.keys
-        val result = listOf(
-                listOf("Student", "Score (all)", "Adjustment", "Score (closed)")
-        ) + students.sorted().map {
+        val scores = students.map {
+            Score(
+                    student = it,
+                    open = open[it]?.first,
+                    adjustment = Adjustment(open[it]?.second),
+                    closed = closed[it]?.first)
+        }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
+        val header = listOf(
+                listOf("Student", "Score (open)", "Adjustment", "Score (closed)", "Total", "Comment")
+        )
+        val table = scores.map { score ->
             listOf(
-                    it,
-                    open[it]?.first.orZero().fmt,
-                    (open[it]?.second ?: 0.0).fmt,
-                    closed[it]?.first.orZero().fmt
+                    score.student,
+                    score.open.orZero().fmt,
+                    score.adjustment.toDouble().fmt,
+                    score.closed.orZero().fmt,
+                    score.total.fmt,
+                    score.comment
             )
         }
+        val result = header + table
 
         ReportResponse(result)
     }
@@ -174,7 +206,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         result ?: return@withContext ReportResponse(listOf())
 
-        ReportResponse (calcAllScores(result))
+        ReportResponse(calcAllScores(result))
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Result.Report)
@@ -183,7 +215,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         result ?: return@withContext ReportResponse(listOf())
 
-        ReportResponse (calcAllScores(result))
+        ReportResponse(calcAllScores(result))
     }
 
 }
