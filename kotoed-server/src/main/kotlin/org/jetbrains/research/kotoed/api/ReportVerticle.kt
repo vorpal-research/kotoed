@@ -153,10 +153,11 @@ class ReportVerticle : AbstractKotoedVerticle() {
     }
 
     private data class Adjustment(val value: Double?) {
-        val defaultPenalty: Double = -1.0
-
         fun toDouble() = value ?: defaultPenalty
         fun isSet() = value != null
+        companion object {
+            const val defaultPenalty: Double = -1.0
+        }
     }
 
     private data class Score(val student: String,
