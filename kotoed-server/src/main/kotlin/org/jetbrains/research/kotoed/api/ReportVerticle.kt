@@ -156,7 +156,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         fun toDouble() = value ?: defaultPenalty
         fun isSet() = value != null
         companion object {
-            const val defaultPenalty: Double = -1.0
+            const val defaultPenalty: Double = 0.0
         }
     }
 
