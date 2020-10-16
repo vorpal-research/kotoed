@@ -113,7 +113,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return header + data + footer
     }
 
-    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, Double?>> {
+    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, List<String>?>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
         return dbFindAsync(DenizenRecord()).map { denizen ->
@@ -139,24 +139,34 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
                 val rec = result?.toRecord<SubmissionResultRecord>()?.let(this::calcScore)
                         ?: return@iter null
-                val tag = result
+                val tags = result
                         .getJsonObject("submission")
                         ?.getJsonArray("tags")
-                        ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString()?.toIntOrNull()?.toDouble() }
-                        ?.singleOrNull()
+                        ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString() }
 
-                denizen.denizenId to (rec to tag)
+                denizen.denizenId to (rec to tags)
             }
         }
                 .mapNotNull { it.await() }
                 .toMap()
     }
 
-    private data class Adjustment(val value: Double?) {
+    private data class Adjustment(val value: Double?, val comment: String? = null) {
         fun toDouble() = value ?: defaultPenalty
         fun isSet() = value != null
+
         companion object {
             const val defaultPenalty: Double = 0.0
+            fun fromTags(tags: List<String>): Adjustment {
+                val adjustmentTags = tags.mapNotNull { it.toIntOrNull()?.toDouble() }
+                return when {
+                    adjustmentTags.size > 1 -> Adjustment(null, "Multiple tags")
+                    adjustmentTags.size == 1 -> Adjustment(adjustmentTags.singleOrNull())
+                    tags.contains("checked") -> Adjustment(0.0)
+                    tags.contains("check me") -> Adjustment(null, "Not checked")
+                    else -> Adjustment(null, "No suitable tags found")
+                }
+            }
         }
     }
 
@@ -167,11 +177,12 @@ class ReportVerticle : AbstractKotoedVerticle() {
                                      closed.orZero()
                              ),
                              val hasBeenChecked: Boolean = adjustment.isSet() || (closed != null && open == null),
-                             val comment: String = if (hasBeenChecked) "" else "Not checked")
+                             val comment: String = if (hasBeenChecked) "" else
+                                 adjustment.comment ?: "No suitable submissions found")
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
     suspend fun handleReport(request: ReportRequest): ReportResponse = withContext(reportPool) {
-        val open = makeReport(request, listOf("open", "obsolete", "closed"))
+        val open = makeReport(request, listOf("open"))
         val closed = makeReport(request, listOf("closed"))
 
         val students = open.keys + closed.keys
@@ -179,7 +190,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             Score(
                     student = it,
                     open = open[it]?.first,
-                    adjustment = Adjustment(open[it]?.second),
+                    adjustment = Adjustment.fromTags(open[it]?.second ?: listOf()),
                     closed = closed[it]?.first
             )
         }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
