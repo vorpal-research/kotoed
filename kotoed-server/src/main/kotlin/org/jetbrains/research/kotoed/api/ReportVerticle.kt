@@ -113,12 +113,12 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return header + data + footer
     }
 
-    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, Pair<Double, List<String>?>> {
+    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, List<Pair<Double, List<String>?>>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
         return dbFindAsync(DenizenRecord()).map { denizen ->
             async(reportPool) iter@{
-                val result = dbQueryAsync(Tables.SUBMISSION_RESULT) {
+                val results = dbQueryAsync(Tables.SUBMISSION_RESULT) {
                     join(Tables.SUBMISSION) {
                         join(Tables.PROJECT) {
                             join(Tables.DENIZEN, field = "denizen_id") {
@@ -135,19 +135,19 @@ class ReportVerticle : AbstractKotoedVerticle() {
                             "type == \"results.json\"")
                 }.sortedByDescending { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime }
                         .dropWhile { (it.safeNav("submission") as JsonObject).toRecord<SubmissionRecord>().datetime > date }
-                        .firstOrNull()
 
-                val rec = result?.toRecord<SubmissionResultRecord>()?.let(this::calcScore)
-                        ?: return@iter null
-                val tags = result
-                        .getJsonObject("submission")
-                        ?.getJsonArray("tags")
-                        ?.mapNotNull { (it as? JsonObject).safeNav("tag", "name")?.toString() }
-
-                denizen.denizenId to (rec to tags)
+                denizen.denizenId to results.map { record ->
+                    val score = record.toRecord<SubmissionResultRecord>().let(this::calcScore)
+                    val tags = record
+                            .getJsonObject("submission")
+                            ?.getJsonArray("tags")
+                            ?.filterIsInstance<JsonObject>()
+                            ?.mapNotNull { it.safeNav("tag", "name")?.toString() }
+                    score to tags
+                }
             }
         }
-                .mapNotNull { it.await() }
+                .map { it.await() }
                 .toMap()
     }
 
@@ -171,14 +171,41 @@ class ReportVerticle : AbstractKotoedVerticle() {
     }
 
     private data class Score(val student: String,
-                             val open: Double?, val adjustment: Adjustment, val closed: Double?,
+                             val open: Double?, val closed: Double?,
+                             val adjustment: Adjustment, val permanentAdjustment: Adjustment,
                              val total: Double = max(
                                      open.orZero() + adjustment.toDouble(),
                                      closed.orZero()
                              ),
                              val hasBeenChecked: Boolean = adjustment.isSet() || (closed != null && open == null),
                              val comment: String = if (hasBeenChecked) "" else
-                                 adjustment.comment ?: "No suitable submissions found")
+                                 adjustment.comment ?: "No suitable submissions found") {
+        companion object {
+            fun fromRecords(denizen: String,
+                            openRecords: List<Pair<Double, List<String>?>>,
+                            closedRecords: List<Pair<Double, List<String>?>>): Score {
+                val lastOpen = openRecords.firstOrNull()
+                val lastClosed = closedRecords.firstOrNull()
+                val permanentAdjs = closedRecords
+                        .map { it.second }
+                        .filterNotNull()
+                        .filter { it.contains("permanent") }
+                        .map { Adjustment.fromTags(it) }
+                        .filter { it.isSet() }
+                val permanentAdj = permanentAdjs.reduce { acc, adjustment ->
+                    Adjustment(acc.value!! + adjustment.value!!,
+                            listOf(acc.comment, adjustment.comment).joinToString())
+                }
+                return Score(
+                        student = denizen,
+                        open = lastOpen?.first,
+                        adjustment = Adjustment.fromTags(lastOpen?.second ?: listOf()),
+                        permanentAdjustment = permanentAdj,
+                        closed = lastClosed?.first
+                )
+            }
+        }
+    }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Report)
     suspend fun handleReport(request: ReportRequest): ReportResponse = withContext(reportPool) {
@@ -187,12 +214,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         val students = open.keys + closed.keys
         val scores = students.map {
-            Score(
-                    student = it,
-                    open = open[it]?.first,
-                    adjustment = Adjustment.fromTags(open[it]?.second ?: listOf()),
-                    closed = closed[it]?.first
-            )
+            Score.fromRecords(it, open[it] ?: listOf(), closed[it] ?: listOf())
         }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
         val header = listOf(
                 listOf("Student", "Score (open)", "Adjustment", "Score (closed)", "Total", "Comment")
