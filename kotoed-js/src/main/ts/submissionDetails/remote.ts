@@ -9,6 +9,7 @@ import {WithId} from "../data/common";
 import {CommentAggregate} from "../code/remote/comments";
 import {CourseToRead} from "../data/course";
 import {sendAsync} from "../views/components/common";
+import natsort from "natsort";
 
 export interface SubmissionPermissions {
     editOwnComments: boolean
@@ -84,9 +85,13 @@ export async function fetchTagList(submissionId: number): Promise<Tag[]> {
 }
 
 export async function fetchAvailableTags(): Promise<Tag[]> {
+    const sorter = natsort();
+
     return sendAsync(Kotoed.Address.Api.Tag.List, undefined)
         .then(tags => {
-            return _.sortBy(tags, t => t.name);
+            return tags.sort((a: Tag, b: Tag) =>
+                // Sort negative numbers as if they were positive
+                sorter(_.trimStart(a.name, '-'), _.trimStart(b.name, '-')));
         });
 }
 
