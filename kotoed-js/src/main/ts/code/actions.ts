@@ -8,7 +8,7 @@ import {
 import {
     Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
-import {fetchRootDir, fetchFile, File} from "./remote/code";
+import {fetchRootDir, fetchFile, File, FileType} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
@@ -221,12 +221,17 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
         }));
 
         return fetchRootDir(payload.submissionId).then((root) => {
-            const sorter = natsort()
+            const naturalSorter = natsort()
+            const typeOrder: FileType[] = ["directory", "file"]
+            const typeSorter = (a: File, b: File) =>
+                typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
             const recursiveSorter = (node: File) => {
                 if (node.children == null) {
                     return
                 }
-                node.children.sort((a: File, b: File) => sorter(a.name, b.name))
+                node.children.sort((a: File, b: File) =>
+                    a.type != b.type ? typeSorter(a, b) : naturalSorter(a.name, b.name)
+                )
                 for (let child of node.children) {
                     recursiveSorter(child)
                 }
