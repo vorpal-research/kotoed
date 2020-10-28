@@ -21,6 +21,7 @@ import {
 
 import {fetchPermissions} from "../submissionDetails/remote";
 import {Kotoed} from "../util/kotoed-api";
+import natsort from "natsort";
 
 export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
     constructor(props: ResultListHolderProps<ResultT>, context: undefined) {
@@ -34,10 +35,14 @@ export class SubmissionResultTable<ResultT> extends ResultListHolder<any> {
         let subReport = sendAsync(Kotoed.Address.Api.Submission.Report, {"id": this.props.id});
 
         return Promise.all([subResults, subReport]).then(([res, rep]) => {
+            const sorter = natsort({insensitive: true}); // Total row should be the last one
+            const sortedRep = rep.data.sort((a: string[], b: string[]) =>
+                sorter(a[0], b[0])
+            );
             const sum: GenericResponse<ResultT> = {
                 records: _.concat(res.records, {
                     type: "submission.statistics",
-                    data: rep.data
+                    data: sortedRep
                 } as any),
                 verificationData: res.verificationData
             };
