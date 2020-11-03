@@ -176,7 +176,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                              val total: Double = max(
                                      open.orZero() + adjustment.toDouble(),
                                      closed.orZero()
-                             ),
+                             ) + permanentAdjustment.toDouble(),
                              val hasBeenChecked: Boolean = adjustment.isSet() || (closed != null && open == null),
                              val comment: String = if (hasBeenChecked) "" else
                                  adjustment.comment ?: "No suitable submissions found") {
@@ -187,15 +187,14 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 val lastOpen = openRecords.firstOrNull()
                 val lastClosed = closedRecords.firstOrNull()
                 val permanentAdjs = closedRecords
-                        .map { it.second }
-                        .filterNotNull()
+                        .mapNotNull { it.second }
                         .filter { it.contains("permanent") }
                         .map { Adjustment.fromTags(it) }
                         .filter { it.isSet() }
-                val permanentAdj = permanentAdjs.reduce { acc, adjustment ->
-                    Adjustment(acc.value!! + adjustment.value!!,
-                            listOf(acc.comment, adjustment.comment).joinToString())
-                }
+                val permanentAdj = Adjustment(
+                        value = permanentAdjs.sumByDouble { it.value ?: 0.0 },
+                        comment = permanentAdjs.mapNotNull { it.comment }.joinToString()
+                )
                 return Score(
                         student = denizen,
                         open = lastOpen?.first,
@@ -217,7 +216,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
             Score.fromRecords(it, open[it] ?: listOf(), closed[it] ?: listOf())
         }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
         val header = listOf(
-                listOf("Student", "Score (open)", "Adjustment", "Score (closed)", "Total", "Comment")
+                listOf("Student", "Score (open)", "Adjustment", "Score (closed)", "Permanent Adj.", "Total", "Comment")
         )
         val table = scores.map { score ->
             listOf(
@@ -225,6 +224,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                     score.open.orZero().fmt,
                     score.adjustment.toDouble().fmt,
                     score.closed.orZero().fmt,
+                    score.permanentAdjustment.toDouble().fmt,
                     score.total.fmt,
                     score.comment
             )
