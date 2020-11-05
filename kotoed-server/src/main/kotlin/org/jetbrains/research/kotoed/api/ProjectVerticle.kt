@@ -10,12 +10,9 @@ import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
-import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
-import org.jooq.TableRecord
 
 @AutoDeployable
 class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
@@ -56,22 +53,32 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
 
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourse)
     suspend fun handleSearchForCourse(query: SearchQueryWithTags): JsonArray {
-        val subQ = query(Tables.SUBMISSION) {
+        val subQueryOpenSubmissions = query(Tables.SUBMISSION) {
             find {
                 state = SubmissionState.open
             }
 
             sortBy("-datetime")
 
-            if(query.withTags == true) {
+            if (query.withTags == true) {
                 rjoin(Tables.SUBMISSION_TAG) {
                     join(Tables.TAG)
                 }
             }
         }
 
+        val subQueryClosedSubmissions = query(Tables.SUBMISSION) {
+            find {
+                state = SubmissionState.closed
+            }
+
+            rjoin(Tables.SUBMISSION_TAG) {
+                join(Tables.TAG)
+            }
+        }
+
         val tableName =
-                if(query.withTags == true)
+                if (query.withTags == true)
                     Tables.PROJECT_TEXT_SEARCH.name
                 else Tables.PROJECT_RESTRICTED_TEXT_SEARCH.name
 
@@ -80,11 +87,12 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                     deleted = false
                 })
                 .join(ComplexDatabaseQuery(Tables.DENIZEN).rjoin(Tables.PROFILE))
-                .rjoin(subQ, "project_id", "openSubmissions")
+                .rjoin(subQueryOpenSubmissions, "project_id", "openSubmissions")
+                .rjoin(subQueryClosedSubmissions, "project_id", "closedSubmissions")
                 .find(ProjectTextSearchRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
-                    if(query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
+                    if (query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
                         empty = false
                     }
                 })
@@ -106,7 +114,22 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                             val vdSub = dbProcessAsync(sub)
                             it["verificationData"] = vdSub.toJson()
                             it
-                        }?: JsonArray()
+                        } ?: JsonArray()
+                val permanentAdjustments = (json.getJsonArray("closedSubmissions")
+                        ?.asSequence() ?: emptySequence())
+                        .filterIsInstance<JsonObject>()
+                        .map { closedSubmission ->
+                            val tags = closedSubmission.getJsonArray("submission_tags")
+                                    ?.mapNotNull { tagRecord ->
+                                        val tag = (tagRecord as JsonObject).getJsonObject("tag")
+                                        tag?.getString("name")
+                                    } ?: listOf()
+                            tags
+                        }
+                        .filter { tags -> "permanent" in tags }
+                        .mapNotNull { tags -> tags.mapNotNull { it.toIntOrNull() }.firstOrNull() }
+                json["permanentAdjustment"] = permanentAdjustments.sum()
+                json.remove("closedSubmissions")
                 json
             }
         } else projects
@@ -117,18 +140,18 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Api.Project.SearchForCourseCount)
     suspend fun handleSearchForCourseCount(query: SearchQueryWithTags): CountResponse {
         val tableName =
-                if(query.withTags == true)
+                if (query.withTags == true)
                     Tables.PROJECT_TEXT_SEARCH.name
                 else Tables.PROJECT_RESTRICTED_TEXT_SEARCH.name
 
 
         val q = ComplexDatabaseQuery(tableName)
-                .find(ProjectRecord().apply{ deleted = false })
+                .find(ProjectRecord().apply { deleted = false })
                 .join(Tables.DENIZEN.name)
                 .find(ProjectTextSearchRecord().apply {
                     courseId = query.find?.getInteger(Tables.PROJECT.COURSE_ID.name)
                     denizenId = query.find?.getInteger(Tables.PROJECT.DENIZEN_ID.name)
-                    if(query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
+                    if (query.withTags == true && "!empty" in query.text.split(Regex("""\s+"""))) {
                         empty = false
                     }
                 })

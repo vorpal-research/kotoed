@@ -24,6 +24,7 @@ export interface BloatSubmission extends SubmissionToRead {
 // This is here because of possible problems with cyclic imports
 export interface JumboProject extends BloatProject {
     openSubmissions: Array<SubmissionToRead & WithVerificationData>
+    permanentAdjustment: number
 }
 
 export interface CreateRequest {
