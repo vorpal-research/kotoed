@@ -332,7 +332,8 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             val vcsRes = if (message.path != null) root.diff(message.path, from, to)
             else root.diffAll(from, to)
 
-            parseGitDiff(vcsRes.result.lineSequence())
+            if(vcsRes.result.length > Config.VCS.MaxDiffSize) listOf()
+            else parseGitDiff(vcsRes.result.lineSequence())
         }
 
         return DiffResponse(contents = diffContents
