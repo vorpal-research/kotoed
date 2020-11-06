@@ -210,6 +210,8 @@ export function loadLostFound(payload: SubmissionPayload) {
     }
 }
 
+// Lower numbers are displayed first
+const fileTypeDisplayOrder = Map<FileType, number>({"directory": 1, "file": 2})
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -222,15 +224,14 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
 
         return fetchRootDir(payload.submissionId).then((root) => {
             const naturalSorter = natsort()
-            const typeOrder: FileType[] = ["directory", "file"]
             const typeSorter = (a: File, b: File) =>
-                typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
+                fileTypeDisplayOrder.get(a.type) - fileTypeDisplayOrder.get(b.type)
             const recursiveSorter = (node: File) => {
                 if (node.children == null) {
                     return
                 }
                 node.children.sort((a: File, b: File) =>
-                    a.type != b.type ? typeSorter(a, b) : naturalSorter(a.name, b.name)
+                    typeSorter(a, b) || naturalSorter(a.name, b.name)
                 )
                 for (let child of node.children) {
                     recursiveSorter(child)
