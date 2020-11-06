@@ -73,9 +73,10 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     };
 
     private renderPermanentAdjustment = (): JSX.Element => {
-        return <span>{this.props.permanentAdjustment !== 0 &&
-        <p>Permanent adjustment {this.props.permanentAdjustment} by
-            {this.props.permanentAdjustmentSubmissions
+        const adj = this.props.permanentAdjustment
+        return <span>{adj != null && adj != 0 &&
+        <p>Permanent adjustment {adj} by
+            {(this.props.permanentAdjustmentSubmissions || [])
                 .map((sub) =>
                     <span> {linkToSubmissionDetails(sub)}</span>
                 )
