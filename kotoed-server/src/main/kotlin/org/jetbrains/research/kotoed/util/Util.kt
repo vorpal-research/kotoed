@@ -25,6 +25,8 @@ import kotlin.reflect.KClass
 
 inline fun <reified T : Any> klassOf() = T::class
 inline fun<T> tryOrNull(body: () -> T) = try { body() } catch (_: Exception) { null }
+inline fun catchAll(body: () -> Unit) = try { body() } catch (_: Throwable) {}
+inline fun tryOrDump(body: () -> Unit) = try { body() } catch (t: Throwable) { catchAll { t.printStackTrace() } }
 
 /******************************************************************************/
 

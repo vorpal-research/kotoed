@@ -49,6 +49,7 @@ class GlobalConfig : Configuration() {
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
 
         val MaxDiffHunkLines: Int by 5000
+        val MaxDiffSize: Int by 1000000
 
         val DefaultEnvironment: Map<String, String> by {
             mapOf(

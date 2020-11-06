@@ -2,11 +2,9 @@ package org.jetbrains.research.kotoed.code.vcs
 
 import com.zaxxer.nuprocess.NuAbstractProcessHandler
 import com.zaxxer.nuprocess.NuProcessBuilder
+import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
-import org.jetbrains.research.kotoed.util.Loggable
-import org.jetbrains.research.kotoed.util.allLines
-import org.jetbrains.research.kotoed.util.futureDone
-import org.jetbrains.research.kotoed.util.futureExitCode
+import org.jetbrains.research.kotoed.util.*
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -45,13 +43,13 @@ data class CommandLine(val args: List<String>,
             setCwd(wd.toPath())
             setProcessListener(object : NuAbstractProcessHandler() {
                 override fun onStdout(buffer: ByteBuffer, closed: Boolean) {
-                    cout.append(UTF8.decode(buffer))
-                    buffer.position(buffer.limit())
+                    tryOrDump { cout.append(UTF8.decode(buffer)) }
+                    tryOrDump { buffer.position(buffer.limit()) }
                 }
 
                 override fun onStderr(buffer: ByteBuffer, closed: Boolean) {
-                    cerr.append(UTF8.decode(buffer))
-                    buffer.position(buffer.limit())
+                    tryOrDump { cerr.append(UTF8.decode(buffer)) }
+                    tryOrDump { buffer.position(buffer.limit()) }
                 }
 
                 override fun onExit(statusCode: Int) {
