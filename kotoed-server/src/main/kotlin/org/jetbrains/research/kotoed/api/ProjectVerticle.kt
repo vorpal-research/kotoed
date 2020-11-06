@@ -115,20 +115,30 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                             it["verificationData"] = vdSub.toJson()
                             it
                         } ?: JsonArray()
-                val permanentAdjustments = (json.getJsonArray("closedSubmissions")
-                        ?.asSequence() ?: emptySequence())
+                val permanentAdjustments = json.getJsonArray("closedSubmissions")
                         .filterIsInstance<JsonObject>()
                         .map { closedSubmission ->
+                            val id = closedSubmission.getInteger("id")
                             val tags = closedSubmission.getJsonArray("submission_tags")
                                     ?.mapNotNull { tagRecord ->
                                         val tag = (tagRecord as JsonObject).getJsonObject("tag")
                                         tag?.getString("name")
                                     } ?: listOf()
-                            tags
+                            id to tags
                         }
-                        .filter { tags -> "permanent" in tags }
-                        .mapNotNull { tags -> tags.mapNotNull { it.toIntOrNull() }.firstOrNull() }
-                json["permanentAdjustment"] = permanentAdjustments.sum()
+                        .toMap()
+                        .filterValues { tags -> "permanent" in tags }
+                        .mapValues { (_, tags) -> tags.mapNotNull { it.toIntOrNull() }.firstOrNull() ?: 0 }
+                json["permanentAdjustment"] = permanentAdjustments.values.sum()
+                json["permanentAdjustmentSubmissions"] = json.getJsonArray("closedSubmissions")
+                        .filterIsInstance<JsonObject>()
+                        .filter { closedSubmission -> closedSubmission.getInteger("id") in permanentAdjustments }
+                        .map {
+                            val sub: SubmissionRecord = (it as JsonObject).toRecord()
+                            val vdSub = dbProcessAsync(sub)
+                            it["verificationData"] = vdSub.toJson()
+                            it
+                        }
                 json.remove("closedSubmissions")
                 json
             }

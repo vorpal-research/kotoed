@@ -25,6 +25,7 @@ export interface BloatSubmission extends SubmissionToRead {
 export interface JumboProject extends BloatProject {
     openSubmissions: Array<SubmissionToRead & WithVerificationData>
     permanentAdjustment: number
+    permanentAdjustmentSubmissions: Array<SubmissionToRead & WithVerificationData>
 }
 
 export interface CreateRequest {

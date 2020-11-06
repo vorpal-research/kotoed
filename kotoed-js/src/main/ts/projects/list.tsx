@@ -73,7 +73,14 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     };
 
     private renderPermanentAdjustment = (): JSX.Element => {
-        return <span>{this.props.permanentAdjustment != 0 && <p>Permanent adj. {this.props.permanentAdjustment}</p>}</span>
+        return <span>{this.props.permanentAdjustment !== 0 &&
+        <p>Permanent adjustment {this.props.permanentAdjustment} by
+            {this.props.permanentAdjustmentSubmissions
+                .map((sub) =>
+                    <span> {linkToSubmissionDetails(sub)}</span>
+                )
+            }</p>}
+        </span>
     }
 
     private renderOpenSubmissions = (): JSX.Element => {
