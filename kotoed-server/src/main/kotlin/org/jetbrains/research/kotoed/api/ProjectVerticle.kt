@@ -124,7 +124,8 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                                         ?.mapNotNull { tagRecord ->
                                             val tag = (tagRecord as JsonObject).getJsonObject("tag")
                                             tag?.getString("name")
-                                        } ?: listOf()
+                                        }
+                                        ?.toSet() ?: setOf()
                                 id to tags
                             }
                             .toMap()
@@ -135,7 +136,7 @@ class ProjectVerticle : AbstractKotoedVerticle(), Loggable {
                             .filterIsInstance<JsonObject>()
                             .filter { closedSubmission -> closedSubmission.getInteger("id") in permanentAdjustments }
                             .map {
-                                val sub: SubmissionRecord = (it as JsonObject).toRecord()
+                                val sub: SubmissionRecord = it.toRecord()
                                 val vdSub = dbProcessAsync(sub)
                                 it["verificationData"] = vdSub.toJson()
                                 it

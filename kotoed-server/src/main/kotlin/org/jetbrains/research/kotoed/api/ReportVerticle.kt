@@ -113,7 +113,9 @@ class ReportVerticle : AbstractKotoedVerticle() {
         return header + data + footer
     }
 
-    suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, List<Pair<Double, List<String>?>>> {
+    private data class SubmissionStatus(val score: Double, val tags: Set<String>)
+
+    private suspend fun makeReport(request: ReportRequest, subStates: List<String>): Map<String, List<SubmissionStatus>> {
         val date = request.timestamp ?: OffsetDateTime.now()
 
         return dbFindAsync(DenizenRecord()).map { denizen ->
@@ -143,7 +145,8 @@ class ReportVerticle : AbstractKotoedVerticle() {
                             ?.getJsonArray("tags")
                             ?.filterIsInstance<JsonObject>()
                             ?.mapNotNull { it.safeNav("tag", "name")?.toString() }
-                    score to tags
+                            ?.toSet() ?: setOf()
+                    SubmissionStatus(score, tags)
                 }
             }
         }
@@ -157,7 +160,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         companion object {
             const val defaultPenalty: Double = 0.0
-            fun fromTags(tags: List<String>): Adjustment {
+            fun fromTags(tags: Set<String>): Adjustment {
                 val adjustmentTags = tags.mapNotNull { it.toIntOrNull()?.toDouble() }
                 return when {
                     adjustmentTags.size > 1 -> Adjustment(null, "Multiple tags")
@@ -182,15 +185,15 @@ class ReportVerticle : AbstractKotoedVerticle() {
                                  adjustment.comment ?: "No suitable submissions found") {
         companion object {
             fun fromRecords(denizen: String,
-                            openRecords: List<Pair<Double, List<String>?>>,
-                            closedRecords: List<Pair<Double, List<String>?>>): Score? {
+                            openRecords: List<SubmissionStatus>,
+                            closedRecords: List<SubmissionStatus>): Score? {
                 if (openRecords.isEmpty() && closedRecords.isEmpty()) {
                     return null // Student have not participated in a course (yet)
                 }
                 val lastOpen = openRecords.firstOrNull()
                 val lastClosed = closedRecords.firstOrNull()
                 val permanentAdjs = closedRecords
-                        .mapNotNull { it.second }
+                        .map { it.tags }
                         .filter { it.contains("permanent") }
                         .map { Adjustment.fromTags(it) }
                         .filter { it.isSet() }
@@ -200,10 +203,10 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 )
                 return Score(
                         student = denizen,
-                        open = lastOpen?.first,
-                        adjustment = Adjustment.fromTags(lastOpen?.second ?: listOf()),
+                        open = lastOpen?.score,
+                        adjustment = Adjustment.fromTags(lastOpen?.tags ?: setOf()),
                         permanentAdjustment = permanentAdj,
-                        closed = lastClosed?.first
+                        closed = lastClosed?.score
                 )
             }
         }
