@@ -183,7 +183,10 @@ class ReportVerticle : AbstractKotoedVerticle() {
         companion object {
             fun fromRecords(denizen: String,
                             openRecords: List<Pair<Double, List<String>?>>,
-                            closedRecords: List<Pair<Double, List<String>?>>): Score {
+                            closedRecords: List<Pair<Double, List<String>?>>): Score? {
+                if (openRecords.isEmpty() && closedRecords.isEmpty()) {
+                    return null // Student have not participated in a course (yet)
+                }
                 val lastOpen = openRecords.firstOrNull()
                 val lastClosed = closedRecords.firstOrNull()
                 val permanentAdjs = closedRecords
@@ -212,7 +215,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         val closed = makeReport(request, listOf("closed"))
 
         val students = open.keys + closed.keys
-        val scores = students.map {
+        val scores = students.mapNotNull {
             Score.fromRecords(it, open[it] ?: listOf(), closed[it] ?: listOf())
         }.sortedWith(compareByDescending<Score> { it.total }.thenBy { it.student })
         val header = listOf(
