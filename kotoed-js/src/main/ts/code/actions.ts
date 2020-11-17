@@ -8,7 +8,7 @@ import {
 import {
     Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
-import {fetchRootDir, fetchFile, File} from "./remote/code";
+import {fetchRootDir, fetchFile, File, FileType} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
@@ -210,6 +210,8 @@ export function loadLostFound(payload: SubmissionPayload) {
     }
 }
 
+// Lower numbers are displayed first
+const fileTypeDisplayOrder = Map<FileType, number>({"directory": 1, "file": 2})
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
     return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
@@ -221,12 +223,16 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
         }));
 
         return fetchRootDir(payload.submissionId).then((root) => {
-            const sorter = natsort()
+            const naturalSorter = natsort()
+            const typeSorter = (a: File, b: File) =>
+                fileTypeDisplayOrder.get(a.type) - fileTypeDisplayOrder.get(b.type)
             const recursiveSorter = (node: File) => {
                 if (node.children == null) {
                     return
                 }
-                node.children.sort((a: File, b: File) => sorter(a.name, b.name))
+                node.children.sort((a: File, b: File) =>
+                    typeSorter(a, b) || naturalSorter(a.name, b.name)
+                )
                 for (let child of node.children) {
                     recursiveSorter(child)
                 }
