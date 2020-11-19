@@ -205,8 +205,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 val lastOpen = submissions.firstOrNull { it.state == SubmissionState.open }
                 val lastObsolete = submissions.firstOrNull { it.state == SubmissionState.obsolete }
                 val lastClosed = submissions.firstOrNull { it.state == SubmissionState.closed }
-                val lastCorrect = if (lastObsolete != null &&
-                        lastObsolete.score > (lastOpen?.score ?: 0.0) &&
+                val lastCorrect = if (lastObsolete != null && lastOpen == null &&
                         lastObsolete.score > (lastClosed?.score ?: 0.0)) {
                     lastObsolete
                 } else {
