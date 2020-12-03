@@ -230,16 +230,14 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
     tagCloug = (cb: SearchCallback) => {
         return this.state.tags.length !== 0 && <Row>
             <Col xs={12} sm={12} md={12} lg={12}>
-                {intersperse<JSX.Element | string>(this.state.tags.map(tag => <TagComponent key={tag.id} tag={tag}
-                                                                                            removable={false}
-                                                                                            onClick={() => {
-                                                                                                const searchState = cb();
-                                                                                                // XXX: we can do better
-                                                                                                // XXX: also it's a copy-paste from ProjectComponent
-                                                                                                if (!searchState.oldKey.includes(tag.name)) {
-                                                                                                    searchState.toggleSearch(searchState.oldKey + " " + tag.name)
-                                                                                                }
-                                                                                            }}/>), " ")}
+                {intersperse<JSX.Element | string>(this.state.tags.map(tag => <TagComponent key={tag.id} tag={tag} removable={false} onClick={() => {
+                    const searchState = cb();
+                    // XXX: we can do better
+                    // XXX: also it's a copy-paste from ProjectComponent
+                    if(!searchState.oldKey.includes(tag.name)) {
+                        searchState.toggleSearch(searchState.oldKey + " " + tag.name)
+                    }
+                }}/>), " ")}
             </Col>
         </Row>;
     };
@@ -269,16 +267,16 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
         return (
             <Table striped bordered condensed hover responsive>
                 <thead>
-                <tr>
-                    <th className="col-md-1">Id</th>
-                    <th className="col-md-2">Name</th>
-                    <th className="col-md-3">Author</th>
-                    <th className="col-md-1">Repo</th>
-                    <th className="col-md-5">Open submissions</th>
-                </tr>
+                    <tr>
+                        <th className="col-md-1">Id</th>
+                        <th className="col-md-2">Name</th>
+                        <th className="col-md-3">Author</th>
+                        <th className="col-md-1">Repo</th>
+                        <th className="col-md-5">Open submissions</th>
+                    </tr>
                 </thead>
                 <tbody>
-                {children}
+                    {children}
                 </tbody>
             </Table>)
     };
