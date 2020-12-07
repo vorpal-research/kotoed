@@ -147,7 +147,7 @@ fun ComplexDatabaseQuery.textSearch(value: String, fieldName: String = "document
     if(terms.isNotEmpty())
         res = res.filter("$fieldName matches %s".formatToQuery(terms.joinToString(" ")))
     if(iterms.isNotEmpty())
-        res = res.filter(iterms.map { "!($fieldName matches %s)".formatToQuery( it.drop(1)) }.joinToString(" and "))
+        res = res.filter(iterms.map { "!($fieldName exactlyMatches %s)".formatToQuery( it.drop(1)) }.joinToString(" and "))
 
     return res
 }

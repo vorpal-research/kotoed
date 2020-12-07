@@ -22,20 +22,25 @@ object JsonFailureHandler: Handler<RoutingContext>, Loggable {
     override fun handle(ctx: RoutingContext) {
         val ex = ctx.failure().unwrapped
         log.error("Exception caught while handling request to ${ctx.request().uri()}", ex)
-        ctx.jsonResponse()
-                .setStatus(ex)
-                .end(
-                        JsonObject(
-                                "success" to false,
-                                "remoteError" to ex.message,
-                                "code" to codeFor(ex),
-                                "stacktrace" to JsonArray(
-                                        ex.stackTrace
-                                                .map { it.toString() }
-                                                .toList()
-                                )
-                        )
-                )
+        try {
+            ctx.jsonResponse()
+                    .setStatus(ex)
+                    .end(
+                            JsonObject(
+                                    "success" to false,
+                                    "remoteError" to ex.message,
+                                    "code" to codeFor(ex),
+                                    "stacktrace" to JsonArray(
+                                            ex.stackTrace
+                                                    .map { it.toString() }
+                                                    .toList()
+                                    )
+                            )
+                    )
+        } catch (ex2: Exception) {
+            ex2.addSuppressed(ex)
+            log.error("Exception caught while handling prevous exception", ex2)
+        }
     }
 
     fun create() = this

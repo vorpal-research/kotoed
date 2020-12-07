@@ -103,6 +103,7 @@
     "tinycolor2": "^1.4.1",
     "twemoji": "^11.0.1",
     "typescript-fsa": "~2.4.0",
-    "vertx3-eventbus-client": "~3.4.2"
+    "vertx3-eventbus-client": "~3.4.2",
+    "natsort": "^2.0.2"
   }
 }

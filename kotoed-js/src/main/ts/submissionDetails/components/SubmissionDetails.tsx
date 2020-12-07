@@ -135,9 +135,27 @@ export default class SubmissionDetails extends React.Component<SubmissionDetails
     private renderStateChange = () => {
         if (!this.props.permissions.changeState)
             return null;
-        else if (this.props.submission.record.state === "open")
-            return <Button bsStyle="danger" onClick={this.props.onClose}>Close</Button>;
-        else if (this.props.submission.record.state === "closed")
+        else if (this.props.submission.record.state === "open") {
+            const adjustmentTagsAdded = this.props.tags.some(value => !isNaN(Number(value.name)))
+            const persistentTagAdded = this.props.tags.some(value => value.name === "permanent")
+            if (adjustmentTagsAdded == persistentTagAdded) {
+                return <Button bsStyle="danger" onClick={this.props.onClose}>Close</Button>;
+            } else {
+                return <OverlayTrigger trigger="click" placement="bottom" overlay={
+                    <Popover id="can-close-popover">
+                        <strong>Are you sure?</strong>
+                        <br/>
+                        <Button bsStyle="danger"
+                                block
+                                onClick={this.props.onClose}>
+                            Close
+                        </Button>
+                    </Popover>
+                }>
+                    <Button bsStyle="danger">Close</Button>
+                </OverlayTrigger>;
+            }
+        } else if (this.props.submission.record.state === "closed")
             return <Button bsStyle="success" onClick={this.props.onReopen}>Reopen</Button>;
     };
 

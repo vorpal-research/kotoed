@@ -161,7 +161,7 @@ abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
                                     ?.getInteger("id")
                                     ?: -1
                         }
-                    }.filter { it < 0 } +
+                    }.filter { it >= 0 } +
                             if (VerificationStatus.Invalid == oldData.status)
                                 oldData.errors
                             else

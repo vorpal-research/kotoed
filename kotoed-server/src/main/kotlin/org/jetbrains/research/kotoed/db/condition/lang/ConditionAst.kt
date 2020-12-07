@@ -18,6 +18,7 @@ enum class CompareOp(val rep: String) {
     LT("<"),
     LE("<="),
     MATCH("matches"),
+    MATCH_EXACT("exactlyMatches"),
     CONTAINS("contains"),
     STARTS_WITH("startsWith"),
     ENDS_WITH("endsWith"),

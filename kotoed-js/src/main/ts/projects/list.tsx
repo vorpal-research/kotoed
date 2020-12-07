@@ -67,10 +67,22 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
     handleSearchableClick = (word: string) => {
         const searchState = this.props.cb();
         // XXX: we can do better
-        if(!searchState.oldKey.includes(word)) {
+        if (!searchState.oldKey.includes(word)) {
             searchState.toggleSearch(searchState.oldKey + " " + word)
         }
     };
+
+    private renderPermanentAdjustment = (): JSX.Element => {
+        const adj = this.props.permanentAdjustment
+        return <span>{adj != null && adj != 0 &&
+        <p>Permanent adjustment {adj} by
+            {(this.props.permanentAdjustmentSubmissions || [])
+                .map((sub) =>
+                    <span> {linkToSubmissionDetails(sub)}</span>
+                )
+            }</p>}
+        </span>
+    }
 
     private renderOpenSubmissions = (): JSX.Element => {
         if (this.props.openSubmissions.length === 0)
@@ -79,13 +91,13 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             // Yes, super-minimalistic table
             return <table>
                 <tbody>
-                    {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
-                        <td>{linkToSubmissionDetails(sub)}</td>
-                        <td>{linkToSubmissionResults(sub)}</td>
-                        <td>{linkToSubmissionReview(sub)}</td>
-                        <td>{renderSubmissionIcon(sub)}</td>
-                        <td>{renderSubmissionTags(sub, this.handleSearchableClick)}</td>
-                    </tr>)}
+                {this.props.openSubmissions.map((sub) => <tr className="roomy-tr" key={`submission-${sub.id}`}>
+                    <td>{linkToSubmissionDetails(sub)}</td>
+                    <td>{linkToSubmissionResults(sub)}</td>
+                    <td>{linkToSubmissionReview(sub)}</td>
+                    <td>{renderSubmissionIcon(sub)}</td>
+                    <td>{renderSubmissionTags(sub, this.handleSearchableClick)}</td>
+                </tr>)}
                 </tbody>
             </table>
         }
@@ -116,7 +128,8 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             <a href={Kotoed.UrlPattern.reverse(Kotoed.UrlPattern.Profile.Index, {id: denizen.id})}>
                 {fullName || `#${denizen.id}`}
             </a>;
-        let groupLink = group && <a style={{cursor: "pointer"}} onClick={() => this.handleSearchableClick(group)}>{group}</a>;
+        let groupLink = group &&
+            <a style={{cursor: "pointer"}} onClick={() => this.handleSearchableClick(group)}>{group}</a>;
 
         return <span>
             ({nameLink}{groupLink && <span>, {groupLink}</span> || null})
@@ -139,7 +152,7 @@ class ProjectComponent extends React.PureComponent<ProjectWithVer> {
             <td>{this.linkify(truncateString(this.props.name || "", 30))}{" "}{this.renderIcon()}</td>
             <td>{this.renderProfileLinks(this.props.denizen)}</td>
             <td><a href={this.props.repoUrl}>Link</a></td>
-            <td>{this.renderOpenSubmissions()}</td>
+            <td>{this.renderPermanentAdjustment()}{this.renderOpenSubmissions()}</td>
         </tr>
     }
 
@@ -153,7 +166,7 @@ interface ProjectSearchState {
 }
 
 class ProjectsSearchTable extends ChoosyByVerDataSearchTable<JumboProject & WithVerificationData,
-        {withVerificationData: true, find: {courseId: number }}> {
+    { withVerificationData: true, find: { courseId: number } }> {
 
     protected isGoodEnough(data: (JumboProject & WithVerificationData)[]) {
         return super.isGoodEnough(data) &&
@@ -200,16 +213,16 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
 
     toolbarButtons = (cb: SearchCallback) => {
         return <ButtonToolbar>
-            { this.state.canEditCourse &&
-                <Button bsStyle={"link"} href={UrlPattern.reverse(UrlPattern.Course.Edit, {id: id_})}>
-                    Edit course
-                </Button>
+            {this.state.canEditCourse &&
+            <Button bsStyle={"link"} href={UrlPattern.reverse(UrlPattern.Course.Edit, {id: id_})}>
+                Edit course
+            </Button>
             }
-            { this.state.canCreateProject &&
-                <ProjectCreate onCreate={() => {
-                    const search = cb();
-                    search.toggleSearch(search.oldKey)
-                }} courseId={id_}/>
+            {this.state.canCreateProject &&
+            <ProjectCreate onCreate={() => {
+                const search = cb();
+                search.toggleSearch(search.oldKey)
+            }} courseId={id_}/>
             }
         </ButtonToolbar>;
     };
@@ -293,7 +306,9 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
                             }
                         }}
                         wrapResults={this.renderTable}
-                        elementComponent={(key, c: ProjectWithVer, cb: SearchCallback) => <ProjectComponent {...c} key={key} cb={cb} />}
+                        elementComponent={(key, c: ProjectWithVer, cb: SearchCallback) => <ProjectComponent {...c}
+                                                                                                            key={key}
+                                                                                                            cb={cb}/>}
                         toolbarComponent={this.toolbar}
                     />
                 </Row>
@@ -310,7 +325,7 @@ if (params == null) {
 
 let id = params.get("id");
 
-if (id === undefined ) {
+if (id === undefined) {
     snafuDialog();
     throw new Error("Cannot resolve course id")
 }

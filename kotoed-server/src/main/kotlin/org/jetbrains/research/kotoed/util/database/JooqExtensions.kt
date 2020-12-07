@@ -137,6 +137,9 @@ class TsQueryOrOperator(val lhv: Field<Any>, val rhv: Field<Any>)
 }
 
 fun toTSQuery(field: Field<String>): Field<Any> = FunctionCall("to_tsquery", DSL.inline("russian"), field)
+fun toPlainTSQuerySimple(field: Field<String>): Field<Any> =
+        FunctionCall("plainto_tsquery", DSL.inline("simple"), field)
+
 fun toPlainTSQuery(field: Field<String>): Field<Any> =
         TsQueryOrOperator(
                 FunctionCall("plainto_tsquery", DSL.inline("russian"), field),

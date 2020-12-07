@@ -19,7 +19,7 @@ class TagVerticle : AbstractKotoedVerticle() {
     suspend fun handleDelete(tag: TagRecord) = dbDeleteAsync(tag)
 
     @JsonableEventBusConsumerFor(Address.Api.Tag.List)
-    suspend fun handleList(message: Unit) = dbFindAsync(TagRecord()).also {
+    suspend fun handleList(message: Unit) = dbFindAsync(TagRecord().apply { deprecated = false }).also {
         use(message)
     }
 }

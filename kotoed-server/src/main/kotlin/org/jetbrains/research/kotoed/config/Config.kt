@@ -49,6 +49,7 @@ class GlobalConfig : Configuration() {
         val PoolSize: Int by { Runtime.getRuntime().availableProcessors() * 2 }
 
         val MaxDiffHunkLines: Int by 5000
+        val MaxDiffSize: Int by 1000000
 
         val DefaultEnvironment: Map<String, String> by {
             mapOf(
@@ -110,7 +111,7 @@ class GlobalConfig : Configuration() {
     val Notifications by NotificationsConfig()
 
     class ProcessorsConfig : Configuration() {
-        val CacheExpiration: Long by 30L
+        val CacheExpiration: Long by 60L
     }
 
     val Processors by ProcessorsConfig()
