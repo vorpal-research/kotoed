@@ -37,7 +37,7 @@ abstract class AbstractOAuthProvider(
         }
     private var codeUri: String? = null
 
-    private var accessTokenResponseBody: JsonObject? = null
+    protected var accessTokenResponseBody: JsonObject? = null
     private var accessToken: String? = null
     private var userId: String? = null
     private var providerDbRecord: OauthProviderRecord? = null
@@ -84,10 +84,8 @@ abstract class AbstractOAuthProvider(
         "$providerBaseUri/$accessTokenPath".normalizeUri()
     }
 
-    suspend fun getAccessTokenResponseBody(): JsonObject = accessTokenResponseBody ?: run {
+    open suspend fun getAccessTokenResponseBody(): JsonObject = accessTokenResponseBody ?: run {
         val formData = mapOf(
-                ClientId to getClientId(),
-                ClientSecret to getClientSecret(),
                 Code to code,
                 RedirectUri to redirectUri,
                 GrantType to AuthorizationCode
@@ -96,6 +94,7 @@ abstract class AbstractOAuthProvider(
         val resp = webClient.postAbs(accessTokenUri)
                 .putHeader("${HttpHeaderNames.CONTENT_TYPE}", "${HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED}")
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
+                .basicAuthentication(getClientId(), getClientSecret())
                 .sendFormAsync(formData)
         return resp.bodyAsJsonObject()?.also { accessTokenResponseBody = it } ?: throw OAuthException("Empty access token response")
     }
