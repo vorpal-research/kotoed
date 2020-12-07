@@ -3,7 +3,6 @@ package org.jetbrains.research.kotoed.oauth
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.core.Vertx
-import org.jetbrains.research.kotoed.util.asMultiMap
 import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
@@ -21,7 +20,7 @@ class Google(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name
         "https://www.googleapis.com/auth/userinfo.profile"
     }
 
-    suspend override fun doGetUserId(): String {
+    override suspend fun doGetUserId(): String {
         val query = mapOf(
                 AccessToken to getAccessToken(),
                 "alt" to "json"
@@ -34,6 +33,6 @@ class Google(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name
     }
 
     companion object {
-        val Name = "Google"
+        const val Name = "Google"
     }
 }

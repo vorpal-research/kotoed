@@ -18,7 +18,7 @@ class Facebook(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Na
     }
 
 
-    suspend override fun doGetUserId(): String {
+    override suspend fun doGetUserId(): String {
         val query = mapOf(
                 "fields" to "id",
                 AccessToken to getAccessToken()
@@ -31,6 +31,6 @@ class Facebook(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Na
     }
 
     companion object {
-        val Name = "Facebook"
+        const val Name = "Facebook"
     }
 }

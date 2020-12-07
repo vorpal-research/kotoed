@@ -3,8 +3,6 @@ package org.jetbrains.research.kotoed.oauth
 import io.netty.handler.codec.http.HttpHeaderNames
 import io.netty.handler.codec.http.HttpHeaderValues
 import io.vertx.core.Vertx
-import org.jetbrains.research.kotoed.util.get
-import org.jetbrains.research.kotoed.util.makeUriQuery
 import org.jetbrains.research.kotoed.util.normalizeUri
 import org.jetbrains.research.kotoed.util.sendAsync
 
@@ -24,6 +22,6 @@ class GitHub(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name
     }
 
     companion object {
-        val Name = "GitHub"
+        const val Name = "GitHub"
     }
 }

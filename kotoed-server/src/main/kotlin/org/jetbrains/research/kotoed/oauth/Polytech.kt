@@ -26,6 +26,6 @@ class Polytech(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Na
 
 
     companion object {
-        val Name = "Polytech"
+        const val Name = "Polytech"
     }
 }

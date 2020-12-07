@@ -19,7 +19,7 @@ class OAuthException(message: String) : Exception(message)
 abstract class AbstractOAuthProvider(
         val name: String,
         private val vertx: Vertx,
-        val callbackBaseUri: String) : Loggable {
+        private val callbackBaseUri: String) : Loggable {
     abstract val providerBaseUri: String
 
     open val authorizePath: String = "/authorize"
@@ -43,15 +43,14 @@ abstract class AbstractOAuthProvider(
     private var providerDbRecord: OauthProviderRecord? = null
 
     private suspend fun getProviderDbRecord() = providerDbRecord ?: run {
-        val records: JsonArray = vertx.eventBus().
-                sendJsonableAsync(Address.DB.find(
-                        Tables.OAUTH_PROVIDER.name), OauthProviderRecord().apply {
-                    name = this@AbstractOAuthProvider.name
-                })
+        val records: JsonArray = vertx.eventBus().sendJsonableAsync(Address.DB.find(
+                Tables.OAUTH_PROVIDER.name), OauthProviderRecord().apply {
+            name = this@AbstractOAuthProvider.name
+        })
 
         val record = records[0]?.uncheckedCastOrNull<JsonObject>()
-        return record?.toRecord<OauthProviderRecord>()?.also { providerDbRecord = it } ?:
-                throw OAuthException("OAuth provider is not present in DB")
+        return record?.toRecord<OauthProviderRecord>()?.also { providerDbRecord = it }
+                ?: throw OAuthException("OAuth provider is not present in DB")
     }
 
     suspend fun getClientId(): String = getProviderDbRecord().clientId
@@ -70,13 +69,13 @@ abstract class AbstractOAuthProvider(
         doGetAuthorizeUriWithQuery().also { codeUri = it }
     }
 
-    open protected suspend fun doGetAuthorizeUriWithQuery(): String {
+    protected open suspend fun doGetAuthorizeUriWithQuery(): String {
         val query = mapOf(
                 ClientId to getClientId(),
                 RedirectUri to redirectUri,
                 ResponseType to Code,
                 Scope to scope
-                ).makeUriQuery()
+        ).makeUriQuery()
         return authorizeUri + query
     }
 
@@ -96,24 +95,26 @@ abstract class AbstractOAuthProvider(
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
                 .basicAuthentication(getClientId(), getClientSecret())
                 .sendFormAsync(formData)
-        return resp.bodyAsJsonObject()?.also { accessTokenResponseBody = it } ?: throw OAuthException("Empty access token response")
+        return resp.bodyAsJsonObject()?.also { accessTokenResponseBody = it }
+                ?: throw OAuthException("Empty access token response")
     }
 
     suspend fun getAccessToken(): String = accessToken ?: run {
         doGetAccessToken().also { accessToken = it }
     }
 
-    open protected suspend fun doGetAccessToken(): String {
+    protected open suspend fun doGetAccessToken(): String {
         val json = getAccessTokenResponseBody()
 
-        return json.getString(AccessToken) ?: throw OAuthException(json.getString("remoteError") ?: "Unknown OAuth remoteError")
+        return json.getString(AccessToken) ?: throw OAuthException(json.getString("remoteError")
+                ?: "Unknown OAuth remoteError")
     }
 
     suspend fun getUserId() = userId ?: run {
         doGetUserId().also { userId = it }
     }
 
-    abstract protected suspend fun doGetUserId(): String
+    protected abstract suspend fun doGetUserId(): String
 
 
     companion object {

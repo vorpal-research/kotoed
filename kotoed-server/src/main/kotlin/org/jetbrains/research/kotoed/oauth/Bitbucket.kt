@@ -11,7 +11,7 @@ class Bitbucket(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(N
     private val apiUri = "https://api.bitbucket.org/2.0/"
     private val userEndpoint = "/user"
 
-    suspend override fun doGetUserId(): String {
+    override suspend fun doGetUserId(): String {
         val resp = webClient.getAbs("$apiUri/$userEndpoint".normalizeUri())
                 .putHeader("${HttpHeaderNames.AUTHORIZATION}", "Bearer ${getAccessToken()}")
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
@@ -23,6 +23,6 @@ class Bitbucket(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(N
     }
 
     companion object {
-        val Name = "Bitbucket"
+        const val Name = "Bitbucket"
     }
 }

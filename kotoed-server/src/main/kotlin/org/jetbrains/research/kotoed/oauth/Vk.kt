@@ -11,8 +11,8 @@ class Vk(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, ve
     override val providerBaseUri: String = "https://oauth.vk.com"
 
     override suspend fun doGetUserId(): String =
-            getAccessTokenResponseBody().getInteger("user_id")?.toString() ?:
-                    throw OAuthException("Cannot get VK user Id")
+            getAccessTokenResponseBody().getInteger("user_id")?.toString()
+                    ?: throw OAuthException("Cannot get VK user Id")
 
     override suspend fun getAccessTokenResponseBody(): JsonObject = accessTokenResponseBody ?: run {
         val formData = mapOf(
@@ -27,10 +27,11 @@ class Vk(vertx: Vertx, callbackBaseUri: String) : AbstractOAuthProvider(Name, ve
                 .putHeader("${HttpHeaderNames.CONTENT_TYPE}", "${HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED}")
                 .putHeader("${HttpHeaderNames.ACCEPT}", "${HttpHeaderValues.APPLICATION_JSON}")
                 .sendFormAsync(formData)
-        return resp.bodyAsJsonObject()?.also { accessTokenResponseBody = it } ?: throw OAuthException("Empty access token response")
+        return resp.bodyAsJsonObject()?.also { accessTokenResponseBody = it }
+                ?: throw OAuthException("Empty access token response")
     }
 
     companion object {
-        val Name = "Vk"
+        const val Name = "Vk"
     }
 }
