@@ -59,7 +59,7 @@
         <commons-text.version>1.7</commons-text.version>
         <httpclient.version>4.5.9</httpclient.version>
         <web-push.version>5.0.2</web-push.version>
-        <bcprov-jdk15on.version>1.62</bcprov-jdk15on.version>
+        <bcprov-jdk15on.version>1.67</bcprov-jdk15on.version>
         <antlr4.version>4.7.2</antlr4.version>
         <nuprocess.version>1.2.5</nuprocess.version>
 
