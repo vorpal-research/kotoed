@@ -108,11 +108,11 @@ data TodoType = TodoType
                     .map { clone -> clone.functionName }
                     .distinct()
                     .joinToString()
-            builder.appendln("($fname) Clone class $i:")
+            builder.appendLine("($fname) Clone class $i:")
             cloneClass.clones.forEach { c ->
-                builder.appendln("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
+                builder.appendLine("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
-            builder.appendln()
+            builder.appendLine()
             println(builder)
         }
 

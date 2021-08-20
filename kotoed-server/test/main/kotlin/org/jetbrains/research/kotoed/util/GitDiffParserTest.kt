@@ -230,5 +230,8 @@ index d1ed767..e120f7c 100644
      @Test
 """.lineSequence())
 
+        mercurialDiff.ignore()
+        gitDiff.ignore()
+
     }
 }
