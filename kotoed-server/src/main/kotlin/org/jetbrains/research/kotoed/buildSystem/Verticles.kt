@@ -2,14 +2,12 @@ package org.jetbrains.research.kotoed.buildSystem
 
 import io.vertx.core.file.FileSystemException
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.code.vcs.CommandLine
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.buildSystem.*
-import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
@@ -27,7 +25,6 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
-import kotlin.NoSuchElementException
 
 @AutoDeployable
 class BuildVerticle : AbstractKotoedVerticle() {
@@ -188,12 +185,19 @@ class BuildVerticle : AbstractKotoedVerticle() {
                         JsonObject("data" to emptyList<Any?>())
                     }
 
+            val qodanaFile = File(randomName, "report/qodana.json")
             val inspectionsFile = File(randomName, "report/inspections.xml")
 
-            val inspections = if (inspectionsFile.exists()) {
-                val inspectionsXml = fs.readFileAsync(inspectionsFile.absolutePath)
-                xml2json(ByteArrayInputStream(inspectionsXml.bytes))
-            } else null
+            val inspections = when {
+                qodanaFile.exists() -> {
+                    fs.readFileAsync(qodanaFile.absolutePath).toJsonObject()
+                }
+                inspectionsFile.exists() -> {
+                    val inspectionsXml = fs.readFileAsync(inspectionsFile.absolutePath)
+                    xml2json(ByteArrayInputStream(inspectionsXml.bytes))
+                }
+                else -> null
+            }
 
             log.info("Build request finished in directory $randomName")
 

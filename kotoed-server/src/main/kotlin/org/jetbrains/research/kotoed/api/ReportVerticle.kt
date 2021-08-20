@@ -224,7 +224,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                 val totalScoreSource = sequenceOf(lastCorrect, lastClosed)
                         .filterNotNull()
                         .associateWith { Adjustment.fromSubmissionStatus(it) }
-                        .maxBy { (status, adj) -> status.score + adj.toDouble() } ?: return null
+                        .maxByOrNull { (status, adj) -> status.score + adj.toDouble() } ?: return null
                 return Score(
                         student = denizen,
                         open = lastCorrect?.score,

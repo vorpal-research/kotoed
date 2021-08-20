@@ -158,7 +158,7 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
                 .execute(File(local), defaultEnv).complete()
         if(res.rcode.await() == 0) {
             val output = res.cout.lineSequence().map { it.split(' ').filter { it.isNotEmpty() }[2].toLong() }
-                    .min()?.let { Instant.ofEpochSecond(it) }
+                    .minOrNull()?.let { Instant.ofEpochSecond(it) }
             return VcsResult.Success(output!!)
         } else return VcsResult.Failure(res.cerr)
     }

@@ -12,8 +12,8 @@ import kotlinx.coroutines.*
 import java.lang.reflect.Method
 import java.util.concurrent.Executors
 import kotlin.coroutines.*
-import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
-import kotlin.coroutines.experimental.migration.toContinuation
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
+import kotlin.coroutines.intrinsics.intercepted
 import kotlin.reflect.KFunction
 
 /******************************************************************************/
@@ -80,7 +80,7 @@ fun Loggable.WithExceptions(ctx: RoutingContext) = WithExceptionsContext(
 
 suspend inline fun <R> KFunction<R>.callAsync(vararg args: Any?) =
         when {
-            isSuspend -> suspendCoroutineOrReturn<R> { call(*args, it.toContinuation()) }
+            isSuspend -> suspendCoroutineUninterceptedOrReturn<R> { call(*args, it.intercepted()) }
             else -> throw Error("$this cannot be called as async")
         }
 
@@ -89,7 +89,7 @@ val Method.isKotlinSuspend
 
 suspend inline fun Method.invokeAsync(receiver: Any?, vararg args: Any?) =
         when {
-            isKotlinSuspend -> suspendCoroutineOrReturn<Any?> { invoke(receiver, *args, it.toContinuation()) }
+            isKotlinSuspend -> suspendCoroutineUninterceptedOrReturn<Any?> { invoke(receiver, *args, it.intercepted()) }
             else -> throw Error("$this cannot be invoked as async")
         }
 
