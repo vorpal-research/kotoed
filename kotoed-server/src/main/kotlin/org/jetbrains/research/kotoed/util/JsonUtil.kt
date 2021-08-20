@@ -1,5 +1,3 @@
-@file:Suppress(kotlinx.warnings.Warnings.NOTHING_TO_INLINE)
-
 package org.jetbrains.research.kotoed.util
 
 import com.google.common.base.CaseFormat
@@ -10,7 +8,8 @@ import io.vertx.core.eventbus.impl.codecs.JsonArrayMessageCodec
 import io.vertx.core.eventbus.impl.codecs.JsonObjectMessageCodec
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import kotlinx.warnings.Warnings.NOTHING_TO_INLINE
+import kotlinx.warnings.Warnings.UNCHECKED_CAST
 import org.jetbrains.research.kotoed.util.database.toJson
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.Field
@@ -410,6 +409,7 @@ private fun <T : Any> sealedFromJson(data: JsonObject, klass: KClass<T>): T {
 
 fun <T : Any> fromJson(data: JsonObject, kclass: KClass<T>): T = fromJson(data, kclass.starProjectedType)
 fun <T : Any> fromJson(data: JsonObject, ktype: KType): T {
+    @Suppress(UNCHECKED_CAST)
     val klass = ktype.jvmErasure as KClass<T>
     if (klass.isSubclassOf(JsonObject::class)) return data.uncheckedCast<T>()
     klass.staticFunctions.firstOrNull { it.name == "fromJson" }?.let {
@@ -424,9 +424,9 @@ fun <T : Any> fromJson(data: JsonObject, ktype: KType): T {
     }
 }
 
-@UseExperimental(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class)
 inline fun <reified T : Any> fromJson(data: JsonObject) = fromJson<T>(data, typeOf<T>())
-@UseExperimental(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class)
 inline fun <reified T : Jsonable> JsonObject.toJsonable() = fromJson<T>(this, typeOf<T>())
 
 /******************************************************************************/

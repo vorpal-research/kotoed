@@ -1,8 +1,6 @@
 package org.jetbrains.research.kotoed.code
 
-import org.jetbrains.research.kotoed.util.GlobalLogging.log
 import org.jetbrains.research.kotoed.util.Jsonable
-import org.jetbrains.research.kotoed.util.chunksBy
 import org.wickedsource.diffparser.api.model.Diff
 import org.wickedsource.diffparser.api.model.Hunk
 import org.wickedsource.diffparser.api.model.Line
@@ -67,7 +65,6 @@ fun Location.applyDiffs(diffs: List<Diff>): Location {
 
     var lastNeutralFrom = curFrom
     var lastNeutralTo = curTo
-    var nextNeutralTo = curTo
 
     val hunkIter = hunk.lines.iterator()
 

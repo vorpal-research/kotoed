@@ -7,6 +7,7 @@ import org.jetbrains.research.kotoed.util.*
 import java.io.File
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.withNullability
+import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.reflect
 
 object Uninitialized
@@ -62,6 +63,7 @@ abstract class Configuration : Jsonable {
             ).uncheckedCastOrNull<T>() ?:
                     throw IllegalStateException("Configuration field ${prop.name} is not initialized")
 
+    @OptIn(ExperimentalReflectionOnLambdas::class)
     operator fun <T> (() -> T).getValue(thisRef: Configuration, prop: KProperty<*>): T =
             internalData.getValueByType(
                     prop.underscoredName,

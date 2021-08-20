@@ -12,6 +12,7 @@ import io.vertx.ext.auth.PRNG
 import io.vertx.ext.web.Session
 import io.vertx.ext.web.sstore.SessionStore
 import io.vertx.ext.web.sstore.impl.SharedDataSessionImpl
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.WebSessionRecord
@@ -26,11 +27,11 @@ import org.jetbrains.research.kotoed.util.withRequestUUID
 private typealias MessageRes = AsyncResult<Message<JsonObject>>
 
 class MySessionImpl : SharedDataSessionImpl {
-    constructor(store: AsyncSessionStore) :
+    constructor(@Suppress(UNUSED_PARAMETER) store: AsyncSessionStore) :
             super()
-    constructor(store: AsyncSessionStore, random: PRNG?) :
+    constructor(@Suppress(UNUSED_PARAMETER) store: AsyncSessionStore, random: PRNG?) :
             super(random)
-    constructor(store: AsyncSessionStore, random: PRNG?, timeout: Long, length: Int) :
+    constructor(@Suppress(UNUSED_PARAMETER) store: AsyncSessionStore, random: PRNG?, timeout: Long, length: Int) :
             super(random, timeout, length)
 
     override fun regenerateId(): Session {

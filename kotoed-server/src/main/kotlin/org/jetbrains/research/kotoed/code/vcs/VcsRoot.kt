@@ -4,6 +4,7 @@ import kotlinx.coroutines.future.await
 import org.jetbrains.research.kotoed.util.DelegateLoggable
 import java.io.File
 import java.time.Instant
+import java.util.*
 
 sealed class VcsResult<out T> {
     data class Success<out T>(val v: T) : VcsResult<T>()
@@ -28,7 +29,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
         object Trunk : Revision()
 
         companion object {
-            fun valueOf(rep: String) = when (rep.toLowerCase()) {
+            fun valueOf(rep: String) = when (rep.lowercase(Locale.getDefault())) {
                 "tip", "head", "current", "" -> Trunk
                 else -> Id(rep)
             }

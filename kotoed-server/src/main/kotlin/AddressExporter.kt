@@ -1,24 +1,17 @@
-import com.google.common.base.CaseFormat
-import io.vertx.core.Promise
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import kotlinx.warnings.Warnings
+import kotlinx.warnings.Warnings.NOTHING_TO_INLINE
+import kotlinx.warnings.Warnings.UNCHECKED_CAST
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationData
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.web.UrlPattern
-import org.jooq.Record
 import org.jooq.TableRecord
-import org.reflections.ReflectionUtils
 import org.reflections.Reflections
 import org.reflections.scanners.MethodAnnotationsScanner
-import org.reflections.scanners.SubTypesScanner
-import org.reflections.scanners.TypeAnnotationsScanner
 import java.io.PrintWriter
-import java.lang.reflect.GenericArrayType
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
@@ -40,7 +33,7 @@ class AppendScope(val appendable: Appendable, val indent: Int = 0) {
     }
 
     operator fun String.unaryPlus() {
-        appendable.appendln(this.trimIndent().prependIndent(" ".repeat(indent)))
+        appendable.appendLine(this.trimIndent().prependIndent(" ".repeat(indent)))
     }
 }
 
@@ -48,7 +41,8 @@ inline fun formatTo(appendable: Appendable, body: AppendScope.() -> Unit) {
     AppendScope(appendable).body()
 }
 
-inline fun AppendScope.appendln(value: CharSequence) = appendable.appendln(value)
+@Suppress(NOTHING_TO_INLINE)
+inline fun AppendScope.appendln(value: CharSequence) = appendable.appendLine(value)
 
 private val numberClasses = setOf(
     java.lang.Integer.TYPE,
@@ -67,6 +61,7 @@ private val numberClasses = setOf(
 
 enum class Purpose { ForInput, ForOutput }
 
+@Suppress("DANGEROUS_CHARACTERS")
 fun classToTS(clazz: Type, purpose: Purpose, visited: MutableSet<Type> = mutableSetOf()): String {
     fun recurse(clazz: Type) = classToTS(clazz, purpose, visited)
     return when {
@@ -114,11 +109,12 @@ fun classToTS(clazz: Type, purpose: Purpose, visited: MutableSet<Type> = mutable
             }
         }
         clazz is Class<*> && clazz.isSubclassOf<TableRecord<*>>() -> {
+            @Suppress(UNCHECKED_CAST)
             clazz as Class<TableRecord<*>>
             visited += clazz
 
-            val instance = clazz.newInstance() as TableRecord<*>
-            val table = instance.getTable()
+            val instance = clazz.getDeclaredConstructor().newInstance() as TableRecord<*>
+            val table = instance.table
             val params = clazz.methods.filter {
                 !it.isSynthetic
                         && it.parameters.isEmpty()
@@ -186,7 +182,7 @@ object AddressExporter {
                 .filter{ it.returnType.jvmErasure == String::class }
                 .forEach {
 
-            @Suppress(Warnings.UNCHECKED_CAST)
+            @Suppress(UNCHECKED_CAST)
             it as KProperty1<Any, String>
 
             val value = it.call().let(Json::encode)
@@ -276,5 +272,3 @@ object AddressExporter {
         pw.close()
     }
 }
-
-

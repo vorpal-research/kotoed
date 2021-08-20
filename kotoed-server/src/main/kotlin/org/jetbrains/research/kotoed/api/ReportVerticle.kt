@@ -75,11 +75,11 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         val lessonsGrade = groupedLessonData.map { (lesson, tasks) ->
             val highestGrades = calcHighestGradeTasks(tasks)
-            lesson to highestGrades.sumBy { it.second }
+            lesson to highestGrades.sumOf { it.second }
         }
 
         val highestGradesLessons = calcHighestGradeLessons(lessonsGrade)
-        val totalScore = highestGradesLessons.sumBy { it.second }
+        val totalScore = highestGradesLessons.sumOf { it.second }
 
         return totalScore.toDouble() // TODO: Change type to Int everywhere
     }
@@ -96,12 +96,12 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
         groupedLessonData.forEach { (lesson, tasks) ->
             val highestGrades = calcHighestGradeTasks(tasks)
-            scores[lesson] = highestGrades.sumBy { it.second }
+            scores[lesson] = highestGrades.sumOf { it.second }
             scoreDescriptions[lesson] = highestGrades.joinToString(separator = " + ") { "${it.second} points for ${it.first}" }
         }
 
         val highestGradesLessons = calcHighestGradeLessons(scores.toList())
-        val totalScore = highestGradesLessons.sumBy { it.second }
+        val totalScore = highestGradesLessons.sumOf { it.second }
         val totalScoreDescription = highestGradesLessons.joinToString(separator = " + ") { it.first }
 
         val header = listOf(listOf("", "Score", "Description"))
@@ -218,7 +218,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
                         .map { Adjustment.fromTags(it) }
                         .filter { it.isSet() }
                 val permanentAdj = Adjustment(
-                        value = permanentAdjs.sumByDouble { it.value ?: 0.0 },
+                        value = permanentAdjs.sumOf { it.value ?: 0.0 },
                         comment = permanentAdjs.mapNotNull { it.comment }.joinToString()
                 )
                 val totalScoreSource = sequenceOf(lastCorrect, lastClosed)

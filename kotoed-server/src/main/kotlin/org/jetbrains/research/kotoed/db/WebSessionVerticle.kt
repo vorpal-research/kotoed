@@ -15,7 +15,7 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
 
     override fun start(startPromise: Promise<Void>) {
         super.start(startPromise)
-        timerId = vertx.setPeriodic(1000 * 60 * 20) { handleTick() }
+        timerId = vertx.setPeriodic(1000L * 60 * 20) { handleTick() }
     }
 
     override fun stop(stopPromise: Promise<Void>?) {

@@ -1,8 +1,9 @@
 package org.jetbrains.research.kotoed.util
 
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import kotlin.reflect.full.declaredMemberProperties
 
-fun main(args: Array<String>) {
+fun main(@Suppress(UNUSED_PARAMETER) args: Array<String>) {
     trigger()
 }
 

@@ -8,6 +8,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.RoutingContext
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import kotlinx.warnings.Warnings.DEPRECATION
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
@@ -75,6 +76,7 @@ suspend fun RoutingContext.handleDebugCrash() {
     handleDebugCrashNow()
 }
 
+@Suppress(DEPRECATION)
 @HandlerFor("/debug/database/create")
 @JsonResponse
 @Order(1)
@@ -96,6 +98,7 @@ fun RoutingContext.handleDebugDatabaseCreate() {
     response().end(res)
 }
 
+@Suppress(DEPRECATION)
 @HandlerFor("/debug/database/fill")
 @JsonResponse
 @Order(1)
@@ -147,6 +150,7 @@ suspend fun RoutingContext.handleDebugDatabaseFill() {
     response().end(JsonArray(res).encodePrettily())
 }
 
+@Suppress(DEPRECATION)
 @HandlerFor("/debug/database/read/:id")
 @JsonResponse
 @Order(1)
@@ -179,6 +183,7 @@ suspend fun RoutingContext.handleDebugDatabaseRead() {
     response().end(Json.encode(res))
 }
 
+@Suppress(DEPRECATION)
 @HandlerFor("/debug/database/clear")
 @JsonResponse
 @Order(1)

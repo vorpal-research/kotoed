@@ -5,6 +5,8 @@ import com.intellij.psi.PsiElement
 import com.suhininalex.suffixtree.SuffixTree
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
+import kotlinx.warnings.Warnings.USELESS_CAST
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -90,7 +92,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
         super.start()
     }
 
-    fun handleRequest(timerId: Long) {
+    fun handleRequest(@Suppress(UNUSED_PARAMETER) timerId: Long) {
 
         fun handleException(ex: Throwable) {
             log.error("Klones failed!", ex)
@@ -235,6 +237,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             method.annotationEntries.all { anno -> "@Test" != anno.text }
                         }
                         .map {
+                            @Suppress(USELESS_CAST)
                             it as PsiElement
                         }
                         .map { method ->
@@ -249,6 +252,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                             val lst = tokens.toList()
                             log.trace("lst = ${lst.joinToString(limit = 32)}")
                             val seqId = suffixTree.addSequence(lst)
+                            seqId.ignore()
                         }
             }
         }
@@ -375,11 +379,11 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                     .map { clone -> clone.functionName }
                     .distinct()
                     .joinToString()
-            builder.appendln("($fname) Clone class $i:")
+            builder.appendLine("($fname) Clone class $i:")
             cloneClass.clones.forEach { c ->
-                builder.appendln("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
+                builder.appendLine("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
-            builder.appendln()
+            builder.appendLine()
             log.trace(builder)
         }
 

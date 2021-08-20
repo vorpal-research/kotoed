@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.util.database
 
+import kotlinx.warnings.Warnings.DEPRECATION
+import kotlinx.warnings.Warnings.NOTHING_TO_INLINE
 import org.jetbrains.research.kotoed.util.expect
 import org.jetbrains.research.kotoed.util.snoc
 import org.jooq.*
@@ -28,31 +30,31 @@ suspend fun <T : Record> ResultQuery<T>.fetchKAsync(): Result<T> =
 
 // infix-noninfix overloads are a shadowy corner of Kotlin
 // but what not to do in the name of code beauty???
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun Condition.and(other: Condition): Condition = this.and(other)
 
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun Condition.or(other: Condition): Condition = this.or(other)
 
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun <T> Field<T>.equal(other: Field<T>): Condition = this.equal(other)
 
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun <T> Field<T>.equal(other: T): Condition = this.equal(other)
 
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun <T> Field<T>.ne(other: Field<T>): Condition = this.ne(other)
 
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline infix fun <T> Field<T>.ne(other: T): Condition = this.ne(other)
 
-
-@Suppress("NOTHING_TO_INLINE")
+@Suppress(NOTHING_TO_INLINE)
 inline fun <E : Any> ResultQuery<*>.fetchInto(klass: KClass<E>): List<E> =
         fetchInto(klass.java)
 
 inline fun <reified E : Any> ResultQuery<*>.fetchInto(): List<E> = fetchInto(E::class.java)
-@Suppress("NOTHING_TO_INLINE")
+
+@Suppress(NOTHING_TO_INLINE)
 inline fun <E : Any> Result<*>.into(klass: KClass<E>): List<E> =
         into(klass.java)
 
@@ -94,6 +96,7 @@ fun Field<Any>.jsonGet(index: Int): Field<Any> = JsonGetElem(this, index)
 operator fun Field<Any>.get(key: String) = jsonGet(key)
 operator fun Field<Any>.get(index: Int) = jsonGet(index)
 
+@Suppress(DEPRECATION)
 class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val arguments: List<QueryPart>)
         : CustomField<T>(function, DSL.getDataType(klass.java)) {
     constructor(function: String, klass: KClass<T>, vararg arguments: QueryPart):
@@ -114,6 +117,7 @@ class FunctionCall<T: Any>(val function: String, val klass: KClass<T>, val argum
 inline fun <reified T: Any> FunctionCall(function: String, vararg arguments: QueryPart) =
         FunctionCall(function, T::class, *arguments)
 
+@Suppress(DEPRECATION)
 class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)
     : CustomField<Boolean>("@@", DSL.getDataType(Boolean::class.java)) {
 
@@ -125,6 +129,7 @@ class TextDocumentMatch(val document: Field<Any>, val query: Field<Any>)
     }
 }
 
+@Suppress(DEPRECATION)
 class TsQueryOrOperator(val lhv: Field<Any>, val rhv: Field<Any>)
     : CustomField<Any>("||", DSL.getDataType(Any::class.java)) {
 

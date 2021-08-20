@@ -189,7 +189,7 @@ inline suspend fun <
     return publishJsonable(address, value, Argument::class)
 }
 
-@UseExperimental(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class)
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any

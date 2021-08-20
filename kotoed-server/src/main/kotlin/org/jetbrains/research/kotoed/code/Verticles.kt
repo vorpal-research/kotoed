@@ -103,6 +103,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             if(rev == VcsRoot.Revision.Trunk) root.update()
             root.update()
         }.result
+        checkoutRes.ignore()
     }
 
     @JsonableEventBusConsumerFor(Address.Code.Read)
@@ -378,6 +379,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val inf = expectNotNull(info[message.uid], "Repository not found")
 
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
+        root.ignore()
 
         val res = temporaryEnv { compiler ->
             val fromFile =

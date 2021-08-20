@@ -18,6 +18,7 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.net.URI
 import java.net.URLEncoder
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -106,7 +107,7 @@ fun Sequence<Char>.asInputStream(): InputStream =
 
             override fun read(): Int {
                 if (!it.hasNext()) return -1
-                return it.next().toInt()
+                return it.next().code
             }
 
             override fun close() {
@@ -269,3 +270,6 @@ inline fun <T, S> List<T>.chunksBy(classifier: (T) -> S): List<Pair<S, List<T>>>
 
 operator fun<T: Comparable<T>> ClosedRange<T>.contains(that: ClosedRange<T>) =
         contains(that.start) && contains(that.endInclusive)
+
+fun String.decapitalize(): String = replaceFirstChar { it.lowercase(Locale.getDefault()) }
+fun String.capitalize(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }

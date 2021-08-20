@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.reflect
 
@@ -125,6 +126,7 @@ suspend fun Vertx.delayAsync(delay: Long): Long =
 
 data class ShareableHolder<out T>(val value: T, val vertx: Vertx) : Shareable
 
+@OptIn(ExperimentalReflectionOnLambdas::class)
 fun <T> Vertx.getSharedLocal(name: String, construct: () -> T): T {
     synchronized(this) {
         val map = sharedData().getLocalMap<String, ShareableHolder<T>>(

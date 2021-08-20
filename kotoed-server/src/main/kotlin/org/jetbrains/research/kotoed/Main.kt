@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import org.flywaydb.core.Flyway
 import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Public
@@ -27,7 +28,7 @@ import org.jetbrains.research.kotoed.web.auth.UavAuthProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-fun main(args: Array<String>) {
+fun main(@Suppress(UNUSED_PARAMETER) args: Array<String>) {
     DefaultChannelId.newInstance() // warm-up slow DNS
 
     CoroutineScope(Dispatchers.Unconfined)

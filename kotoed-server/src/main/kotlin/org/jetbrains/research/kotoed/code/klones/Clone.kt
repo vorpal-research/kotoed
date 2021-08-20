@@ -5,7 +5,7 @@ import com.suhininalex.suffixtree.Node
 
 data class CloneClass(val node: Node) {
 
-    val length = node.parentEdges.sumBy(Edge::length)
+    val length = node.parentEdges.sumOf(Edge::length)
 
     val clones by lazy {
         node.terminalMap.map { e ->

@@ -15,12 +15,13 @@ import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.ForeignKey
 import org.jooq.Table
 import org.jooq.UpdatableRecord
+import java.util.*
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.TimeUnit
 
 abstract class ProcessorVerticle<R : UpdatableRecord<R>>(
         table: Table<R>,
-        entityName: String = table.name.toLowerCase()
+        entityName: String = table.name.lowercase(Locale.getDefault())
 ) : DatabaseVerticle<R>(table, entityName), Loggable {
 
     val processAddress = Address.DB.process(entityName)

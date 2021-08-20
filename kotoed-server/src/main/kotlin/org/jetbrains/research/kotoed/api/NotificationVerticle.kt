@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonObject
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import nl.martijndwars.webpush.Encoding
 import nl.martijndwars.webpush.Notification
 import nl.martijndwars.webpush.PushService
@@ -131,7 +132,7 @@ class NotificationVerticle : AbstractKotoedVerticle() {
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Notification.Web.PublicKey)
-    fun handleWebKey(ignore: Unit): JsonObject =
+    fun handleWebKey(@Suppress(UNUSED_PARAMETER) ignore: Unit): JsonObject =
             org.jetbrains.research.kotoed.util.JsonObject("key" to Config.Notifications.Web.VapidKeyPublic)
 
     @JsonableEventBusConsumerFor(Address.Api.Notification.Read)

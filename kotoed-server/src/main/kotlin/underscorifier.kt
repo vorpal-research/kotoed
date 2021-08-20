@@ -1,6 +1,7 @@
+import kotlinx.warnings.Warnings.UNUSED_PARAMETER
 import org.jetbrains.research.kotoed.database.Public
 
-fun main(args: Array<String>) {
+fun main(@Suppress(UNUSED_PARAMETER) args: Array<String>) {
 
     for (table in Public.PUBLIC.tables) {
         for (field in table.fields()) {

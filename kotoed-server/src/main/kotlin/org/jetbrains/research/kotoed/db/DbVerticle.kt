@@ -27,6 +27,7 @@ import org.jooq.impl.DSL
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.Tuple5
 import ru.spbstu.ktuples.plus
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -35,7 +36,7 @@ import kotlin.sequences.Sequence
 
 abstract class DatabaseVerticle<R : TableRecord<R>>(
         val table: Table<R>,
-        val entityName: String = table.name.toLowerCase()
+        val entityName: String = table.name.lowercase(Locale.getDefault())
 ) : AbstractKotoedVerticle(), Loggable {
 
     companion object {
@@ -120,7 +121,7 @@ abstract class DatabaseVerticle<R : TableRecord<R>>(
 
 abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
         table: Table<R>,
-        entityName: String = table.name.toLowerCase()
+        entityName: String = table.name.lowercase(Locale.getDefault())
 ) : DatabaseVerticle<R>(table, entityName) {
 
     val createAddress = Address.DB.create(entityName)
@@ -491,7 +492,7 @@ abstract class CrudDatabaseVerticle<R : TableRecord<R>>(
 
 abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
         table: Table<R>,
-        entityName: String = table.name.toLowerCase()
+        entityName: String = table.name.lowercase(Locale.getDefault())
 ) : CrudDatabaseVerticle<R>(table, entityName) {
 
     override fun start(startPromise: Promise<Void>) {
@@ -506,7 +507,7 @@ abstract class CrudDatabaseVerticleWithReferences<R : TableRecord<R>>(
     }
 
     internal fun addressFor(fk: ForeignKey<R, *>) =
-            "$readAddress.for.${fk.key.table.name.toLowerCase()}"
+            "$readAddress.for.${fk.key.table.name.lowercase(Locale.getDefault())}"
 
     internal fun handlerFor(fk: ForeignKey<R, *>) = { msg: Message<JsonObject> ->
         launch(WithExceptions(msg) + CoroutineName(msg.requestUUID())) {

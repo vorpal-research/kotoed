@@ -21,7 +21,7 @@ class LineDiff {
                         .toChar()
             }
     fun linesToString(lines: Sequence<String>): String = lines.map(this::lineToChar).joinToString("")
-    fun charToLine(ch: Char) = cache[ch.toInt()]!!
+    fun charToLine(ch: Char) = cache[ch.code]!!
     fun stringToLines(string: String): List<String> = string.map(this::charToLine)
 
     fun diff(before: Sequence<String>, after: Sequence<String>): List<Chunk> =
