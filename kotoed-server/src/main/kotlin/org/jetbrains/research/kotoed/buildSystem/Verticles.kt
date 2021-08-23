@@ -188,15 +188,17 @@ class BuildVerticle : AbstractKotoedVerticle() {
             val qodanaFile = File(randomName, "report/qodana.json")
             val inspectionsFile = File(randomName, "report/inspections.xml")
 
-            val inspections = when {
-                qodanaFile.exists() -> {
-                    fs.readFileAsync(qodanaFile.absolutePath).toJsonObject()
+            val inspections = tryOrNull {
+                when {
+                    qodanaFile.exists() -> {
+                        fs.readFileAsync(qodanaFile.absolutePath).toJsonObject()
+                    }
+                    inspectionsFile.exists() -> {
+                        val inspectionsXml = fs.readFileAsync(inspectionsFile.absolutePath)
+                        xml2json(ByteArrayInputStream(inspectionsXml.bytes))
+                    }
+                    else -> null
                 }
-                inspectionsFile.exists() -> {
-                    val inspectionsXml = fs.readFileAsync(inspectionsFile.absolutePath)
-                    xml2json(ByteArrayInputStream(inspectionsXml.bytes))
-                }
-                else -> null
             }
 
             log.info("Build request finished in directory $randomName")
