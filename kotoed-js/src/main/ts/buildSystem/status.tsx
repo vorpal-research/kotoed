@@ -1,5 +1,6 @@
 import {render} from "react-dom";
 import * as React from "react";
+import * as AnsiUp from 'ansi_up';
 import {Panel, PanelGroup, Row} from 'react-bootstrap';
 import {Kotoed} from "../util/kotoed-api";
 import {WithId} from "../data/common";
@@ -7,6 +8,11 @@ import {sendAsync} from "../views/components/common";
 import SpinnerWithVeil from "../views/components/SpinnerWithVeil";
 import * as moment from "../code/components/CommentComponent";
 import {poll, SimplePollingStrategy} from "../util/poll";
+
+const ansiToHtml = (() => {
+    const ansiUpObject = new AnsiUp.default()
+    return ansiUpObject.ansi_to_html.bind(ansiUpObject) as (txt:string) => string
+})()
 
 type BuildStatusState = { loading: true }
                       | { loading: false, status: BuildStatus }
@@ -51,7 +57,10 @@ class BuildStatusView extends React.Component<WithId, BuildStatusState> {
                            collapsible defaultExpanded={false}
                            header={<pre>{v.commandLine}</pre>}
                            bsStyle={this.bsClassFor(v)}
-                    > { <pre>{v.cout}{'\n'}{v.cerr}</pre> }
+                    > { <pre>
+                            <div dangerouslySetInnerHTML={{__html: ansiToHtml(v.cout)}} />
+                            <div dangerouslySetInnerHTML={{__html: ansiToHtml(v.cerr)}} />
+                         </pre> }
                     </Panel>
                 )
             }
