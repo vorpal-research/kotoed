@@ -46,7 +46,8 @@ data class BuildStatus(val request: BuildRequest,
                        val startTime: Instant = Clock.systemUTC().instant()): Jsonable
 
 data class KotoedRunnerFailure(
-        val nestedException: String
+        val nestedException: String?,
+        val errorMessage: String?
 ): Jsonable
 // acquired by fair
 // ```SQL

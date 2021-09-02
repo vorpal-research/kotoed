@@ -74,12 +74,13 @@ export class KloneClassPanel extends Component<KloneClassPanelProps, KloneClassP
 
 
 export interface UnknownFailureInfo {
-    nestedException: string
+    nestedException?: string
+    errorMessage?: string
 }
 
 export function isUnknownFailureInfo(failure: FailureInfo): failure is UnknownFailureInfo {
-    return failure &&
-        (failure as any)["@class"] === "org.jetbrains.research.runner.data.UnknownFailureDatum";
+    return _.isObject(failure) && !isTestFailureInfo(failure)
+        && (failure.nestedException != null || failure.errorMessage != null)
 }
 
 export interface TestFailureInfo {
@@ -90,8 +91,11 @@ export interface TestFailureInfo {
 }
 
 export function isTestFailureInfo(failure: FailureInfo): failure is TestFailureInfo {
-    return failure &&
-        (failure as any)["@class"] === "org.jetbrains.research.runner.data.TestFailureDatum";
+    const failureObj = failure as any
+    return _.isObject(failure)
+        && failureObj.input != null
+        && failureObj.output != null
+        && failureObj.expectedOutput != null
 }
 
 export type FailureInfo = TestFailureInfo | UnknownFailureInfo
@@ -201,7 +205,16 @@ export class TestDataColumn extends Component<TestDataColumnProps, TestDataColum
                                 } else if (isUnknownFailureInfo(failure)) {
                                     return <ListGroupItem bsStyle="danger">
                                         Failed with:<br/>
-                                        <pre><code>{prettyPrint(failure.nestedException)}</code></pre>
+                                        {
+                                            failure.nestedException ?
+                                                [<pre><code>{prettyPrint(failure.nestedException)}</code></pre>]
+                                                : []
+                                        }
+                                        {
+                                            failure.errorMessage ?
+                                                [<pre><code>{failure.errorMessage}</code></pre>]
+                                                : []
+                                        }
                                     </ListGroupItem>
                                 }
                             }

@@ -102,6 +102,7 @@ namespace KFirst {
             return _.every(row.results, (td: TestData) =>
                 td.status == "NOT_IMPLEMENTED" ||
                 isUnknownFailureInfo(td.failure)
+                && td.failure.nestedException
                 && td.failure.nestedException.match(/kotlin\.NotImplementedError/)
             );
         },
