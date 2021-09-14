@@ -18,10 +18,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
-import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
-import org.jetbrains.research.kotoed.util.routing.CookieSessionStoreImpl
-import org.jetbrains.research.kotoed.util.routing.RoutingConfig
-import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
+import org.jetbrains.research.kotoed.util.routing.*
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
 import org.jetbrains.research.kotoed.util.template.helpers.StaticFilesHelper
 import org.jetbrains.research.kotoed.web.auth.OAuthProvider
@@ -126,7 +123,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                         "url" to KotoedUrlHelper()
                 ),
                 staticFilesHelper = staticFilesHelper,
-                loggingHandler = LoggerHandler.create(LoggerFormat.SHORT)
+                loggingHandler = LoggerHandlerImpl()
         )
 
         autoRegisterHandlers(routingConfig)
