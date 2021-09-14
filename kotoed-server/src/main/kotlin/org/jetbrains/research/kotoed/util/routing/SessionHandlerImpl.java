@@ -129,13 +129,6 @@ public class SessionHandlerImpl implements SessionHandler {
 
     @Override
     public void handle(RoutingContext context) {
-        if (nagHttps && log.isDebugEnabled()) {
-            String uri = context.request().absoluteURI();
-            if (!uri.startsWith("https:")) {
-                log.debug("Using session cookies without https could make you susceptible to session hijacking: " + uri);
-            }
-        }
-
         // Look for existing session cookie
         Cookie cookie = context.getCookie(sessionCookieName);
         if (cookie != null) {
