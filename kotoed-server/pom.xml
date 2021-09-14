@@ -50,7 +50,7 @@
         <ktuples.version>0.0.1.10</ktuples.version>
         <kparsec.version>0.0.0.8</kparsec.version>
         <kootstrap.version>0.0.0.1</kootstrap.version>
-        <suffixtree.version>1.0.2</suffixtree.version>
+        <suffixtree.version>1.0.3</suffixtree.version>
 
         <icu.version>64.2</icu.version>
         <wordnet-random-name.version>1.3</wordnet-random-name.version>
