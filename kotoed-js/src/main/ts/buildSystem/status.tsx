@@ -11,11 +11,22 @@ import {poll, SimplePollingStrategy} from "../util/poll";
 
 const ansiToHtml = (() => {
     const ansiUpObject = new AnsiUp.default()
+    ansiUpObject.url_whitelist = {}
     return ansiUpObject.ansi_to_html.bind(ansiUpObject) as (txt:string) => string
 })()
 
 type BuildStatusState = { loading: true }
                       | { loading: false, status: BuildStatus }
+
+class AnsiComponent extends React.Component<{ contents: string }> {
+    constructor(props: { contents: string }) {
+        super(props);
+    }
+
+    render(): JSX.Element {
+        return <div dangerouslySetInnerHTML={{__html: ansiToHtml(this.props.contents)}} />;
+    }
+}
 
 class BuildStatusView extends React.Component<WithId, BuildStatusState> {
     constructor(props: WithId) {
@@ -56,11 +67,11 @@ class BuildStatusView extends React.Component<WithId, BuildStatusState> {
                     <Panel key={`${i}`}
                            collapsible defaultExpanded={false}
                            header={<pre>{v.commandLine}</pre>}
-                           bsStyle={this.bsClassFor(v)}
-                    > { <pre>
-                            <div dangerouslySetInnerHTML={{__html: ansiToHtml(v.cout)}} />
-                            <div dangerouslySetInnerHTML={{__html: ansiToHtml(v.cerr)}} />
-                         </pre> }
+                           bsStyle={this.bsClassFor(v)} >
+                        <pre>
+                            <AnsiComponent contents={v.cout} />
+                            <AnsiComponent contents={v.cerr} />
+                        </pre>
                     </Panel>
                 )
             }

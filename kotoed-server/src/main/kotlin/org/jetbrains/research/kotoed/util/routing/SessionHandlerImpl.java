@@ -263,11 +263,14 @@ public class SessionHandlerImpl implements SessionHandler {
                             if (res.failed()) {
                                 log.error("Failed to store session", res.cause());
                             } else {
-                                sessionStore.delete(session.oldId(), delete -> {
-                                    if (delete.failed()) {
-                                        log.error("Failed to delete previous session", delete.cause());
-                                    }
-                                });
+                                String oldId = session.oldId();
+                                if (oldId != null) {
+                                    sessionStore.delete(oldId, delete -> {
+                                        if (delete.failed()) {
+                                            log.error("Failed to delete previous session", delete.cause());
+                                        }
+                                    });
+                                }
                             }
                         });
                     } else {

@@ -19,6 +19,7 @@ import org.jetbrains.research.kotoed.database.Public
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.getSharedDataSource
 import org.jetbrains.research.kotoed.util.routing.AsyncSessionStore
+import org.jetbrains.research.kotoed.util.routing.CookieSessionStoreImpl
 import org.jetbrains.research.kotoed.util.routing.RoutingConfig
 import org.jetbrains.research.kotoed.util.routing.autoRegisterHandlers
 import org.jetbrains.research.kotoed.util.template.helpers.KotoedUrlHelper
@@ -119,7 +120,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore =  AsyncSessionStore(vertx),
+                sessionStore =  CookieSessionStoreImpl(vertx, Config.Notifications.Web.VapidKeyPrivate),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()

@@ -10,6 +10,7 @@ import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
 import io.vertx.core.shareddata.Shareable
+import io.vertx.core.shareddata.impl.ClusterSerializable
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.client.HttpRequest
 import io.vertx.ext.web.client.HttpResponse
@@ -220,3 +221,15 @@ fun autoDeploy(vertx: Vertx, handler: Handler<AsyncResult<CompositeFuture>>) {
 }
 
 /******************************************************************************/
+
+fun ClusterSerializable.bytes(): ByteArray {
+    val buf = Buffer.buffer()
+    writeToBuffer(buf)
+    return buf.bytes
+}
+
+fun <T: ClusterSerializable> T.fromBytes(bytes: ByteArray): T {
+    val buf = Buffer.buffer(bytes)
+    readFromBuffer(0, buf)
+    return this
+}
