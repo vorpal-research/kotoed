@@ -39,27 +39,28 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
 
     // For now, this is the only way to guarantee that read-after-write does not behave
     // differently from what vert.x-web expects it to do
-    val mutex = Mutex()
+    val mutexes = mutableMapOf<String, Mutex>()
+    private fun mutex(message: WebSessionRecord) = mutexes.getOrPut(message.id) { Mutex() }
 
-    override suspend fun handleRead(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
+    override suspend fun handleRead(message: WebSessionRecord): WebSessionRecord = mutex(message).withLock {
         super.handleRead(message)
     }
 
-    override suspend fun handleUpdate(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
-        log.trace("Update requested in table ${table.name}:\n$message")
-        handleCreateOrUpdate(message)
+    override suspend fun handleUpdate(message: WebSessionRecord): WebSessionRecord = mutex(message).withLock {
+        //log.trace("Update requested in table ${table.name}:\n$message")
+        doCreateOrUpdate(message)
     }
 
-    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
-        log.trace("Create requested in table ${table.name}:\n$message")
-        handleCreateOrUpdate(message)
+    suspend override fun handleCreate(message: WebSessionRecord): WebSessionRecord = mutex(message).withLock {
+        //log.trace("Create requested in table ${table.name}:\n$message")
+        doCreateOrUpdate(message)
     }
 
-    override suspend fun handleDelete(message: WebSessionRecord): WebSessionRecord = mutex.withLock {
+    override suspend fun handleDelete(message: WebSessionRecord): WebSessionRecord = mutex(message).withLock {
         super.handleDelete(message)
     }
 
-    suspend fun handleCreateOrUpdate(message: WebSessionRecord): WebSessionRecord {
+    suspend fun doCreateOrUpdate(message: WebSessionRecord): WebSessionRecord {
         val table = WebSession.WEB_SESSION
         return db {
             sqlStateAware {
@@ -71,15 +72,7 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
                             .fetch()
                             .into(recordClass)
                             .firstOrNull()
-
-                    log.trace("Previous record:\n$prev")
-
-                    require(prev == null || prev.version == message.version) { "Conflict" }
-
-                    // Negative version means we should bump it
-                    if (message.version < 0) {
-                        message.version = -message.version + 1
-                    }
+                    processVersions(prev, message)
 
                     insertInto(table)
                             .set(message)
@@ -90,11 +83,22 @@ class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SES
                             .fetch()
                             .into(recordClass)
                             .first()
-                            .apply { log.trace("Inserted:\n$this") }
                 }
 
 
             }
+        }
+    }
+
+    private fun processVersions(
+        prev: WebSessionRecord?,
+        message: WebSessionRecord
+    ) {
+        require(prev == null || prev.version == message.version) { "Conflict" }
+
+        // Negative version means we should bump it
+        if (message.version < 0) {
+            message.version = -message.version + 1
         }
     }
 
