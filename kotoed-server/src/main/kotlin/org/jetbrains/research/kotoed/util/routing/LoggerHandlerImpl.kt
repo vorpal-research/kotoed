@@ -41,7 +41,7 @@ class LoggerHandlerImpl: LoggerHandler, Loggable {
         val status = request.response().statusCode
 
         if (status == 200
-            && (UrlPattern.matches(UrlPattern.EventBus, uri) || UrlPattern.matches(UrlPattern.Static, uri))
+            && (uri.startsWith("/eventbus/") || uri.startsWith("/static/"))
         ) return
 
         val message = String.format(
