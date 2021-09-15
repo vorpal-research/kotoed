@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.web
 
+import io.vertx.ext.web.Route
+
 object UrlPattern {
     // TODO maybe make parameter names const values
     const val Star = "/*"
@@ -91,10 +93,37 @@ object UrlPattern {
     const val EventBus = "/eventbus/*"
     const val Static = "/static/*"
 
+    fun match(pattern: String, value: String): Map<String, String>? {
+        val patternChunks = pattern.split("/")
+        val valueChunks = value.split("/")
+
+        val currentMap = mutableMapOf<String, String>()
+        if (valueChunks.size > patternChunks.size) return null
+
+        for (i in 0..patternChunks.lastIndex) {
+            val p = patternChunks[i]
+            val v = valueChunks[i]
+
+            if (p == "*") {
+                currentMap["*"] = valueChunks.drop(i).joinToString("/")
+                return currentMap
+            }
+            if (p.startsWith(":")) {
+                val key = p.removePrefix(":")
+                currentMap[key] = v
+                continue
+            }
+            if (v != p) return null
+        }
+        return currentMap
+    }
+
+    fun matches(pattern: String, value: String): Boolean = match(pattern, value) != null
+
     /**
      * Each Any in parameter will be converted to string
      */
-    fun reverse(pattern: String, params: Map<String, Any>, star: Any = ""): String {
+    fun reverse(pattern: String, params: Map<String, Any> = mapOf(), star: Any = ""): String {
         var url = pattern
         for ((k, v) in params) {
             url = url.replace(":$k", "$v")

@@ -116,6 +116,11 @@ class GlobalConfig : Configuration() {
 
     val Processors by ProcessorsConfig()
 
+    class SecretsConfig : Configuration() {
+        val GenericSecret: String by "REPLACE_ME"
+    }
+    val Secrets by SecretsConfig()
+
     class RootConfig : Configuration() {
         val ListenPort: Int by 9000
         val PublicUrl: String by "http://localhost:9000"

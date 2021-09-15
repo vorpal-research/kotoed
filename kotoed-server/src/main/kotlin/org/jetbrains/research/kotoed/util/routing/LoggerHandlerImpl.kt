@@ -7,7 +7,9 @@ import io.vertx.core.http.HttpVersion
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.LoggerFormat
 import io.vertx.ext.web.handler.LoggerHandler
+import io.vertx.ext.web.impl.RouterImpl
 import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.web.UrlPattern
 import java.util.*
 
 class LoggerHandlerImpl: LoggerHandler, Loggable {
@@ -30,18 +32,19 @@ class LoggerHandlerImpl: LoggerHandler, Loggable {
         uri: String
     ) {
         val request = context.request()
-        var contentLength: Long = 0
-
-        contentLength = request.response().bytesWritten()
+        val contentLength = request.response().bytesWritten()
         val versionFormatted = when (version) {
             HttpVersion.HTTP_1_0 -> "HTTP/1.0"
             HttpVersion.HTTP_1_1 -> "HTTP/1.1"
             HttpVersion.HTTP_2 -> "HTTP/2.0"
         }
-        val headers = request.headers()
         val status = request.response().statusCode
-        var message: String? = null
-        message = String.format(
+
+        if (status == 200
+            && (UrlPattern.matches(UrlPattern.EventBus, uri) || UrlPattern.matches(UrlPattern.Static, uri))
+        ) return
+
+        val message = String.format(
             "%s - %s %s %s %d %d",
             remoteClient,
             method,
@@ -57,7 +60,9 @@ class LoggerHandlerImpl: LoggerHandler, Loggable {
 
         return request.getHeader("X-Real-IP")
             ?: request.getHeader("X-Forwarded-For")?.split(",")?.firstOrNull()?.trim()
-            ?: request.getHeader("Forwarded")?.split(";")?.firstOrNull { it.trim().startsWith("for=") }?.trim()?.removePrefix("for=")?.trim()
+            ?: request.getHeader("Forwarded")?.split(";")?.firstNotNullOfOrNull {
+                Regex("for=\\s*(.*)\\s*").matchEntire(it)?.groupValues?.getOrNull(1)
+            }
             ?: request.remoteAddress().host()
     }
 
@@ -67,7 +72,6 @@ class LoggerHandlerImpl: LoggerHandler, Loggable {
         val method: HttpMethod = context.request().method()
         val uri: String = context.request().uri()
         val version: HttpVersion = context.request().version()
-
 
         context.addBodyEndHandler {
             log(context, timestamp, remoteClient, version, method, uri)

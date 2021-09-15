@@ -117,7 +117,7 @@ class RootVerticle : AbstractVerticle(), Loggable {
                 },
                 authProvider = UavAuthProvider(vertx),
                 oAuthProvider = OAuthProvider(vertx),
-                sessionStore =  CookieSessionStoreImpl(vertx, Config.Notifications.Web.VapidKeyPrivate),
+                sessionStore =  CookieSessionStoreImpl(vertx, Config.Secrets.GenericSecret),
                 templateHelpers = mapOf(
                         "static" to staticFilesHelper,
                         "url" to KotoedUrlHelper()
