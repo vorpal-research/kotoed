@@ -83,7 +83,7 @@ class AutoTaggerVerticle: AbstractKotoedVerticle() {
             if(content.data.any { it.results.any {
                         it.status != KotoedRunnerStatus.SUCCESSFUL &&
                                 it.failure != null &&
-                                (it.failure.nestedException?.startsWith("kotlin.NotImplementedError") != false)
+                                (it.failure.nestedException?.startsWith("kotlin.NotImplementedError") != true)
                     } }) {
                 setTag(build.submissionId, getTestsFailed())
             } else {

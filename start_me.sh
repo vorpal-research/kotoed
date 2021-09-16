@@ -16,9 +16,11 @@ cd "$ME_DIR"
 # So we can rebuild kotoed jar while running
 COPY_DIR=$(mktemp -d --suffix=-kotoed)
 cp -f kotoed-all/target/kotoed-all-*-SNAPSHOT-fat.jar ${COPY_DIR}/kotoed.jar
+cp -f -r lib ${COPY_DIR}/lib
 
 java \
+    -cp "${COPY_DIR}/lib/*:${COPY_DIR}/kotoed.jar" \
     -Dkotlinx.coroutines.debug \
     -Djava.net.preferIPv4Stack=true \
     -Dkotoed.settingsFile=deploySettings.json \
-    -jar ${COPY_DIR}/kotoed.jar
+    org.jetbrains.research.kotoed.MainKt
