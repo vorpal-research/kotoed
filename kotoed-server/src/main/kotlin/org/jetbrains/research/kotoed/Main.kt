@@ -69,7 +69,7 @@ suspend fun startApplication(): Vertx {
 
     rootLog.info("Migration successful")
 
-    //vertx.eventBus().addInterceptor(DebugInterceptor)
+    // vertx.eventBus().addInboundInterceptor<Any?>(DebugInterceptor)
 
     vertx.eventBus().registerCodec(NonCopyJsonObjectCodec)
     vertx.eventBus().registerCodec(NonCopyJsonArrayCodec)

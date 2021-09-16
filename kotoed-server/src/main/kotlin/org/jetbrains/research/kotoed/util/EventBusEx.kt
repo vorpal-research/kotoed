@@ -436,8 +436,8 @@ private fun CoroutineVerticle.registerJsonableConsumer(
     }
 }
 
-object DebugInterceptor : Handler<DeliveryContext<*>>, Loggable {
-    override fun handle(event: DeliveryContext<*>) {
+object DebugInterceptor : Handler<DeliveryContext<Any?>>, Loggable {
+    override fun handle(event: DeliveryContext<Any?>) {
         val message = event.message()
         log.trace("Message to ${message.address()}[${message.replyAddress() ?: ""}]")
         event.next()

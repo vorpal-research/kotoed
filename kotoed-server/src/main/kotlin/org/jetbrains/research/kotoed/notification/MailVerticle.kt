@@ -22,7 +22,7 @@ class MailVerticle : AbstractNotificationVerticle(), Loggable {
         when {
             Config.Notifications.Mail.UseTLS -> TransportStrategy.SMTP_TLS
             Config.Notifications.Mail.UseSSL -> TransportStrategy.SMTPS
-            else -> TransportStrategy.SMTP
+            else -> TransportStrategy.SMTP.apply { setOpportunisticTLS(false) }
         }
     }
 
