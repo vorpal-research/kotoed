@@ -220,6 +220,7 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
             }
             {this.state.canCreateProject &&
             <ProjectCreate onCreate={() => {
+                this.setState({canCreateProject: false}) // if you want to create many projects, press F5, duh
                 const search = cb();
                 search.toggleSearch(search.oldKey)
             }} courseId={id_}/>

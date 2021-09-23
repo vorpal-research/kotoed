@@ -4,6 +4,7 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.CourseState
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
@@ -11,6 +12,7 @@ import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.GlobalLogging.log
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jetbrains.research.kotoed.util.routing.HandlerFor
 import org.jetbrains.research.kotoed.util.routing.JsonResponse
@@ -59,6 +61,18 @@ suspend fun handleCoursePerms(context: RoutingContext) {
                         this.id = intId
                     })
 
+    val projects: List<ProjectRecord> =
+            context.vertx().eventBus().sendJsonableAsync(
+                Address.DB.find("project"),
+                ProjectRecord().apply {
+                    this.courseId = intId
+                    this.deleted = false
+                    this.denizenId = context.user()?.principal()?.getInteger("id")
+                }
+            )
+
+    log.debug("Fetched projects: $projects")
+
     val course: CourseRecord = courseWrapper.record
 
     val isProcessed = courseWrapper.verificationData.status == VerificationStatus.Processed
@@ -68,7 +82,7 @@ suspend fun handleCoursePerms(context: RoutingContext) {
     val userIsTeacher = context.user().isAuthorisedAsync(Authority.Teacher)
 
     context.response().end(Permissions.Course(
-            createProject = isProcessed && isOpen,
+            createProject = isProcessed && isOpen && (userIsTeacher || projects.isEmpty()),
             editCourse = isProcessed && userIsTeacher,
             viewTags = userIsTeacher
     ))
