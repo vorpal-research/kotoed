@@ -78,7 +78,14 @@ create trigger pts_trigger_submission_tag
     for each row
 execute function pts_make_trigger_submission_tag();
 
-drop view if exists project_text_search;
-create view project_text_search as select * from project;
+create or replace function create_project_text_view() returns void
+    language sql
+as
+$$
+    drop view if exists project_text_search cascade;
+    create view project_text_search as select * from project;
+$$;
+select create_project_text_view();
+select create_submission_text_view();
 
-create index project_document_gin_idx on project using gin (document);
+create index if not exists project_document_gin_idx on project using gin (document);
