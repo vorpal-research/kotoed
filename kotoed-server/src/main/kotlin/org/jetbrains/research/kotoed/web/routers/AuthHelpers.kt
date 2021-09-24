@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.web.routers
 
 import io.netty.handler.codec.http.HttpResponseStatus
+import io.vertx.ext.auth.User
 import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
@@ -23,6 +24,9 @@ import org.jetbrains.research.kotoed.web.data.Permissions
 import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
 import kotlin.reflect.typeOf
 
+private val User.denizenId: Int
+    get() = principal().getInteger("id")!!
+
 @HandlerFor(UrlPattern.AuthHelpers.WhoAmI)
 @JsonResponse
 @LoginRequired
@@ -37,15 +41,17 @@ suspend fun handleRootPerms(context: RoutingContext) {
     val user = context.user()
     val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
 
-    context.response().end(Permissions.Root(
+    context.response().end(
+        Permissions.Root(
             createCourse = isTeacher
-    ))
+        )
+    )
 }
 
 @HandlerFor(UrlPattern.AuthHelpers.CoursePerms)
 @JsonResponse
 @LoginRequired
-suspend fun handleCoursePerms(context: RoutingContext) {
+suspend fun handleCoursePerms(context: RoutingContext) = withVertx(context.vertx()) {
     val id by context.request()
     val intId = id?.toInt()
 
@@ -55,21 +61,19 @@ suspend fun handleCoursePerms(context: RoutingContext) {
     }
 
     val courseWrapper: DbRecordWrapper<CourseRecord> =
-            context.vertx().eventBus().sendJsonableAsync(
-                    Address.Api.Course.Read,
-                    CourseRecord().apply {
-                        this.id = intId
-                    })
+        sendJsonableAsync(
+            Address.Api.Course.Read,
+            CourseRecord().apply {
+                this.id = intId
+            }
+        )
 
     val projects: List<ProjectRecord> =
-            context.vertx().eventBus().sendJsonableAsync(
-                Address.DB.find("project"),
-                ProjectRecord().apply {
-                    this.courseId = intId
-                    this.deleted = false
-                    this.denizenId = context.user()?.principal()?.getInteger("id")
-                }
-            )
+        dbFindAsync(ProjectRecord().apply {
+            this.courseId = intId
+            this.deleted = false
+            this.denizenId = context.user().denizenId
+        })
 
     log.debug("Fetched projects: $projects")
 
@@ -81,17 +85,19 @@ suspend fun handleCoursePerms(context: RoutingContext) {
 
     val userIsTeacher = context.user().isAuthorisedAsync(Authority.Teacher)
 
-    context.response().end(Permissions.Course(
+    context.response().end(
+        Permissions.Course(
             createProject = isProcessed && isOpen && (userIsTeacher || projects.isEmpty()),
             editCourse = isProcessed && userIsTeacher,
             viewTags = userIsTeacher
-    ))
+        )
+    )
 }
 
 @HandlerFor(UrlPattern.AuthHelpers.ProjectPerms)
 @JsonResponse
 @LoginRequired
-suspend fun handleProjectPerms(context: RoutingContext) {
+suspend fun handleProjectPerms(context: RoutingContext) = withVertx(context.vertx()) {
     val user = context.user()
     val id by context.request()
     val intId = id?.toInt()
@@ -104,29 +110,31 @@ suspend fun handleProjectPerms(context: RoutingContext) {
     }
 
     val projectWrapper: DbRecordWrapper<ProjectRecord> =
-            context.vertx().eventBus().sendJsonableAsync(
-                    Address.Api.Project.Read,
-                    ProjectRecord().apply {
-                        this.id = intId
-                    })
+        sendJsonableAsync(
+            Address.Api.Project.Read,
+            ProjectRecord().apply {
+                this.id = intId
+            })
 
     val project: ProjectRecord = projectWrapper.record
 
     val courseWrapper: DbRecordWrapper<CourseRecord> =
-            context.vertx().eventBus().sendJsonableAsync(
-                    Address.Api.Course.Read,
-                    CourseRecord().apply {
-                        this.id = project.courseId
-                    })
+        sendJsonableAsync(
+            Address.Api.Course.Read,
+            CourseRecord().apply {
+                this.id = project.courseId
+            })
 
     val course: CourseRecord = courseWrapper.record
 
-    context.response().end(Permissions.Project(
+    context.response().end(
+        Permissions.Project(
             createSubmission = projectWrapper.verificationData.status == VerificationStatus.Processed
-                    && user?.principal()?.get("id") == project.denizenId
+                    && user?.denizenId == project.denizenId
                     && course.state == CourseState.open,
             deleteProject = isTeacher
-    ))
+        )
+    )
 }
 
 
@@ -144,20 +152,21 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
     }
 
     val (course, author, _, _, submission) =
-            SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
-                context.fail(HttpResponseStatus.NOT_FOUND)
-                return
-            }
+        SubmissionWithRelated.fetchByIdOrNull(context.vertx().eventBus(), intId) ?: run {
+            context.fail(HttpResponseStatus.NOT_FOUND)
+            return
+        }
 
     val isTeacher = user.isAuthorisedAsync(Authority.Teacher)
     val isOpen = submission.state == SubmissionState.open
-            // && course.state == CourseState.open // otherwise comments do not work
-                                                   // for closed courses
+    // && course.state == CourseState.open // otherwise comments do not work
+    // for closed courses
     val isResubmittable = (isOpen || submission.state == SubmissionState.invalid)
             && course.state == CourseState.open
-    val isAuthor = author.id == context.user()?.principal()?.getInteger("id")
+    val isAuthor = author.id == context.user()?.denizenId
 
-    context.response().end(Permissions.Submission(
+    context.response().end(
+        Permissions.Submission(
             editOwnComments = isOpen,
             editAllComments = isTeacher && isOpen,
             changeStateOwnComments = isOpen,
@@ -168,5 +177,6 @@ suspend fun handleSubmissionPerms(context: RoutingContext) {
             clean = isTeacher,
             tags = isTeacher,
             klones = isTeacher
-    ))
+        )
+    )
 }

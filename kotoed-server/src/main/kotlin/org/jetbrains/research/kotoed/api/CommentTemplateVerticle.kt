@@ -8,9 +8,7 @@ import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.CommentTemplateRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
 
 @AutoDeployable

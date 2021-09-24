@@ -25,8 +25,8 @@ suspend fun EventBus.commentByIdOrNull(id: Int): SubmissionCommentRecord? {
     val comment: SubmissionCommentRecord
     try {
         comment = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.SUBMISSION_COMMENT.name),
-                org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord().apply { this.id = id })
+                Address.DB.read(Tables.SUBMISSION_COMMENT.name),
+                SubmissionCommentRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
@@ -40,8 +40,8 @@ suspend fun EventBus.submissionByIdOrNull(id: Int): SubmissionRecord? {
     val submission: SubmissionRecord
     try {
         submission = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.SUBMISSION.name),
-                org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord().apply { this.id = id })
+                Address.DB.read(Tables.SUBMISSION.name),
+                SubmissionRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
@@ -54,8 +54,8 @@ suspend fun EventBus.projectByIdOrNull(id: Int): ProjectRecord? {
     val project: ProjectRecord
     try {
         project = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.PROJECT.name),
-                org.jetbrains.research.kotoed.database.tables.records.ProjectRecord().apply { this.id = id })
+                Address.DB.read(PROJECT.name),
+                ProjectRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
@@ -68,8 +68,8 @@ suspend fun EventBus.denizenByIdOrNull(id: Int): DenizenRecord? {
     val denizen: DenizenRecord
     try {
         denizen = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.DENIZEN.name),
-                org.jetbrains.research.kotoed.database.tables.records.ProjectRecord().apply { this.id = id })
+                Address.DB.read(DENIZEN.name),
+                ProjectRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
@@ -82,7 +82,7 @@ suspend fun EventBus.courseByIdOrNull(id: Int): CourseRecord? {
     val course: CourseRecord
     try {
         course = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.COURSE.name),
+                Address.DB.read(Tables.COURSE.name),
                 org.jetbrains.research.kotoed.database.tables.records.CourseRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
@@ -97,7 +97,7 @@ suspend fun EventBus.buildTemplateByIdOrNull(id: Int): BuildTemplateRecord? {
     val bt: BuildTemplateRecord
     try {
         bt = this.sendJsonableAsync(
-                org.jetbrains.research.kotoed.eventbus.Address.DB.read(Tables.BUILD_TEMPLATE.name),
+                Address.DB.read(Tables.BUILD_TEMPLATE.name),
                 org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord().apply { this.id = id })
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())

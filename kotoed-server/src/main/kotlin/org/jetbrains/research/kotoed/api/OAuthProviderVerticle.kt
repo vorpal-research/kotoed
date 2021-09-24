@@ -4,10 +4,7 @@ import io.vertx.core.json.JsonArray
 import org.jetbrains.research.kotoed.database.tables.records.OauthProviderRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.oauth.KnownOAuthProviders
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
-import org.jetbrains.research.kotoed.util.use
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class OAuthProviderVerticle : AbstractKotoedVerticle()  {

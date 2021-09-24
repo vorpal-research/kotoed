@@ -13,10 +13,7 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
-import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class SubmissionResultVerticle : AbstractKotoedVerticle(), Loggable {

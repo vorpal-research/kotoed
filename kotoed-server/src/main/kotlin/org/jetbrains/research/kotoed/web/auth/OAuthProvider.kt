@@ -18,7 +18,7 @@ class OAuthProvider(vertx: Vertx) : AsyncAuthProvider(vertx) {
         val msg = fromJson<OAuthLoginMsg>(authInfo)
 
         val record: DenizenUnsafeRecord = try {
-            vertx.eventBus().sendJsonableAsync(Address.User.OAuth.Login, msg)
+            sendJsonableAsync(Address.User.OAuth.Login, msg)
         } catch (e: ReplyException) {
             if (e.failureCode() == HttpResponseStatus.NOT_FOUND.code()) {
                 throw Unauthorized(e.message ?: "Unauthorized")

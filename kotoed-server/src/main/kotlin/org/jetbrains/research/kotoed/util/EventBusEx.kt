@@ -1,6 +1,7 @@
 package org.jetbrains.research.kotoed.util
 
 import io.vertx.core.Handler
+import io.vertx.core.Vertx
 import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -444,124 +445,133 @@ object DebugInterceptor : Handler<DeliveryContext<Any?>>, Loggable {
     }
 }
 
-open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable {
+fun interface WithVertx {
+    fun getVertx(): Vertx // not a val because it causes 'accidental override' errors
+}
+
+inline fun <R> withVertx(vertx: Vertx, body: WithVertx.() -> R): R = WithVertx { vertx }.body()
+
+val WithVertx.vertx: Vertx
+    get() = getVertx()
+
+open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable, WithVertx {
     override suspend fun start() {
         registerAllConsumers()
         super.start()
     }
+}
 
-    suspend fun<R> async(dispatcher: CoroutineContext = coroutineContext, body: suspend () -> R) =
-            (this as CoroutineScope).async(dispatcher + LogExceptions() + currentCoroutineName()) {
-                body()
-            }
-
-    fun<R> spawn(dispatcher: CoroutineContext = coroutineContext, body: suspend () -> R) {
-        var context = dispatcher + LogExceptions()
-        if(context[CoroutineName.Key] == null) {
-            val name = newRequestUUID()
-            log.trace("Assigning $name to spawned call of $body")
-            context += CoroutineName(name)
-        }
-
-        launch(context) { body() }
+suspend fun <V, R> V.async(dispatcher: CoroutineContext = this.coroutineContext, body: suspend () -> R)
+where V: CoroutineScope, V: WithVertx, V: Loggable =
+    (this as CoroutineScope).async(dispatcher + LogExceptions() + currentCoroutineName()) {
+        body()
     }
 
-    // all this debauchery is here due to a kotlin compiler bug:
-    // https://youtrack.jetbrains.com/issue/KT-17640
-    protected suspend fun <R : TableRecord<R>> dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+fun <V, R> V.spawn(dispatcher: CoroutineContext = coroutineContext, body: suspend () -> R)
+        where V: CoroutineScope, V: WithVertx, V: Loggable {
+    var context = LogExceptions() + dispatcher
+    if(context[CoroutineName.Key] == null) {
+        val name = newRequestUUID()
+        log.trace("Assigning $name to spawned call of $body")
+        context += CoroutineName(name)
+    }
 
-    protected suspend fun <R : TableRecord<R>> dbBatchUpdateAsync(criteria: R,
-                                                                  patch: R,
-                                                                  klass: KClass<out R> = criteria::class): Unit =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(
-                    Address.DB.batchUpdate(criteria.table.name),
-                    BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class).also {
-                use(klass)
-            }
-
-    protected suspend fun <R : TableRecord<R>> dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
-
-    protected suspend fun <R : TableRecord<R>> dbBatchCreateAsync(v: List<R>): List<R> =
-            @Suppress(DEPRECATION)
-            if (v.isEmpty()) emptyList()
-            else {
-                val evidence = v.first()
-                val klass = evidence::class
-                vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, klass, klass)
-            }
-
-    protected suspend fun <R : TableRecord<R>> dbDeleteAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.delete(v.table.name), v, klass, klass)
-
-    protected suspend fun <R : TableRecord<R>> dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
-
-    protected suspend fun <R : TableRecord<R>> dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
-
-    protected suspend fun dbQueryAsync(q: ComplexDatabaseQuery): List<JsonObject> =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q,
-                    ComplexDatabaseQuery::class,
-                    JsonObject::class)
-
-    protected suspend fun <R : TableRecord<R>> dbQueryAsync(table: Table<R>,
-                                                            builderBody: TypedQueryBuilder<R>.() -> Unit) =
-            dbQueryAsync(TypedQueryBuilder(table).apply(builderBody).query)
-
-    protected suspend fun dbCountAsync(q: ComplexDatabaseQuery): CountResponse =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, CountResponse::class)
-
-    protected suspend fun <R : TableRecord<R>> dbCountAsync(table: Table<R>,
-                                                            builderBody: TypedQueryBuilder<R>.() -> Unit) =
-            dbCountAsync(TypedQueryBuilder(table).apply(builderBody).query)
-
-    protected suspend fun <R : TableRecord<R>> dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
-
-    protected suspend fun <R : TableRecord<R>> dbVerifyAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, VerificationData::class)
-
-    protected suspend fun <R : TableRecord<R>> dbCleanAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(Address.DB.clean(v.table.name), v, klass, VerificationData::class)
-
-    protected suspend fun <R : TableRecord<R>> fetchByIdAsync(instance: Table<R>, id: Int,
-                                                              klass: KClass<out R> = instance.recordType.kotlin): R =
-            @Suppress(DEPRECATION)
-            vertx.eventBus().sendJsonableAsync(
-                    Address.DB.read(instance.name),
-                    JsonObject("id" to id),
-                    JsonObject::class, klass)
-
-    protected suspend fun createNotification(record: NotificationRecord) =
-            sendJsonable(
-                    Address.Api.Notification.Create,
-                    record.fixTitle()
-            )
+    launch(context) { body() }
 }
+
+suspend fun <R : TableRecord<R>> WithVertx.dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbBatchUpdateAsync(criteria: R,
+                                                              patch: R,
+                                                              klass: KClass<out R> = criteria::class): Unit =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(
+        Address.DB.batchUpdate(criteria.table.name),
+        BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class).also {
+        use(klass)
+    }
+
+suspend fun <R : TableRecord<R>> WithVertx.dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>): List<R> =
+    @Suppress(DEPRECATION)
+    if (v.isEmpty()) emptyList()
+    else {
+        val evidence = v.first()
+        val klass = evidence::class
+        vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, klass, klass)
+    }
+
+suspend fun <R : TableRecord<R>> WithVertx.dbDeleteAsync(v: R, klass: KClass<out R> = v::class): R =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.delete(v.table.name), v, klass, klass)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+
+suspend fun WithVertx.dbQueryAsync(q: ComplexDatabaseQuery): List<JsonObject> =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q,
+        ComplexDatabaseQuery::class,
+        JsonObject::class)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbQueryAsync(table: Table<R>,
+                                                        builderBody: TypedQueryBuilder<R>.() -> Unit) =
+    dbQueryAsync(TypedQueryBuilder(table).apply(builderBody).query)
+
+suspend fun WithVertx.dbCountAsync(q: ComplexDatabaseQuery): CountResponse =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, CountResponse::class)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbCountAsync(table: Table<R>,
+                                                        builderBody: TypedQueryBuilder<R>.() -> Unit) =
+    dbCountAsync(TypedQueryBuilder(table).apply(builderBody).query)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbVerifyAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, VerificationData::class)
+
+suspend fun <R : TableRecord<R>> WithVertx.dbCleanAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.clean(v.table.name), v, klass, VerificationData::class)
+
+suspend fun <R : TableRecord<R>> WithVertx.fetchByIdAsync(instance: Table<R>, id: Int,
+                                                          klass: KClass<out R> = instance.recordType.kotlin): R =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(
+        Address.DB.read(instance.name),
+        JsonObject("id" to id),
+        JsonObject::class, klass)
+
+suspend fun WithVertx.createNotification(record: NotificationRecord) =
+        sendJsonable(
+                Address.Api.Notification.Create,
+                record.fixTitle()
+        )
 
 inline suspend fun <
         reified Argument : Any
-        > AbstractKotoedVerticle.sendJsonable(address: String, value: Argument) {
+        > WithVertx.sendJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
     return vertx.eventBus().sendJsonable(address, value)
 }
 
 inline suspend fun <
         reified Argument : Any
-        > AbstractKotoedVerticle.publishJsonable(address: String, value: Argument) {
+        > WithVertx.publishJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
     return vertx.eventBus().publishJsonable(address, value)
 }
@@ -569,7 +579,7 @@ inline suspend fun <
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
-        > AbstractKotoedVerticle.sendJsonableAsync(address: String, value: Argument): Result {
+        > WithVertx.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
     return vertx.eventBus().sendJsonableAsync(address, value, Argument::class, Result::class)
 }
@@ -577,7 +587,7 @@ inline suspend fun <
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
-        > AbstractKotoedVerticle.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
+        > WithVertx.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
     @Suppress(DEPRECATION)
     return vertx.eventBus().sendJsonableCollectAsync(address, value, Argument::class, Result::class)
 }
@@ -585,7 +595,7 @@ inline suspend fun <
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
-        > AbstractKotoedVerticle.trySendJsonableAsync(address: String, value: Argument): Result? {
+        > WithVertx.trySendJsonableAsync(address: String, value: Argument): Result? {
     return try {
         sendJsonableAsync(address, value)
     } catch (ex: ReplyException) {

@@ -14,15 +14,17 @@ import kotlinx.coroutines.launch
 import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUp
 import kotlin.coroutines.CoroutineContext
 
-abstract class AsyncAuthProvider(val vertx: Vertx) : AuthProvider, Loggable, CoroutineScope {
+abstract class AsyncAuthProvider(vertx: Vertx) : AuthProvider, Loggable, CoroutineScope, WithVertx {
+    val vertx = vertx
+        @JvmName("vertx_") get;
+    override fun getVertx(): Vertx = vertx
+
     override val coroutineContext: CoroutineContext by lazy { vertx.dispatcher() }
 
     protected abstract suspend fun doAuthenticateAsync(authInfo: JsonObject): User
 
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {
-        val uuid = newRequestUUID()
-        log.trace("Assigning $uuid to ${authInfo.cleanUp().toString().truncateAt(500)}")
-        launch(WithExceptions(handler) + CoroutineName(uuid)) coro@{
+        spawn(WithExceptions(handler)) coro@{
             handler.handle(Future.succeededFuture(doAuthenticateAsync(authInfo)))
         }
     }

@@ -6,9 +6,7 @@ import org.jetbrains.research.kotoed.data.notification.NotificationMessage
 import org.jetbrains.research.kotoed.data.notification.NotificationService
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
-import org.jetbrains.research.kotoed.util.Loggable
+import org.jetbrains.research.kotoed.util.*
 import org.simplejavamail.email.Email
 import org.simplejavamail.email.EmailBuilder
 import org.simplejavamail.mailer.MailerBuilder

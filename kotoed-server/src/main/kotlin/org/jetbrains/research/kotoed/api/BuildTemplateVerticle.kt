@@ -4,9 +4,7 @@ import org.jetbrains.research.kotoed.data.api.BuildTemplate
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AbstractKotoedVerticle
-import org.jetbrains.research.kotoed.util.AutoDeployable
-import org.jetbrains.research.kotoed.util.JsonableEventBusConsumerFor
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class BuildTemplateVerticle : AbstractKotoedVerticle() {

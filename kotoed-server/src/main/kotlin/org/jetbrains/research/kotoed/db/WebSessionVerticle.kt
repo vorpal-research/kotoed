@@ -8,6 +8,7 @@ import org.jetbrains.research.kotoed.database.tables.WebSession
 import org.jetbrains.research.kotoed.database.tables.records.WebSessionRecord
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.database.into
+import org.jetbrains.research.kotoed.util.*
 
 @AutoDeployable
 class WebSessionVerticle : CrudDatabaseVerticle<WebSessionRecord>(Tables.WEB_SESSION) {

@@ -14,18 +14,15 @@ import java.util.*
 @HandlerFor(UrlPattern.Auth.ResetPassword)
 @ForHttpMethod(HttpMethod.POST)
 @JsonResponse
-suspend fun resetPasswordEndpointHandler(context: RoutingContext) {
+suspend fun resetPasswordEndpointHandler(context: RoutingContext) = withVertx(context.vertx()) {
     val body: DenizenRecord = context.bodyAsJson.toRecord()
 
     val search: List<DenizenRecord> =
-            context.vertx().eventBus().sendJsonableCollectAsync(
-                    Address.DB.find("denizen"),
-                    DenizenRecord().apply{ denizenId = body.denizenId!!; email = body.email!! }
-            )
+            dbFindAsync(DenizenRecord().apply { denizenId = body.denizenId!!; email = body.email!! })
 
     if(search.isEmpty()) throw Unauthorized("Incorrect email-login combination")
 
-    run<Unit> { context.vertx().eventBus().sendJsonableAsync(Address.User.Auth.Restore, search.first()) }
+    run<Unit> { sendJsonableAsync(Address.User.Auth.Restore, search.first()) }
     context.jsonResponse().end(JsonObject("succeeded" to true))
 }
 
