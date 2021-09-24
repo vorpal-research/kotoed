@@ -38,6 +38,7 @@ export interface Tag {
     id: number
     name: string
     style: CSSProperties
+    suggestForSearch: boolean
 }
 
 export interface SubmissionTag {

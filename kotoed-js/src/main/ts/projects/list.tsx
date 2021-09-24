@@ -205,7 +205,7 @@ class ProjectsSearch extends React.Component<{}, ProjectSearchState> {
         const perms = await fetchPermissions(id_);
         let tags: Array<Tag>
         if (perms.viewTags)
-            tags = await fetchAvailableTags();
+            tags = await fetchAvailableTags({ suggestForSearch: true });
         else
             tags = []
         this.setState({canCreateProject: perms.createProject, canEditCourse: perms.editCourse, tags})
