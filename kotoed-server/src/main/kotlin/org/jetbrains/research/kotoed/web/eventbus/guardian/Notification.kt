@@ -1,8 +1,8 @@
 package org.jetbrains.research.kotoed.web.eventbus.guardian
 
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
+import org.jetbrains.research.kotoed.util.scope
 import org.jetbrains.research.kotoed.util.get
 import org.jetbrains.research.kotoed.util.set
 import org.jetbrains.research.kotoed.web.eventbus.filters.BridgeEventFilter
@@ -30,6 +30,6 @@ data class ShouldBeNotificationTarget(val vertx: Vertx) : BridgeEventFilter {
         val rawMessage = be.rawMessage
         val nId = rawMessage["body", "id"] as? Number ?: return false
 
-        return vertx.eventBus().notificationByIdOrNull(nId.toInt())?.denizenId == principalId
+        return vertx.scope.notificationByIdOrNull(nId.toInt())?.denizenId == principalId
     }
 }

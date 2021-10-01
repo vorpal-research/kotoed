@@ -5,6 +5,7 @@ import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.util.withVertx
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
 import org.jetbrains.research.kotoed.web.eventbus.buildTemplateByIdOrNull
@@ -19,7 +20,7 @@ import org.jetbrains.research.kotoed.web.navigation.kotoedNavBar
 @LoginRequired
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("buildTemplateEdit")
-suspend fun handleBuildTemplateEdit(context: RoutingContext) {
+suspend fun handleBuildTemplateEdit(context: RoutingContext) = withVertx(context.vertx()) {
     val id by context.request()
     val intId = id?.toIntOrNull()
 
@@ -28,7 +29,7 @@ suspend fun handleBuildTemplateEdit(context: RoutingContext) {
         return
     }
 
-    val bt = context.vertx().eventBus().buildTemplateByIdOrNull(intId) ?: run {
+    val bt = buildTemplateByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
@@ -36,4 +37,5 @@ suspend fun handleBuildTemplateEdit(context: RoutingContext) {
     context.put(Context.BreadCrumb, BuildTemplateBreadCrumb(bt))
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.Title, "Build template #${bt.id}")
+    Unit
 }

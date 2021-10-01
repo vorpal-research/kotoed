@@ -3,15 +3,15 @@ package org.jetbrains.research.kotoed.web.eventbus.guardian
 import io.vertx.core.Vertx
 import io.vertx.ext.web.handler.sockjs.BridgeEvent
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.util.scope
 import org.jetbrains.research.kotoed.web.auth.isProjectOwner
 import org.jetbrains.research.kotoed.web.auth.isSubmissionOwner
-import org.jetbrains.research.kotoed.web.eventbus.projectByIdOrNull
 import org.jetbrains.research.kotoed.web.eventbus.submissionByIdOrNull
 
 /* Sum stuff */
 
 private suspend fun BridgeEvent.isSubmissionReady(vertx: Vertx, id: Int): Boolean {
-    val sub = vertx.eventBus().submissionByIdOrNull(id) ?: return false
+    val sub = vertx.scope.submissionByIdOrNull(id) ?: return false
     return when (sub.state) {
         SubmissionState.pending,
         SubmissionState.invalid -> false
@@ -37,7 +37,7 @@ class SubmissionReady(
 }
 
 private suspend fun BridgeEvent.isSubmissionOpen(vertx: Vertx, id: Int): Boolean {
-    val sub = vertx.eventBus().submissionByIdOrNull(id) ?: return false
+    val sub = vertx.scope.submissionByIdOrNull(id) ?: return false
     return SubmissionState.open == sub.state
 }
 

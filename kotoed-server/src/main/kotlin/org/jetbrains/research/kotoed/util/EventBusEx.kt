@@ -1,11 +1,12 @@
 package org.jetbrains.research.kotoed.util
 
-import io.vertx.core.Handler
-import io.vertx.core.Vertx
+import io.vertx.core.*
 import io.vertx.core.eventbus.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.ext.web.RoutingContext
 import io.vertx.kotlin.coroutines.CoroutineVerticle
+import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -445,20 +446,43 @@ object DebugInterceptor : Handler<DeliveryContext<Any?>>, Loggable {
     }
 }
 
-fun interface WithVertx {
-    fun getVertx(): Vertx // not a val because it causes 'accidental override' errors
+interface WithVertx {
+    val vertxInstance: Vertx
+}
+
+val WithVertx.vertx: Vertx
+    get() = vertxInstance
+
+inline fun WithVertx(crossinline body: () -> Vertx) = object: WithVertx {
+    override val vertxInstance: Vertx
+        get() = body()
 }
 
 inline fun <R> withVertx(vertx: Vertx, body: WithVertx.() -> R): R = WithVertx { vertx }.body()
+inline fun <R> withVertx(routing: RoutingContext, body: WithVertx.() -> R): R =
+    withVertx(routing.vertx(), body)
+inline fun <R> withVertx(verticle: Verticle, body: WithVertx.() -> R): R =
+    withVertx(verticle.vertx, body)
 
-val WithVertx.vertx: Vertx
-    get() = getVertx()
+open class VertxScope(override val vertxInstance: Vertx):
+        Vertx by vertxInstance,
+        WithVertx,
+        CoroutineScope {
+    override val coroutineContext: CoroutineContext by lazy { vertxInstance.dispatcher() }
+}
 
-open class AbstractKotoedVerticle : CoroutineVerticle(), Loggable, WithVertx {
+val Vertx.scope
+    get() = VertxScope(this)
+
+open class AbstractKotoedVerticle : CoroutineVerticle(), CoroutineScope, Loggable, WithVertx {
     override suspend fun start() {
         registerAllConsumers()
         super.start()
     }
+
+    override val vertxInstance: Vertx
+        get() = super.getVertx()
+
 }
 
 suspend fun <V, R> V.async(dispatcher: CoroutineContext = this.coroutineContext, body: suspend () -> R)

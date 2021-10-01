@@ -10,116 +10,48 @@ import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.DatabaseJoin
 import org.jetbrains.research.kotoed.data.db.query
 import org.jetbrains.research.kotoed.database.Tables
-import org.jetbrains.research.kotoed.database.Tables.COURSE
-import org.jetbrains.research.kotoed.database.Tables.DENIZEN
-import org.jetbrains.research.kotoed.database.Tables.PROFILE
-import org.jetbrains.research.kotoed.database.Tables.PROJECT
-import org.jetbrains.research.kotoed.database.Tables.SUBMISSION
+import org.jetbrains.research.kotoed.database.Tables.*
 import org.jetbrains.research.kotoed.database.tables.SubmissionComment
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jooq.Table
+import org.jooq.TableRecord
 
-suspend fun EventBus.commentByIdOrNull(id: Int): SubmissionCommentRecord? {
-    val comment: SubmissionCommentRecord
+inline suspend fun <reified R: TableRecord<R>> WithVertx.fetchByIdOrNull(table: Table<R>, id: Int): R? {
+    val result: R
     try {
-        comment = this.sendJsonableAsync(
-                Address.DB.read(Tables.SUBMISSION_COMMENT.name),
-                SubmissionCommentRecord().apply { this.id = id })
+        result = fetchByIdAsync(table, id)
     } catch (ex: ReplyException) {
         if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
             return null
         else throw ex
     }
 
-    return comment
+    return result
 }
 
-suspend fun EventBus.submissionByIdOrNull(id: Int): SubmissionRecord? {
-    val submission: SubmissionRecord
-    try {
-        submission = this.sendJsonableAsync(
-                Address.DB.read(Tables.SUBMISSION.name),
-                SubmissionRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return submission
-}
+suspend fun WithVertx.commentByIdOrNull(id: Int): SubmissionCommentRecord? =
+    fetchByIdOrNull(SUBMISSION_COMMENT, id)
 
-suspend fun EventBus.projectByIdOrNull(id: Int): ProjectRecord? {
-    val project: ProjectRecord
-    try {
-        project = this.sendJsonableAsync(
-                Address.DB.read(PROJECT.name),
-                ProjectRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return project
-}
+suspend fun WithVertx.submissionByIdOrNull(id: Int): SubmissionRecord? =
+    fetchByIdOrNull(SUBMISSION, id)
 
-suspend fun EventBus.denizenByIdOrNull(id: Int): DenizenRecord? {
-    val denizen: DenizenRecord
-    try {
-        denizen = this.sendJsonableAsync(
-                Address.DB.read(DENIZEN.name),
-                ProjectRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return denizen
-}
+suspend fun WithVertx.projectByIdOrNull(id: Int): ProjectRecord? =
+    fetchByIdOrNull(PROJECT, id)
 
-suspend fun EventBus.courseByIdOrNull(id: Int): CourseRecord? {
-    val course: CourseRecord
-    try {
-        course = this.sendJsonableAsync(
-                Address.DB.read(Tables.COURSE.name),
-                org.jetbrains.research.kotoed.database.tables.records.CourseRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return course
-}
+suspend fun WithVertx.denizenByIdOrNull(id: Int): DenizenRecord? =
+    fetchByIdOrNull(DENIZEN, id)
 
+suspend fun WithVertx.courseByIdOrNull(id: Int): CourseRecord? =
+    fetchByIdOrNull(COURSE, id)
 
-suspend fun EventBus.buildTemplateByIdOrNull(id: Int): BuildTemplateRecord? {
-    val bt: BuildTemplateRecord
-    try {
-        bt = this.sendJsonableAsync(
-                Address.DB.read(Tables.BUILD_TEMPLATE.name),
-                org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return bt
-}
+suspend fun WithVertx.buildTemplateByIdOrNull(id: Int): BuildTemplateRecord? =
+    fetchByIdOrNull(BUILD_TEMPLATE, id)
 
-suspend fun EventBus.notificationByIdOrNull(id: Int): NotificationRecord? {
-    val notification: NotificationRecord
-    try {
-        notification = this.sendJsonableAsync(
-                Address.DB.read(Tables.NOTIFICATION.name),
-                NotificationRecord().apply { this.id = id })
-    } catch (ex: ReplyException) {
-        if (ex.failureCode() == HttpResponseStatus.NOT_FOUND.code())
-            return null
-        else throw ex
-    }
-    return notification
-}
+suspend fun WithVertx.notificationByIdOrNull(id: Int): NotificationRecord? =
+    fetchByIdOrNull(NOTIFICATION, id)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Complex stuff

@@ -7,20 +7,10 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.auth.AuthProvider
 import io.vertx.ext.auth.User
-import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import org.jetbrains.research.kotoed.web.eventbus.guardian.cleanUp
-import kotlin.coroutines.CoroutineContext
 
-abstract class AsyncAuthProvider(vertx: Vertx) : AuthProvider, Loggable, CoroutineScope, WithVertx {
-    val vertx = vertx
-        @JvmName("vertx_") get;
-    override fun getVertx(): Vertx = vertx
-
-    override val coroutineContext: CoroutineContext by lazy { vertx.dispatcher() }
-
+abstract class AsyncAuthProvider(override val vertxInstance: Vertx) :
+        AuthProvider, Loggable,
+        VertxScope(vertxInstance) {
     protected abstract suspend fun doAuthenticateAsync(authInfo: JsonObject): User
 
     override fun authenticate(authInfo: JsonObject, handler: Handler<AsyncResult<User>>) {

@@ -5,10 +5,9 @@ import io.vertx.ext.web.RoutingContext
 import org.jetbrains.research.kotoed.util.fail
 import org.jetbrains.research.kotoed.util.getValue
 import org.jetbrains.research.kotoed.util.routing.*
+import org.jetbrains.research.kotoed.util.withVertx
 import org.jetbrains.research.kotoed.web.UrlPattern
 import org.jetbrains.research.kotoed.web.auth.Authority
-import org.jetbrains.research.kotoed.web.eventbus.ProjectWithRelated
-import org.jetbrains.research.kotoed.web.eventbus.SubmissionWithRelated
 import org.jetbrains.research.kotoed.web.eventbus.courseByIdOrNull
 import org.jetbrains.research.kotoed.web.navigation.*
 import java.time.OffsetDateTime
@@ -17,7 +16,7 @@ import java.time.OffsetDateTime
 @Templatize("projects.jade")
 @LoginRequired
 @JsBundle("projectList")
-suspend fun handleCourseIndex(context: RoutingContext) {
+suspend fun handleCourseIndex(context: RoutingContext) = withVertx(context.vertx()) {
     val id by context.request()
     val intId = id?.toIntOrNull()
 
@@ -26,7 +25,7 @@ suspend fun handleCourseIndex(context: RoutingContext) {
         return
     }
 
-    val course = context.vertx().eventBus().courseByIdOrNull(intId) ?: run {
+    val course = courseByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
@@ -34,6 +33,7 @@ suspend fun handleCourseIndex(context: RoutingContext) {
     context.put(Context.BreadCrumb, CourseBreadCrumb(course))
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.Title, course.name)
+    Unit
 }
 
 @HandlerFor(UrlPattern.Course.Edit)
@@ -41,7 +41,7 @@ suspend fun handleCourseIndex(context: RoutingContext) {
 @LoginRequired
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("courseEdit")
-suspend fun handleCourseEdit(context: RoutingContext) {
+suspend fun handleCourseEdit(context: RoutingContext) = withVertx(context.vertx()) {
     val id by context.request()
     val intId = id?.toIntOrNull()
 
@@ -50,7 +50,7 @@ suspend fun handleCourseEdit(context: RoutingContext) {
         return
     }
 
-    val course = context.vertx().eventBus().courseByIdOrNull(intId) ?: run {
+    val course = courseByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
@@ -58,6 +58,7 @@ suspend fun handleCourseEdit(context: RoutingContext) {
     context.put(Context.BreadCrumb, CourseBreadCrumb(course))
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.Title, course.name)
+    Unit
 }
 
 @HandlerFor(UrlPattern.Course.Report)
@@ -65,7 +66,7 @@ suspend fun handleCourseEdit(context: RoutingContext) {
 @LoginRequired
 @AuthorityRequired(Authority.Teacher)
 @JsBundle("courseReport")
-suspend fun handleCourseReport(context: RoutingContext) {
+suspend fun handleCourseReport(context: RoutingContext) = withVertx(context.vertx()) {
     val id by context.request()
     val intId = id?.toIntOrNull()
 
@@ -77,7 +78,7 @@ suspend fun handleCourseReport(context: RoutingContext) {
         return
     }
 
-    val course = context.vertx().eventBus().courseByIdOrNull(intId) ?: run {
+    val course = courseByIdOrNull(intId) ?: run {
         context.fail(HttpResponseStatus.NOT_FOUND)
         return
     }
@@ -88,4 +89,5 @@ suspend fun handleCourseReport(context: RoutingContext) {
     context.put(Context.BreadCrumb, CourseBreadCrumb(course))
     context.put(Context.NavBar, kotoedNavBar(context.user()))
     context.put(Context.Title, course.name)
+    Unit
 }

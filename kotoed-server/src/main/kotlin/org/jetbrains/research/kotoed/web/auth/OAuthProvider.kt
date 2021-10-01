@@ -8,10 +8,7 @@ import io.vertx.ext.auth.User
 import org.jetbrains.research.kotoed.data.db.OAuthLoginMsg
 import org.jetbrains.research.kotoed.database.tables.records.DenizenUnsafeRecord
 import org.jetbrains.research.kotoed.eventbus.Address
-import org.jetbrains.research.kotoed.util.AsyncAuthProvider
-import org.jetbrains.research.kotoed.util.Unauthorized
-import org.jetbrains.research.kotoed.util.fromJson
-import org.jetbrains.research.kotoed.util.sendJsonableAsync
+import org.jetbrains.research.kotoed.util.*
 
 class OAuthProvider(vertx: Vertx) : AsyncAuthProvider(vertx) {
     override suspend fun doAuthenticateAsync(authInfo: JsonObject): User {

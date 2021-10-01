@@ -69,12 +69,12 @@ suspend fun handleSubmissionResultsById(context: RoutingContext) {
 
 @HandlerFor(UrlPattern.Comment.ById)
 @LoginRequired
-suspend fun handleCommentById(context: RoutingContext) {
+suspend fun handleCommentById(context: RoutingContext) = withVertx(context) {
     val id by context.request()
 
     id ?: throw NotFound("id is null")
 
-    val comment = context.vertx().eventBus().commentByIdOrNull(id!!.toInt())
+    val comment = commentByIdOrNull(id!!.toInt())
     comment ?: return context.fail(HttpResponseStatus.INTERNAL_SERVER_ERROR)
     if (comment.sourceline != SubmissionComments.UnknownLine && comment.sourcefile != SubmissionComments.UnknownFile)
         context.response().redirect(UrlPattern.reverse(
