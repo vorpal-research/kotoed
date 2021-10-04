@@ -648,7 +648,7 @@
                                     <types>.*json[^b]*</types>
                                 </forcedType>
                                 <forcedType>
-                                    <userType>Object</userType>
+                                    <userType>org.jetbrains.research.kotoed.util.database.TSVector</userType>
                                     <binding>
                                         org.jetbrains.research.kotoed.util.database.PostgresTSVectorBinding
                                     </binding>

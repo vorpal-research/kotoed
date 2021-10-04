@@ -57,6 +57,7 @@ private fun<T> convertCompareExpression(cmp: CompareExpression, tables: (String)
         var rhv = convertPrimitive<T>(cmp.rhv, tables).uncheckedCast<Field<Any>>()
         if(lhv.dataType.typeName !in listOf("tsvector", "\"pg_catalog\".\"tsvector\"")) lhv = FunctionCall("to_tsvector", lhv)
         if(rhv.dataType.typeName !in listOf("tsquery", "\"pg_catalog\".\"tsquery\"")) rhv = convertQuery(rhv.uncheckedCast())
+        lhv as Field<TSVector>
         DSL.condition(lhv documentMatch rhv)
     }
     CompareOp.CONTAINS -> convertPrimitive<T>(cmp.lhv, tables).contains(convertPrimitive<T>(cmp.rhv, tables))

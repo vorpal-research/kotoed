@@ -100,36 +100,46 @@ class PostgresJSONBBinding : Binding<JSONB, Any?> {
 //    override val typename = "json"
 //}
 
-class PostgresTSVectorBinding : Binding<Any?, Any?> {
+data class TSVector(val rep: String): Jsonable
+
+class PostgresTSVectorBinding : Binding<Any?, TSVector?> {
     val typename: String = "tsvector"
 
-    override fun converter(): Converter<Any?, Any?> = NoConverter
+    object TheConverter: Converter<Any?, TSVector?> {
+        override fun from(databaseObject: Any?): TSVector? = databaseObject?.toString()?.let(::TSVector)
+        override fun to(userObject: TSVector?): Any? = userObject?.rep
 
-    override fun get(ctx: BindingGetStatementContext<Any?>) {
+        override fun fromType(): Class<Any?> = Any::class.java.uncheckedCast()
+        override fun toType(): Class<TSVector?> = TSVector::class.java.uncheckedCast()
+    }
+
+    override fun converter(): Converter<Any?, TSVector?> = TheConverter
+
+    override fun get(ctx: BindingGetStatementContext<TSVector?>) {
         ctx.convert(converter()).value(ctx.statement().getString(ctx.index()))
     }
 
-    override fun get(ctx: BindingGetResultSetContext<Any?>) {
+    override fun get(ctx: BindingGetResultSetContext<TSVector?>) {
         ctx.convert(converter()).value(ctx.resultSet().getString(ctx.index()))
     }
 
-    override fun get(ctx: BindingGetSQLInputContext<Any?>?) {
+    override fun get(ctx: BindingGetSQLInputContext<TSVector?>) {
         throw SQLFeatureNotSupportedException()
     }
 
-    override fun sql(ctx: BindingSQLContext<Any?>) {
+    override fun sql(ctx: BindingSQLContext<TSVector?>) {
         ctx.render().visit(DSL.`val`(ctx.convert(converter()).value())).sql("::$typename")
     }
 
-    override fun set(ctx: BindingSetSQLOutputContext<Any?>?) {
+    override fun set(ctx: BindingSetSQLOutputContext<TSVector?>?) {
         throw SQLFeatureNotSupportedException()
     }
 
-    override fun set(ctx: BindingSetStatementContext<Any?>) {
+    override fun set(ctx: BindingSetStatementContext<TSVector?>) {
         ctx.statement().setString(ctx.index(), ctx.convert(converter()).value().toString())
     }
 
-    override fun register(ctx: BindingRegisterContext<Any?>) {
+    override fun register(ctx: BindingRegisterContext<TSVector?>) {
         ctx.statement().registerOutParameter(ctx.index(), Types.VARCHAR)
     }
 }

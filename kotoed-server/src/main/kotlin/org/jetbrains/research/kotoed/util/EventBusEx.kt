@@ -128,9 +128,6 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
         argType: KType? = null,
         resultType: KType
 ): Result {
-    GlobalLogging.log.trace("argType = ${argType}")
-    GlobalLogging.log.trace("resultType = ${resultType}")
-
     val toJson = getToJsonConverter(argType ?: value::class.starProjectedType)
     val fromJson = getFromJsonConverter(resultType)
     return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
@@ -600,12 +597,13 @@ inline suspend fun <
     return vertx.eventBus().publishJsonable(address, value)
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 inline suspend fun <
         reified Result : Any,
         reified Argument : Any
         > WithVertx.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
-    return vertx.eventBus().sendJsonableAsync(address, value, Argument::class, Result::class)
+    return vertx.eventBus().sendJsonableAsync(address, value, typeOf<Argument>(), typeOf<Result>())
 }
 
 inline suspend fun <

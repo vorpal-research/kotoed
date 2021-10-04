@@ -1,5 +1,6 @@
 package org.jetbrains.research.kotoed.db
 
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
@@ -16,6 +17,12 @@ import org.jooq.QueryPart
 @AutoDeployable
 class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables.PROJECT) {
 
+    override suspend fun handleRead(message: ProjectRecord): ProjectRecord {
+        return super.handleRead(message).apply {
+            reset("document")
+            reset("empty")
+        }
+    }
     val fullAddress = Address.DB.full(table.name)
 
     @JsonableEventBusConsumerForDynamic(addressProperty = "fullAddress")
@@ -30,8 +37,9 @@ class ProjectVerticle : CrudDatabaseVerticleWithReferences<ProjectRecord>(Tables
         fun to_json(p: QueryPart) = FunctionCall<Any>("to_jsonb", p).coerce(PostgresDataTypeEx.JSONB)
         fun array(p: QueryPart) = FunctionCall<Any>("array", p)
 
+        val fields = table.fields().asList() - table.field("document")
         val overRecords = db {
-            select(*table.fields(),
+            select(*fields.toTypedArray(),
                     *courseTable.fields(),
                     *ownerTable.fields(),
                     to_json(array(
