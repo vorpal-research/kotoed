@@ -177,6 +177,7 @@ object Address {
     object Code {
         const val Ping = "kotoed.code.ping"
         const val Download = "kotoed.code.download"
+        const val Fetch = "kotoed.code.fetch"
         const val Read = "kotoed.code.read"
         const val Checkout = "kotoed.code.checkout"
         const val List = "kotoed.code.list"

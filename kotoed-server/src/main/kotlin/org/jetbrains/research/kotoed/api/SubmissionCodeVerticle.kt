@@ -35,6 +35,8 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         if (submission.id !is Int) throw IllegalArgumentException("Submission $submission not found")
         val project = dbFetchAsync(ProjectRecord().apply { id = submission.projectId })
         if (project.id !is Int) throw IllegalStateException("Invalid project: $project")
+        val course = dbFetchAsync(CourseRecord().apply { id = project.courseId })
+        if (course.id !is Int) throw IllegalStateException("Invalid course: $course")
 
         val repo: RepositoryInfo = sendJsonableAsync(
                 Address.Code.Download,
@@ -43,6 +45,14 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         url = project.repoUrl
                 )
         )
+        if (course.baseRepoUrl != null && repo.status == CloneStatus.done) {
+            val courseRepo = getCommitInfo(course).repo
+            if (courseRepo.status == CloneStatus.done) {
+                run<Unit> { sendJsonableAsync(Address.Code.Fetch,
+                    FetchRequest(uid = repo.uid, externalUid = courseRepo.uid)) }
+            }
+        }
+
         return CommitInfo(repo, submission.revision, repo.status)
     }
 

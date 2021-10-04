@@ -41,6 +41,7 @@ abstract class VcsRoot(val remote: String, val local: String) {
 
     abstract suspend fun clone(): VcsResult<Unit>
     abstract suspend fun update(): VcsResult<Unit>
+    abstract suspend fun fetch(remote: String): VcsResult<Unit>
     abstract suspend fun checkoutTo(revision: Revision, targetDirectory: String): VcsResult<Unit>
     abstract suspend fun cat(path: String, revision: Revision): VcsResult<CharSequence>
     abstract suspend fun diff(path: String, from: Revision, to: Revision): VcsResult<CharSequence>
@@ -74,6 +75,19 @@ class Git(remote: String, local: String, val defaultEnv: Map<String, String>) : 
         val die = { out: CommandLine.Output ->
             VcsResult.Failure(out.cerr)
                     .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $out") }
+        }
+
+        if (res.rcode.await() != 0) return die(res)
+
+        return VcsResult.Success(Unit)
+    }
+
+    override suspend fun fetch(remote: String): VcsResult<Unit> {
+        val res = CommandLine(git, "fetch", remote).execute(File(local), defaultEnv).complete()
+
+        val die = { out: CommandLine.Output ->
+            VcsResult.Failure(out.cerr)
+                .also { DelegateLoggable(Git::class.java).log.error("Cmd failed with: $out") }
         }
 
         if (res.rcode.await() != 0) return die(res)
@@ -198,6 +212,10 @@ class Mercurial(remote: String, local: String, val defaultEnv: Map<String, Strin
 
         if (res.rcode.await() == 0) return VcsResult.Success(res.cout.lines().last().split(" ").let { Pair(it[0], it[1]) })
         else return VcsResult.Failure(res.cerr)
+    }
+
+    override suspend fun fetch(remote: String): VcsResult<Unit> {
+        TODO("Not supported")
     }
 
     override suspend fun update(): VcsResult<Unit> {

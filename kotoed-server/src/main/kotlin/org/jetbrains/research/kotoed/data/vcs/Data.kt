@@ -29,6 +29,8 @@ data class ListResponse(val files: List<String>) : Jsonable
 
 data class CheckoutRequest(val uid: String, val targetDirectory: String, val revision: String? = null): Jsonable
 
+data class FetchRequest(val uid: String, val externalUid: String): Jsonable
+
 data class InfoFormat(
         val uid: String,
         val revision: String? = null,

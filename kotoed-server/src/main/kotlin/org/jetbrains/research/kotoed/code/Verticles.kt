@@ -215,6 +215,23 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         procs.invalidate(message.url)
     }
 
+    @JsonableEventBusConsumerFor(Address.Code.Fetch)
+    suspend fun handleFetch(request: FetchRequest) {
+        log.info("Requested fetch: $request")
+
+        UUID.fromString(request.uid)
+
+        val inf1 = expectNotNull(info[request.uid], "Repository ${request.uid} not found")
+        val root1 = expectNotNull(procs[inf1.url], "Inconsistent repo state").root
+
+        val inf2 = expectNotNull(info[request.externalUid], "Repository ${request.externalUid} not found")
+        val root2 = expectNotNull(procs[inf2.url], "Inconsistent repo state").root
+
+        withContext(ee) {
+            root1.fetch(root2.local)
+        }
+    }
+
     @EventBusConsumerFor(Address.Code.Download)
     suspend fun handleClone(mes: Message<JsonObject>) {
         val message: RemoteRequest = mes.body().toJsonable()
