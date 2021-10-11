@@ -413,7 +413,7 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             checkNotNull(messageLine)
 
             val resLine = resFunction.text.lines().withIndex().minByOrNull { (_, text) ->
-                Levenshtein.distance(text, messageLine)
+                Levenshtein.distance(text.trim(), messageLine.trim())
             }?.index ?: messageIndex
 
             (resFunction.location.start.thisLine() + resLine)
