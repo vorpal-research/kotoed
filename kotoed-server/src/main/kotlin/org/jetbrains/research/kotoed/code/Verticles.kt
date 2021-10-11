@@ -23,6 +23,7 @@ import org.jetbrains.research.kotoed.util.code.alignToLines
 import org.jetbrains.research.kotoed.util.code.location
 import org.jetbrains.research.kotoed.util.code.temporaryEnv
 import org.jetbrains.research.kotoed.util.code.thisLine
+import org.jline.utils.Levenshtein
 import org.wickedsource.diffparser.api.UnifiedDiffParser
 import org.wickedsource.diffparser.api.model.Diff
 import java.io.File
@@ -407,8 +408,15 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             val (function, resFunction) = findCorrespondingFunction(message.location, fromFile, toFile)
                     ?: return null
 
-            (resFunction.location.start.thisLine() +
-                    (message.location - function.location.start.thisLine()))
+            val messageIndex = message.location - function.location.start.thisLine()
+            val messageLine = function.text.lines().getOrNull(messageIndex)
+            checkNotNull(messageLine)
+
+            val resLine = resFunction.text.lines().withIndex().minByOrNull { (_, text) ->
+                Levenshtein.distance(text, messageLine)
+            }?.index ?: messageIndex
+
+            (resFunction.location.start.thisLine() + resLine)
                     .coerceIn(resFunction.location.alignToLines())
         }
 
