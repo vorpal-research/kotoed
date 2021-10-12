@@ -10,7 +10,6 @@ import kotlinx.warnings.Warnings.USELESS_CAST
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.data.api.Code
@@ -24,7 +23,8 @@ import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.code.temporaryEnv
+import org.jetbrains.research.kotoed.util.code.getPsi
+import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
 import org.kohsuke.randname.RandomNameGenerator
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
@@ -211,7 +211,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     private suspend fun processKtFiles(allFiles: List<String>, mode: Mode, id: Int, denizenId: Int) {
         if (allFiles.isEmpty()) return //no .kt files
 
-        temporaryEnv { compilerEnv ->
+        temporaryKotlinEnv {
             val ktFiles = allFiles
                     .map { filename ->
                         log.trace("filename = $filename")
@@ -225,7 +225,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                                         Code.Submission.ReadRequest(
                                                 submissionId = id, path = filename))
                         }
-                        withContext(ee) { KtPsiFactory(compilerEnv.project).createFile(filename, resp.contents) }
+                        withContext(ee) { getPsi(resp.contents, filename) }
                     }
 
             withContext(ee) {

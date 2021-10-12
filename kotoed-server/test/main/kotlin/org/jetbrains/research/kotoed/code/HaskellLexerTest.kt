@@ -74,8 +74,6 @@ data TodoType = TodoType
                         listOf(it.first().copy(text = "BEGIN")) + it + listOf(it.last().copy(text = "END"))
                 }
 
-        tokenListList.forEach(::println)
-
         val sf = SuffixTree<Token>()
 
         tokenListList.forEach {
@@ -113,7 +111,6 @@ data TodoType = TodoType
                 builder.appendLine("${c.submissionId}/${c.functionName}/${c.file.path}:${c.fromLine}:${c.toLine}")
             }
             builder.appendLine()
-            println(builder)
         }
 
     }
@@ -186,13 +183,6 @@ evaluate expression = case expression of
         val tokens1 = CommonTokenStream(HaskellLexer(CharStreams.fromString(input1, "File1.hs"))).apply{ fill() }.tokens
 
 
-        println(tokens1
-                .filter { it.type !in setOf(HaskellLexer.SPACES, HaskellLexer.EOF, HaskellLexer.LEFT_CURLY, HaskellLexer.RIGHT_CURLY) }
-                .map { HaskellLexer.VOCABULARY.getSymbolicName(it.type) }
-                .joinToString("\n", ">>>", "<<<")
-        )
-
-
         @Language("Haskell")
         val input2 =
                 """
@@ -255,12 +245,6 @@ evaluate expression = case expression of
 """
 
         val tokens2 = CommonTokenStream(HaskellLexer(CharStreams.fromString(input2, "File2.hs"))).apply{ fill() }.tokens
-
-        println(tokens2
-                .filter { it.type !in setOf(HaskellLexer.SPACES, HaskellLexer.EOF, HaskellLexer.LEFT_CURLY, HaskellLexer.RIGHT_CURLY) }
-                .map { HaskellLexer.VOCABULARY.getSymbolicName(it.type) }
-                .joinToString("\n", ">>>", "<<<")
-        )
 
     }
 

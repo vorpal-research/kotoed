@@ -10,7 +10,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.diff.asJsonable
 import org.jetbrains.research.kotoed.code.diff.parseGitDiff
@@ -19,10 +18,7 @@ import org.jetbrains.research.kotoed.config.Config
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.code.alignToLines
-import org.jetbrains.research.kotoed.util.code.location
-import org.jetbrains.research.kotoed.util.code.temporaryEnv
-import org.jetbrains.research.kotoed.util.code.thisLine
+import org.jetbrains.research.kotoed.util.code.*
 import org.jline.utils.Levenshtein
 import org.wickedsource.diffparser.api.UnifiedDiffParser
 import org.wickedsource.diffparser.api.model.Diff
@@ -367,11 +363,9 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
     }
 
 
-    suspend fun getPsi(compiler: KotlinCoreEnvironment, request: ReadRequest): KtFile? {
+    suspend fun KotlinCoreEnvironment.getPsi(request: ReadRequest): KtFile? {
         val read = try { handleRead(request) } catch(ex: VcsException) { return null }
-        val psiFactory = KtPsiFactory(compiler.project)
-
-        return psiFactory.createFile(request.path, read.contents.toString())
+        return getPsi(read.contents.toString(), request.path)
     }
 
     fun findCorrespondingFunction(location: Location, fromFile: KtFile, toFile: KtFile): Pair<KtNamedFunction, KtNamedFunction>? {
@@ -399,11 +393,11 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
         val root = expectNotNull(procs[inf.url], "Inconsistent repo state").root
         root.ignore()
 
-        val res = temporaryEnv { compiler ->
+        val res = temporaryKotlinEnv {
             val fromFile =
-                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.fromRevision)) ?: return null
+                    getPsi(ReadRequest(message.uid, message.location.filename.path, message.fromRevision)) ?: return null
             val toFile =
-                    getPsi(compiler, ReadRequest(message.uid, message.location.filename.path, message.toRevision)) ?: return null
+                    getPsi(ReadRequest(message.uid, message.location.filename.path, message.toRevision)) ?: return null
 
             val (function, resFunction) = findCorrespondingFunction(message.location, fromFile, toFile)
                     ?: return null

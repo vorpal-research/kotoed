@@ -9,10 +9,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.psi.KtBlockExpression
-import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
@@ -62,7 +59,7 @@ fun KtFile.blockByLocation(loc: Location): PsiElement {
     return this
 }
 
-inline fun <R> Loggable.temporaryEnv(body: (KotlinCoreEnvironment) -> R): R {
+inline fun <R> Loggable.temporaryKotlinEnv(body: KotlinCoreEnvironment.() -> R): R {
     val disposable = Disposer.newDisposable()
     val env = KotlinCoreEnvironment.createForProduction(
             disposable,
@@ -77,7 +74,6 @@ inline fun <R> Loggable.temporaryEnv(body: (KotlinCoreEnvironment) -> R): R {
                       ) {
                           log.info("Kotlin compiler message: [${severity.presentableName}]: $message")
                       }
-
                   })
             },
             EnvironmentConfigFiles.JVM_CONFIG_FILES
@@ -88,3 +84,6 @@ inline fun <R> Loggable.temporaryEnv(body: (KotlinCoreEnvironment) -> R): R {
         disposable.dispose()
     }
 }
+
+fun KotlinCoreEnvironment.getPsi(contents: String, filename: String = "dummy.kt"): KtFile =
+    KtPsiFactory(project).createFile(filename, contents)
