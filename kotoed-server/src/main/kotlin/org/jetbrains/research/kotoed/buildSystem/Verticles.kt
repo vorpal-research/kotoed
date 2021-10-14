@@ -11,11 +11,11 @@ import org.jetbrains.research.kotoed.data.buildSystem.*
 import org.jetbrains.research.kotoed.data.notification.NotificationType
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.BuildRecord
-import org.jetbrains.research.kotoed.database.tables.records.NotificationRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.database.record
 import org.jetbrains.research.kotoed.util.database.toJson
 import ru.spbstu.ktuples.Tuple
 import ru.spbstu.ktuples.joinToString
@@ -95,7 +95,7 @@ class BuildVerticle : AbstractKotoedVerticle() {
                 }
 
                 createNotification(
-                        NotificationRecord().apply {
+                    record {
                             this.type = NotificationType.NEW_SUBMISSION_RESULTS.name
                             this.denizenId = denizenId
                             this.body = BuildRecord().apply {
@@ -255,7 +255,7 @@ class BuildResultVerticle : AbstractKotoedVerticle() {
         is BuildResponse.BuildSuccess -> {
             log.trace("Processing $build")
 
-            val result: SubmissionResultRecord = SubmissionResultRecord().apply {
+            val result: SubmissionResultRecord = record {
                 submissionId = build.submissionId
                 time = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
                 type = "results.json"
@@ -266,7 +266,7 @@ class BuildResultVerticle : AbstractKotoedVerticle() {
         is BuildResponse.BuildFailed -> {
             log.trace("Processing $build")
 
-            val result: SubmissionResultRecord = SubmissionResultRecord().apply {
+            val result: SubmissionResultRecord = record {
                 submissionId = build.submissionId
                 time = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
                 type = "Failed build log"
@@ -277,7 +277,7 @@ class BuildResultVerticle : AbstractKotoedVerticle() {
         is BuildResponse.BuildInspection -> {
             log.trace("Processing $build")
 
-            val result: SubmissionResultRecord = SubmissionResultRecord().apply {
+            val result: SubmissionResultRecord = record {
                 submissionId = build.submissionId
                 time = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
                 type = "inspections.json"
