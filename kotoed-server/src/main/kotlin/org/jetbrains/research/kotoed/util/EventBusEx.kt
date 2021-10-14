@@ -83,13 +83,13 @@ suspend fun <T> Message<T>.reply(message: Jsonable): Unit = Unit
 
 @PublishedApi
 @Deprecated("Do not call directly")
-internal suspend fun <Argument : Any> EventBus.sendJsonable(
+internal suspend fun <Argument: Any> EventBus.sendJsonable(
         address: String,
         value: Argument,
-        argClass: KClass<out Argument>
+        argType: GenericKType<Argument>
 ) {
 
-    val toJson = getToJsonConverter(argClass.starProjectedType)
+    val toJson = getToJsonConverter(argType)
     val currentName = currentCoroutineName()
     send(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
 }
@@ -99,10 +99,10 @@ internal suspend fun <Argument : Any> EventBus.sendJsonable(
 internal suspend fun <Argument : Any> EventBus.publishJsonable(
         address: String,
         value: Argument,
-        argClass: KClass<out Argument>
+        argType: GenericKType<Argument>
 ) {
 
-    val toJson = getToJsonConverter(argClass.starProjectedType)
+    val toJson = getToJsonConverter(argType)
     val currentName = currentCoroutineName()
     publish(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
 }
@@ -112,38 +112,38 @@ internal suspend fun <Argument : Any> EventBus.publishJsonable(
 internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
         address: String,
         value: Argument,
-        argClass: KClass<out Argument> = value::class,
-        resultClass: KClass<out Result>
+        argType: GenericKType<Argument>,
+        resultType: GenericKType<Result>
 ): Result {
-    val toJson = getToJsonConverter(argClass.starProjectedType)
-    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
-    return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
-}
-
-@PublishedApi
-@Deprecated("Do not call directly")
-internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
-        address: String,
-        value: Argument,
-        argType: KType? = null,
-        resultType: KType
-): Result {
-    val toJson = getToJsonConverter(argType ?: value::class.starProjectedType)
+    val toJson = getToJsonConverter(argType)
     val fromJson = getFromJsonConverter(resultType)
     return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
 }
+
+//@PublishedApi
+//@Deprecated("Do not call directly")
+//internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
+//        address: String,
+//        value: Argument,
+//        argType: KType? = null,
+//        resultType: KType
+//): Result {
+//    val toJson = getToJsonConverter(argType ?: value::class.starProjectedType)
+//    val fromJson = getFromJsonConverter(resultType)
+//    return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
+//}
 
 @PublishedApi
 @Deprecated("Do not call directly")
 internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollectAsync(
         address: String,
         value: Argument,
-        argClass: KClass<out Argument>,
-        resultClass: KClass<out Result>,
+        argType: GenericKType<Argument>,
+        resultType: GenericKType<Result>,
         deliveryOptions: DeliveryOptions = DeliveryOptions()
 ): List<Result> {
-    val toJson = getToJsonConverter(argClass.starProjectedType)
-    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+    val toJson = getToJsonConverter(argType)
+    val fromJson = getFromJsonConverter(resultType)
     return sendAsync<JsonArray>(address, toJson(value), deliveryOptions = deliveryOptions)
             .body()
             .asSequence()
@@ -158,13 +158,13 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
 internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollectAsync(
         address: String,
         value: List<Argument>,
-        argClass: KClass<out Argument>,
-        resultClass: KClass<out Result>
+        argType: GenericKType<Argument>,
+        resultType: GenericKType<Result>,
 ): List<Result> {
     val toJson = getToJsonConverter(
             List::class.createType(
-                    listOf(KTypeProjection.invariant(argClass.starProjectedType))))
-    val fromJson = getFromJsonConverter(resultClass.starProjectedType)
+                    listOf(KTypeProjection.invariant(argType))))
+    val fromJson = getFromJsonConverter(resultType)
     return sendAsync<JsonArray>(address, toJson(value))
             .body()
             .asSequence()
@@ -178,14 +178,14 @@ inline suspend fun <
         reified Argument : Any
         > EventBus.sendJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
-    return sendJsonable(address, value, Argument::class)
+    return sendJsonable(address, value, genericTypeOf<Argument>())
 }
 
 inline suspend fun <
         reified Argument : Any
         > EventBus.publishJsonable(address: String, value: Argument) {
     @Suppress(DEPRECATION)
-    return publishJsonable(address, value, Argument::class)
+    return publishJsonable(address, value, genericTypeOf<Argument>())
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -194,7 +194,7 @@ inline suspend fun <
         reified Argument : Any
         > EventBus.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
-    return sendJsonableAsync(address, value, typeOf<Argument>(), typeOf<Result>())
+    return sendJsonableAsync(address, value, genericTypeOf<Argument>(), genericTypeOf<Result>())
 }
 
 inline suspend fun <
@@ -202,7 +202,7 @@ inline suspend fun <
         reified Argument : Any
         > EventBus.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
     @Suppress(DEPRECATION)
-    return sendJsonableCollectAsync(address, value, Argument::class, Result::class)
+    return sendJsonableCollectAsync(address, value, genericTypeOf<Argument>(), genericTypeOf<Result>())
 }
 
 @Target(AnnotationTarget.FUNCTION)
@@ -500,50 +500,70 @@ fun <V, R> V.spawn(dispatcher: CoroutineContext = coroutineContext, body: suspen
     launch(context) { body() }
 }
 
-suspend fun <R : TableRecord<R>> WithVertx.dbUpdateAsync(v: R, klass: KClass<out R> = v::class): R =
+suspend fun <R : TableRecord<R>> WithVertx.dbUpdateAsync(v: R, type: GenericKType<R>): R =
     @Suppress(DEPRECATION)
-    vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, klass, klass)
+    vertx.eventBus().sendJsonableAsync(Address.DB.update(v.table.name), v, type, type)
+
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbUpdateAsync(v: R): R = dbUpdateAsync(v, genericTypeOf())
 
 suspend fun <R : TableRecord<R>> WithVertx.dbBatchUpdateAsync(criteria: R,
                                                               patch: R,
-                                                              klass: KClass<out R> = criteria::class): Unit =
+                                                              klass: GenericKType<R>): Unit =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableAsync(
         Address.DB.batchUpdate(criteria.table.name),
-        BatchUpdateMsg(criteria, patch), BatchUpdateMsg::class, Unit::class).also {
+        BatchUpdateMsg(criteria, patch),
+        genericTypeOf<BatchUpdateMsg<*>>(),
+        genericTypeOf<Unit>()).also {
         use(klass)
     }
 
-suspend fun <R : TableRecord<R>> WithVertx.dbCreateAsync(v: R, klass: KClass<out R> = v::class): R =
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbBatchUpdateAsync(criteria: R, patch: R): Unit =
+    dbBatchUpdateAsync(criteria, patch, genericTypeOf())
+
+suspend fun <R : TableRecord<R>> WithVertx.dbCreateAsync(v: R, klass: GenericKType<R>): R =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableAsync(Address.DB.create(v.table.name), v, klass, klass)
 
-suspend fun <R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>): List<R> =
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbCreateAsync(v: R): R =
+    dbCreateAsync(v, genericTypeOf())
+
+suspend fun <R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>, type: GenericKType<R>): List<R> =
     @Suppress(DEPRECATION)
     if (v.isEmpty()) emptyList()
     else {
         val evidence = v.first()
-        val klass = evidence::class
-        vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, klass, klass)
+        vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, type, type)
     }
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>): List<R> =
+    dbBatchCreateAsync(v, genericTypeOf<R>())
 
-suspend fun <R : TableRecord<R>> WithVertx.dbDeleteAsync(v: R, klass: KClass<out R> = v::class): R =
+suspend fun <R : TableRecord<R>> WithVertx.dbDeleteAsync(v: R, klass: GenericKType<R>): R =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableAsync(Address.DB.delete(v.table.name), v, klass, klass)
 
-suspend fun <R : TableRecord<R>> WithVertx.dbFetchAsync(v: R, klass: KClass<out R> = v::class): R =
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbDeleteAsync(v: R): R =
+    dbDeleteAsync(v, genericTypeOf())
+
+suspend fun <R : TableRecord<R>> WithVertx.dbFetchAsync(v: R, klass: GenericKType<R>): R =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableAsync(Address.DB.read(v.table.name), v, klass, klass)
 
-suspend fun <R : TableRecord<R>> WithVertx.dbFindAsync(v: R, klass: KClass<out R> = v::class): List<R> =
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbFetchAsync(v: R): R =
+    dbFetchAsync(v, genericTypeOf())
+
+suspend fun <R : TableRecord<R>> WithVertx.dbFindAsync(v: R, klass: GenericKType<R>): List<R> =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableCollectAsync(Address.DB.find(v.table.name), v, klass, klass)
+
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbFindAsync(v: R): List<R> =
+    dbFindAsync(v, genericTypeOf())
 
 suspend fun WithVertx.dbQueryAsync(q: ComplexDatabaseQuery): List<JsonObject> =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableCollectAsync(Address.DB.query(q.table!!), q,
-        ComplexDatabaseQuery::class,
-        JsonObject::class)
+        genericTypeOf<ComplexDatabaseQuery>(),
+        genericTypeOf<JsonObject>())
 
 suspend fun <R : TableRecord<R>> WithVertx.dbQueryAsync(table: Table<R>,
                                                         builderBody: TypedQueryBuilder<R>.() -> Unit) =
@@ -551,37 +571,50 @@ suspend fun <R : TableRecord<R>> WithVertx.dbQueryAsync(table: Table<R>,
 
 suspend fun WithVertx.dbCountAsync(q: ComplexDatabaseQuery): CountResponse =
     @Suppress(DEPRECATION)
-    vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, ComplexDatabaseQuery::class, CountResponse::class)
+    vertx.eventBus().sendJsonableAsync(Address.DB.count(q.table!!), q, genericTypeOf(), genericTypeOf())
 
 suspend fun <R : TableRecord<R>> WithVertx.dbCountAsync(table: Table<R>,
                                                         builderBody: TypedQueryBuilder<R>.() -> Unit) =
     dbCountAsync(TypedQueryBuilder(table).apply(builderBody).query)
 
-suspend fun <R : TableRecord<R>> WithVertx.dbProcessAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+suspend fun <R : TableRecord<R>> WithVertx.dbProcessAsync(v: R, klass: GenericKType<R>): VerificationData =
     @Suppress(DEPRECATION)
-    vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, VerificationData::class)
+    vertx.eventBus().sendJsonableAsync(Address.DB.process(v.table.name), v, klass, genericTypeOf())
 
-suspend fun <R : TableRecord<R>> WithVertx.dbVerifyAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
-    @Suppress(DEPRECATION)
-    vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, VerificationData::class)
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbProcessAsync(v: R): VerificationData =
+    dbProcessAsync(v, genericTypeOf())
 
-suspend fun <R : TableRecord<R>> WithVertx.dbCleanAsync(v: R, klass: KClass<out R> = v::class): VerificationData =
+suspend fun <R : TableRecord<R>> WithVertx.dbVerifyAsync(v: R, klass: GenericKType<R>): VerificationData =
     @Suppress(DEPRECATION)
-    vertx.eventBus().sendJsonableAsync(Address.DB.clean(v.table.name), v, klass, VerificationData::class)
+    vertx.eventBus().sendJsonableAsync(Address.DB.verify(v.table.name), v, klass, genericTypeOf())
+
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbVerifyAsync(v: R): VerificationData =
+    dbVerifyAsync(v, genericTypeOf())
+
+suspend fun <R : TableRecord<R>> WithVertx.dbCleanAsync(v: R, klass: GenericKType<R>): VerificationData =
+    @Suppress(DEPRECATION)
+    vertx.eventBus().sendJsonableAsync(Address.DB.clean(v.table.name), v, klass, genericTypeOf())
+
+suspend inline fun <reified R : TableRecord<R>> WithVertx.dbCleanAsync(v: R): VerificationData =
+    dbCleanAsync(v, genericTypeOf())
 
 suspend fun <R : TableRecord<R>> WithVertx.fetchByIdAsync(instance: Table<R>, id: Int,
-                                                          klass: KClass<out R> = instance.recordType.kotlin): R =
+                                                          klass: GenericKType<out R>): R =
     @Suppress(DEPRECATION)
     vertx.eventBus().sendJsonableAsync(
         Address.DB.read(instance.name),
         JsonObject("id" to id),
-        JsonObject::class, klass)
+        genericTypeOf<JsonObject>(), klass)
+
+suspend inline fun <reified R : TableRecord<R>> WithVertx.fetchByIdAsync(instance: Table<R>, id: Int): R =
+    fetchByIdAsync(instance, id, genericTypeOf())
+
 
 suspend fun WithVertx.createNotification(record: NotificationRecord) =
-        sendJsonable(
-                Address.Api.Notification.Create,
-                record.fixTitle()
-        )
+    sendJsonable(
+            Address.Api.Notification.Create,
+            record.fixTitle()
+    )
 
 inline suspend fun <
         reified Argument : Any
@@ -603,7 +636,7 @@ inline suspend fun <
         reified Argument : Any
         > WithVertx.sendJsonableAsync(address: String, value: Argument): Result {
     @Suppress(DEPRECATION)
-    return vertx.eventBus().sendJsonableAsync(address, value, typeOf<Argument>(), typeOf<Result>())
+    return vertx.eventBus().sendJsonableAsync(address, value, genericTypeOf<Argument>(), genericTypeOf<Result>())
 }
 
 inline suspend fun <
@@ -611,7 +644,7 @@ inline suspend fun <
         reified Argument : Any
         > WithVertx.sendJsonableCollectAsync(address: String, value: Argument): List<Result> {
     @Suppress(DEPRECATION)
-    return vertx.eventBus().sendJsonableCollectAsync(address, value, Argument::class, Result::class)
+    return vertx.eventBus().sendJsonableCollectAsync(address, value, genericTypeOf<Argument>(), genericTypeOf<Result>())
 }
 
 inline suspend fun <

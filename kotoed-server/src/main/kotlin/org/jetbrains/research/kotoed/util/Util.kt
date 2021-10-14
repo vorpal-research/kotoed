@@ -21,6 +21,9 @@ import java.net.URLEncoder
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.typeOf
 
 /******************************************************************************/
 
@@ -273,3 +276,9 @@ operator fun<T: Comparable<T>> ClosedRange<T>.contains(that: ClosedRange<T>) =
 
 fun String.decapitalize(): String = replaceFirstChar { it.lowercase(Locale.getDefault()) }
 fun String.capitalize(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+
+class GenericKType<T>(val inner: KType): KType by inner
+fun <T: Any> GenericKType(kClass: KClass<out T>) = GenericKType<T>(kClass.starProjectedType)
+
+@OptIn(ExperimentalStdlibApi::class)
+inline fun <reified T> genericTypeOf(): GenericKType<T> = GenericKType(typeOf<T>())
