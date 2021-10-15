@@ -24,8 +24,8 @@ val PsiElement.location: ClosedRange<Location>
     get() {
         val file = containingFile
         val document = file.viewProvider.document!!
-        val fromLine = document.getLineNumber(startOffset)
-        val toLine = document.getLineNumber(endOffset)
+        val fromLine = document.getLineNumber(startOffset) + 1 // we count lines from 1, psi does it from 0
+        val toLine = document.getLineNumber(endOffset) + 1 // we count lines from 1, psi does it from 0
         val fromCol = startOffset - document.getLineStartOffset(fromLine)
         val toCol = endOffset - document.getLineStartOffset(toLine)
 

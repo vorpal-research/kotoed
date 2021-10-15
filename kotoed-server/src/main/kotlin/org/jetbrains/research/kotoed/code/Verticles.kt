@@ -402,9 +402,18 @@ class CodeVerticle : AbstractKotoedVerticle(), Loggable {
             val (function, resFunction) = findCorrespondingFunction(message.location, fromFile, toFile)
                     ?: return null
 
+            log.warn("Function from: ${function.name}")
+            log.warn("Function to: ${function.name}")
+            log.warn("Message location: ${message.location}")
+
             val messageIndex = message.location - function.location.start.thisLine()
-            val messageLine = function.text.lines().getOrNull(messageIndex)
-            checkNotNull(messageLine)
+
+            log.warn("Message line in function: ${messageIndex}")
+
+            val messageLine = function.text.lines().getOrNull(messageIndex).apply {
+                log.warn("Actual line of code: $this")
+            }
+                ?: return@temporaryKotlinEnv function.location.start
 
             val resLine = resFunction.text.lines().withIndex().minByOrNull { (_, text) ->
                 Levenshtein.distance(text.trim(), messageLine.trim())
