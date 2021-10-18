@@ -277,7 +277,14 @@ operator fun<T: Comparable<T>> ClosedRange<T>.contains(that: ClosedRange<T>) =
 fun String.decapitalize(): String = replaceFirstChar { it.lowercase(Locale.getDefault()) }
 fun String.capitalize(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
-class GenericKType<T>(val inner: KType): KType by inner
+class GenericKType<T>(val inner: KType) {
+    override fun equals(other: Any?): Boolean = when {
+        other is GenericKType<*> -> inner.equals(other.inner)
+        else -> inner.equals(other)
+    }
+    override fun hashCode(): Int = inner.hashCode()
+    override fun toString(): String = inner.toString()
+}
 fun <T: Any> GenericKType(kClass: KClass<out T>) = GenericKType<T>(kClass.starProjectedType)
 
 @OptIn(ExperimentalStdlibApi::class)

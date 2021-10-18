@@ -102,7 +102,7 @@ internal suspend fun <Argument : Any> EventBus.publishJsonable(
         argType: GenericKType<Argument>
 ) {
 
-    val toJson = getToJsonConverter(argType)
+    val toJson = getToJsonConverter(argType.inner)
     val currentName = currentCoroutineName()
     publish(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
 }
@@ -115,8 +115,8 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
         argType: GenericKType<Argument>,
         resultType: GenericKType<Result>
 ): Result {
-    val toJson = getToJsonConverter(argType)
-    val fromJson = getFromJsonConverter(resultType)
+    val toJson = getToJsonConverter(argType.inner)
+    val fromJson = getFromJsonConverter(resultType.inner)
     return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
 }
 
@@ -142,8 +142,8 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
         resultType: GenericKType<Result>,
         deliveryOptions: DeliveryOptions = DeliveryOptions()
 ): List<Result> {
-    val toJson = getToJsonConverter(argType)
-    val fromJson = getFromJsonConverter(resultType)
+    val toJson = getToJsonConverter(argType.inner)
+    val fromJson = getFromJsonConverter(resultType.inner)
     return sendAsync<JsonArray>(address, toJson(value), deliveryOptions = deliveryOptions)
             .body()
             .asSequence()
@@ -163,8 +163,8 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
 ): List<Result> {
     val toJson = getToJsonConverter(
             List::class.createType(
-                    listOf(KTypeProjection.invariant(argType))))
-    val fromJson = getFromJsonConverter(resultType)
+                    listOf(KTypeProjection.invariant(argType.inner))))
+    val fromJson = getFromJsonConverter(resultType.inner)
     return sendAsync<JsonArray>(address, toJson(value))
             .body()
             .asSequence()
@@ -222,7 +222,6 @@ annotation class JsonableEventBusConsumerForDynamic(val addressProperty: String,
 @Target(AnnotationTarget.CLASS)
 annotation class CleanupJsonFields(val fields: Array<String>)
 
-
 private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
     return when {
@@ -259,6 +258,8 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     }
 }
 
+private fun <T> getToJsonConverter(type: GenericKType<T>) = getToJsonConverter(type.inner)
+
 private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
     return when {
@@ -291,6 +292,8 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
         else -> throw IllegalArgumentException("Non-jsonable class: $klazz")
     }
 }
+
+private fun <T> getFromJsonConverter(type: GenericKType<T>) = getFromJsonConverter(type.inner)
 
 object ConsumerAutoRegister : Loggable
 
@@ -533,7 +536,9 @@ suspend fun <R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>, type: 
     if (v.isEmpty()) emptyList()
     else {
         val evidence = v.first()
-        vertx.eventBus().sendJsonableCollectAsync(Address.DB.batchCreate(evidence.table.name), v, type, type)
+        val eb = vertx.eventBus()
+        val address = Address.DB.batchCreate(evidence.table.name)
+        eb.sendJsonableCollectAsync(address, v, type, type)
     }
 suspend inline fun <reified R : TableRecord<R>> WithVertx.dbBatchCreateAsync(v: List<R>): List<R> =
     dbBatchCreateAsync(v, genericTypeOf<R>())

@@ -114,7 +114,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         try {
             dbBatchCreateAsync(parentTags.map { it.apply { submissionId = child.id } })
         } catch (ex: Exception) {
-            // FIXME: Do nothing?
+            log.error(ex.message, ex)
         }
     }
 
