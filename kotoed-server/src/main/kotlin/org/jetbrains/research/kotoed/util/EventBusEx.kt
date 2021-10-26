@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.warnings.Warnings.DEPRECATION
+import kotlinx.warnings.Warnings.UNCHECKED_CAST
 import org.jetbrains.research.kotoed.data.api.CountResponse
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.BatchUpdateMsg
@@ -102,7 +103,7 @@ internal suspend fun <Argument : Any> EventBus.publishJsonable(
         argType: GenericKType<Argument>
 ) {
 
-    val toJson = getToJsonConverter(argType.inner)
+    val toJson = getToJsonConverter(argType)
     val currentName = currentCoroutineName()
     publish(address, toJson(value), DeliveryOptions().addHeader(KOTOED_REQUEST_UUID, currentName.name))
 }
@@ -115,9 +116,9 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableAsync(
         argType: GenericKType<Argument>,
         resultType: GenericKType<Result>
 ): Result {
-    val toJson = getToJsonConverter(argType.inner)
-    val fromJson = getFromJsonConverter(resultType.inner)
-    return sendAsync(address, toJson(value)).body().let(fromJson).uncheckedCast<Result>()
+    val toJson = getToJsonConverter(argType)
+    val fromJson = getFromJsonConverter(resultType)
+    return sendAsync(address, toJson(value)).body().let(fromJson)
 }
 
 //@PublishedApi
@@ -142,14 +143,13 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
         resultType: GenericKType<Result>,
         deliveryOptions: DeliveryOptions = DeliveryOptions()
 ): List<Result> {
-    val toJson = getToJsonConverter(argType.inner)
-    val fromJson = getFromJsonConverter(resultType.inner)
+    val toJson = getToJsonConverter(argType)
+    val fromJson = getFromJsonConverter(resultType)
     return sendAsync<JsonArray>(address, toJson(value), deliveryOptions = deliveryOptions)
             .body()
             .asSequence()
             .filterIsInstance<JsonObject>()
             .map(fromJson)
-            .map { it.uncheckedCast<Result>() }
             .toList()
 }
 
@@ -161,16 +161,13 @@ internal suspend fun <Argument : Any, Result : Any> EventBus.sendJsonableCollect
         argType: GenericKType<Argument>,
         resultType: GenericKType<Result>,
 ): List<Result> {
-    val toJson = getToJsonConverter(
-            List::class.createType(
-                    listOf(KTypeProjection.invariant(argType.inner))))
-    val fromJson = getFromJsonConverter(resultType.inner)
+    val toJson = getToJsonConverter(GenericKType(List::class).of(argType))
+    val fromJson = getFromJsonConverter(resultType)
     return sendAsync<JsonArray>(address, toJson(value))
             .body()
             .asSequence()
             .filterIsInstance<JsonObject>()
             .map(fromJson)
-            .map { it.uncheckedCast<Result>() }
             .toList()
 }
 
@@ -258,7 +255,8 @@ private fun getToJsonConverter(type: KType): (value: Any) -> Any {
     }
 }
 
-private fun <T> getToJsonConverter(type: GenericKType<T>) = getToJsonConverter(type.inner)
+@Suppress(UNCHECKED_CAST)
+private fun <T> getToJsonConverter(type: GenericKType<T>) = getToJsonConverter(type.inner) as ((T) -> Any)
 
 private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     val klazz = type.jvmErasure
@@ -293,7 +291,8 @@ private fun getFromJsonConverter(type: KType): (value: Any) -> Any {
     }
 }
 
-private fun <T> getFromJsonConverter(type: GenericKType<T>) = getFromJsonConverter(type.inner)
+@Suppress(UNCHECKED_CAST)
+private fun <T> getFromJsonConverter(type: GenericKType<T>) = getFromJsonConverter(type.inner) as ((Any) -> T)
 
 object ConsumerAutoRegister : Loggable
 

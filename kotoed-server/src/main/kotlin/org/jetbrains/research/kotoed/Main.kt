@@ -42,6 +42,12 @@ suspend fun startApplication(): Vertx {
         System.getProperties().load(it)
     }
 
+    Thread.currentThread().contextClassLoader.getResourceAsStream(
+        System.getProperty("kotoed.dbPropertiesFile", "db.properties")
+    ).use {
+        System.getProperties().load(it)
+    }
+
     val vertx = localVertx(
             VertxOptions().also {
                 it.metricsOptions = dropwizardMetricsOptionsOf(

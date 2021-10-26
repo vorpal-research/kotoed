@@ -15,6 +15,8 @@
     </parent>
 
     <properties>
+        <db.properties>${project.basedir}/db.properties</db.properties>
+
         <kotlin.version>1.5.20</kotlin.version>
         <kotlin.api.version>1.5</kotlin.api.version>
         <kotlinx.html.version>0.6.12</kotlinx.html.version>
@@ -385,7 +387,7 @@
                         </goals>
                         <configuration>
                             <files>
-                                <file>${project.basedir}/db.properties</file>
+                                <file>${db.properties}</file>
                             </files>
                         </configuration>
                     </execution>
@@ -690,6 +692,34 @@
                         </argument>
                     </arguments>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <!-- here the phase you need -->
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${project.basedir}/target/classes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>db.properties</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>

@@ -22,7 +22,10 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 /******************************************************************************/
@@ -285,6 +288,9 @@ class GenericKType<T>(val inner: KType) {
     override fun hashCode(): Int = inner.hashCode()
     override fun toString(): String = inner.toString()
 }
+infix fun <T> GenericKType<List<*>>.of(argument: GenericKType<T>): GenericKType<List<T>> =
+    GenericKType(List::class.createType(listOf(KTypeProjection.invariant(argument.inner))))
+
 fun <T: Any> GenericKType(kClass: KClass<out T>) = GenericKType<T>(kClass.starProjectedType)
 
 @OptIn(ExperimentalStdlibApi::class)
