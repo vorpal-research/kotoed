@@ -12,6 +12,7 @@ import kotlin.reflect.jvm.reflect
 
 object Uninitialized
 object Null
+data class SystemProperty(val name: String)
 
 abstract class Configuration : Jsonable {
     private var data: JsonObject = JsonObject()
@@ -76,6 +77,11 @@ abstract class Configuration : Jsonable {
         child.internalData = root.internalData.getValue(prop.underscoredName, child.internalData) as JsonObject
         return child
     }
+
+    operator fun SystemProperty.getValue(thisRef: Configuration, prop: KProperty<*>): String =
+        data.getString(prop.underscoredName, null)
+            ?: System.getProperty(this.name)
+            ?: throw IllegalStateException("Configuration field ${prop.name} not in system properties")
 
     override fun toString(): String {
         return toJson().encodePrettily()

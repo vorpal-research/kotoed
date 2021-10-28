@@ -6,9 +6,9 @@ import org.jooq.tools.jdbc.JDBCUtils
 class GlobalConfig : Configuration() {
     class DebugConfig : Configuration() {
         class DBConfig : Configuration() {
-            val Url by { System.getProperty("db.url") ?: "jdbc:postgresql://localhost/kotoed" }
-            val User by { System.getProperty("db.user") ?: "kotoed" }
-            val Password by { System.getProperty("db.user") ?: "kotoed" }
+            val Url by SystemProperty("db.url")
+            val User by SystemProperty("db.user")
+            val Password by SystemProperty("db.password")
 
             val Dialect get() = JDBCUtils.dialect(Url)
 
