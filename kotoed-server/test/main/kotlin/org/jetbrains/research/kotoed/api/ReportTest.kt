@@ -32,33 +32,33 @@ class ReportTest {
                 methodName = "task1",
                 packageName = "lesson1.Tests")
         val res2 = res1.copy(methodName = "task2", tags = listOf("2"))
-        assertEquals(listOf("task1" to 1), reportVerticle.calcHighestGradeTasks(mapOf("task1" to listOf(res1))))
-        assertEquals(listOf("task2" to 2), reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2))))
+        assertEquals(listOf("task1" to 1), reportVerticle.calcHighestGradeTasks(mapOf("task1" to listOf(res1))).ok)
+        assertEquals(listOf("task2" to 2), reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2))).ok)
         assertEquals(listOf("task2" to 2, "task1" to 1),
-                reportVerticle.calcHighestGradeTasks(mapOf("task1" to listOf(res1), "task2" to listOf(res2))))
+                reportVerticle.calcHighestGradeTasks(mapOf("task1" to listOf(res1), "task2" to listOf(res2))).ok)
 
         val res22 = res2.copy(tags = listOf())
         assertEquals(listOf("task2" to 2),
-                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res22))))
+                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res22))).ok)
 
         val res23 = res2.copy(tags = listOf("3"))
-        assertFails {
-            reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res23)))
-        }
+        assertEquals(listOf("task2" to "Two or more grade tags"),
+            reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res23))).problem
+        )
 
         val res24 = res2.copy(packageName = "lesson1.RandomTests")
         assertEquals(listOf("task2" to 2),
-                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res24))))
+                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res24))).ok)
 
         val res25 = res24.copy(results = listOf(KotoedRunnerTestResult(KotoedRunnerStatus.FAILED, failure = null)))
         assertEquals(listOf(),
-                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res25))))
+                reportVerticle.calcHighestGradeTasks(mapOf("task2" to listOf(res2, res25))).ok)
 
         val res3 = res1.copy(methodName = "task3", tags = listOf("3"))
         val res4 = res1.copy(methodName = "task4", tags = listOf("4"))
         assertEquals(listOf("task4" to 4, "task3" to 3),
                 reportVerticle.calcHighestGradeTasks(mapOf(
                         "task1" to listOf(res1), "task2" to listOf(res2),
-                        "task3" to listOf(res3), "task4" to listOf(res4))))
+                        "task3" to listOf(res3), "task4" to listOf(res4))).ok)
     }
 }

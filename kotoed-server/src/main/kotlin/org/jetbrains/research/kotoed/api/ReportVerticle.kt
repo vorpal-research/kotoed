@@ -30,11 +30,11 @@ class ReportVerticle : AbstractKotoedVerticle() {
 
     private val ignoredTags = listOf("Example")
 
-    private val List<Int>.grade: Int
+    private val List<Int>.grade: Int?
         get() = when {
             this.isEmpty() -> 1 // default grade
             this.size == 1 -> this.single()
-            else -> throw Exception("Two or more grade tags")
+            else -> null
         }
 
     private val Iterable<String>.onlyNumbers: List<Int>
@@ -59,11 +59,23 @@ class ReportVerticle : AbstractKotoedVerticle() {
     fun calcHighestGradeLessons(lessonGrades: List<Pair<String, Int>>) =
             lessonGrades.sortedByDescending { it.second }.filter { it.second > 0.0 }.take(TAKE_N_HIGHEST_GRADE_LESSONS)
 
-    fun calcHighestGradeTasks(tasks: Map<String, List<KotoedRunnerTestMethodRun>>): List<Pair<String, Int>> {
+    data class TaskGrades(
+        val ok: List<Pair<String, Int>>,
+        val problem: List<Pair<String, String>>
+    )
+
+    fun calcHighestGradeTasks(tasks: Map<String, List<KotoedRunnerTestMethodRun>>): TaskGrades {
         val solvableTasks = tasks.filter { it.value.flatMap { it.tags }.intersect(ignoredTags).isEmpty() }
         val successfulTasks = solvableTasks.filterValues { it.flatMap { it.results }.all { it.status == successfulStatus } }
         val taskGrades = successfulTasks.mapValues { it.value.flatMap { it.tags }.onlyNumbers.grade }
-        return taskGrades.toList().sortedByDescending { it.second }.take(TAKE_N_HIGHEST_GRADE_TASKS)
+
+        val okGrades = taskGrades.filterValues { it != null } as Map<String, Int>
+        val problemGrades = taskGrades.filterValues { it == null }.mapValues { (_, _) -> "Two or more grade tags" }
+
+        return TaskGrades(
+            okGrades.toList().sortedByDescending { it.second }.take(TAKE_N_HIGHEST_GRADE_TASKS),
+            problemGrades.toList()
+        )
     }
 
     private fun calcScore(sr: SubmissionResultRecord): Double {
@@ -74,7 +86,7 @@ class ReportVerticle : AbstractKotoedVerticle() {
         val groupedLessonData = extractLessonsFromTestResults(content)
 
         val lessonsGrade = groupedLessonData.map { (lesson, tasks) ->
-            val highestGrades = calcHighestGradeTasks(tasks)
+            val (highestGrades, _) = calcHighestGradeTasks(tasks)
             lesson to highestGrades.sumOf { it.second }
         }
 
@@ -95,9 +107,20 @@ class ReportVerticle : AbstractKotoedVerticle() {
         val groupedLessonData = extractLessonsFromTestResults(content)
 
         groupedLessonData.forEach { (lesson, tasks) ->
-            val highestGrades = calcHighestGradeTasks(tasks)
+            val (highestGrades, problemGrades) = calcHighestGradeTasks(tasks)
+
             scores[lesson] = highestGrades.sumOf { it.second }
-            scoreDescriptions[lesson] = highestGrades.joinToString(separator = " + ") { "${it.second} points for ${it.first}" }
+
+            scoreDescriptions[lesson] =
+                highestGrades.joinToString(separator = " + ") { "${it.second} points for ${it.first}" }
+
+            if (problemGrades.isNotEmpty()) {
+                scoreDescriptions[lesson] += problemGrades.joinToString(
+                    separator = ", ",
+                    prefix = " (problems with: ",
+                    postfix = ")"
+                ) { "${it.second} for ${it.first}" }
+            }
         }
 
         val highestGradesLessons = calcHighestGradeLessons(scores.toList())
