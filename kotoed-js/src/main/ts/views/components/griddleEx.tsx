@@ -80,7 +80,7 @@ export interface UnknownFailureInfo {
 
 export function isUnknownFailureInfo(failure: FailureInfo): failure is UnknownFailureInfo {
     return _.isObject(failure) && !isTestFailureInfo(failure)
-        && (failure.nestedException != undefined || failure.errorMessage != undefined)
+        && (failure.nestedException !== undefined || failure.errorMessage !== undefined)
 }
 
 export interface TestFailureInfo {
@@ -93,9 +93,9 @@ export interface TestFailureInfo {
 export function isTestFailureInfo(failure: FailureInfo): failure is TestFailureInfo {
     const failureObj = failure as any
     return _.isObject(failure)
-        && failureObj.input != undefined
-        && failureObj.output != undefined
-        && failureObj.expectedOutput != undefined
+        && failureObj.input !== undefined
+        && failureObj.output !== undefined
+        && failureObj.expectedOutput !== undefined
 }
 
 export type FailureInfo = TestFailureInfo | UnknownFailureInfo
