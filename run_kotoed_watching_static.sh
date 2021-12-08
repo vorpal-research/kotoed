@@ -39,6 +39,7 @@ if [[ -z "${DIE_REQUESTED}" ]]; then
         -Dkotlinx.coroutines.debug \
         -Djava.net.preferIPv4Stack=true \
         -Dkotoed.settingsFile=deploySettings.json \
+        -Dvertx.cacheDirBase=./.vertx \
         -jar kotoed-all/target/kotoed-all-0.1.0-SNAPSHOT-fat.jar &
     KOTOED_PID=$!
 fi
@@ -47,7 +48,7 @@ sleep 10 # Is it enough to vertx to extract cache?
 cd kotoed-js
 
 if [[ -z "${DIE_REQUESTED}" ]]; then
-    webpack --progress --colors --watch --config=webpack.config.watch.ts &
+    ./node_modules/.bin/webpack --progress --colors --watch --config=webpack.config.watch.ts &
     WEBPACK_PID=$!
 fi
 
