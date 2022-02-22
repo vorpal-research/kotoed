@@ -9,7 +9,7 @@ import {
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
     expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize,
-    submissionFetch, annotationsFetch, commentTemplateFetch
+    submissionFetch, annotationsFetch, commentTemplateFetch, fileDiff
 } from "./actions";
 import {
     ADD_DELTA,
@@ -133,7 +133,8 @@ const defaultEditorState = {
     fileName: "",
     displayedComments: FileComments(),
     mode: {},
-    loading: false
+    loading: false,
+    diff: []
 };
 
 export const editorReducer = (state: EditorState = defaultEditorState, action: Action) => {
@@ -146,6 +147,12 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         newState.value = action.payload.result.value;
         newState.fileName = action.payload.params.filename;
         newState.loading = false;
+        return newState;
+    } else if (isType(action, fileDiff.done)) {
+        let diff = action.payload.result;
+        if (diff === undefined) return state;
+        let newState = {...state};
+        newState.diff = diff.changes;
         return newState;
     }
     return state;

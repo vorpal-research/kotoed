@@ -8,7 +8,7 @@ import {
 import {
     Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
-import {fetchRootDir, fetchFile, File, FileType} from "./remote/code";
+import {fetchDiff, fetchFile, fetchRootDir, File, FileDiffResult, FileType} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
@@ -134,6 +134,7 @@ export const submissionFetch = actionCreator.async<SubmissionPayload, DbRecordWr
 // File or dir fetch actions
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
+export const fileDiff = actionCreator.async<FilePathPayload & SubmissionPayload, FileDiffResult | undefined, {}>('FILE_DIFF');
 
 // Annotation fetch actions
 export const annotationsFetch = actionCreator.async<number, ReviewAnnotations, {}>('ANNOTATION_FETCH');
@@ -334,6 +335,15 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
             }));
         });
 
+        fetchDiff(payload.submissionId).then(result => {
+            dispatch(fileDiff.done({
+                params: {
+                    submissionId: payload.submissionId,
+                    filename
+                },
+                result: result.find((diff) => diff.toFile == filename)
+            }))
+        });
     }
 }
 

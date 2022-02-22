@@ -14,6 +14,29 @@ export interface File {
     children?: Array<File>
 }
 
+export type DiffLineChangeType = 'NEUTRAL' | 'FROM' | 'TO'
+
+export interface FileDiffChangeRange {
+    start: number
+    count: number
+}
+
+export interface FileDiffChangeLine {
+    contents: string
+    type: DiffLineChangeType
+}
+
+export interface FileDiffChange {
+    from: FileDiffChangeRange
+    to: FileDiffChangeRange
+    lines: Array<FileDiffChangeLine>
+}
+
+export interface FileDiffResult {
+    fromFile: string
+    toFile: string
+    changes: Array<FileDiffChange>
+}
 
 type RootDirRequest = SubmissionIdRequest
 
@@ -27,6 +50,10 @@ interface FileRequest extends SubmissionIdRequest {
 
 interface FileResponse extends ResponseWithStatus {
     contents: string
+}
+
+interface FileDiffResponse extends ResponseWithStatus {
+    diff: Array<FileDiffResult>
 }
 
 type IsReadyRequest = SubmissionIdRequest
@@ -69,6 +96,16 @@ export async function fetchFile(submissionId: number,
         });
     });
     return res.contents;
+}
+
+export async function fetchDiff(submissionId: number): Promise<Array<FileDiffResult>> {
+
+    let res = await repeatTillReady<FileDiffResponse>(() => {
+        return sendAsync(Kotoed.Address.Api.Submission.Code.Diff, {
+            submissionId: submissionId
+        });
+    });
+    return res.diff;
 }
 
 export async function waitTillReady(submissionId: number): Promise<void> {

@@ -97,6 +97,8 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
             Address.Api.Submission.Code.Read to
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
+            Address.Api.Submission.Code.Diff to
+                    (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
 
             Address.Api.Submission.Comment.Create to
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionOpen(vertx)),

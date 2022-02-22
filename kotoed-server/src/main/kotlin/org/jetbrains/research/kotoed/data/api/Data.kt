@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.data.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.code.diff.DiffJsonable
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
@@ -88,6 +89,8 @@ object Code {
                 val toLine: Int? = null) : Jsonable
         data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
         data class ListRequest(val submissionId: Int) : Jsonable
+        data class DiffRequest(val submissionId: Int) : Jsonable
+        data class DiffResponse(val diff: List<DiffJsonable>, val status: CloneStatus) : Jsonable
     }
 
     object Course {

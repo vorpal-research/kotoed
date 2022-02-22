@@ -40,6 +40,8 @@ import {DEFAULT_FORM_STATE, FileForms, FormState, ReviewForms} from "../state/fo
 import {CodeAnnotation} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
 import {doNothing, sleep} from "../../util/common";
+import {FileDiffChange} from "../remote/code";
+import SpinnerWithVeil from "../../views/components/SpinnerWithVeil";
 
 interface FileReviewBaseProps {
     canPostComment: boolean
@@ -52,6 +54,7 @@ interface FileReviewBaseProps {
     whoAmI: string
     scrollTo: ScrollTo
     forms: FileForms
+    diff: Array<FileDiffChange>
 }
 
 interface FileReviewCallbacks {
@@ -336,6 +339,24 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         );
     };
 
+    renderDiff = () => {
+        if (this.editor === undefined) return
+        this.props.diff.forEach((change) => {
+            this.renderDiffChange(change)
+        })
+    }
+
+    renderDiffChange = (change: FileDiffChange) => {
+        let lineNumber = change.to.start;
+        for (const lineChange of change.lines) {
+            if (lineChange.type === 'FROM') continue;
+            if (lineChange.type === 'TO') {
+                this.editor.addLineClass(toCmLine(lineNumber), "background", "mark-line-changed");
+            }
+            lineNumber += 1;
+        }
+    }
+
     componentWillMount() {
         this.resetExpanded(this.props)
     }
@@ -407,6 +428,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
 
         this.renderMarkers();
         this.scrollToLine();
+        this.renderDiff();
 
         Mousetrap.bindGlobal("escape escape", (e: KeyboardEvent) => {
             e.preventDefault();
@@ -487,6 +509,7 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     }
 
     render() {
+        this.renderDiff();
         return (
             <div className="codemirror-with-veil">
                 <div className="codemirror-abs">
