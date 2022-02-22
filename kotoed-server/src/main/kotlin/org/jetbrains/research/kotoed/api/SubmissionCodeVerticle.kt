@@ -20,6 +20,8 @@ import org.jetbrains.research.kotoed.data.api.Code.Course.ReadResponse as CrsRea
 import org.jetbrains.research.kotoed.data.api.Code.Submission.ListRequest as SubListRequest
 import org.jetbrains.research.kotoed.data.api.Code.Submission.ReadRequest as SubReadRequest
 import org.jetbrains.research.kotoed.data.api.Code.Submission.ReadResponse as SubReadResponse
+import org.jetbrains.research.kotoed.data.api.Code.Submission.DiffRequest as SubDiffRequest
+import org.jetbrains.research.kotoed.data.api.Code.Submission.DiffResponse as SubDiffResponse
 
 private typealias InnerRemoteRequest = org.jetbrains.research.kotoed.data.vcs.RemoteRequest
 private typealias InnerListRequest = org.jetbrains.research.kotoed.data.vcs.ListRequest
@@ -126,6 +128,20 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                 .joinToString(separator = "\n")
 
         return SubReadResponse(contents = contents, status = CloneStatus.done)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Diff)
+    suspend fun handleSubmissionCodeDiff(message: SubDiffRequest): SubDiffResponse {
+        val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
+        val repoInfo = getCommitInfo(submission)
+        when (repoInfo.cloneStatus) {
+            CloneStatus.pending -> return SubDiffResponse(diff = emptyList(), status = repoInfo.cloneStatus)
+            CloneStatus.failed -> throw NotFound("Repository not found")
+            else -> {
+            }
+        }
+        val diff = submissionCodeDiff(submission, repoInfo)
+        return SubDiffResponse(diff = diff.contents, status = repoInfo.cloneStatus)
     }
 
     // Feel da powa of Kotlin!
@@ -236,7 +252,17 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         revision = repoInfo.revision
                 )
         )
+        val diff = submissionCodeDiff(submission, repoInfo)
+        return ListResponse(
+                root = buildCodeTree(
+                        innerResp.files,
+                        diff.contents.flatMap { listOf(it.fromFile, it.toFile) }
+                ),
+                status = repoInfo.cloneStatus
+        )
+    }
 
+    private suspend fun submissionCodeDiff(submission: SubmissionRecord, repoInfo: CommitInfo): DiffResponse {
         val closedSubs = dbFindAsync(SubmissionRecord().apply {
             projectId = submission.projectId
             state = SubmissionState.closed
@@ -271,7 +297,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             }
         }
 
-        val diff: DiffResponse = when (baseRev) {
+        return when (baseRev) {
             null -> DiffResponse(listOf())
             else -> sendJsonableAsync(
                     Address.Code.Diff,
@@ -282,14 +308,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                     )
             )
         }
-
-        return ListResponse(
-                root = buildCodeTree(
-                        innerResp.files,
-                        diff.contents.flatMap { listOf(it.fromFile, it.toFile) }
-                ),
-                status = repoInfo.cloneStatus
-        )
     }
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Date)

@@ -41,7 +41,8 @@ const mapStateToProps = function(store: CodeReviewState,
             loading: store.editorState.loading || store.fileTreeState.loading || store.capabilitiesState.loading,
             value: store.editorState.value,
             file: store.editorState.fileName,
-            comments: store.commentsState.comments.get(store.editorState.fileName, FileComments())
+            comments: store.commentsState.comments.get(store.editorState.fileName, FileComments()),
+            diff: store.editorState.diff
         },
         fileTree: {
             loading: store.fileTreeState.loading || store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,

@@ -20,6 +20,7 @@ import AggregatesLabel from "../../views/AggregatesLabel";
 import {FileForms, ReviewForms} from "../state/forms";
 import {ReviewAnnotations} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
+import {FileDiffChange} from "../remote/code";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -33,6 +34,7 @@ export interface CodeReviewProps {
         value: string
         file: string
         comments: FileComments
+        diff: Array<FileDiffChange>
     }
 
     fileTree: {
@@ -116,6 +118,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                 if (this.props.editor.file !== "")
                     return <FileReview canPostComment={this.props.capabilities.canPostComment}
                                        value={this.props.editor.value}
+                                       diff={this.props.editor.diff}
                                        height="100%"
                                        comments={this.props.editor.comments}
                                        filePath={this.props.editor.file}

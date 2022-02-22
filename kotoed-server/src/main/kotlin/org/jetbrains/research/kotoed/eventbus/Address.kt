@@ -109,6 +109,7 @@ object Address {
                 const val Read = "kotoed.api.submission.code.read"
                 const val List = "kotoed.api.submission.code.list"
                 const val Date = "kotoed.api.submission.code.date"
+                const val Diff = "kotoed.api.submission.code.diff"
             }
 
             object Result {
