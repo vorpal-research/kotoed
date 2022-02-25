@@ -17,10 +17,10 @@
     <properties>
         <db.properties>${project.basedir}/db.properties</db.properties>
 
-        <kotlin.version>1.5.20</kotlin.version>
+        <kotlin.version>1.6.0</kotlin.version>
         <kotlin.api.version>1.5</kotlin.api.version>
-        <kotlinx.html.version>0.6.12</kotlinx.html.version>
-        <kotlinx.coroutines.version>1.5.1</kotlinx.coroutines.version>
+        <kotlinx.html.version>0.7.3</kotlinx.html.version>
+        <kotlinx.coroutines.version>1.6.0</kotlinx.coroutines.version>
 
         <java.version>1.8</java.version>
         <junit.version>4.12</junit.version>
@@ -49,8 +49,8 @@
         <commons-codec.version>1.13</commons-codec.version>
         <simple-java-mail.version>5.2.0</simple-java-mail.version>
 
-        <ktuples.version>0.0.1.10</ktuples.version>
-        <kparsec.version>0.0.0.8</kparsec.version>
+        <ktuples.version>0.0.2.4</ktuples.version>
+        <kparsec.version>0.0.0.9</kparsec.version>
         <kootstrap.version>0.0.0.1</kootstrap.version>
         <suffixtree.version>1.0.3</suffixtree.version>
 
@@ -284,7 +284,7 @@
 
         <dependency>
             <groupId>ru.spbstu</groupId>
-            <artifactId>ktuples</artifactId>
+            <artifactId>ktuples-jvm</artifactId>
             <version>${ktuples.version}</version>
         </dependency>
         <dependency>
@@ -730,11 +730,6 @@
             <id>maven-central-to-force-ordering</id>
             <name>maven-central</name>
             <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-        <repository>
-            <id>jcenter</id>
-            <name>jcenter</name>
-            <url>https://jcenter.bintray.com</url>
         </repository>
         <repository>
             <id>github-kotlin-polytech-kotlin-maven</id>

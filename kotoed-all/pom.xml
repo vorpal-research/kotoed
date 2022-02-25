@@ -112,12 +112,19 @@
 
     <repositories>
         <repository>
-            <id>bintray-jcenter</id>
-            <url>http://jcenter.bintray.com</url>
+            <id>maven-central-to-force-ordering</id>
+            <name>maven-central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
         <repository>
-            <id>bintray-vorpal-research-kotlin-maven</id>
-            <url>http://dl.bintray.com/vorpal-research/kotlin-maven</url>
+            <id>github-kotlin-polytech-kotlin-maven</id>
+            <name>kotlin-polytech-kotlin-maven</name>
+            <url>https://maven.polytech.vorpal-research.science</url>
+        </repository>
+        <repository>
+            <id>github-vorpal-research-kotlin-maven</id>
+            <name>vorpal-research-kotlin-maven</name>
+            <url>https://maven.vorpal-research.science</url>
         </repository>
     </repositories>
 

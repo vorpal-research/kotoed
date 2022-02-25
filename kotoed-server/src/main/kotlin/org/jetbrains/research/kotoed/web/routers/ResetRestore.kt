@@ -49,7 +49,7 @@ suspend fun restorePasswordPageHandler(context: RoutingContext) {
 @JsonResponse
 suspend fun restorePasswordEndpointHandler(context: RoutingContext) {
     val uid by context.request()
-    val body = context.bodyAsJson
+    val body: JsonObject = context.bodyAsJson
     body.retainFields("denizenId", "password")
     body["secret"] = uid
 
