@@ -62,7 +62,7 @@
     "@types/react-click-outside": "^3.0.2",
     "@types/tinycolor2": "^1.4.0",
     "ansi-to-html": "~0.7.1",
-    "axios": "~0.16.2",
+    "axios": "~0.21.2",
     "babel-polyfill": "~6.23.0",
     "babel-preset-es2015": "~6.24.1",
     "babel-preset-es2016": "~6.24.1",
