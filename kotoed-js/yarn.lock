@@ -1266,9 +1266,9 @@ bootstrap-social@~5.1.1:
     bootstrap "~3"
     font-awesome "~4.7"
 
-bootstrap@^3.3.7, bootstrap@~3:
-  version "3.3.7"
-  resolved "https://registry.npmjs.org/bootstrap/-/bootstrap-3.3.7.tgz"
+bootstrap@^3.4.1, bootstrap@~3:
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.4.1.tgz#c3a347d419e289ad11f4033e3c4132b87c081d72"
 
 bowser@^1.0.0:
   version "1.9.4"
