@@ -13,7 +13,13 @@ import CodeReviewContainer, {
 } from "./containers/CodeReviewContainer";
 import {
     annotationsReducer,
-    capabilitiesReducer, commentsReducer, commentTemplateReducer, editorReducer, fileTreeReducer, formReducer,
+    capabilitiesReducer,
+    commentsReducer,
+    commentTemplateReducer,
+    diffReducer,
+    editorReducer,
+    fileTreeReducer,
+    formReducer,
     submissionReducer
 } from "./reducers";
 
@@ -37,6 +43,7 @@ export const store = createStore(
         capabilitiesState: capabilitiesReducer,
         submissionState: submissionReducer,
         formState: formReducer,
+        diffState: diffReducer,
         router: routerReducer
     }),
     applyMiddleware(routerMiddleware(history)),

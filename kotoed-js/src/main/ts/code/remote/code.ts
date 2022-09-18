@@ -4,6 +4,8 @@ import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 import {sendAsync} from "../../views/components/common";
+import {Generated} from "../../util/kotoed-generated";
+import ApiBindingInputs = Generated.ApiBindingInputs;
 
 export type FileType = "file" | "directory"
 
@@ -52,8 +54,15 @@ interface FileResponse extends ResponseWithStatus {
     contents: string
 }
 
-interface FileDiffResponse extends ResponseWithStatus {
+export interface FileDiffResponse extends ResponseWithStatus {
     diff: Array<FileDiffResult>
+}
+
+
+export type DiffBaseType = 'SUBMISSION_ID' | 'PREVIOUS_CLOSED' | 'PREVIOUS_CHECKED' | 'COURSE_BASE';
+export interface DiffBase {
+    submissionId?: number,
+    type: DiffBaseType
 }
 
 type IsReadyRequest = SubmissionIdRequest
@@ -73,10 +82,12 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
     }
 }
 
-export async function fetchRootDir(submissionId: number): Promise<File> {
+export async function fetchRootDir(submissionId: number,
+                                   diffBase: DiffBase): Promise<File> {
     let res = await repeatTillReady<RootDirResponse>(() => {
         return sendAsync(Kotoed.Address.Api.Submission.Code.List, {
-            submissionId: submissionId
+            submissionId: submissionId,
+            diffBase
         })
     });
     return res.root!;
@@ -98,11 +109,13 @@ export async function fetchFile(submissionId: number,
     return res.contents;
 }
 
-export async function fetchDiff(submissionId: number): Promise<Array<FileDiffResult>> {
+export async function fetchDiff(submissionId: number,
+                                base: DiffBase): Promise<Array<FileDiffResult>> {
 
     let res = await repeatTillReady<FileDiffResponse>(() => {
         return sendAsync(Kotoed.Address.Api.Submission.Code.Diff, {
-            submissionId: submissionId
+            submissionId: submissionId,
+            base
         });
     });
     return res.diff;

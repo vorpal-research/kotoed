@@ -1,5 +1,7 @@
 package org.jetbrains.research.kotoed.api
 
+import io.vertx.core.json.JsonObject
+import org.jetbrains.research.kotoed.data.api.Code
 import org.jetbrains.research.kotoed.data.api.Code.FileRecord
 import org.jetbrains.research.kotoed.data.api.Code.FileType.directory
 import org.jetbrains.research.kotoed.data.api.Code.FileType.file
@@ -7,10 +9,13 @@ import org.jetbrains.research.kotoed.data.api.Code.ListResponse
 import org.jetbrains.research.kotoed.data.api.Code.Submission.RemoteRequest
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.vcs.*
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.database.tables.records.TagRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.database.toRecord
@@ -140,7 +145,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             else -> {
             }
         }
-        val diff = submissionCodeDiff(submission, repoInfo)
+        val diff = submissionCodeDiff(submission, repoInfo, message.base)
         return SubDiffResponse(diff = diff.contents, status = repoInfo.cloneStatus)
     }
 
@@ -238,6 +243,8 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
     suspend fun handleSubmissionCodeList(message: SubListRequest): ListResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         val repoInfo = getCommitInfo(submission)
+        val base = message.diffBase
+
         when (repoInfo.cloneStatus) {
             CloneStatus.pending -> return ListResponse(root = null, status = repoInfo.cloneStatus)
             CloneStatus.failed -> throw NotFound("Repository not found")
@@ -252,7 +259,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         revision = repoInfo.revision
                 )
         )
-        val diff = submissionCodeDiff(submission, repoInfo)
+        val diff = submissionCodeDiff(submission, repoInfo, base)
         return ListResponse(
                 root = buildCodeTree(
                         innerResp.files,
@@ -262,40 +269,9 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         )
     }
 
-    private suspend fun submissionCodeDiff(submission: SubmissionRecord, repoInfo: CommitInfo): DiffResponse {
-        val closedSubs = dbFindAsync(SubmissionRecord().apply {
-            projectId = submission.projectId
-            state = SubmissionState.closed
-        })
-
-        val foundationSub = closedSubs.filter {
-            it.datetime < submission.datetime
-        }.sortedByDescending { it.datetime }.firstOrNull()
-
-        var baseRev = foundationSub?.revision
-
-        if (baseRev == null) {
-            val course: CourseRecord =
-                    dbQueryAsync(
-                            ComplexDatabaseQuery(ProjectRecord().apply { id = submission.projectId }).join("course")
-                    ).first().getJsonObject("course").toRecord()
-
-            baseRev = if (course.baseRevision != "") course.baseRevision else null
-
-            if (baseRev != null) try {
-                run<Unit> {
-                    sendJsonableAsync(
-                            Address.Code.List,
-                            InnerListRequest(
-                                    uid = repoInfo.repo.uid,
-                                    revision = baseRev
-                            )
-                    )
-                }
-            } catch (ex: Exception) {
-                baseRev = null
-            }
-        }
+    private suspend fun submissionCodeDiff(submission: SubmissionRecord, repoInfo: CommitInfo,
+                                           base: SubDiffRequest.DiffBase): DiffResponse {
+        val baseRev = base.getBaseRev(submission)
 
         return when (baseRev) {
             null -> DiffResponse(listOf())
@@ -325,5 +301,92 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                 )
         )
 
+    }
+    private suspend fun SubDiffRequest.DiffBase.getBaseRev(submission: SubmissionRecord): String? =
+            when (type) {
+                Code.Submission.DiffBaseType.SUBMISSION_ID -> dbFetchAsync(SubmissionRecord().apply {
+                    projectId = submission.projectId
+                    id = submissionId
+                })?.revision
+                Code.Submission.DiffBaseType.PREVIOUS_CHECKED -> submission.getLatestCheckedRev()
+                Code.Submission.DiffBaseType.PREVIOUS_CLOSED -> submission.getPreviousClosedOrCourseRev()
+                Code.Submission.DiffBaseType.COURSE_BASE -> submission.getCourseBaseRev()
+            }
+    private suspend fun SubmissionRecord.getLatestClosedSub(): SubmissionRecord? =
+            dbQueryAsync(
+                    ComplexDatabaseQuery(Tables.SUBMISSION)
+                            .filter("project_id == %s and state == %s and datetime < %s"
+                                    .formatToQuery(projectId, SubmissionState.closed, datetime))
+            )
+
+                    .asSequence()
+                    .map {
+                        it.toRecord<SubmissionRecord>()
+                    }
+                    .filter {
+                        it.datetime < datetime
+                    }
+                    .sortedByDescending {
+                        it.datetime
+                    }
+                    .firstOrNull()
+    private suspend fun SubmissionRecord.getCourseBaseRev(): String? =
+            dbQueryAsync(
+                    ComplexDatabaseQuery(ProjectRecord().apply { id = projectId }).join("course")
+            )
+                    .first()
+                    .getJsonObject("course")
+                    .toRecord<CourseRecord>()
+                    .let {
+                        if (it.baseRevision != "") it.baseRevision else null
+                    }
+
+    private suspend fun SubmissionRecord.getLatestCheckedRev(): String? {
+        val latestClosed = getLatestClosedSub() // We consider closed as checked here
+        val q = "project_id == %s " +
+                (latestClosed?.datetime?.let { "and datetime > %s" } ?: "")
+        val qArgs = sequence {
+            yield(projectId)
+            latestClosed?.datetime?.let {
+                yield(it)
+            }
+        }.toList().toTypedArray()
+
+        val newerThanClosed = dbQueryAsync(
+                ComplexDatabaseQuery(Tables.SUBMISSION)
+                        .rjoin(ComplexDatabaseQuery(Tables.SUBMISSION_TAG)
+                                .join(Tables.TAG), "submission_id", "tags")
+                        .filter(q.formatToQuery(*qArgs))
+        )
+
+        val byId = newerThanClosed
+                .asSequence().map {
+                    it.toRecord(SubmissionRecord::class)
+                }.associateBy {
+                    it.id
+                }
+
+        val tagsById = newerThanClosed
+                .asSequence()
+                .map {
+                    it.getInteger("id") to it.getJsonArray("tags").asSequence().map {
+                        it.uncheckedCast<JsonObject>().getJsonObject("tag").toRecord<TagRecord>().name
+                    }.toSet()
+                }
+                .toMap()
+
+        var current = this
+        do {
+            current = byId[current.parentSubmissionId] ?: return latestClosed?.revision
+            val tags = tagsById[current.id] ?: return latestClosed?.revision
+            if (CHECKED in tags) return current.revision
+        } while(true)
+
+    }
+    private suspend fun SubmissionRecord.getPreviousClosedOrCourseRev(): String? =
+            getLatestClosedSub()?.revision ?: getCourseBaseRev()
+
+    companion object {
+        private const val CHECKED = "checked"
     }
 }

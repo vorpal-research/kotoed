@@ -9,16 +9,16 @@ import {
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
     expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize,
-    submissionFetch, annotationsFetch, commentTemplateFetch, fileDiff
+    submissionFetch, annotationsFetch, commentTemplateFetch, fileDiff, diffFetch
 } from "./actions";
 import {
     ADD_DELTA,
-    addAggregates, CLOSE_DELTA, makeFileNode, OPEN_DELTA, registerAddComment, registerCloseComment,
+    addAggregates, applyDiffToFileTree, CLOSE_DELTA, makeFileNode, OPEN_DELTA, registerAddComment, registerCloseComment,
     registerOpenComment, updateAggregate
 } from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "./remote/constants";
-import {List} from "immutable";
+import {List, Map} from "immutable";
 import {DbRecordWrapper} from "../data/verification";
 import {SubmissionToRead} from "../data/submission";
 import {SubmissionState} from "./state/submission";
@@ -26,6 +26,8 @@ import {DEFAULT_FORM_STATE, FileForms, ReviewForms} from "./state/forms";
 import {CodeAnnotationsState, ReviewAnnotations} from "./state/annotations";
 import {CommentTemplateState} from "./state/templates";
 import {CommentTemplates} from "./remote/templates";
+import {DiffBase, fetchDiff, FileDiffResult} from "./remote/code";
+import {DiffState} from "./state/diff";
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -86,8 +88,13 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
     } else if (isType(action, rootFetch.done)) {
         let newState = {...state};
         newState.root = makeFileNode(action.payload.result.root);
+        // Do not copy the state since it has not been published yet
+        applyDiffToFileTree(newState.root, action.payload.result.diff, false);
         newState.loading = false;
         return newState;
+    } else if (isType(action, diffFetch.done)) {
+        let newState = {...state}
+        newState.root = FileNode(applyDiffToFileTree(state.root, action.payload.result))
     } else if (isType(action, commentAggregatesFetch.done)) {
         let newState = {...state};
         newState.root = addAggregates(newState.root, action.payload.result);
@@ -128,14 +135,14 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
     return state;
 };
 
-const defaultEditorState = {
+const defaultEditorState: EditorState = {
     value: "",
     fileName: "",
     displayedComments: FileComments(),
-    mode: {},
     loading: false,
     diff: []
 };
+
 
 export const editorReducer = (state: EditorState = defaultEditorState, action: Action) => {
     if (isType(action, fileLoad.started)) {
@@ -157,6 +164,46 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
     }
     return state;
 };
+
+const defaultDiffState: DiffState = {
+    diff: Map<string, FileDiffResult>(),
+    loading: false,
+    base: {
+        type: "PREVIOUS_CLOSED"
+    }
+}
+
+function fileDiffToMap(diff: Array<FileDiffResult>) {
+    return Map<string, FileDiffResult>().withMutations(mutable => {
+        for (const diffEntry of diff) {
+            mutable.set(diffEntry.toFile, diffEntry)
+        }
+    })
+
+}
+
+export const diffReducer = (state: DiffState = defaultDiffState, action: Action): DiffState => {
+    if (isType(action, diffFetch.done)) {
+        return {
+            loading: false,
+            base: action.payload.params.diffBase,
+            diff: fileDiffToMap(action.payload.result)
+        }
+    } else if (isType(action, diffFetch.started)) {
+        return {
+            loading: true,
+            base: action.payload.diffBase,
+            diff: state.diff
+        }
+    } else if (isType(action, rootFetch.done)) {
+        return {
+            loading: false,
+            base: state.base,
+            diff: fileDiffToMap(action.payload.result.diff)
+        }
+    }
+    return state
+}
 
 export const defaultCommentsState = {
     comments: ReviewComments(),

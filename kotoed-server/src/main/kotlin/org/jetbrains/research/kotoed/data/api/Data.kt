@@ -7,15 +7,12 @@ import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
-import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
 import java.util.*
 
 import org.jetbrains.research.kotoed.data.buildSystem.BuildCommand
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.util.*
-import ru.spbstu.ktuples.Tuple
-import ru.spbstu.ktuples.Tuple2
 
 enum class VerificationStatus {
     Unknown,
@@ -88,9 +85,19 @@ object Code {
                 val fromLine: Int? = null,
                 val toLine: Int? = null) : Jsonable
         data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
-        data class ListRequest(val submissionId: Int) : Jsonable
-        data class DiffRequest(val submissionId: Int) : Jsonable
+        data class ListRequest(val submissionId: Int, val diffBase: DiffRequest.DiffBase) : Jsonable
+        data class DiffRequest(val submissionId: Int, val base: DiffBase) : Jsonable {
+            class DiffBase(val type: DiffBaseType, val submissionId: Int? = null) : Jsonable {
+                init {
+                    require((type == DiffBaseType.SUBMISSION_ID) == (submissionId != null))
+                }
+            }
+        }
         data class DiffResponse(val diff: List<DiffJsonable>, val status: CloneStatus) : Jsonable
+
+        enum class DiffBaseType {
+            SUBMISSION_ID, PREVIOUS_CLOSED, PREVIOUS_CHECKED, COURSE_BASE
+        }
     }
 
     object Course {

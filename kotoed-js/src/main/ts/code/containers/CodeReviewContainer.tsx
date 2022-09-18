@@ -9,7 +9,7 @@ import {
     dirCollapse, dirExpand, editComment, expandHiddenComments, fileSelect, loadCode, loadLostFound, postComment,
     resetExpandedForLine,
     setCommentState,
-    setCodePath, setLostFoundPath, resetExpandedForLostFound, unselectFile, emphasizeComment
+    setCodePath, setLostFoundPath, resetExpandedForLostFound, unselectFile, emphasizeComment, updateDiff
 } from "../actions";
 import {CodeReviewState, ScrollTo} from "../state";
 import {RouteComponentProps} from "react-router-dom";
@@ -42,7 +42,6 @@ const mapStateToProps = function(store: CodeReviewState,
             value: store.editorState.value,
             file: store.editorState.fileName,
             comments: store.commentsState.comments.get(store.editorState.fileName, FileComments()),
-            diff: store.editorState.diff
         },
         fileTree: {
             loading: store.fileTreeState.loading || store.fileTreeState.aggregatesLoading || store.capabilitiesState.loading,
@@ -56,10 +55,16 @@ const mapStateToProps = function(store: CodeReviewState,
         },
         capabilities: {
             canPostComment: store.capabilitiesState.capabilities.permissions.postComment,
+            canViewTags: store.capabilitiesState.capabilities.permissions.tags,
             whoAmI: store.capabilitiesState.capabilities.principal.denizenId,
         },
         forms: {
             forms: store.formState
+        },
+        diff: {
+            diff: store.diffState.diff,
+            base: store.diffState.base,
+            loading: store.diffState.loading
         }
     }
 };
@@ -171,6 +176,16 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
                 }));
             }
         },
+
+        diff: {
+            onChangeDiffBase: (submissionId, diffBase) => {
+                dispatch(updateDiff({
+                    diffBase,
+                    submissionId
+                }))
+            }
+        },
+
         onCodeRoute: (submissionId, filename) => {
             dispatch(loadCode({
                 submissionId,
