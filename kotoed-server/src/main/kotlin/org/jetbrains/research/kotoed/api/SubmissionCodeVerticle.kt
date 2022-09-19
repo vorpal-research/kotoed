@@ -139,14 +139,38 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
     suspend fun handleSubmissionCodeDiff(message: SubDiffRequest): SubDiffResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         val repoInfo = getCommitInfo(submission)
+        val toRevInfo = Code.Submission.RevisionInfo(submission)
+
         when (repoInfo.cloneStatus) {
-            CloneStatus.pending -> return SubDiffResponse(diff = emptyList(), status = repoInfo.cloneStatus)
+            CloneStatus.pending -> return SubDiffResponse(
+                    diff = emptyList(),
+                    status = repoInfo.cloneStatus,
+                    from = toRevInfo,
+                    to = toRevInfo
+            )
             CloneStatus.failed -> throw NotFound("Repository not found")
             else -> {
             }
         }
-        val diff = submissionCodeDiff(submission, repoInfo, message.base)
-        return SubDiffResponse(diff = diff.contents, status = repoInfo.cloneStatus)
+        val baseRev = message.base.getBaseRev(submission)
+        val diff = when (baseRev) {
+            null -> DiffResponse(listOf())
+            else -> sendJsonableAsync(
+                    Address.Code.Diff,
+                    DiffRequest(
+                            uid = repoInfo.repo.uid,
+                            from = baseRev.revision,
+                            to = submission.revision
+                    )
+            )
+        }
+
+        return SubDiffResponse(
+                diff = diff.contents,
+                status = repoInfo.cloneStatus,
+                from = baseRev ?: toRevInfo, // Makes sense for an empty diff
+                to = toRevInfo
+        )
     }
 
     // Feel da powa of Kotlin!
@@ -252,23 +276,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         )
     }
 
-    private suspend fun submissionCodeDiff(submission: SubmissionRecord, repoInfo: CommitInfo,
-                                           base: SubDiffRequest.DiffBase): DiffResponse {
-        val baseRev = base.getBaseRev(submission)
-
-        return when (baseRev) {
-            null -> DiffResponse(listOf())
-            else -> sendJsonableAsync(
-                    Address.Code.Diff,
-                    DiffRequest(
-                            uid = repoInfo.repo.uid,
-                            from = baseRev,
-                            to = submission.revision
-                    )
-            )
-        }
-    }
-
     @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Date)
     suspend fun handleSubmissionCodeDate(message: SubReadRequest): BlameResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
@@ -285,14 +292,17 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         )
 
     }
-    private suspend fun SubDiffRequest.DiffBase.getBaseRev(submission: SubmissionRecord): String? =
+
+    private suspend fun SubDiffRequest.DiffBase.getBaseRev(submission: SubmissionRecord): Code.Submission.RevisionInfo? =
             when (type) {
                 Code.Submission.DiffBaseType.SUBMISSION_ID -> dbFetchAsync(SubmissionRecord().apply {
                     projectId = submission.projectId
                     id = submissionId
-                })?.revision
-                Code.Submission.DiffBaseType.PREVIOUS_CHECKED -> submission.getLatestCheckedRev()
-                Code.Submission.DiffBaseType.PREVIOUS_CLOSED -> submission.getPreviousClosedOrCourseRev()
+                })?.revision?.let {
+                    Code.Submission.RevisionInfo(it)
+                }
+                Code.Submission.DiffBaseType.PREVIOUS_CHECKED -> submission.getPreviousChecked()
+                Code.Submission.DiffBaseType.PREVIOUS_CLOSED -> submission.getPreviousClosed()
                 Code.Submission.DiffBaseType.COURSE_BASE -> submission.getCourseBaseRev()
             }
     private suspend fun SubmissionRecord.getLatestClosedSub(): SubmissionRecord? =
@@ -313,7 +323,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         it.datetime
                     }
                     .firstOrNull()
-    private suspend fun SubmissionRecord.getCourseBaseRev(): String? =
+    private suspend fun SubmissionRecord.getCourseBaseRev(): Code.Submission.RevisionInfo? =
             dbQueryAsync(
                     ComplexDatabaseQuery(ProjectRecord().apply { id = projectId }).join("course")
             )
@@ -321,10 +331,10 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                     .getJsonObject("course")
                     .toRecord<CourseRecord>()
                     .let {
-                        if (it.baseRevision != "") it.baseRevision else null
+                        if (it.baseRevision != "") Code.Submission.RevisionInfo(it.baseRevision) else null
                     }
 
-    private suspend fun SubmissionRecord.getLatestCheckedRev(): String? {
+    private suspend fun SubmissionRecord.getPreviousChecked(): Code.Submission.RevisionInfo? {
         val latestClosed = getLatestClosedSub() // We consider closed as checked here
         val q = "project_id == %s " +
                 (latestClosed?.datetime?.let { "and datetime > %s" } ?: "")
@@ -360,14 +370,18 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
         var current = this
         do {
-            current = byId[current.parentSubmissionId] ?: return latestClosed?.revision
-            val tags = tagsById[current.id] ?: return latestClosed?.revision
-            if (CHECKED in tags) return current.revision
+            current = byId[current.parentSubmissionId] ?: return latestClosed?.let {
+                Code.Submission.RevisionInfo(it)
+            }
+            val tags = tagsById[current.id] ?: return latestClosed?.let {
+                Code.Submission.RevisionInfo(it)
+            }
+            if (CHECKED in tags) return Code.Submission.RevisionInfo(current)
         } while(true)
 
     }
-    private suspend fun SubmissionRecord.getPreviousClosedOrCourseRev(): String? =
-            getLatestClosedSub()?.revision ?: getCourseBaseRev()
+    private suspend fun SubmissionRecord.getPreviousClosed(): Code.Submission.RevisionInfo? =
+            getLatestClosedSub()?.let { Code.Submission.RevisionInfo(it) } ?: getCourseBaseRev()
 
     companion object {
         private const val CHECKED = "checked"

@@ -12,6 +12,7 @@ import java.util.*
 
 import org.jetbrains.research.kotoed.data.buildSystem.BuildCommand
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.util.*
 
 enum class VerificationStatus {
@@ -93,7 +94,19 @@ object Code {
                 }
             }
         }
-        data class DiffResponse(val diff: List<DiffJsonable>, val status: CloneStatus) : Jsonable
+        data class DiffResponse(
+                val diff: List<DiffJsonable>,
+                val status: CloneStatus,
+                val from: RevisionInfo,
+                val to: RevisionInfo) : Jsonable
+
+        data class RevisionInfo(val revision: String, val submissionId: Int? = null): Jsonable {
+            companion object {
+                operator fun invoke(revision: String) = RevisionInfo(revision)
+                operator fun invoke(sub: SubmissionRecord) = RevisionInfo(sub.revision, sub.id)
+
+            }
+        }
 
         enum class DiffBaseType {
             SUBMISSION_ID, PREVIOUS_CLOSED, PREVIOUS_CHECKED, COURSE_BASE

@@ -1,11 +1,9 @@
 import {sleep} from "../../util/common";
 import {EventBusError} from "../../util/vertx";
-import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 import {sendAsync} from "../../views/components/common";
 import {Generated} from "../../util/kotoed-generated";
-import ApiBindingInputs = Generated.ApiBindingInputs;
 
 export type FileType = "file" | "directory"
 
@@ -53,8 +51,14 @@ interface FileResponse extends ResponseWithStatus {
     contents: string
 }
 
+export interface RevisionInfo {
+    revision: string, submissionId?: number
+}
+
 export interface FileDiffResponse extends ResponseWithStatus {
     diff: Array<FileDiffResult>
+    from: RevisionInfo
+    to: RevisionInfo
 }
 
 
@@ -109,15 +113,14 @@ export async function fetchFile(submissionId: number,
 }
 
 export async function fetchDiff(submissionId: number,
-                                base: DiffBase): Promise<Array<FileDiffResult>> {
+                                base: DiffBase): Promise<FileDiffResponse> {
 
-    let res = await repeatTillReady<FileDiffResponse>(() => {
+    return await repeatTillReady<FileDiffResponse>(() => {
         return sendAsync(Kotoed.Address.Api.Submission.Code.Diff, {
             submissionId: submissionId,
             base
         });
     });
-    return res.diff;
 }
 
 export async function waitTillReady(submissionId: number): Promise<void> {

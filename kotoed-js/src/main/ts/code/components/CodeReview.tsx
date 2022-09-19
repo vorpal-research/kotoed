@@ -20,12 +20,13 @@ import AggregatesLabel from "../../views/AggregatesLabel";
 import {FileForms, ReviewForms} from "../state/forms";
 import {ReviewAnnotations} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
-import {DiffBase, DiffBaseType, FileDiffChange, FileDiffResult} from "../remote/code";
+import {DiffBase, DiffBaseType, FileDiffChange, FileDiffResult, RevisionInfo} from "../remote/code";
 
 import "@fortawesome/fontawesome-free/less/fontawesome.less"
 import "@fortawesome/fontawesome-free/less/solid.less"
 import "@fortawesome/fontawesome-free/less/regular.less"
 import {ChangeEvent} from "react";
+import {DiffState} from "../state/diff";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -63,11 +64,7 @@ export interface CodeReviewProps {
         forms: ReviewForms
     }
 
-    diff: {
-        diff: Map<string, FileDiffResult>
-        base: DiffBase
-        loading: boolean
-    }
+    diff: DiffState
 }
 
 interface CodeReviewPropsFromRouting {
@@ -201,46 +198,89 @@ export default class CodeReview extends
 
 
     renderReview = () => {
-        return <div className="row code-review">
-            <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
-                {this.renderFileTreeVeil()}
-                <div className="code-review-tree-container">
-                    <FileTree root={this.props.fileTree.root}
-                              onDirExpand={this.props.fileTree.onDirExpand}
-                              onDirCollapse={this.props.fileTree.onDirCollapse}
-                              onFileSelect={this.props.fileTree.onFileSelect}
-                              loading={this.props.fileTree.loading}
-                              lostFoundAggregate={this.props.lostFound.aggregate}
-                    />
-                    <div className="lost-found-button-container">
-                        <Button bsStyle="warning" className="review-bottom-button" onClick={this.props.lostFound.onSelect}>
-                            Lost + Found {" "}
-                            <AggregatesLabel {...this.props.lostFound.aggregate}/>
-                        </Button>
-                    </div>
-                    <div className="diff-mode-button-container">
-                        <Button
-                            bsStyle="primary"
-                            className="review-bottom-button"
-                            disabled={this.props.diff.loading}
-                            onClick={() => this.setState({
-                                showDiffModal: true,
-                                baseChoice: this.baseToFormState(this.props.diff.base)
-                            })}
-                        >
-                            Settings
-                        </Button>
+        return <div className="code-review-app-rows">
+            <div className="row code-review">
+                <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
+                    {this.renderFileTreeVeil()}
+                    <div className="code-review-tree-container">
+                        <FileTree root={this.props.fileTree.root}
+                                  onDirExpand={this.props.fileTree.onDirExpand}
+                                  onDirCollapse={this.props.fileTree.onDirCollapse}
+                                  onFileSelect={this.props.fileTree.onFileSelect}
+                                  loading={this.props.fileTree.loading}
+                                  lostFoundAggregate={this.props.lostFound.aggregate}
+                        />
+                        <div className="lost-found-button-container">
+                            <Button bsStyle="warning" className="review-bottom-button" onClick={this.props.lostFound.onSelect}>
+                                Lost + Found {" "}
+                                <AggregatesLabel {...this.props.lostFound.aggregate}/>
+                            </Button>
+                        </div>
+                        <div className="diff-mode-button-container">
+                            <Button
+                                bsStyle="primary"
+                                className="review-bottom-button"
+                                disabled={this.props.diff.loading}
+                                onClick={() => this.setState({
+                                    showDiffModal: true,
+                                    baseChoice: this.baseToFormState(this.props.diff.base)
+                                })}
+                            >
+                                Settings
+                            </Button>
+                        </div>
                     </div>
                 </div>
+                <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
+                    {this.renderRightSide()}
+                </div>
+                {this.renderModal()}
             </div>
-            <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
-                {this.renderRightSide()}
-            </div>
-            {this.renderModal()}
+            {this.renderStatusBar()}
         </div>
     };
 
     shouldRenderReview = () => this.props.submission && this.props.submission.verificationData.status === "Processed";
+
+    renderStatusBar = () =>
+        <div className="code-review-status-bar">
+            {this.renderDiffStatus()}
+            <div className="clearfix"></div>
+        </div>
+
+    shrinkRev = (rev: string) => rev.substring(0, 10)
+
+    renderSubLink = (id?: number) => {
+        if (!id) {
+            return undefined;
+        }
+
+        return <span>{" "}(<a href={`/submission/${id}/review/code/${this.props.editor.file}`}>Sub #{id}</a>)</span>
+    }
+
+    renderSubText = (id?: number) => {
+        if (!id) {
+            return undefined;
+        }
+        return ` (Sub #${id})`
+    }
+
+    renderDiffStatus = () => {
+        if (!this.props.diff.from || !this.props.diff.to)
+            return undefined;
+
+        if (this.props.diff.from.revision === this.props.diff.to.revision)
+            return undefined;
+
+        return <div className="pull-right text-muted">
+            {"Showing diff "}
+            {this.shrinkRev(this.props.diff.from.revision)}
+            {this.renderSubLink(this.props.diff.from.submissionId)}
+            {" .. "}
+            {this.shrinkRev(this.props.diff.to.revision)}
+            {this.renderSubText(this.props.diff.to.submissionId)}
+        </div>
+    }
 
     renderModal = () =>
         <Modal show={this.state.showDiffModal} onHide={() => {

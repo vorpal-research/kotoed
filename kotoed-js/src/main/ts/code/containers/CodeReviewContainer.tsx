@@ -61,11 +61,7 @@ const mapStateToProps = function(store: CodeReviewState,
         forms: {
             forms: store.formState
         },
-        diff: {
-            diff: store.diffState.diff,
-            base: store.diffState.base,
-            loading: store.diffState.loading
-        }
+        diff: {...store.diffState}
     }
 };
 

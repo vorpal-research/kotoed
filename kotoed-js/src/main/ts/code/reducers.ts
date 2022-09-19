@@ -9,7 +9,7 @@ import {
     fileSelect,
     rootFetch, commentAggregatesFetch, aggregatesUpdate, capabilitiesFetch, hiddenCommentsExpand,
     expandedResetForFile, expandedResetForLine, commentEdit, fileUnselect, expandedResetForLostFound, commentEmphasize,
-    submissionFetch, annotationsFetch, commentTemplateFetch, fileDiff, diffFetch
+    submissionFetch, annotationsFetch, commentTemplateFetch, diffFetch
 } from "./actions";
 import {
     ADD_DELTA,
@@ -94,7 +94,7 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
         return newState;
     } else if (isType(action, diffFetch.done)) {
         let newState = {...state}
-        newState.root = FileNode(applyDiffToFileTree(state.root, action.payload.result))
+        newState.root = FileNode(applyDiffToFileTree(state.root, action.payload.result.diff))
         return newState;
     } else if (isType(action, commentAggregatesFetch.done)) {
         let newState = {...state};
@@ -156,12 +156,6 @@ export const editorReducer = (state: EditorState = defaultEditorState, action: A
         newState.fileName = action.payload.params.filename;
         newState.loading = false;
         return newState;
-    } else if (isType(action, fileDiff.done)) {
-        let diff = action.payload.result;
-        if (diff === undefined) return state;
-        let newState = {...state};
-        newState.diff = diff.changes;
-        return newState;
     }
     return state;
 };
@@ -188,7 +182,9 @@ export const diffReducer = (state: DiffState = defaultDiffState, action: Action)
         return {
             loading: false,
             base: action.payload.params.diffBase,
-            diff: fileDiffToMap(action.payload.result)
+            diff: fileDiffToMap(action.payload.result.diff),
+            from: action.payload.result.from,
+            to: action.payload.result.to
         }
     } else if (isType(action, diffFetch.started)) {
         return {

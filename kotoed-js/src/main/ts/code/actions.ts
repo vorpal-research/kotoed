@@ -152,8 +152,7 @@ export const submissionFetch = actionCreator.async<SubmissionPayload, DbRecordWr
 // File or dir fetch actions
 export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult & DiffResultPayload, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
-export const fileDiff = actionCreator.async<FilePathPayload & SubmissionPayload, FileDiffResult | undefined, {}>('FILE_DIFF');
-export const diffFetch = actionCreator.async<SubmissionPayload & DiffBasePayload, FileDiffResult[]>('DIFF_FETCH')
+export const diffFetch = actionCreator.async<SubmissionPayload & DiffBasePayload, FileDiffResponse>('DIFF_FETCH')
 
 // Annotation fetch actions
 export const annotationsFetch = actionCreator.async<number, ReviewAnnotations, {}>('ANNOTATION_FETCH');
@@ -268,10 +267,16 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
             },
             result: {
                 root,
-                diff
+                diff: diff.diff
             }
         }))
-
+        dispatch(diffFetch.done({
+            params: {
+                submissionId: payload.submissionId,
+                diffBase: state.diffState.base
+            },
+            result: diff
+        }))
     };
 }
 

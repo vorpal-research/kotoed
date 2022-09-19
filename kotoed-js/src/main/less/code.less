@@ -61,11 +61,16 @@
 }
 
 #code-review-app {
+  display: flex;
+  flex: 1 1 100%;
+}
+
+.code-review-app-rows {
   flex: 1 1 auto;
   min-height: 0px;
   overflow: hidden;
   display: flex;
-  flex-flow: row;
+  flex-flow: column;
 }
 
 .code-review {
@@ -75,6 +80,13 @@
   flex-flow: row;
   border-top: 1px solid #ccc;
 }
+
+.code-review-status-bar {
+  flex: 0 0 1.2em;
+  flex-flow: row;
+  border-top: 1px solid #ccc;
+}
+
 
 #code-review-left {
   display: flex;
