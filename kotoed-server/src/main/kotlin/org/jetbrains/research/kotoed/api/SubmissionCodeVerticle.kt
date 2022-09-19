@@ -295,10 +295,10 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
     private suspend fun SubDiffRequest.DiffBase.getBaseRev(submission: SubmissionRecord): Code.Submission.RevisionInfo? =
             when (type) {
-                Code.Submission.DiffBaseType.SUBMISSION_ID -> dbFetchAsync(SubmissionRecord().apply {
+                Code.Submission.DiffBaseType.SUBMISSION_ID -> dbFindAsync(SubmissionRecord().apply {
                     projectId = submission.projectId
                     id = submissionId
-                })?.revision?.let {
+                }).firstOrNull()?.revision?.let {
                     Code.Submission.RevisionInfo(it)
                 }
                 Code.Submission.DiffBaseType.PREVIOUS_CHECKED -> submission.getPreviousChecked()
