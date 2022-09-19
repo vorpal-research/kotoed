@@ -152,7 +152,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
     // Feel da powa of Kotlin!
     private data class MutableCodeTree(
             private val data: MutableMap<String, MutableCodeTree> = mutableMapOf(),
-            var changed: Boolean = false
     ) : MutableMap<String, MutableCodeTree> by data { // it's over 9000!
 
         private val fileComparator = compareBy<FileRecord> { it.type }.thenBy { it.name }
@@ -162,31 +161,28 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                     FileRecord(
                             type = directory,
                             name = "$name/${children[0].name}",
-                            children = children[0].children,
-                            changed = changed
+                            children = children[0].children
                     )
                 else
                     this
 
         private fun Map.Entry<String, MutableCodeTree>.toFileRecord(): FileRecord =
-                if (value.isEmpty()) FileRecord(type = file, name = key, changed = value.changed)
+                if (value.isEmpty()) FileRecord(type = file, name = key)
                 else FileRecord(
                         type = directory,
                         name = key,
-                        children = value.map { it.toFileRecord() }.sortedWith(fileComparator),
-                        changed = value.changed
+                        children = value.map { it.toFileRecord() }.sortedWith(fileComparator)
                 ).squash()
 
 
         fun toFileRecord() = FileRecord(
                 type = directory,
                 name = "",
-                children = map { it.toFileRecord() }.sortedWith(fileComparator),
-                changed = changed
+                children = map { it.toFileRecord() }.sortedWith(fileComparator)
         )
     }
 
-    private fun buildCodeTree(files: List<String>, changedFiles: List<String>): FileRecord {
+    private fun buildCodeTree(files: List<String>): FileRecord {
         val mutableCodeTree = MutableCodeTree()
 
         // this is not overly efficient, but who cares
@@ -195,16 +191,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             var current = mutableCodeTree
             for (crumb in path) {
                 current = current.computeIfAbsent(crumb) { MutableCodeTree() }
-            }
-        }
-
-        for (file in changedFiles) {
-            val path = file.split('/', '\\')
-            var current = mutableCodeTree
-            for (crumb in path) {
-                current.changed = true
-                current = current[crumb] ?: break // do not mark removed files or "/dev/null"
-                current.changed = true
             }
         }
 
@@ -232,8 +218,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
         return ListResponse(
                 root = buildCodeTree(
-                        innerResp.files,
-                        emptyList()
+                        innerResp.files
                 ),
                 status = repoInfo.cloneStatus
         )
@@ -259,11 +244,9 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                         revision = repoInfo.revision
                 )
         )
-        val diff = submissionCodeDiff(submission, repoInfo, base)
         return ListResponse(
                 root = buildCodeTree(
-                        innerResp.files,
-                        diff.contents.flatMap { listOf(it.fromFile, it.toFile) }
+                        innerResp.files
                 ),
                 status = repoInfo.cloneStatus
         )

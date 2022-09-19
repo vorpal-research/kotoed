@@ -110,8 +110,7 @@ object Code {
     data class FileRecord(
             val type: FileType,
             val name: String,
-            val children: List<FileRecord>? = null,
-            val changed: Boolean = false) : Jsonable {
+            val children: List<FileRecord>? = null) : Jsonable {
         fun toFileSeq(): Sequence<String> =
                 when (type) {
                     FileType.directory ->

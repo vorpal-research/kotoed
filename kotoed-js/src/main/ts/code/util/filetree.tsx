@@ -25,17 +25,12 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
     let id = 0;
     let idGenF = idGen ? idGen : () => {return ++id;};
 
-    let iconType = (file.changed) ? "changed " : "";
-    let nodeClass = (file.changed) ? "pt-tree-node-changed" : "";
-
     let bpNode: FileNodeProps = {
         id: idGenF(),
         isExpanded: false,
         isSelected: false,
         label: file.name,
         hasCaret: file.type === "directory",
-        className: nodeClass,
-        iconName: iconType + (file.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE),
         childNodes: [],
         data: {
             kind: "file",
