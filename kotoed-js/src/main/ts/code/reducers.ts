@@ -95,6 +95,7 @@ export const fileTreeReducer = (state: FileTreeState = initialFileTreeState, act
     } else if (isType(action, diffFetch.done)) {
         let newState = {...state}
         newState.root = FileNode(applyDiffToFileTree(state.root, action.payload.result))
+        return newState;
     } else if (isType(action, commentAggregatesFetch.done)) {
         let newState = {...state};
         newState.root = addAggregates(newState.root, action.payload.result);
