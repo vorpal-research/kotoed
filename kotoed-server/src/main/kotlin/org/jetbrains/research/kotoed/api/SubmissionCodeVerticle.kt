@@ -252,7 +252,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
     suspend fun handleSubmissionCodeList(message: SubListRequest): ListResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         val repoInfo = getCommitInfo(submission)
-        val base = message.diffBase
 
         when (repoInfo.cloneStatus) {
             CloneStatus.pending -> return ListResponse(root = null, status = repoInfo.cloneStatus)
