@@ -2,7 +2,7 @@ import * as React from "react";
 import {render} from "react-dom";
 
 import "less/kotoed-bootstrap/bootstrap.less"
-import {Denizen, WithDenizen} from "../data/denizen";
+import {Denizen, ProfileInfo, WithDenizen} from "../data/denizen";
 import {Kotoed} from "../util/kotoed-api";
 import {eventBus} from "../eventBus";
 import {sendAsync} from "../views/components/common";
@@ -15,15 +15,6 @@ import SocialButton from "../login/components/SocialButton";
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Index, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
 
-interface ProfileInfo {
-    id: number
-    denizenId: string
-    email?: string
-    oauth: [string, string | null][]
-    firstName?: string
-    lastName?: string
-    group?: string
-}
 
 interface ProfileComponentProps extends LoadingProperty {
     denizen?: ProfileInfo

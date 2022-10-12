@@ -16,7 +16,7 @@ import {
     File,
     FileDiffResponse,
     FileDiffResult,
-    FileType
+    FileType, updateDiffPreference
 } from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
@@ -126,6 +126,10 @@ interface FormLockUnlockPayload {
 
 interface DiffBasePayload {
     diffBase: DiffBase
+}
+
+interface PersistPayload {
+    persist: boolean
 }
 
 interface DiffResultPayload {
@@ -368,9 +372,16 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
     }
 }
 
-export function updateDiff(payload: SubmissionPayload & DiffBasePayload) {
+export function updateDiff(payload: SubmissionPayload & DiffBasePayload & PersistPayload) {
     return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         dispatch(diffFetch.started(payload))
+
+        const state = getState();
+        const patchedType = payload.diffBase.type == "SUBMISSION_ID" ? "PREVIOUS_CLOSED" : payload.diffBase.type;
+
+        if (payload.persist) {
+            updateDiffPreference(state.capabilitiesState.capabilities.principal, patchedType)
+        }
 
         const diff = await fetchDiff(payload.submissionId, payload.diffBase);
 

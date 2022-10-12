@@ -10,6 +10,7 @@ import org.jetbrains.research.kotoed.data.db.textSearch
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.Tables.DENIZEN_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.Tables.PROFILE
+import org.jetbrains.research.kotoed.database.enums.DiffModePreference
 import org.jetbrains.research.kotoed.database.tables.records.DenizenRecord
 import org.jetbrains.research.kotoed.database.tables.records.OauthProfileRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProfileRecord
@@ -51,7 +52,8 @@ class DenizenVerticle: AbstractKotoedVerticle() {
                 firstName = profile?.firstName,
                 lastName = profile?.lastName,
                 group = profile?.groupId,
-                emailNotifications = profile?.emailNotifications ?: false
+                emailNotifications = profile?.emailNotifications ?: false,
+                diffModePreference = profile?.diffModePreference ?: DiffModePreference.PREVIOUS_CLOSED
         )
     }
 
@@ -70,10 +72,11 @@ class DenizenVerticle: AbstractKotoedVerticle() {
             update.firstName?.let { firstName = it }
             update.lastName?.let { lastName = it }
             update.group?.let { groupId = it }
-            update.emailNotifications.let { emailNotifications = it }
+            update.emailNotifications?.let { emailNotifications = it }
+            update.diffModePreference?.let { diffModePreference = it }
         }
 
-        if(profile != null) {
+        if (profile != null) {
             dbUpdateAsync(newProf.apply{ id = profile.id})
         } else {
             dbCreateAsync(newProf)

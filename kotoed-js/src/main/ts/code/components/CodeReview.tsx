@@ -1,5 +1,16 @@
 import * as React from "react";
-import {Button, Panel, Label, Modal, Form, FormGroup, ControlLabel, FormControl, Radio} from "react-bootstrap";
+import {
+    Button,
+    Panel,
+    Label,
+    Modal,
+    Form,
+    FormGroup,
+    ControlLabel,
+    FormControl,
+    Radio,
+    SplitButton, MenuItem
+} from "react-bootstrap";
 
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
@@ -27,6 +38,7 @@ import "@fortawesome/fontawesome-free/less/solid.less"
 import "@fortawesome/fontawesome-free/less/regular.less"
 import {ChangeEvent} from "react";
 import {DiffState} from "../state/diff";
+import {Profile} from "../../data/denizen";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -99,7 +111,7 @@ export interface CodeReviewCallbacks {
     }
 
     diff: {
-        onChangeDiffBase: (submissionId: number, diffBase: DiffBase) => void
+        onChangeDiffBase: (submissionId: number, diffBase: DiffBase, persist: boolean) => void
     }
 }
 
@@ -293,7 +305,7 @@ export default class CodeReview extends
                 <Modal.Title>Settings</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <FormGroup controlId="project-repo-type" >
+                <FormGroup controlId="diff-base" >
                     <ControlLabel>Diff base</ControlLabel>
                     <Radio
                         name="diff-base"
@@ -369,26 +381,32 @@ export default class CodeReview extends
                 </FormGroup>}
             </Modal.Body>
             <Modal.Footer>
-                <Button
+                <SplitButton
+                    id="apply-diff-preference-dropdown"
+                    title="Apply"
                     bsStyle="success"
                     disabled={this.state.baseChoice.type == "SUBMISSION_ID" &&
                         isNaN(parseInt(this.state.baseChoice.submissionId || ""))}
-                    onClick={() => {
-                        this.props.diff.onChangeDiffBase(
-                            this.props.submission!!.record.id, {
-                                type: this.state.baseChoice.type,
-                                submissionId: this.state.baseChoice.type == "SUBMISSION_ID" ?
-                                    parseInt(this.state.baseChoice.submissionId || "0") :
-                                    undefined
-                            })
-                        this.setState({
-                            showDiffModal: false
-                        })
-                    }}>
-                    Apply
-                </Button>
+                    onClick={() => this.applyDiffPreference(false)}>
+                    <MenuItem eventKey="apply-and-save"
+                              disabled={this.state.baseChoice.type == "SUBMISSION_ID"}
+                              onClick={() => this.applyDiffPreference(true)}>Apply and save</MenuItem>
+                </SplitButton>
             </Modal.Footer>
         </Modal>
+
+    applyDiffPreference = (persist: boolean) => {
+        this.props.diff.onChangeDiffBase(
+            this.props.submission!!.record.id, {
+                type: this.state.baseChoice.type,
+                submissionId: this.state.baseChoice.type == "SUBMISSION_ID" ?
+                    parseInt(this.state.baseChoice.submissionId || "0") :
+                    undefined
+            }, persist)
+        this.setState({
+            showDiffModal: false
+        })
+    }
 
     render() {
         if (!this.props.submission) {

@@ -335,6 +335,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                     }
 
     private suspend fun SubmissionRecord.getPreviousChecked(): Code.Submission.RevisionInfo? {
+        this.
         val latestClosed = getLatestClosedSub() // We consider closed as checked here
         val q = "project_id == %s " +
                 (latestClosed?.datetime?.let { "and datetime > %s" } ?: "")

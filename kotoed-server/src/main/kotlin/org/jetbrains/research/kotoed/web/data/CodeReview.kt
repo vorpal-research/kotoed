@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.util.Jsonable
 
 object Permissions {
-    data class Root(val createCourse: Boolean = false): Jsonable
+    data class Root(val createCourse: Boolean = false, val tags: Boolean = false): Jsonable
     data class Course(val createProject: Boolean = false,
                       val editCourse: Boolean = false,
                       val viewTags: Boolean = false): Jsonable

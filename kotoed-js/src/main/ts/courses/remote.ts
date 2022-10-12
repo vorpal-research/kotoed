@@ -7,8 +7,9 @@ import {WithId} from "../data/common";
 import {DbRecordWrapper} from "../data/verification";
 import {CourseToRead} from "../data/course";
 
-interface RootPermissions {
-    createCourse: boolean
+export interface RootPermissions {
+    createCourse: boolean,
+    tags: boolean
 }
 
 export async function fetchPermissions(): Promise<RootPermissions> {

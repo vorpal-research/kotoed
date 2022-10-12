@@ -15,6 +15,8 @@ import {fallThroughErrorHandler} from "../eventBus";
 import {PasswordErrors, PasswordInput} from "../views/components/PasswordInput";
 import {pick, typedKeys} from "../util/common";
 import * as _ from "lodash";
+import {fetchPermissions, RootPermissions} from "../courses/remote";
+import {DiffModePreference} from "../data/denizen";
 
 let params = Kotoed.UrlPattern.tryResolve(Kotoed.UrlPattern.Profile.Edit, window.location.pathname) || new Map();
 let userId = parseInt(params.get("id")) || -1;
@@ -28,6 +30,7 @@ interface EditableProfileInfo {
     lastName?: string
     group?: string
     emailNotifications: boolean
+    diffModePreference: DiffModePreference
 }
 
 interface EditablePasswordInfo {
@@ -38,6 +41,7 @@ interface EditablePasswordInfo {
 
 interface ProfileComponentProps {
     denizen: EditableProfileInfo
+    permissions: RootPermissions
 }
 
 let noErrors = { badEmail: false, passwordsDontMatch: false, emptyPassword: false, incorrectPassword: false };
@@ -121,6 +125,10 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         this.setDenizen({ [key]: e.target.checked } as Pick<EditableProfileInfo, K>)
     };
 
+    bindRadio = <K extends keyof EditableProfileInfo>(key: K) => (e: ChangeEvent<HTMLInputElement>) => {
+        this.setDenizen({ [key]: e.target.value } as Pick<EditableProfileInfo, K>)
+    };
+
     onEmailChanged = (e: ChangeEvent<HTMLInputElement>) => {
         this.unsetError("badEmail");
         if(e.target.value && !e.target.checkValidity()) this.setError("badEmail");
@@ -200,6 +208,57 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
         </div>;
     };
 
+    renderDiffPreference = () => {
+        return <div className="form-group">
+            <label htmlFor="diff-mode-preference" className="col-sm-2 control-label">Preferred diff mode</label>
+            <div className="col-sm-10">
+                <div className="radio">
+                    <label htmlFor="input-diff-mode-course-base">
+                        <input
+                            id={`input-diff-mode-course-base`}
+                            type="radio"
+                            name="diff-mode"
+                            value="COURSE_BASE"
+                            checked={this.props.denizen.diffModePreference == "COURSE_BASE"}
+                            onChange={this.bindRadio("diffModePreference")}
+                            defaultChecked={this.state.denizen.emailNotifications}
+                        />
+                        Course base revision
+                    </label>
+                </div>
+                <div className="radio">
+                    <label htmlFor="input-diff-mode-previous-closed">
+                        <input
+                            id={`input-diff-mode-previous-closed`}
+                            type="radio"
+                            name="diff-mode"
+                            value="PREVIOUS_CLOSED"
+                            checked={this.props.denizen.diffModePreference == "PREVIOUS_CLOSED" ||
+                                !this.props.permissions.tags && this.props.denizen.diffModePreference == "PREVIOUS_CHECKED" }
+                            onChange={this.bindRadio("diffModePreference")}
+                            defaultChecked={this.state.denizen.emailNotifications}
+                        />
+                        Latest closed submission
+                    </label>
+                </div>
+                {this.props.permissions.tags && <div className="radio">
+                    <label htmlFor="input-diff-mode-previous-checked">
+                        <input
+                            id={`input-diff-mode-previous-checked`}
+                            type="radio"
+                            name="diff-mode"
+                            value="PREVIOUS_CHECKED"
+                            checked={this.props.denizen.diffModePreference == "PREVIOUS_CHECKED"}
+                            onChange={this.bindRadio("diffModePreference")}
+                            defaultChecked={this.state.denizen.emailNotifications}
+                        />
+                        Latest checked submission
+                    </label>
+                </div>}
+            </div>
+        </div>;
+    };
+
     renderBody = () => {
         return <div className="panel">
             <div className="panel-heading">
@@ -220,6 +279,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                     { this.mkInputFor("First name", "firstName") }
                     { this.mkInputFor("Last name", "lastName") }
                     { this.mkInputFor("Group #", "group") }
+                    { this.renderDiffPreference() }
                     <div className="form-group">
                         <div className="col-sm-offset-2 col-sm-10">
                             <a className="btn btn-default" onClick={this.onSave}>Save</a>
@@ -267,6 +327,7 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
 
 interface ProfileWrapperState {
     denizen?: EditableProfileInfo
+    permissions?: RootPermissions
 }
 
 class ProfileWrapper extends React.Component<{}, ProfileWrapperState> {
@@ -276,9 +337,10 @@ class ProfileWrapper extends React.Component<{}, ProfileWrapperState> {
     }
 
     loadDenizen = async () => {
-        let profile =
+        let denizen =
             await sendAsync(Kotoed.Address.Api.Denizen.Profile.Read, {id: userId});
-        this.setState({denizen: profile})
+        let permissions = await fetchPermissions();
+        this.setState({denizen, permissions})
     };
 
     componentDidMount() {
@@ -286,8 +348,8 @@ class ProfileWrapper extends React.Component<{}, ProfileWrapperState> {
     }
 
     render() {
-        return this.state.denizen ?
-            <ProfileComponent denizen={this.state.denizen}/> : <SpinnerWithVeil/>;
+        return this.state.denizen && this.state.permissions ?
+            <ProfileComponent denizen={this.state.denizen} permissions={this.state.permissions}/> : <SpinnerWithVeil/>;
     }
 }
 

@@ -174,10 +174,11 @@ const mapDispatchToProps = function (dispatch: Dispatch<CodeReviewState>,
         },
 
         diff: {
-            onChangeDiffBase: (submissionId, diffBase) => {
+            onChangeDiffBase: (submissionId, diffBase, persist) => {
                 dispatch(updateDiff({
                     diffBase,
-                    submissionId
+                    submissionId,
+                    persist
                 }))
             }
         },

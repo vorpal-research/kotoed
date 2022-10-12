@@ -11,6 +11,7 @@ import org.jooq.Record
 import java.util.*
 
 import org.jetbrains.research.kotoed.data.buildSystem.BuildCommand
+import org.jetbrains.research.kotoed.database.enums.DiffModePreference
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.util.*
@@ -219,7 +220,8 @@ data class ProfileInfo(
         val firstName: String?,
         val lastName: String?,
         val group: String?,
-        val emailNotifications: Boolean
+        val emailNotifications: Boolean,
+        val diffModePreference: DiffModePreference
 ) : Jsonable
 
 data class PasswordChangeRequest(
@@ -237,7 +239,8 @@ data class ProfileInfoUpdate(
         val firstName: String?,
         val lastName: String?,
         val group: String?,
-        val emailNotifications: Boolean
+        val emailNotifications: Boolean?,
+        val diffModePreference: DiffModePreference?
 ) : Jsonable
 
 enum class SubmissionCodeAnnotationSeverity { error, warning }

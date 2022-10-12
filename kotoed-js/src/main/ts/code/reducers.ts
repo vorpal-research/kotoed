@@ -28,6 +28,7 @@ import {CommentTemplateState} from "./state/templates";
 import {CommentTemplates} from "./remote/templates";
 import {DiffBase, fetchDiff, FileDiffResult} from "./remote/code";
 import {DiffState} from "./state/diff";
+import {DiffModePreference} from "../data/denizen";
 
 const initialFileTreeState: FileTreeState = {
     root: FileNode({
@@ -197,6 +198,22 @@ export const diffReducer = (state: DiffState = defaultDiffState, action: Action)
             loading: false,
             base: state.base,
             diff: fileDiffToMap(action.payload.result.diff)
+        }
+    } else if (isType(action, capabilitiesFetch.done)) {
+        let diffModePreference: DiffModePreference
+
+        if (!action.payload.result.permissions.tags &&
+            action.payload.result.profile.diffModePreference == "PREVIOUS_CHECKED") {
+            diffModePreference = "PREVIOUS_CLOSED"
+        } else {
+            diffModePreference = action.payload.result.profile.diffModePreference;
+        }
+
+        return {
+            ...state,
+            base: {
+                type: diffModePreference
+            }
         }
     }
     return state
@@ -373,9 +390,16 @@ export const defaultCapabilitiesState: CapabilitiesState = {
             clean: false,
             tags: false,
             klones: false
+        },
+        profile: {
+            id: 0,
+            denizenId: "???",
+            diffModePreference: "PREVIOUS_CLOSED",
+            oauth: []
         }
     },
     loading: true,
+
 };
 
 export const capabilitiesReducer = (state: CapabilitiesState = defaultCapabilitiesState, action: Action) => {

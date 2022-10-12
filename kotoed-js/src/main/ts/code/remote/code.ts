@@ -4,6 +4,8 @@ import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 import {sendAsync} from "../../views/components/common";
 import {Generated} from "../../util/kotoed-generated";
+import {DenizenPrincipal, DiffModePreference} from "../../data/denizen";
+import Address = Kotoed.Address;
 
 export type FileType = "file" | "directory"
 
@@ -129,4 +131,13 @@ export async function waitTillReady(submissionId: number): Promise<void> {
             submissionId: submissionId,
         })
     });
+}
+
+export async function updateDiffPreference(principal: DenizenPrincipal, preference: DiffModePreference) {
+    return await sendAsync(Address.Api.Denizen.Profile.Update, {
+        id: principal.id,
+        denizenId: principal.denizenId,
+        diffModePreference: preference
+    });
+
 }
