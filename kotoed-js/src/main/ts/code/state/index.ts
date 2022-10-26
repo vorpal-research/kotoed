@@ -8,6 +8,9 @@ import {SubmissionState} from "./submission";
 import {ReviewForms} from "./forms";
 import {CodeAnnotationsState} from "./annotations";
 import {CommentTemplateState} from "./templates";
+import {DiffBase, FileDiffResult} from "../remote/code";
+import {Map} from "immutable"
+import {DiffState} from "./diff";
 
 export interface CodeReviewState {
     fileTreeState: FileTreeState
@@ -18,6 +21,7 @@ export interface CodeReviewState {
     capabilitiesState: CapabilitiesState
     submissionState: SubmissionState
     formState: ReviewForms
+    diffState: DiffState
 }
 
 export interface ScrollTo {

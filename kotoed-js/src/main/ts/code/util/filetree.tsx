@@ -1,6 +1,6 @@
 import * as React from "react"
 import {Button, Panel, Label, OverlayTrigger, Tooltip} from "react-bootstrap";
-import {File} from "../remote/code";
+import {File, FileDiffResult} from "../remote/code";
 import {IconClasses, Intent, Spinner} from "@blueprintjs/core";
 import {CommentAggregate, CommentAggregates} from "../remote/comments";
 import {FileNode, FileNodeProps, FileTreeProps, LoadingNode} from "../state/filetree";
@@ -8,6 +8,8 @@ import {NodePath} from "../state/blueprintTree";
 import {FileNotFoundError} from "../errors";
 import {ICON} from "@blueprintjs/core/dist/common/classes";
 import AggregatesLabel from "../../views/AggregatesLabel";
+import * as _ from "lodash";
+import {Set} from "immutable"
 
 export function makeLoadingNode(idGen: (() => number)): LoadingNode {
     return {
@@ -23,17 +25,12 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
     let id = 0;
     let idGenF = idGen ? idGen : () => {return ++id;};
 
-    let iconType = (file.changed) ? "changed " : "";
-    let nodeClass = (file.changed) ? "pt-tree-node-changed" : "";
-
     let bpNode: FileNodeProps = {
         id: idGenF(),
         isExpanded: false,
         isSelected: false,
         label: file.name,
         hasCaret: file.type === "directory",
-        className: nodeClass,
-        iconName: iconType + (file.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE),
         childNodes: [],
         data: {
             kind: "file",
@@ -52,6 +49,38 @@ export function makeFileTreeProps(file: File, idGen: (() => number)|null = null)
         });
     }
     return bpNode;
+}
+
+export function changedFilesAndDirs(diff: Array<FileDiffResult>): Set<string> {
+    return Set<string>().withMutations(mutable => {
+        for (const diffItem of diff) {
+            const fileNameChunks = diffItem.toFile.split("/")
+            for (let i = 0; i < fileNameChunks.length; i++) {
+                mutable.add(fileNameChunks.slice(0, i + 1).join("/"));
+            }
+        }
+    });
+}
+
+function applyDiffToFileTreeHelper(props: FileNodeProps, changedFiles: Set<String>, basePath: string|null = null) {
+    const isChanged = basePath ? changedFiles.contains(basePath) : false;
+    const iconType = isChanged ? "changed " : "";
+    const nodeClass = isChanged ? "pt-tree-node-changed" : ""
+
+    props.className = nodeClass;
+    props.iconName = iconType + (props.data.type == "file" ? IconClasses.DOCUMENT : IconClasses.FOLDER_CLOSE);
+
+    if (props.childNodes) {
+        for (const child of props.childNodes) {
+            applyDiffToFileTreeHelper(child, changedFiles,
+                basePath ? basePath + "/" + child.data.filename : child.data.filename)
+        }
+    }
+    return props;
+}
+
+export function applyDiffToFileTree(props: FileNodeProps, diff: Array<FileDiffResult>, clone: boolean = true) {
+    return applyDiffToFileTreeHelper(clone ? _.cloneDeep(props) : props, changedFilesAndDirs(diff))
 }
 
 export function makeFileNode(file: File) {

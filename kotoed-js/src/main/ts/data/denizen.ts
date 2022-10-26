@@ -28,3 +28,17 @@ export interface BloatDenizen extends Denizen, WithProfiles {}
 export interface WithBloatDenizen {
     denizen: BloatDenizen
 }
+
+export type DiffModePreference = 'PREVIOUS_CLOSED' | 'PREVIOUS_CHECKED' | 'COURSE_BASE'
+
+
+export interface ProfileInfo {
+    id: number
+    denizenId: string
+    email?: string
+    oauth: [string, string | null][]
+    firstName?: string
+    lastName?: string
+    group?: string,
+    diffModePreference: DiffModePreference
+}

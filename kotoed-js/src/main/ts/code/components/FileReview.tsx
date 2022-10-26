@@ -346,6 +346,12 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         })
     }
 
+    resetDiffRender = () => {
+        for (let i = 0; i < this.editor.lineCount(); i++) {
+            this.editor.removeLineClass(toCmLine(i), "background", "mark-line-changed");
+        }
+    }
+
     renderDiffChange = (change: FileDiffChange) => {
         let lineNumber = change.to.start;
         for (const lineChange of change.lines) {
@@ -493,6 +499,11 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
         }
         if (oldProps.scrollTo.line !== this.props.scrollTo.line || oldProps.scrollTo.commentId !== this.props.scrollTo.commentId)
             this.scrollToLine();
+        if (oldProps.diff != this.props.diff) {
+            this.resetDiffRender();
+            this.renderDiff();
+        }
+
     }
 
     componentWillUnmount () {
@@ -509,7 +520,6 @@ export default class FileReview extends ComponentWithLoading<FileReviewProps, Fi
     }
 
     render() {
-        this.renderDiff();
         return (
             <div className="codemirror-with-veil">
                 <div className="codemirror-abs">

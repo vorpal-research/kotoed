@@ -38,6 +38,13 @@ fun ProjectOwnerOrTeacherForFilter(vertx: Vertx, path: String = "project_id"): B
 fun SubmissionOwnerOrTeacher(vertx: Vertx, path: String = "submission_id"): BridgeEventFilter =
         ShouldBeSubmissionOwner(vertx, path) or AuthorityRequired(Authority.Teacher)
 
+fun DiffFilter(vertx: Vertx): BridgeEventFilter {
+    val shouldBeTeacher = AuthorityRequired(Authority.Teacher)
+    val ownerWithCondition = ShouldBeSubmissionOwner(vertx) and ShouldNotRequestLastChecked(vertx)
+    val subShouldBeReady = SubmissionReady(vertx)
+    return (shouldBeTeacher or ownerWithCondition) and subShouldBeReady
+}
+
 fun SubmissionOwnerOrTeacherForFilter(vertx: Vertx, path: String = "submission_id"): BridgeEventFilter =
         ShouldBeSubmissionOwnerForFilter(vertx, path) or AuthorityRequired(Authority.Teacher)
 
@@ -97,8 +104,7 @@ fun kotoedPerAddressFilter(vertx: Vertx): PerAddress {
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
             Address.Api.Submission.Code.Read to
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
-            Address.Api.Submission.Code.Diff to
-                    (SubmissionOwnerOrTeacher(vertx) and SubmissionReady(vertx)),
+            Address.Api.Submission.Code.Diff to DiffFilter(vertx),
 
             Address.Api.Submission.Comment.Create to
                     (SubmissionOwnerOrTeacher(vertx) and SubmissionOpen(vertx)),

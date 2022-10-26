@@ -7,15 +7,14 @@ import org.jetbrains.research.kotoed.data.vcs.CloneStatus
 import org.jetbrains.research.kotoed.database.enums.SubmissionCommentState
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionCommentRecord
 import org.jetbrains.research.kotoed.database.tables.records.TagRecord
-import org.jetbrains.research.kotoed.util.database.toJson
 import org.jooq.Record
 import java.util.*
 
 import org.jetbrains.research.kotoed.data.buildSystem.BuildCommand
+import org.jetbrains.research.kotoed.database.enums.DiffModePreference
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
+import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
 import org.jetbrains.research.kotoed.util.*
-import ru.spbstu.ktuples.Tuple
-import ru.spbstu.ktuples.Tuple2
 
 enum class VerificationStatus {
     Unknown,
@@ -89,8 +88,30 @@ object Code {
                 val toLine: Int? = null) : Jsonable
         data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
         data class ListRequest(val submissionId: Int) : Jsonable
-        data class DiffRequest(val submissionId: Int) : Jsonable
-        data class DiffResponse(val diff: List<DiffJsonable>, val status: CloneStatus) : Jsonable
+        data class DiffRequest(val submissionId: Int, val base: DiffBase) : Jsonable {
+            class DiffBase(val type: DiffBaseType, val submissionId: Int? = null) : Jsonable {
+                init {
+                    require((type == DiffBaseType.SUBMISSION_ID) == (submissionId != null))
+                }
+            }
+        }
+        data class DiffResponse(
+                val diff: List<DiffJsonable>,
+                val status: CloneStatus,
+                val from: RevisionInfo,
+                val to: RevisionInfo) : Jsonable
+
+        data class RevisionInfo(val revision: String, val submissionId: Int? = null): Jsonable {
+            companion object {
+                operator fun invoke(revision: String) = RevisionInfo(revision)
+                operator fun invoke(sub: SubmissionRecord) = RevisionInfo(sub.revision, sub.id)
+
+            }
+        }
+
+        enum class DiffBaseType {
+            SUBMISSION_ID, PREVIOUS_CLOSED, PREVIOUS_CHECKED, COURSE_BASE
+        }
     }
 
     object Course {
@@ -103,8 +124,7 @@ object Code {
     data class FileRecord(
             val type: FileType,
             val name: String,
-            val children: List<FileRecord>? = null,
-            val changed: Boolean = false) : Jsonable {
+            val children: List<FileRecord>? = null) : Jsonable {
         fun toFileSeq(): Sequence<String> =
                 when (type) {
                     FileType.directory ->
@@ -200,7 +220,8 @@ data class ProfileInfo(
         val firstName: String?,
         val lastName: String?,
         val group: String?,
-        val emailNotifications: Boolean
+        val emailNotifications: Boolean,
+        val diffModePreference: DiffModePreference
 ) : Jsonable
 
 data class PasswordChangeRequest(
@@ -218,7 +239,8 @@ data class ProfileInfoUpdate(
         val firstName: String?,
         val lastName: String?,
         val group: String?,
-        val emailNotifications: Boolean
+        val emailNotifications: Boolean?,
+        val diffModePreference: DiffModePreference?
 ) : Jsonable
 
 enum class SubmissionCodeAnnotationSeverity { error, warning }

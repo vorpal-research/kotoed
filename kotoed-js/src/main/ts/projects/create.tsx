@@ -23,7 +23,6 @@ interface ProjectCreateState {
     showModal: boolean
     remoteError?: string
     name: string
-    repoType: string
     repoUrl: string
 }
 
@@ -35,7 +34,6 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
         this.state = {
             showModal: false,
             name: "",
-            repoType: "git",
             repoUrl: "",
             localErrors: {
                 emptyName: false,
@@ -70,7 +68,6 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
         this.setState({
             name: "",
             repoUrl: "",
-            repoType: "git",
             showModal: false
         });
     };
@@ -104,7 +101,7 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
         try {
             await sendAsync(Kotoed.Address.Api.Project.Create, {
                 name: this.state.name,
-                repoType: this.state.repoType,
+                repoType: "git",
                 repoUrl: this.state.repoUrl,
                 courseId: this.props.courseId
             });
@@ -122,11 +119,6 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
         }
     };
 
-    handleRepoTypeChange = (changeEvent: ChangeEvent<any>) => {
-        this.setState({
-            repoType: changeEvent.target.value as string
-        });
-    };
 
     handleEnter = (event: KeyboardEvent<FormControl>) => event.key === "Enter" && this.handleSubmit();
 
@@ -157,25 +149,6 @@ export class ProjectCreate extends ComponentWithLocalErrors<ProjectCreateProps, 
                                 onKeyPress={this.handleEnter}
                             />
                             <FormControl.Feedback/>
-                        </FormGroup>
-                        <FormGroup controlId="project-repo-type">
-                            <ControlLabel>Repo type</ControlLabel>
-                            <Radio
-                                name="repo-type"
-                                value="git"
-                                checked={this.state.repoType === "git"}
-                                onChange={this.handleRepoTypeChange}>
-                                Git
-                            </Radio>
-                            {" "}
-                            <Radio
-                                name="repo-type"
-                                value="mercurial"
-                                checked={this.state.repoType === "mercurial"}
-                                onChange={this.handleRepoTypeChange}
-                                disabled={true}>
-                                Mercurial
-                            </Radio>
                         </FormGroup>
                         <FormGroup
                             controlId="repo-url"

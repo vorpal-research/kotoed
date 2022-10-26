@@ -1,12 +1,23 @@
 import * as React from "react";
-import {Button, Panel, Label} from "react-bootstrap";
+import {
+    Button,
+    Panel,
+    Label,
+    Modal,
+    Form,
+    FormGroup,
+    ControlLabel,
+    FormControl,
+    Radio,
+    SplitButton, MenuItem
+} from "react-bootstrap";
 
 import FileReview from "./FileReview";
 import FileTree from "./FileTree";
 import {Comment, FileComments, LostFoundComments as LostFoundCommentsState} from "../state/comments";
 import {NodePath} from "../state/blueprintTree";
 import {FileNode} from "../state/filetree";
-import {List} from "immutable";
+import {List, Map} from "immutable";
 import {LostFoundComments} from "./LostFoundComments";
 import {CommentAggregate} from "../remote/comments";
 import {UNKNOWN_FILE, UNKNOWN_LINE} from "../remote/constants";
@@ -20,7 +31,14 @@ import AggregatesLabel from "../../views/AggregatesLabel";
 import {FileForms, ReviewForms} from "../state/forms";
 import {ReviewAnnotations} from "../state/annotations";
 import {CommentTemplates} from "../remote/templates";
-import {FileDiffChange} from "../remote/code";
+import {DiffBase, DiffBaseType, FileDiffChange, FileDiffResult, RevisionInfo} from "../remote/code";
+
+import "@fortawesome/fontawesome-free/less/fontawesome.less"
+import "@fortawesome/fontawesome-free/less/solid.less"
+import "@fortawesome/fontawesome-free/less/regular.less"
+import {ChangeEvent} from "react";
+import {DiffState} from "../state/diff";
+import {Profile} from "../../data/denizen";
 
 export interface CodeReviewProps {
     submissionId: number
@@ -34,7 +52,6 @@ export interface CodeReviewProps {
         value: string
         file: string
         comments: FileComments
-        diff: Array<FileDiffChange>
     }
 
     fileTree: {
@@ -51,12 +68,15 @@ export interface CodeReviewProps {
 
     capabilities: {
         canPostComment: boolean
+        canViewTags: boolean
         whoAmI: string
     }
 
     forms: {
         forms: ReviewForms
     }
+
+    diff: DiffState
 }
 
 interface CodeReviewPropsFromRouting {
@@ -89,16 +109,54 @@ export interface CodeReviewCallbacks {
     lostFound: {
         onSelect: () => void
     }
+
+    diff: {
+        onChangeDiffBase: (submissionId: number, diffBase: DiffBase, persist: boolean) => void
+    }
 }
 
 export type CodeReviewPropsAndCallbacks = CodeReviewProps & CodeReviewCallbacks
 
-export default class CodeReview extends React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting> {
+interface CodeReviewState {
+    showDiffModal: boolean
+    baseChoice: {
+        type: DiffBaseType
+        submissionId: string|null
+    }
+}
+
+export default class CodeReview extends
+    React.Component<CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting, CodeReviewState> {
+
+    constructor(props: CodeReviewPropsAndCallbacks & CodeReviewPropsFromRouting, context: any) {
+        super(props, context);
+        this.state = {
+            showDiffModal: false,
+            baseChoice: this.baseToFormState(props.diff.base)
+        }
+    }
+
+
+    private baseToFormState(base: DiffBase) {
+        return {
+            type: base.type,
+            submissionId: base.submissionId && base.submissionId.toString() || null
+        }
+    }
 
     makeOriginalLinkOrUndefined = (comment: BaseCommentToRead) => {
         if (this.props.comments.makeOriginalLink && comment.submissionId !== this.props.submissionId)
             return this.props.comments.makeOriginalLink(comment)
     };
+
+    getDiffForEditor = () => {
+        const fileDiff = this.props.diff.diff.get(this.props.editor.file);
+        if (!fileDiff) {
+            return []
+        }
+
+        return fileDiff.changes;
+    }
 
     renderRightSide = () => {
         switch (this.props.show) {
@@ -118,7 +176,7 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
                 if (this.props.editor.file !== "")
                     return <FileReview canPostComment={this.props.capabilities.canPostComment}
                                        value={this.props.editor.value}
-                                       diff={this.props.editor.diff}
+                                       diff={this.getDiffForEditor()}
                                        height="100%"
                                        comments={this.props.editor.comments}
                                        filePath={this.props.editor.file}
@@ -152,33 +210,203 @@ export default class CodeReview extends React.Component<CodeReviewPropsAndCallba
 
 
     renderReview = () => {
-        return <div className="row code-review">
-            <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
-                {this.renderFileTreeVeil()}
-                <div className="code-review-tree-container">
-                    <FileTree root={this.props.fileTree.root}
-                              onDirExpand={this.props.fileTree.onDirExpand}
-                              onDirCollapse={this.props.fileTree.onDirCollapse}
-                              onFileSelect={this.props.fileTree.onFileSelect}
-                              loading={this.props.fileTree.loading}
-                              lostFoundAggregate={this.props.lostFound.aggregate}
-                    />
-                    <div className="lost-found-button-container">
-                        <Button bsStyle="warning" className="lost-found-button" onClick={this.props.lostFound.onSelect}>
-                            Lost + Found {" "}
-                            <AggregatesLabel {...this.props.lostFound.aggregate}/>
-                        </Button>
+        return <div className="code-review-app-rows">
+            <div className="row code-review">
+                <div className="col-xs-4 col-sm-3 col-md-3 col-lg-2 col-xl-2" id="code-review-left">
+                    {this.renderFileTreeVeil()}
+                    <div className="code-review-tree-container">
+                        <FileTree root={this.props.fileTree.root}
+                                  onDirExpand={this.props.fileTree.onDirExpand}
+                                  onDirCollapse={this.props.fileTree.onDirCollapse}
+                                  onFileSelect={this.props.fileTree.onFileSelect}
+                                  loading={this.props.fileTree.loading}
+                                  lostFoundAggregate={this.props.lostFound.aggregate}
+                        />
+                        <div className="lost-found-button-container">
+                            <Button bsStyle="warning" className="review-bottom-button" onClick={this.props.lostFound.onSelect}>
+                                Lost + Found {" "}
+                                <AggregatesLabel {...this.props.lostFound.aggregate}/>
+                            </Button>
+                        </div>
+                        <div className="diff-mode-button-container">
+                            <Button
+                                bsStyle="primary"
+                                className="review-bottom-button"
+                                disabled={this.props.diff.loading}
+                                onClick={() => this.setState({
+                                    showDiffModal: true,
+                                    baseChoice: this.baseToFormState(this.props.diff.base)
+                                })}
+                            >
+                                Settings
+                            </Button>
+                        </div>
                     </div>
                 </div>
+                <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
+                    {this.renderRightSide()}
+                </div>
+                {this.renderModal()}
             </div>
-            <div className="col-xs-8 col-sm-9 col-md-9 col-lg-10 col-xl-10" id="code-review-right">
-                {this.renderRightSide()}
-            </div>
+            {this.renderStatusBar()}
         </div>
     };
 
     shouldRenderReview = () => this.props.submission && this.props.submission.verificationData.status === "Processed";
 
+    renderStatusBar = () =>
+        <div className="code-review-status-bar">
+            {this.renderDiffStatus()}
+            <div className="clearfix"></div>
+        </div>
+
+    shrinkRev = (rev: string) => rev.substring(0, 10)
+
+    renderSubLink = (id?: number) => {
+        if (!id) {
+            return undefined;
+        }
+
+        return <span>{" "}(<a href={`/submission/${id}/review/code/${this.props.editor.file}`}>Sub #{id}</a>)</span>
+    }
+
+    renderSubText = (id?: number) => {
+        if (!id) {
+            return undefined;
+        }
+        return ` (Sub #${id})`
+    }
+
+    renderDiffStatus = () => {
+        if (!this.props.diff.from || !this.props.diff.to)
+            return undefined;
+
+        if (this.props.diff.from.revision === this.props.diff.to.revision)
+            return undefined;
+
+        return <div className="pull-right text-muted">
+            {"Showing diff "}
+            {this.shrinkRev(this.props.diff.from.revision)}
+            {this.renderSubLink(this.props.diff.from.submissionId)}
+            {" .. "}
+            {this.shrinkRev(this.props.diff.to.revision)}
+            {this.renderSubText(this.props.diff.to.submissionId)}
+        </div>
+    }
+
+    renderModal = () =>
+        <Modal show={this.state.showDiffModal} onHide={() => {
+            this.setState({
+                showDiffModal: false,
+                baseChoice: this.baseToFormState(this.props.diff.base)
+            })
+        }}>
+            <Modal.Header closeButton>
+                <Modal.Title>Settings</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <FormGroup controlId="diff-base" >
+                    <ControlLabel>Diff base</ControlLabel>
+                    <Radio
+                        name="diff-base"
+                        value="COURSE_BASE"
+                        checked={this.state.baseChoice.type === "COURSE_BASE"}
+                        onChange={() => this.setState({
+                            ...this.state,
+                            baseChoice: {
+                                type: "COURSE_BASE",
+                                submissionId: null
+                            }
+                        })}>
+                        Course base revision
+                    </Radio>
+                    {" "}
+                    <Radio
+                        name="diff-base"
+                        value="PREVIOUS_CLOSED"
+                        checked={this.state.baseChoice.type === "PREVIOUS_CLOSED"}
+                        onChange={() => this.setState({
+                            ...this.state,
+                            baseChoice: {
+                                type: "PREVIOUS_CLOSED",
+                                submissionId: null
+                            }
+                        })}>
+                        Latest closed submission
+                    </Radio>
+                    {this.props.capabilities.canViewTags &&<Radio
+                        name="diff-base"
+                        value="PREVIOUS_CHECKED"
+                        checked={this.state.baseChoice.type === "PREVIOUS_CHECKED"}
+                        onChange={() => this.setState({
+                            ...this.state,
+                            baseChoice: {
+                                type: "PREVIOUS_CHECKED",
+                                submissionId: null
+                            }
+                        })}>
+                        Latest checked submission
+                    </Radio>}
+                    <Radio
+                        name="diff-base"
+                        value="SUBMISSION_ID"
+                        checked={this.state.baseChoice.type === "SUBMISSION_ID"}
+                        onChange={() => this.setState({
+                            ...this.state,
+                            baseChoice: {
+                                type: "SUBMISSION_ID",
+                                submissionId: this.state.baseChoice.submissionId
+                            }
+                        })}>
+                        Specific submission
+
+                    </Radio>
+                </FormGroup>
+                {this.state.baseChoice.type == "SUBMISSION_ID" && <FormGroup controlId="submission-id">
+                    <ControlLabel >Submission Id</ControlLabel>
+                    <FormControl
+                        type="text"
+                        value={this.state.baseChoice.submissionId || ""}
+                        onChange={(e: ChangeEvent<any>) => {
+                            this.setState({
+                                ...this.state,
+                                baseChoice: {
+                                    type: "SUBMISSION_ID",
+                                    submissionId: e.target.value as string || ""
+                                }
+                            })
+                        }}
+                    />
+                    <FormControl.Feedback/>
+                </FormGroup>}
+            </Modal.Body>
+            <Modal.Footer>
+                <SplitButton
+                    id="apply-diff-preference-dropdown"
+                    title="Apply"
+                    bsStyle="success"
+                    disabled={this.state.baseChoice.type == "SUBMISSION_ID" &&
+                        isNaN(parseInt(this.state.baseChoice.submissionId || ""))}
+                    onClick={() => this.applyDiffPreference(false)}>
+                    <MenuItem eventKey="apply-and-save"
+                              disabled={this.state.baseChoice.type == "SUBMISSION_ID"}
+                              onClick={() => this.applyDiffPreference(true)}>Apply and save</MenuItem>
+                </SplitButton>
+            </Modal.Footer>
+        </Modal>
+
+    applyDiffPreference = (persist: boolean) => {
+        this.props.diff.onChangeDiffBase(
+            this.props.submission!!.record.id, {
+                type: this.state.baseChoice.type,
+                submissionId: this.state.baseChoice.type == "SUBMISSION_ID" ?
+                    parseInt(this.state.baseChoice.submissionId || "0") :
+                    undefined
+            }, persist)
+        this.setState({
+            showDiffModal: false
+        })
+    }
 
     render() {
         if (!this.props.submission) {

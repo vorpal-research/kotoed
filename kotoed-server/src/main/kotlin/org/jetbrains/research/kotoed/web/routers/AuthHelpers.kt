@@ -43,7 +43,8 @@ suspend fun handleRootPerms(context: RoutingContext) {
 
     context.response().end(
         Permissions.Root(
-            createCourse = isTeacher
+            createCourse = isTeacher,
+            tags = isTeacher
         )
     )
 }

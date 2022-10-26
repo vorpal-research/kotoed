@@ -35,7 +35,6 @@ const config: webpack.Configuration = {
     context: srcMain,
 
     entry: {
-        hello: kotoedEntry("./ts/hello.ts"),
         profile: kotoedEntry("./ts/profile/index.tsx"),
         profileEdit: kotoedEntry("./ts/profile/edit.tsx"),
         login: kotoedEntry("./ts/login/index.tsx", false),

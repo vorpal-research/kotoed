@@ -1,16 +1,17 @@
 import {sleep} from "../../util/common";
 import {EventBusError} from "../../util/vertx";
-import {eventBus} from "../../eventBus";
 import {ResponseWithStatus, SubmissionIdRequest} from "./common";
 import {Kotoed} from "../../util/kotoed-api";
 import {sendAsync} from "../../views/components/common";
+import {Generated} from "../../util/kotoed-generated";
+import {DenizenPrincipal, DiffModePreference} from "../../data/denizen";
+import Address = Kotoed.Address;
 
 export type FileType = "file" | "directory"
 
 export interface File {
     type: FileType;
     name: string,
-    changed: boolean,
     children?: Array<File>
 }
 
@@ -52,8 +53,21 @@ interface FileResponse extends ResponseWithStatus {
     contents: string
 }
 
-interface FileDiffResponse extends ResponseWithStatus {
+export interface RevisionInfo {
+    revision: string, submissionId?: number
+}
+
+export interface FileDiffResponse extends ResponseWithStatus {
     diff: Array<FileDiffResult>
+    from: RevisionInfo
+    to: RevisionInfo
+}
+
+
+export type DiffBaseType = 'SUBMISSION_ID' | 'PREVIOUS_CLOSED' | 'PREVIOUS_CHECKED' | 'COURSE_BASE';
+export interface DiffBase {
+    submissionId?: number,
+    type: DiffBaseType
 }
 
 type IsReadyRequest = SubmissionIdRequest
@@ -98,14 +112,15 @@ export async function fetchFile(submissionId: number,
     return res.contents;
 }
 
-export async function fetchDiff(submissionId: number): Promise<Array<FileDiffResult>> {
+export async function fetchDiff(submissionId: number,
+                                base: DiffBase): Promise<FileDiffResponse> {
 
-    let res = await repeatTillReady<FileDiffResponse>(() => {
+    return await repeatTillReady<FileDiffResponse>(() => {
         return sendAsync(Kotoed.Address.Api.Submission.Code.Diff, {
-            submissionId: submissionId
+            submissionId: submissionId,
+            base
         });
     });
-    return res.diff;
 }
 
 export async function waitTillReady(submissionId: number): Promise<void> {
@@ -114,4 +129,13 @@ export async function waitTillReady(submissionId: number): Promise<void> {
             submissionId: submissionId,
         })
     });
+}
+
+export async function updateDiffPreference(principal: DenizenPrincipal, preference: DiffModePreference) {
+    return await sendAsync(Address.Api.Denizen.Profile.Update, {
+        id: principal.id,
+        denizenId: principal.denizenId,
+        diffModePreference: preference
+    });
+
 }

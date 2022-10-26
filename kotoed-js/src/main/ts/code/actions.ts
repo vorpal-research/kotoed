@@ -8,7 +8,16 @@ import {
 import {
     Comment, CommentsState, CommentState, FileComments, LineComments, ReviewComments
 } from "./state/comments";
-import {fetchDiff, fetchFile, fetchRootDir, File, FileDiffResult, FileType} from "./remote/code";
+import {
+    DiffBase,
+    fetchDiff,
+    fetchFile,
+    fetchRootDir,
+    File,
+    FileDiffResponse,
+    FileDiffResult,
+    FileType, updateDiffPreference
+} from "./remote/code";
 import {FileNotFoundError} from "./errors";
 import {push} from "react-router-redux";
 import {Dispatch} from "redux";
@@ -22,7 +31,7 @@ import {
     editComment as doEditComment
 } from "./remote/comments";
 import {Capabilities, fetchCapabilities} from "./remote/capabilities";
-import {getFilePath, getNodePath} from "./util/filetree";
+import {applyDiffToFileTree, getFilePath, getNodePath} from "./util/filetree";
 import {NodePath} from "./state/blueprintTree";
 import {makeCodeReviewCodePath, makeCodeReviewLostFoundPath} from "../util/url";
 import {DbRecordWrapper, isStatusFinal} from "../data/verification";
@@ -33,6 +42,7 @@ import {fetchAnnotations} from "./remote/annotations";
 import {ReviewAnnotations} from "./state/annotations";
 import {CommentTemplates, fetchCommentTemplates} from "./remote/templates";
 import natsort from "natsort";
+import {pick, typedKeys} from "../util/common";
 
 const actionCreator = actionCreatorFactory();
 
@@ -114,6 +124,18 @@ interface FormLockUnlockPayload {
     sourceline: number
 }
 
+interface DiffBasePayload {
+    diffBase: DiffBase
+}
+
+interface PersistPayload {
+    persist: boolean
+}
+
+interface DiffResultPayload {
+    diff: FileDiffResult[]
+}
+
 // Local actions
 export const dirExpand = actionCreator<NodePathPayload>('DIR_EXPAND');
 export const dirCollapse = actionCreator<NodePathPayload>('DIR_COLLAPSE');
@@ -132,9 +154,9 @@ export const submissionFetch = actionCreator.async<SubmissionPayload, DbRecordWr
 
 
 // File or dir fetch actions
-export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult, {}>('ROOT_FETCH');
+export const rootFetch = actionCreator.async<SubmissionPayload, DirFetchResult & DiffResultPayload, {}>('ROOT_FETCH');
 export const fileLoad = actionCreator.async<FilePathPayload & SubmissionPayload, FileFetchResult, {}>('FILE_LOAD');
-export const fileDiff = actionCreator.async<FilePathPayload & SubmissionPayload, FileDiffResult | undefined, {}>('FILE_DIFF');
+export const diffFetch = actionCreator.async<SubmissionPayload & DiffBasePayload, FileDiffResponse>('DIFF_FETCH')
 
 // Annotation fetch actions
 export const annotationsFetch = actionCreator.async<number, ReviewAnnotations, {}>('ANNOTATION_FETCH');
@@ -217,36 +239,48 @@ const naturalSorter = natsort()
 const typeSorter = (a: File, b: File) => fileTypeDisplayOrder[a.type] - fileTypeDisplayOrder[b.type]
 
 export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
-        if (!getState().fileTreeState.loading)
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        const state = getState();
+        if (!state.fileTreeState.loading)
             return Promise.resolve();
 
         dispatch(rootFetch.started({
             submissionId: payload.submissionId
         }));
 
-        return fetchRootDir(payload.submissionId).then((root) => {
-            const recursiveSorter = (node: File) => {
-                if (node.children == null) {
-                    return
-                }
-                node.children.sort((a: File, b: File) =>
-                    typeSorter(a, b) || naturalSorter(a.name, b.name)
-                )
-                for (let child of node.children) {
-                    recursiveSorter(child)
-                }
+        const root = await fetchRootDir(payload.submissionId);
+
+        const recursiveSorter = (node: File) => {
+            if (node.children == null) {
+                return
             }
-            recursiveSorter(root)
-            dispatch(rootFetch.done({
-                params: {
-                    submissionId: payload.submissionId
-                },
-                result: {
-                    root
-                }
-            }))
-        });
+            node.children.sort((a: File, b: File) =>
+                typeSorter(a, b) || naturalSorter(a.name, b.name)
+            )
+            for (let child of node.children) {
+                recursiveSorter(child)
+            }
+        }
+        recursiveSorter(root)
+
+        const diff = await fetchDiff(payload.submissionId, state.diffState.base);
+
+        dispatch(rootFetch.done({
+            params: {
+                submissionId: payload.submissionId
+            },
+            result: {
+                root,
+                diff: diff.diff
+            }
+        }))
+        dispatch(diffFetch.done({
+            params: {
+                submissionId: payload.submissionId,
+                diffBase: state.diffState.base
+            },
+            result: diff
+        }))
     };
 }
 
@@ -310,8 +344,9 @@ export function setLostFoundPath(payload: SubmissionPayload) {
 
 
 export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
-    return (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
         let {filename} = payload;
+        const state = getState();
         dispatch(fileLoad.started({
             submissionId: payload.submissionId,
             filename
@@ -322,28 +357,38 @@ export function loadFileToEditor(payload: FilePathPayload & SubmissionPayload) {
             file: filename
         })(dispatch, getState);
 
-        fetchFile(payload.submissionId, filename).then(result => {
-            dispatch(fileLoad.done({
-                params: {
-                    submissionId: payload.submissionId,
-                    filename
-                },
-                result: {
-                    value: result,
-                    displayedComments: getState().commentsState.comments.get(filename, Map<number, LineComments>()),
-                }
-            }));
-        });
+        const result = await fetchFile(payload.submissionId, filename);
+        dispatch(fileLoad.done({
+            params: {
+                submissionId: payload.submissionId,
+                filename
+            },
+            result: {
+                value: result,
+                displayedComments: state.commentsState.comments.get(filename, Map<number, LineComments>()),
+            }
+        }));
 
-        fetchDiff(payload.submissionId).then(result => {
-            dispatch(fileDiff.done({
-                params: {
-                    submissionId: payload.submissionId,
-                    filename
-                },
-                result: result.find((diff) => diff.toFile == filename)
-            }))
-        });
+    }
+}
+
+export function updateDiff(payload: SubmissionPayload & DiffBasePayload & PersistPayload) {
+    return async (dispatch: Dispatch<CodeReviewState>, getState: () => CodeReviewState) => {
+        dispatch(diffFetch.started(payload))
+
+        const state = getState();
+        const patchedType = payload.diffBase.type == "SUBMISSION_ID" ? "PREVIOUS_CLOSED" : payload.diffBase.type;
+
+        if (payload.persist) {
+            updateDiffPreference(state.capabilitiesState.capabilities.principal, patchedType)
+        }
+
+        const diff = await fetchDiff(payload.submissionId, payload.diffBase);
+
+        dispatch(diffFetch.done({
+            params: payload,
+            result: diff
+        }))
     }
 }
 
