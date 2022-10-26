@@ -315,9 +315,6 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
                     .map {
                         it.toRecord<SubmissionRecord>()
                     }
-                    .filter {
-                        it.datetime < datetime
-                    }
                     .sortedByDescending {
                         it.datetime
                     }

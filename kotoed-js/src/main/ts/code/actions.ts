@@ -248,7 +248,7 @@ export function fetchRootDirIfNeeded(payload: SubmissionPayload) {
             submissionId: payload.submissionId
         }));
 
-        const root = await fetchRootDir(payload.submissionId, state.diffState.base);
+        const root = await fetchRootDir(payload.submissionId);
 
         const recursiveSorter = (node: File) => {
             if (node.children == null) {

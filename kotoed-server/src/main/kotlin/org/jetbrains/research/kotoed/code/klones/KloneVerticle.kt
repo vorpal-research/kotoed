@@ -167,8 +167,7 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
 
         val files: Code.ListResponse = sendJsonableAsync(
                 Address.Api.Submission.Code.List,
-                Code.Submission.ListRequest(sub.getInteger("id"),
-                        Code.Submission.DiffRequest.DiffBase(Code.Submission.DiffBaseType.PREVIOUS_CLOSED))
+                Code.Submission.ListRequest(sub.getInteger("id"))
         )
 
         return handleFiles(

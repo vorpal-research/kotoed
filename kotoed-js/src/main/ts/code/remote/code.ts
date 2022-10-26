@@ -87,12 +87,10 @@ async function repeatTillReady<T extends ResponseWithStatus>(doRequest: () => Pr
     }
 }
 
-export async function fetchRootDir(submissionId: number,
-                                   diffBase: DiffBase): Promise<File> {
+export async function fetchRootDir(submissionId: number): Promise<File> {
     let res = await repeatTillReady<RootDirResponse>(() => {
         return sendAsync(Kotoed.Address.Api.Submission.Code.List, {
-            submissionId: submissionId,
-            diffBase
+            submissionId: submissionId
         })
     });
     return res.root!;

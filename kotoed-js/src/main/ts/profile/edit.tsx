@@ -221,7 +221,6 @@ export class ProfileComponent extends ComponentWithLocalErrors<ProfileComponentP
                             value="COURSE_BASE"
                             checked={this.props.denizen.diffModePreference == "COURSE_BASE"}
                             onChange={this.bindRadio("diffModePreference")}
-                            defaultChecked={this.state.denizen.emailNotifications}
                         />
                         Course base revision
                     </label>

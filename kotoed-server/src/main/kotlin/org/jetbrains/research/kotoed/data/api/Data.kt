@@ -87,7 +87,7 @@ object Code {
                 val fromLine: Int? = null,
                 val toLine: Int? = null) : Jsonable
         data class ReadResponse(val contents: String, val status: CloneStatus) : Jsonable
-        data class ListRequest(val submissionId: Int, val diffBase: DiffRequest.DiffBase) : Jsonable
+        data class ListRequest(val submissionId: Int) : Jsonable
         data class DiffRequest(val submissionId: Int, val base: DiffBase) : Jsonable {
             class DiffBase(val type: DiffBaseType, val submissionId: Int? = null) : Jsonable {
                 init {
