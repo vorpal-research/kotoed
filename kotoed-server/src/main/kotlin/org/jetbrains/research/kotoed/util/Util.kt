@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.hazelcast.util.Base64
+import com.intellij.psi.PsiElement
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
@@ -20,6 +21,8 @@ import java.net.URI
 import java.net.URLEncoder
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.function.BiConsumer
+import java.util.function.BiFunction
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
@@ -295,3 +298,34 @@ fun <T: Any> GenericKType(kClass: KClass<out T>) = GenericKType<T>(kClass.starPr
 
 @OptIn(ExperimentalStdlibApi::class)
 inline fun <reified T> genericTypeOf(): GenericKType<T> = GenericKType(typeOf<T>())
+
+interface TreeVisitor<T> {
+    fun getLeaf(root: PsiElement): T
+
+    fun getSelf(element: PsiElement): T
+
+    fun getAccumulator(): BiFunction<T, T, T>
+
+    fun getStartLevelNum(): Int {
+        return 0
+    }
+
+    fun getConsumers(): List<BiConsumer<T, Int>> {
+        return emptyList()
+    }
+
+    fun dfs(root: PsiElement): Pair<T, Int> {
+        if (root.children.isEmpty()) {
+            return Pair(getLeaf(root), getStartLevelNum())
+        }
+        var maxLevel = 0
+        var accumulation = getSelf(root)
+        for (child in root.children) {
+            val nextLevel = dfs(child)
+            maxLevel = Math.max(maxLevel, nextLevel.second)
+            accumulation = getAccumulator().apply(accumulation, nextLevel.first)
+        }
+        getConsumers().forEach { it.accept(accumulation, maxLevel + 1) }
+        return Pair(accumulation, maxLevel + 1)
+    }
+}

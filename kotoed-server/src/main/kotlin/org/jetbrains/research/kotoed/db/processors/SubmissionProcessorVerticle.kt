@@ -1,8 +1,19 @@
 package org.jetbrains.research.kotoed.db.processors
 
+import com.intellij.psi.PsiElement
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.withContext
+import kotlinx.warnings.Warnings
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
+import org.jetbrains.kotlin.psi.psiUtil.endOffset
+import org.jetbrains.kotlin.psi.psiUtil.startOffsetSkippingComments
+import org.jetbrains.research.kotoed.api.getFullName
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
+import org.jetbrains.research.kotoed.code.diff.HunkJsonable
+import org.jetbrains.research.kotoed.code.diff.RangeJsonable
+import org.jetbrains.research.kotoed.data.api.Code
 import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.buildSystem.BuildAck
@@ -13,9 +24,14 @@ import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.code.getPsi
+import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
 import org.jetbrains.research.kotoed.util.database.executeKAsync
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
+import java.io.File
+import java.util.function.BiConsumer
+import java.util.function.BiFunction
 
 data class BuildTriggerResult(
         val result: String,
@@ -24,6 +40,7 @@ data class BuildTriggerResult(
 
 @AutoDeployable
 class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.SUBMISSION) {
+    private val ee by lazy { betterSingleThreadContext("submissionProcessorVerticle.executor") }
 
     // parent submission id can be invalid, filter it out
     override val checkedReferences: List<ForeignKey<SubmissionRecord, *>>
@@ -193,7 +210,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                                 buildRequestId = ack.buildId
                             }
                     )
-
+                    computeHashesFromSub(sub) //FIXME call only when create submission
                     VerificationData.Processed
                 }
                 1 -> {
@@ -337,5 +354,206 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         return VerificationData.Unknown
     }
+    private suspend fun computeHashesFromSub(res: SubmissionRecord) {
+        log.info("Start computing hashing for submission=[${res.id}]")
+        val diffResponse: Code.Submission.DiffResponse = sendJsonableAsync(
+            Address.Api.Submission.Code.DiffWithPrevious,
+            Code.Submission.DiffRequest(submissionId = res.id)
+        )
+        val files: Code.ListResponse = sendJsonableAsync(
+            Address.Api.Submission.Code.List,
+            Code.Submission.ListRequest(res.id)
+        )
 
+        temporaryKotlinEnv {
+            withContext(ee) {
+                val ktFiles =
+                    files.root?.toFileSeq()
+                        .orEmpty()
+                        .filter { it.endsWith(".kt") }
+                        .toList()                           //FIXME
+                        .map { filename ->
+                            val resp: Code.Submission.ReadResponse = sendJsonableAsync(
+                                Address.Api.Submission.Code.Read,
+                                Code.Submission.ReadRequest(
+                                    submissionId = res.id, path = filename
+                                )
+                            )
+                            getPsi(resp.contents, filename)
+                        }
+                val functionsList = ktFiles.asSequence()
+                    .flatMap { file ->
+                        file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                    }
+                    .filter { method ->
+                        method.annotationEntries.all { anno -> "@Test" != anno.text }
+                    }
+                    .map {
+                        @Suppress(Warnings.USELESS_CAST)
+                        it as PsiElement
+                    }
+                    .toList()
+
+                val changesInFiles = diffResponse.diff.associate {
+                    if (it.toFile != it.fromFile) {
+                        log.warn("File [${it.fromFile}] is renamed to [${it.toFile}]")
+                    }
+                    it.toFile to it.changes
+                }
+                val project = dbFindAsync(ProjectRecord().apply { id = res.projectId }).first()
+
+                for (function in functionsList) {
+                    processFunction(function, res, changesInFiles, project)
+                }
+
+            }
+        }
+
+    }
+
+    private suspend fun processFunction(
+        function: PsiElement,
+        res: SubmissionRecord,
+        changesInFiles: Map<String, List<HunkJsonable>>,
+        project: ProjectRecord
+    ) {
+        val functionFullName = (function as KtNamedFunction).getFullName()
+        val functionRecord = dbFindAsync(FunctionRecord().apply { name = functionFullName })
+        val functionFromDb: FunctionRecord
+        when (functionRecord.size) {
+            0 -> {
+                log.info("Add new function=[${functionFullName}] in submission=[${res.id}]")
+                functionFromDb = dbCreateAsync(FunctionRecord().apply { name = functionFullName })
+            }
+
+            1 -> {
+                functionFromDb = functionRecord.first()!!
+            }
+
+            else -> {
+                throw IllegalStateException(
+                    "Amount of function [${functionFullName}] in table is ${functionRecord.size}"
+                )
+            }
+        }
+        val document = function.containingFile.viewProvider.document
+            ?: throw IllegalStateException("Function's=[${function.containingFile.name}] document is null")
+        val fileChanges = changesInFiles[function.containingFile.name] ?: return
+        val funStartLine = document.getLineNumber(function.startOffsetSkippingComments) + 1
+        val funFinishLine = document.getLineNumber(function.endOffset) + 1
+        for (change in fileChanges) {
+            val range = change.to
+            if (isNeedToRecomputeHash(funStartLine, funFinishLine, range)) {
+                val hashesForLevels: List<List<Int>> = computeHashesForElement(function.bodyExpression as PsiElement)
+                putHashesInTable(hashesForLevels, functionFromDb, res, project)
+                break
+            }
+        }
+    }
+
+    private suspend fun putHashesInTable(
+        hashesForLevels: List<List<Int>>,
+        functionFromDb: FunctionRecord,
+        res: SubmissionRecord,
+        project: ProjectRecord
+    ) {
+        hashesForLevels.forEachIndexed { index, hashes ->
+            dbBatchCreateAsync(hashes.map {
+                FunctionPartHashRecord().apply {
+                    functionid = functionFromDb.id
+                    submissionid = res.id
+                    denizenId = project.denizenId
+                    hash = it
+                    level = index
+                }
+            })
+        }
+    }
+
+    fun computeHashesForElement(root: PsiElement): List<List<Int>> {
+        val associativeArray = mutableListOf<MutableList<Int>>(mutableListOf())
+        val treeVisitor = object : TreeVisitor<Int> {
+            override fun getLeaf(root: PsiElement): Int {
+                return getSelf(root)
+            }
+
+            override fun getSelf(element: PsiElement): Int {
+                return element.javaClass.name.hashCode()
+            }
+
+            override fun getAccumulator(): BiFunction<Int, Int, Int> {
+                return BiFunction { a, b -> a + b }
+            }
+
+            override fun getConsumers(): List<BiConsumer<Int, Int>> {
+                return listOf(BiConsumer<Int, Int> { hash, level ->
+                    if (level > associativeArray.size) {
+                        throw IllegalStateException(
+                            "Level=[${level}] more than associativeArray size=[${associativeArray.size}]"
+                        )
+                    }
+                    if (level == associativeArray.size) {
+                        associativeArray.add(mutableListOf())
+                    }
+                    associativeArray[level].add(hash)
+                })
+            }
+        }
+        treeVisitor.dfs(root)
+        return associativeArray
+    }
+
+    private fun isNeedToRecomputeHash(funStartLine: Int, funFinishLine: Int, changesRange: RangeJsonable): Boolean {
+        val start = changesRange.start
+        val finish = start + changesRange.count
+        val out = start > funFinishLine || finish < funStartLine
+        return !out
+    }
+
+
+    private fun computeStatistics(list: List<PsiElement>) {
+        val treeVisitor = object : TreeVisitor<Int> {
+            override fun getLeaf(root: PsiElement): Int {
+                return 0
+            }
+
+            override fun getSelf(element: PsiElement): Int {
+                return 1
+            }
+
+            override fun getAccumulator(): BiFunction<Int, Int, Int> {
+                return BiFunction { a, b -> a + b }
+            }
+        }
+        val otherList = list.map {
+            val levelsCount = treeVisitor.dfs(it.children.last()).first
+            val linesCount = it.children[it.children.size - 1].text.count { chr -> chr == '\n' } + 1
+            (it as KtNamedFunction).name to Pair(levelsCount, linesCount)
+        }.toList()
+        val sortedRatio = otherList
+            .map { el -> el.second.first * 1.0 / el.second.second }
+            .sorted()
+        val median: Double =
+            if (sortedRatio.size % 2 == 0) (sortedRatio[sortedRatio.size / 2 - 1] + sortedRatio[sortedRatio.size / 2]) / 2.0
+            else sortedRatio[sortedRatio.size / 2] * 1.0
+        val percentile95: Double = sortedRatio[(sortedRatio.size * 0.95).toInt()]
+
+        File("InformationAboutCommit")
+            .bufferedWriter()
+            .use { out ->
+                var treeLevelsSum = 0
+                var linesSum = 0
+                for (pair in otherList) {
+                    treeLevelsSum += pair.second.first
+                    val lineInFunctions = pair.second.second
+                    linesSum += lineInFunctions
+                    out.write("Name:${pair.first} ${pair.second.first} $lineInFunctions")
+                    out.newLine()
+                }
+                out.write("All statistics: TreeLevels:${treeLevelsSum} FunctionsLines:${linesSum}")
+                out.newLine()
+                out.write("Median:${median} 95_Percentile:${percentile95}")
+                out.flush()
+            }
+    }
 }

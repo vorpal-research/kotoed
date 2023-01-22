@@ -2,10 +2,10 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.jetbrains.research.kotoed.data.api.CountResponse
-import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
-import org.jetbrains.research.kotoed.data.api.SearchQuery
-import org.jetbrains.research.kotoed.data.api.VerificationData
+import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
+import org.jetbrains.research.kotoed.data.api.*
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.db.textSearch
@@ -14,13 +14,26 @@ import org.jetbrains.research.kotoed.database.Tables.COURSE_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
-import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
+import org.jetbrains.research.kotoed.database.tables.records.FunctionRecord
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.code.getPsi
+import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
 import org.jetbrains.research.kotoed.util.database.toRecord
+import java.lang.StringBuilder
+
+fun KtNamedFunction.getFullName(): String {
+    val resultName = StringBuilder(this.containingFile.name)
+    resultName.append(this.name)
+    for (valueParameter in this.valueParameters) {
+        resultName.append(valueParameter.typeReference!!.text)
+    }
+    return resultName.toString()
+}
 
 @AutoDeployable
 class CourseVerticle : AbstractKotoedVerticle(), Loggable {
+    private val ee by lazy { betterSingleThreadContext("courseVerticle.executor") }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Create)
     suspend fun handleCreate(course: CourseRecord): DbRecordWrapper<CourseRecord> {
@@ -51,6 +64,43 @@ class CourseVerticle : AbstractKotoedVerticle(), Loggable {
     suspend fun handleUpdate(course: CourseRecord): DbRecordWrapper<CourseRecord> {
         val res: CourseRecord = dbUpdateAsync(course)
         val status: VerificationData = dbProcessAsync(res)
+
+        val files: Code.ListResponse = sendJsonableAsync(
+            Address.Api.Course.Code.List,
+            Code.Course.ListRequest(course.id)
+        )
+        temporaryKotlinEnv {//FIXME COPYPASTE
+            withContext(ee) {
+                val ktFiles =
+                    files.root?.toFileSeq()
+                        .orEmpty()
+                        .filter { it.endsWith(".kt") }
+                        .toList()                           //FIXME
+                        .map { filename ->
+                            val resp: Code.Submission.ReadResponse = sendJsonableAsync(
+                                Address.Api.Submission.Code.Read,
+                                Code.Submission.ReadRequest(
+                                    submissionId = res.id, path = filename
+                                )
+                            )
+                            getPsi(resp.contents, filename)
+                        }
+                val functionsList = ktFiles.asSequence()
+                    .flatMap { file ->
+                        file.collectDescendantsOfType<KtNamedFunction>().asSequence()
+                    }
+                    .filter { method ->
+                        method.annotationEntries.all { anno -> "@Test" != anno.text }
+                    }
+                    .forEach {
+                        val resultName = it.getFullName()
+                        val functionRecord = FunctionRecord().apply { name = resultName }
+                        if (dbFindAsync(functionRecord).isEmpty()) {
+                            dbCreateAsync(functionRecord)
+                        }
+                    }
+            }
+        }
         return DbRecordWrapper(res, status)
     }
 

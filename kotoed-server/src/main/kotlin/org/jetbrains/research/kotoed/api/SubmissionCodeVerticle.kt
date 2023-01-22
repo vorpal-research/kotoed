@@ -1,10 +1,12 @@
 package org.jetbrains.research.kotoed.api
 
+import org.jetbrains.research.kotoed.data.api.Code
 import org.jetbrains.research.kotoed.data.api.Code.FileRecord
 import org.jetbrains.research.kotoed.data.api.Code.FileType.directory
 import org.jetbrains.research.kotoed.data.api.Code.FileType.file
 import org.jetbrains.research.kotoed.data.api.Code.ListResponse
 import org.jetbrains.research.kotoed.data.api.Code.Submission.RemoteRequest
+import org.jetbrains.research.kotoed.data.api.DiffType
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.vcs.*
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
@@ -132,6 +134,18 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
 
     @JsonableEventBusConsumerFor(Address.Api.Submission.Code.Diff)
     suspend fun handleSubmissionCodeDiff(message: SubDiffRequest): SubDiffResponse {
+        return diffResponse(message, DiffType.DIFF_WITH_CLOSED)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Api.Submission.Code.DiffWithPrevious)
+    suspend fun handleSubmissionCodeDiffWithPrevious(message: SubDiffRequest): SubDiffResponse {
+        return diffResponse(message, DiffType.DIFF_WITH_PREVIOUS)
+    }
+
+    private suspend fun diffResponse(
+        message: Code.Submission.DiffRequest,
+        diffType: DiffType
+    ): Code.Submission.DiffResponse {
         val submission: SubmissionRecord = dbFetchAsync(SubmissionRecord().apply { id = message.submissionId })
         val repoInfo = getCommitInfo(submission)
         when (repoInfo.cloneStatus) {
@@ -140,7 +154,7 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             else -> {
             }
         }
-        val diff = submissionCodeDiff(submission, repoInfo)
+        val diff = getDiff(submission, repoInfo, diffType)
         return SubDiffResponse(diff = diff.contents, status = repoInfo.cloneStatus)
     }
 
@@ -262,7 +276,21 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         )
     }
 
-    private suspend fun submissionCodeDiff(submission: SubmissionRecord, repoInfo: CommitInfo): DiffResponse {
+    private suspend fun getDiff(
+        submission: SubmissionRecord,
+        repoInfo: CommitInfo,
+        diffType: DiffType
+    ): DiffResponse {
+        return when (diffType) {
+            DiffType.DIFF_WITH_CLOSED -> submissionCodeDiff(submission, repoInfo)
+            DiffType.DIFF_WITH_PREVIOUS -> submissionCodeDiffWithPrevious(submission, repoInfo)
+        }
+    }
+
+    private suspend fun submissionCodeDiff(
+        submission: SubmissionRecord,
+        repoInfo: CommitInfo
+    ): DiffResponse {
         val closedSubs = dbFindAsync(SubmissionRecord().apply {
             projectId = submission.projectId
             state = SubmissionState.closed
@@ -272,6 +300,30 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
             it.datetime < submission.datetime
         }.sortedByDescending { it.datetime }.firstOrNull()
 
+        return getDiffBetweenSubmission(foundationSub, submission, repoInfo)
+    }
+
+    private suspend fun submissionCodeDiffWithPrevious(
+        submission: SubmissionRecord,
+        repoInfo: CommitInfo
+    ): DiffResponse {
+        val prevSubs = dbFindAsync(SubmissionRecord().apply {
+            projectId = submission.projectId
+            state != SubmissionState.invalid
+        })
+
+        val newestPrevSub = prevSubs.filter {
+            it.datetime < submission.datetime
+        }.sortedByDescending { it.datetime }.firstOrNull()
+
+        return getDiffBetweenSubmission(newestPrevSub, submission, repoInfo)
+    }
+
+    private suspend fun getDiffBetweenSubmission(
+        foundationSub: SubmissionRecord?,
+        submission: SubmissionRecord,
+        repoInfo: CommitInfo
+    ): DiffResponse {
         var baseRev = foundationSub?.revision
 
         if (baseRev == null) {
