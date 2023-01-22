@@ -23,6 +23,9 @@ enum class VerificationStatus {
     Processed,
     Invalid
 }
+enum class DiffType {
+    DIFF_WITH_PREVIOUS, DIFF_WITH_CLOSED
+}
 
 fun VerificationData?.bang() = this ?: VerificationData.Unknown
 
