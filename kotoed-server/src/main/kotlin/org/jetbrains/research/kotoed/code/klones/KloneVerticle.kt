@@ -14,9 +14,13 @@ import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.data.api.Code
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
+import org.jetbrains.research.kotoed.database.tables.records.FunctionPartHashRecord
+import org.jetbrains.research.kotoed.database.tables.records.ProcessedProjectSubRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
@@ -25,6 +29,7 @@ import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.code.getPsi
 import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
+import org.jooq.impl.DSL
 import org.kohsuke.randname.RandomNameGenerator
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
@@ -73,6 +78,17 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .join(projQ, field = "project_id")
 
         return sendJsonableCollectAsync(Address.DB.query("submission"), q)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.ProjectKloneCheck)
+    suspend fun handleSimilarHashesForProject(projectRecord: ProjectRecord) {
+       dbQueryAsync(ComplexDatabaseQuery(Tables.FUNCTION_PART_HASH).filter("${projectRecord.id}"))
+        //TODO remember lastProcessedSubId
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.DifferenceBetweenKlones)
+    suspend fun handleDifference(projectRecord: ProjectRecord) {
+        dbQueryAsync(ComplexDatabaseQuery(Tables.FUNCTION_PART_HASH))
     }
 
     @JsonableEventBusConsumerFor(Address.Code.KloneCheck)

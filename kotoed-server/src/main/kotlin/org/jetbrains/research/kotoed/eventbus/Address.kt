@@ -190,6 +190,8 @@ object Address {
         const val PurgeCache = "kotoed.code.purgecache"
 
         const val KloneCheck = "kotoed.code.klonecheck"
+        const val ProjectKloneCheck = "kotoed.code.project.klonecheck"
+        const val DifferenceBetweenKlones = "kotoed.code.difference"
     }
 
     object User {

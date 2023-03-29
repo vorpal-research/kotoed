@@ -3,12 +3,12 @@ package org.jetbrains.research.kotoed.db.processors
 import com.intellij.psi.PsiElement
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.withContext
-import kotlinx.warnings.Warnings
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.startOffsetSkippingComments
-import org.jetbrains.research.kotoed.api.getFullName
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.code.diff.HunkJsonable
@@ -29,18 +29,37 @@ import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
 import org.jetbrains.research.kotoed.util.database.executeKAsync
 import org.jetbrains.research.kotoed.util.database.toRecord
 import org.jooq.ForeignKey
-import java.io.File
-import java.util.function.BiConsumer
-import java.util.function.BiFunction
+import java.util.function.Consumer
 
 data class BuildTriggerResult(
         val result: String,
         val buildRequestId: Int
 ) : Jsonable
 
+fun KtNamedFunction.getFullName(): String {
+    val resultName = StringBuilder(this.containingFile.name)
+    if (!this.isTopLevel) {
+        if (this.parent is KtClassBody) {
+            val classParent = this.parent.parent as KtClass
+            resultName.append(classParent.name)
+        } else {
+            throw IllegalArgumentException("Function =${this.name} is not topLevel or class function")
+        }
+    }
+    if (this.receiverTypeReference != null) {
+        resultName.append(this.receiverTypeReference!!.text)
+    }
+    resultName.append(this.name)
+    for (valueParameter in this.valueParameters) {
+        resultName.append(valueParameter.typeReference?.text)
+    }
+    return resultName.toString()
+}
+
 @AutoDeployable
-class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.SUBMISSION) {
+class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(SUBMISSION) {
     private val ee by lazy { betterSingleThreadContext("submissionProcessorVerticle.executor") }
+    private val treeVisitor = TreeVisitor()
 
     // parent submission id can be invalid, filter it out
     override val checkedReferences: List<ForeignKey<SubmissionRecord, *>>
@@ -51,35 +70,35 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         get() = Location(Filename(path = sourcefile), sourceline)
 
     private suspend fun recreateCommentsAsync(vcsUid: String, parent: SubmissionRecord, child: SubmissionRecord) {
-        val submissionCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(Tables.SUBMISSION, id) }
-        val commentCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(Tables.SUBMISSION_COMMENT, id) }
+        val submissionCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(SUBMISSION, id) }
+        val commentCacheAsync = AsyncCache { id: Int -> fetchByIdAsync(SUBMISSION_COMMENT, id) }
         val ancestorCommentCacheAsync = AsyncCache { comment: SubmissionCommentRecord ->
             dbFindAsync(SubmissionCommentRecord().apply {
                 submissionId = comment.originalSubmissionId
                 persistentCommentId = comment.persistentCommentId
             }).expecting(
-                    message = "Duplicate or missing comment in chain detected: " +
-                            "submission.id = ${comment.originalSubmissionId} " +
-                            "comment.id = ${comment.persistentCommentId}"
+                message = "Duplicate or missing comment in chain detected: " +
+                        "submission.id = ${comment.originalSubmissionId} " +
+                        "comment.id = ${comment.persistentCommentId}"
             ) { 1 == it.size }
-                    .first()
+                .first()
         }
 
         val parentComments =
-                dbFindAsync(SubmissionCommentRecord().apply { submissionId = parent.id })
+            dbFindAsync(SubmissionCommentRecord().apply { submissionId = parent.id })
 
         val alreadyMappedPersistentIds =
-                dbFindAsync(SubmissionCommentRecord().apply { submissionId = child.id }).map { it.persistentCommentId }
+            dbFindAsync(SubmissionCommentRecord().apply { submissionId = child.id }).map { it.persistentCommentId }
 
         // first, we create all the missing comments
 
         val childComments: List<SubmissionCommentRecord> =
-                parentComments
-                        .asSequence()
-                        .filter { it.persistentCommentId !in alreadyMappedPersistentIds }
-                        .mapTo(mutableListOf()) { comment ->
-                            dbCreateAsync(comment.copy().apply { submissionId = child.id })
-                        }
+            parentComments
+                .asSequence()
+                .filter { it.persistentCommentId !in alreadyMappedPersistentIds }
+                .mapTo(mutableListOf()) { comment ->
+                    dbCreateAsync(comment.copy().apply { submissionId = child.id })
+                }
 
         // second, we remap all the locations and reply-chains
 
@@ -88,15 +107,15 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             val ancestorSubmission = submissionCacheAsync(ancestorComment.submissionId)
 
             val adjustedLocation: LocationResponse =
-                    sendJsonableAsync(
-                            Address.Code.LocationDiff,
-                            LocationRequest(
-                                    vcsUid,
-                                    ancestorComment.location,
-                                    ancestorSubmission.revision,
-                                    child.revision
-                            )
+                sendJsonableAsync(
+                    Address.Code.LocationDiff,
+                    LocationRequest(
+                        vcsUid,
+                        ancestorComment.location,
+                        ancestorSubmission.revision,
+                        child.revision
                     )
+                )
             comment.sourcefile = adjustedLocation.location.filename.path
             comment.sourceline = adjustedLocation.location.line
 
@@ -113,7 +132,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             val head: DialoguePoint get() = prev?.head?.also { prev = it } ?: this
         }
 
-        val dialogues = childComments.map { it.id to DialoguePoint(value =  it) }.toMap()
+        val dialogues = childComments.map { it.id to DialoguePoint(value = it) }.toMap()
         dialogues.forEach { (_, v) ->
             v.prev = dialogues[v.value.previousCommentId]
         }
@@ -126,7 +145,7 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
     private suspend fun copyTagsFrom(parent: SubmissionRecord, child: SubmissionRecord) {
         val parentTags = dbFindAsync(
-                SubmissionTagRecord().apply { submissionId = parent.id })
+            SubmissionTagRecord().apply { submissionId = parent.id })
 
         try {
             dbBatchCreateAsync(parentTags.map { it.apply { submissionId = child.id } })
@@ -137,37 +156,38 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
     private suspend fun getVcsInfo(project: ProjectRecord): RepositoryInfo {
         return sendJsonableAsync(
-                Address.Code.Download,
-                RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
+            Address.Code.Download,
+            RemoteRequest(VCS.valueOf(project.repoType), project.repoUrl).toJson()
         )
     }
 
     private suspend fun getVcsStatus(
-            vcsInfo: RepositoryInfo,
-            submission: SubmissionRecord): VerificationData {
+        vcsInfo: RepositoryInfo,
+        submission: SubmissionRecord
+    ): VerificationData {
 
         return when (vcsInfo.status) {
             CloneStatus.pending -> VerificationData.Unknown
             CloneStatus.done -> VerificationData.Processed
             CloneStatus.failed ->
                 dbCreateAsync(
-                        SubmissionStatusRecord().apply {
-                            this.submissionId = submission.id
-                            this.data = JsonObject(
-                                    "failure" to "Fetching remote repository failed",
-                                    "details" to vcsInfo.toJson()
-                            )
-                        }
+                    SubmissionStatusRecord().apply {
+                        this.submissionId = submission.id
+                        this.data = JsonObject(
+                            "failure" to "Fetching remote repository failed",
+                            "details" to vcsInfo.toJson()
+                        )
+                    }
                 ).id.let { VerificationData.Invalid(it) }
         }
     }
 
-    suspend override fun doProcess(data: JsonObject): VerificationData = run {
+    override suspend fun doProcess(data: JsonObject): VerificationData = run {
         val sub: SubmissionRecord = data.toRecord()
-        val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
+        val project: ProjectRecord = fetchByIdAsync(PROJECT, sub.projectId)
 
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
-            fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
+            fetchByIdAsync(SUBMISSION, sub.parentSubmissionId)
         }
 
         parentSub?.let {
@@ -200,8 +220,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             when (buildInfos.size) {
                 0 -> {
                     val ack: BuildAck = sendJsonableAsync(
-                            Address.BuildSystem.Build.Submission.Request,
-                            SubmissionRecord().apply { id = sub.id }
+                        Address.BuildSystem.Build.Submission.Request,
+                        SubmissionRecord().apply { id = sub.id }
                     )
 
                     dbCreateAsync(
@@ -259,13 +279,13 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         }
     }
 
-    suspend override fun verify(data: JsonObject?): VerificationData {
+    override suspend fun verify(data: JsonObject?): VerificationData {
         data ?: throw IllegalArgumentException("Cannot verify null submission")
 
         val sub: SubmissionRecord = data.toRecord()
-        val project: ProjectRecord = fetchByIdAsync(Tables.PROJECT, sub.projectId)
+        val project: ProjectRecord = fetchByIdAsync(PROJECT, sub.projectId)
         val parentSub: SubmissionRecord? = sub.parentSubmissionId?.let {
-            fetchByIdAsync(Tables.SUBMISSION, sub.parentSubmissionId)
+            fetchByIdAsync(SUBMISSION, sub.parentSubmissionId)
         }
 
         val vcsReq = getVcsInfo(project)
@@ -276,21 +296,21 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         try {
             val list: ListResponse = sendJsonableAsync(
-                    Address.Code.List,
-                    ListRequest(vcsReq.uid, sub.revision)
+                Address.Code.List,
+                ListRequest(vcsReq.uid, sub.revision)
             )
 
             list.ignore()
 
         } catch (ex: Exception) {
             val errorId = dbCreateAsync(
-                    SubmissionStatusRecord().apply {
-                        this.submissionId = sub.id
-                        this.data = JsonObject(
-                                "failure" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
-                                "details" to ex.message
-                        )
-                    }
+                SubmissionStatusRecord().apply {
+                    this.submissionId = sub.id
+                    this.data = JsonObject(
+                        "failure" to "Fetching revision ${sub.revision} for repository ${project.repoUrl} failed",
+                        "details" to ex.message
+                    )
+                }
             ).id
 
             return VerificationData.Invalid(errorId)
@@ -300,9 +320,9 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             val parentComments = dbFindAsync(SubmissionCommentRecord().apply { submissionId = parentSub.id })
 
             val ourComments = dbFindAsync(SubmissionCommentRecord().apply { submissionId = sub.id })
-                    .asSequence()
-                    .map { it.persistentCommentId }
-                    .toSet()
+                .asSequence()
+                .map { it.persistentCommentId }
+                .toSet()
 
             if (parentSub.state != SubmissionState.obsolete) {
                 return VerificationData.Unknown
@@ -320,19 +340,19 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
             0 -> VerificationData.Unknown
             else -> {
                 dbCreateAsync(
-                        SubmissionStatusRecord().apply {
-                            this.submissionId = sub.id
-                            this.data = JsonObject(
-                                    "failure" to "Several builds found for submission ${sub.id}",
-                                    "details" to buildInfos.tryToJson()
-                            )
-                        }
+                    SubmissionStatusRecord().apply {
+                        this.submissionId = sub.id
+                        this.data = JsonObject(
+                            "failure" to "Several builds found for submission ${sub.id}",
+                            "details" to buildInfos.tryToJson()
+                        )
+                    }
                 ).id.let { VerificationData.Invalid(it) }
             }
         }
     }
 
-    suspend override fun doClean(data: JsonObject): VerificationData {
+    override suspend fun doClean(data: JsonObject): VerificationData {
         val sub: SubmissionRecord = data.toRecord()
 
         async {
@@ -342,14 +362,14 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
 
         dbWithTransactionAsync {
             deleteFrom(SUBMISSION_STATUS)
-                    .where(SUBMISSION_STATUS.SUBMISSION_ID.eq(sub.id))
-                    .executeKAsync()
+                .where(SUBMISSION_STATUS.SUBMISSION_ID.eq(sub.id))
+                .executeKAsync()
             deleteFrom(SUBMISSION_RESULT)
-                    .where(SUBMISSION_RESULT.SUBMISSION_ID.eq(sub.id))
-                    .executeKAsync()
+                .where(SUBMISSION_RESULT.SUBMISSION_ID.eq(sub.id))
+                .executeKAsync()
             deleteFrom(BUILD)
-                    .where(BUILD.SUBMISSION_ID.eq(sub.id))
-                    .executeKAsync()
+                .where(BUILD.SUBMISSION_ID.eq(sub.id))
+                .executeKAsync()
         }
 
         return VerificationData.Unknown
@@ -386,11 +406,8 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                         file.collectDescendantsOfType<KtNamedFunction>().asSequence()
                     }
                     .filter { method ->
-                        method.annotationEntries.all { anno -> "@Test" != anno.text }
-                    }
-                    .map {
-                        @Suppress(Warnings.USELESS_CAST)
-                        it as PsiElement
+                        method.annotationEntries.all { anno -> "@Test" != anno.text } &&
+                                !method.containingFile.name.startsWith("test")
                     }
                     .toList()
 
@@ -401,8 +418,11 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                     it.toFile to it.changes
                 }
                 val project = dbFindAsync(ProjectRecord().apply { id = res.projectId }).first()
-
                 for (function in functionsList) {
+                    val needProcess = function.isTopLevel || function.parent is KtClassBody //FIXME
+                    if (!needProcess) {
+                        continue
+                    }
                     processFunction(function, res, changesInFiles, project)
                 }
 
@@ -412,17 +432,22 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     }
 
     private suspend fun processFunction(
-        function: PsiElement,
+        function: KtNamedFunction,
         res: SubmissionRecord,
         changesInFiles: Map<String, List<HunkJsonable>>,
         project: ProjectRecord
     ) {
-        val functionFullName = (function as KtNamedFunction).getFullName()
+        val functionFullName = function.getFullName()
+        if (function.bodyExpression == null) {
+            log.info("BodyExpression is null in function=${functionFullName}, submission=${res.id}")
+            return
+        }
         val functionRecord = dbFindAsync(FunctionRecord().apply { name = functionFullName })
         val functionFromDb: FunctionRecord
         when (functionRecord.size) {
             0 -> {
                 log.info("Add new function=[${functionFullName}] in submission=[${res.id}]")
+                //TODO add try catch
                 functionFromDb = dbCreateAsync(FunctionRecord().apply { name = functionFullName })
             }
 
@@ -444,63 +469,48 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
         for (change in fileChanges) {
             val range = change.to
             if (isNeedToRecomputeHash(funStartLine, funFinishLine, range)) {
-                val hashesForLevels: List<List<Int>> = computeHashesForElement(function.bodyExpression as PsiElement)
+                val hashesForLevels: MutableList<VisitResult> = computeHashesForElement(function.bodyExpression!!)
                 putHashesInTable(hashesForLevels, functionFromDb, res, project)
-                break
+                return
             }
         }
     }
 
     private suspend fun putHashesInTable(
-        hashesForLevels: List<List<Int>>,
+        hashes: MutableList<VisitResult>,
         functionFromDb: FunctionRecord,
         res: SubmissionRecord,
         project: ProjectRecord
     ) {
-        hashesForLevels.forEachIndexed { index, hashes ->
-            dbBatchCreateAsync(hashes.map {
+        if (hashes.isEmpty()) {
+            log.info("Hashes for funId=${functionFromDb.id}, subId=${res.id} is empty")
+            return
+        }
+        dbBatchCreateAsync(hashes.map {
                 FunctionPartHashRecord().apply {
                     functionid = functionFromDb.id
                     submissionid = res.id
-                    denizenId = project.denizenId
-                    hash = it
-                    level = index
+                    projectid = project.id
+                    leftbound = it.leftBound
+                    rightbound = it.rightBound
+                    hash = it.levelHash
                 }
             })
-        }
-    }
+        log.info("functionid = ${functionFromDb.id}, submissionid = ${res.id}, leavescount = ${hashes.last().leafNum}")
+        dbCreateAsync(FunctionLeavesRecord().apply {
+            functionid = functionFromDb.id
+            submissionid = res.id
+            leavescount = hashes.last().leafNum
+        })
+     }
 
-    fun computeHashesForElement(root: PsiElement): List<List<Int>> {
-        val associativeArray = mutableListOf<MutableList<Int>>(mutableListOf())
-        val treeVisitor = object : TreeVisitor<Int> {
-            override fun getLeaf(root: PsiElement): Int {
-                return getSelf(root)
-            }
-
-            override fun getSelf(element: PsiElement): Int {
-                return element.javaClass.name.hashCode()
-            }
-
-            override fun getAccumulator(): BiFunction<Int, Int, Int> {
-                return BiFunction { a, b -> a + b }
-            }
-
-            override fun getConsumers(): List<BiConsumer<Int, Int>> {
-                return listOf(BiConsumer<Int, Int> { hash, level ->
-                    if (level > associativeArray.size) {
-                        throw IllegalStateException(
-                            "Level=[${level}] more than associativeArray size=[${associativeArray.size}]"
-                        )
-                    }
-                    if (level == associativeArray.size) {
-                        associativeArray.add(mutableListOf())
-                    }
-                    associativeArray[level].add(hash)
-                })
-            }
-        }
-        treeVisitor.dfs(root)
-        return associativeArray
+    fun computeHashesForElement(root: PsiElement): MutableList<VisitResult> {
+        val visitResults = mutableListOf<VisitResult>()
+        val consumers = listOf(Consumer<VisitResult>{
+            visitResults.add(it)
+        })
+        treeVisitor.visitTree(root, consumers)
+        return visitResults
     }
 
     private fun isNeedToRecomputeHash(funStartLine: Int, funFinishLine: Int, changesRange: RangeJsonable): Boolean {
@@ -511,49 +521,53 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
     }
 
 
-    private fun computeStatistics(list: List<PsiElement>) {
-        val treeVisitor = object : TreeVisitor<Int> {
-            override fun getLeaf(root: PsiElement): Int {
-                return 0
-            }
 
-            override fun getSelf(element: PsiElement): Int {
-                return 1
-            }
+//
+//    private fun computeStatistics(list: List<PsiElement>) {
+//        val treeVisitor = object : TreeVisitor<Int>(
+//            accumulator = BiFunction { a, b -> a + b },
+//            startLevelNum = 0,
+//            consumers = emptyList()
+//        ) {
+//
+//            override fun processLeaf(root: PsiElement): Int {
+//                return 0
+//            }
+//
+//            override fun processNode(element: PsiElement): Int {
+//                return 1
+//            }
+//        }
+//        val otherList = list.map {
+//            val levelsCount = treeVisitor.dfs(it.children.last()).first
+//            val linesCount = it.children[it.children.size - 1].text.count { chr -> chr == '\n' } + 1
+//            (it as KtNamedFunction).name to Pair(levelsCount, linesCount)
+//        }.toList()
+//        val sortedRatio = otherList
+//            .map { el -> el.second.first * 1.0 / el.second.second }
+//            .sorted()
+//        val median: Double =
+//            if (sortedRatio.size % 2 == 0) (sortedRatio[sortedRatio.size / 2 - 1] + sortedRatio[sortedRatio.size / 2]) / 2.0
+//            else sortedRatio[sortedRatio.size / 2] * 1.0
+//        val percentile95: Double = sortedRatio[(sortedRatio.size * 0.95).toInt()]
+//
+//        File("InformationAboutCommit")
+//            .bufferedWriter()
+//            .use { out ->
+//                var treeLevelsSum = 0
+//                var linesSum = 0
+//                for (pair in otherList) {
+//                    treeLevelsSum += pair.second.first
+//                    val lineInFunctions = pair.second.second
+//                    linesSum += lineInFunctions
+//                    out.write("Name:${pair.first} ${pair.second.first} $lineInFunctions")
+//                    out.newLine()
+//                }
+//                out.write("All statistics: TreeLevels:${treeLevelsSum} FunctionsLines:${linesSum}")
+//                out.newLine()
+//                out.write("Median:${median} 95_Percentile:${percentile95}")
+//                out.flush()
+//            }
+//    }
 
-            override fun getAccumulator(): BiFunction<Int, Int, Int> {
-                return BiFunction { a, b -> a + b }
-            }
-        }
-        val otherList = list.map {
-            val levelsCount = treeVisitor.dfs(it.children.last()).first
-            val linesCount = it.children[it.children.size - 1].text.count { chr -> chr == '\n' } + 1
-            (it as KtNamedFunction).name to Pair(levelsCount, linesCount)
-        }.toList()
-        val sortedRatio = otherList
-            .map { el -> el.second.first * 1.0 / el.second.second }
-            .sorted()
-        val median: Double =
-            if (sortedRatio.size % 2 == 0) (sortedRatio[sortedRatio.size / 2 - 1] + sortedRatio[sortedRatio.size / 2]) / 2.0
-            else sortedRatio[sortedRatio.size / 2] * 1.0
-        val percentile95: Double = sortedRatio[(sortedRatio.size * 0.95).toInt()]
-
-        File("InformationAboutCommit")
-            .bufferedWriter()
-            .use { out ->
-                var treeLevelsSum = 0
-                var linesSum = 0
-                for (pair in otherList) {
-                    treeLevelsSum += pair.second.first
-                    val lineInFunctions = pair.second.second
-                    linesSum += lineInFunctions
-                    out.write("Name:${pair.first} ${pair.second.first} $lineInFunctions")
-                    out.newLine()
-                }
-                out.write("All statistics: TreeLevels:${treeLevelsSum} FunctionsLines:${linesSum}")
-                out.newLine()
-                out.write("Median:${median} 95_Percentile:${percentile95}")
-                out.flush()
-            }
-    }
 }

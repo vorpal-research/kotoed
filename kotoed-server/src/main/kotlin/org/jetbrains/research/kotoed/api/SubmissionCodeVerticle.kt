@@ -8,14 +8,21 @@ import org.jetbrains.research.kotoed.data.api.Code.ListResponse
 import org.jetbrains.research.kotoed.data.api.Code.Submission.RemoteRequest
 import org.jetbrains.research.kotoed.data.api.DiffType
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.vcs.*
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
+import org.jetbrains.research.kotoed.database.tables.records.CommentTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
+import org.jetbrains.research.kotoed.util.AnyAsJson.get
 import org.jetbrains.research.kotoed.util.database.toRecord
+import java.sql.Timestamp
+import java.time.OffsetDateTime
 import org.jetbrains.research.kotoed.data.api.Code.Course.ListRequest as CrsListRequest
 import org.jetbrains.research.kotoed.data.api.Code.Course.ReadRequest as CrsReadRequest
 import org.jetbrains.research.kotoed.data.api.Code.Course.ReadResponse as CrsReadResponse
@@ -307,14 +314,22 @@ class SubmissionCodeVerticle : AbstractKotoedVerticle() {
         submission: SubmissionRecord,
         repoInfo: CommitInfo
     ): DiffResponse {
-        val prevSubs = dbFindAsync(SubmissionRecord().apply {
-            projectId = submission.projectId
-            state != SubmissionState.invalid
-        })
 
-        val newestPrevSub = prevSubs.filter {
-            it.datetime < submission.datetime
-        }.sortedByDescending { it.datetime }.firstOrNull()
+        val newestPrevSub: SubmissionRecord? = dbQueryAsync(
+            ComplexDatabaseQuery(Tables.SUBMISSION)
+                .filter(
+                    ("${Tables.SUBMISSION.PROJECT_ID.name} == %s and " +
+                            "${Tables.SUBMISSION.STATE.name} != %s and " +
+                            "${Tables.SUBMISSION.STATE.name} != %s and " +
+                            "${Tables.SUBMISSION.DATETIME.name} < %s").formatToQuery(
+                        submission.projectId,
+                        SubmissionState.invalid,
+                        SubmissionState.pending,
+                        submission.datetime
+                    )
+                )
+                .sortBy(Tables.SUBMISSION.DATETIME.name)
+        ).lastOrNull()?.toRecord()
 
         return getDiffBetweenSubmission(newestPrevSub, submission, repoInfo)
     }
