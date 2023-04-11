@@ -2,10 +2,10 @@ package org.jetbrains.research.kotoed.api
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
-import org.jetbrains.research.kotoed.data.api.*
+import org.jetbrains.research.kotoed.data.api.CountResponse
+import org.jetbrains.research.kotoed.data.api.DbRecordWrapper
+import org.jetbrains.research.kotoed.data.api.SearchQuery
+import org.jetbrains.research.kotoed.data.api.VerificationData
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.db.textSearch
@@ -14,18 +14,13 @@ import org.jetbrains.research.kotoed.database.Tables.COURSE_TEXT_SEARCH
 import org.jetbrains.research.kotoed.database.tables.records.BuildTemplateRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
 import org.jetbrains.research.kotoed.database.tables.records.CourseStatusRecord
-import org.jetbrains.research.kotoed.database.tables.records.FunctionRecord
+import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.util.*
-import org.jetbrains.research.kotoed.util.code.getPsi
-import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
 import org.jetbrains.research.kotoed.util.database.toRecord
-import java.lang.StringBuilder
-
 
 @AutoDeployable
 class CourseVerticle : AbstractKotoedVerticle(), Loggable {
-    private val ee by lazy { betterSingleThreadContext("courseVerticle.executor") }
 
     @JsonableEventBusConsumerFor(Address.Api.Course.Create)
     suspend fun handleCreate(course: CourseRecord): DbRecordWrapper<CourseRecord> {

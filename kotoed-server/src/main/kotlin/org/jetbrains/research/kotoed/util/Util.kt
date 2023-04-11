@@ -6,7 +6,6 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.hazelcast.util.Base64
-import com.intellij.psi.PsiElement
 import io.vertx.core.MultiMap
 import io.vertx.core.logging.Logger
 import io.vertx.core.logging.LoggerFactory
@@ -26,6 +25,7 @@ import kotlin.reflect.KType
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 /******************************************************************************/

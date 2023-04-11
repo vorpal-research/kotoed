@@ -138,7 +138,6 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
         subNums: (Set<Int>)?,
     ) {
 
-
         val oldAlgoMap = fillMapForOldAlgo(oldAlgoClones, funIdProducer, subNums)
         val newAlgoMap = fillNewAlgoMap(newAlgoClones)
         val sameRecords = mutableMapOf<Pair<Int, Int>, MutableSet<Pair<Int, Int>>>()
@@ -324,12 +323,8 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
     ) {
         val recordFunctionSegment = record.fLeftbound to record.fRightbound
         val otherFunctionSegment = record.sLeftbound to record.sRightbound
-        var otherSegments = segmentsMap[recordFunctionSegment]
-        if (otherSegments == null) {
-            otherSegments = mutableListOf()
-            segmentsMap[recordFunctionSegment] = otherSegments
-        }
-        otherSegments.add(otherFunctionSegment)
+
+        segmentsMap.computeIfAbsent(recordFunctionSegment) { mutableListOf() }.add(otherFunctionSegment)
     }
 
     private fun isCloneRecordsFromDifferentFunctions(

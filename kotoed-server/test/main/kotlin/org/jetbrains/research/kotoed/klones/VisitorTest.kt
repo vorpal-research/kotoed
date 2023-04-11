@@ -9,7 +9,7 @@ import com.intellij.psi.*
 import com.intellij.psi.scope.PsiScopeProcessor
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.SearchScope
-import org.jetbrains.research.kotoed.util.TreeVisitor
+import org.jetbrains.research.kotoed.util.TreeHashVisitor
 import org.jetbrains.research.kotoed.util.VisitResult
 import org.junit.Test
 import java.util.function.Consumer
@@ -17,7 +17,7 @@ import javax.swing.Icon
 import kotlin.test.assertEquals
 
 class VisitorTest {
-    private val treeVisitor = TreeVisitor()
+    private val treeHashVisitor = TreeHashVisitor()
     //           root
     //       0-5          6-7
     //    0-2   3-4  5;     6-6; 7;
@@ -42,7 +42,7 @@ class VisitorTest {
         val consumers = listOf<Consumer<VisitResult>>(Consumer {
             results.add(it)
         })
-        treeVisitor.visitTree(root, consumers)
+        treeHashVisitor.visitTree(root, consumers)
         var result = results[0]
         assertEquals(0, result.leftBound)
         assertEquals(2, result.rightBound)

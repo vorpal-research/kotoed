@@ -83,7 +83,6 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
     @JsonableEventBusConsumerFor(Address.Code.ProjectKloneCheck)
     suspend fun handleSimilarHashesForProject(projectRecord: ProjectRecord) {
        dbQueryAsync(ComplexDatabaseQuery(Tables.FUNCTION_PART_HASH).filter("${projectRecord.id}"))
-        //TODO remember lastProcessedSubId
     }
 
     @JsonableEventBusConsumerFor(Address.Code.DifferenceBetweenKlones)

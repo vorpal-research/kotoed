@@ -3,7 +3,7 @@ package org.jetbrains.research.kotoed.util
 import com.intellij.psi.PsiElement
 import java.util.function.Consumer
 
-class TreeVisitor {
+class TreeHashVisitor {
     fun visitTree(root: PsiElement, consumers: List<Consumer<VisitResult>>) {
         dfs(root, consumers, 0)
     }
