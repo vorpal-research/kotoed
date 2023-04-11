@@ -1,17 +1,14 @@
 package org.jetbrains.research.kotoed.klones
 
 import io.vertx.core.json.JsonArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.research.kotoed.database.tables.records.HashClonesRecord
-//import org.jetbrains.research.kotoed.db.FunctionPartHashVerticle
+import org.jetbrains.research.kotoed.db.FunctionPartHashVerticle
 import org.jetbrains.research.kotoed.util.Jsonable
-import org.jetbrains.research.kotoed.util.tryToJson
-import java.io.FileReader
+
 
 class KlonesAlgorithmComparingTest {
 
-//    private val service = FunctionPartHashVerticle()
+    private val service = FunctionPartHashVerticle()
 
     private val id = 1L
     private val projId = 1
@@ -38,7 +35,7 @@ class KlonesAlgorithmComparingTest {
 
         createOldCloneBetween(oldAlgoClones, THIRD_FUN_ID, FIRST_SUB_ID, THIRD_FUN_ID, SECOND_SUB_ID, 5)
 
-//        service.compareKlones(oldAlgoClones, newAlgoRecords, { t -> t.getInteger("fun_id") },"testFile", setOf(FIRST_SUB_ID))
+        service.compareKlones(oldAlgoClones, newAlgoRecords, { t -> t.getInteger("fun_id") },"testFile", setOf(FIRST_SUB_ID))
     }
 
     private fun addClonesBetween(

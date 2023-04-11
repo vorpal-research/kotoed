@@ -5,13 +5,11 @@ import io.vertx.core.json.JsonObject
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
 import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.tables.records.FunctionPartHashRecord
-import org.jetbrains.research.kotoed.database.tables.records.FunctionRecord
 import org.jetbrains.research.kotoed.database.tables.records.HashClonesRecord
 import org.jetbrains.research.kotoed.database.tables.records.ProcessedProjectSubRecord
 import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.dbBatchCreateAsync
-import org.jetbrains.research.kotoed.util.dbFetchAsync
 import org.jetbrains.research.kotoed.util.dbFindAsync
 import org.jooq.Record10
 import java.io.BufferedWriter
@@ -70,57 +68,66 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
 
         for (i in 1 until records.size) {
             if (isCloneRecordsFromDifferentFunctions(records[i], records[i - 1])) {
-                val fFun = records[i - 1].fFunctionid
-                val fSub = records[i - 1].fSubmissionid
-                val fProj = records[i - 1].fProjectid
-                val sFun = records[i - 1].sFunctionid
-                val sSub = records[i - 1].sSubmissionid
-                val sProj = records[i - 1].sProjectid
-
-                val segments = comparingList.map { record ->
-                    record.fLeftbound to record.fRightbound
-                }
-                val nonAbsorbedSegments = absorbingSegments(segments)
-                nonAbsorbedSegments.forEach { nonAbsorbedSegment ->
-                    val otherSegments = segmentsMap[nonAbsorbedSegment] ?: throw IllegalStateException(
-                        "After absorbing segments=${segments} for firstFunId=${fFun}, firstSubId=${fSub}, secondFunId=${sFun}," +
-                                " secondSubId=${sSub} for nonAbsorbedSegment=${nonAbsorbedSegment} second functions segments are null"
-                    )
-                    dbBatchCreateAsync(otherSegments.map { otherSegment ->
-                        HashClonesRecord().apply {
-                            fFunctionid = fFun
-                            fSubmissionid = fSub
-                            fProjectid = fProj
-                            fLeftbound = nonAbsorbedSegment.first
-                            fRightbound = nonAbsorbedSegment.second
-                            sFunctionid = sFun
-                            sSubmissionid = sSub
-                            sProjectid = sProj
-                            sLeftbound = otherSegment.first
-                            sRightbound = otherSegment.second
-                        }
-                    })
-                }
-                comparingList.clear()
-                segmentsMap.clear()
+                processFunctionClones(comparingList, segmentsMap, records[i - 1])
             }
             comparingList.add(records[i])
             putClonesRecordsSegmentsIntoMap(segmentsMap, records[i])
         }
+        processFunctionClones(comparingList, segmentsMap, records[records.size - 1])
         //TODO remember lastProcessedSub
         return JsonArray()
     }
 
+    private suspend fun processFunctionClones(
+        comparingList: MutableList<HashClonesRecord>,
+        segmentsMap: MutableMap<Pair<Int, Int>, MutableList<Pair<Int, Int>>>,
+        prevRecord: HashClonesRecord
+    ) {
+        val fFun = prevRecord.fFunctionid
+        val fSub = prevRecord.fSubmissionid
+        val fProj = prevRecord.fProjectid
+        val sFun = prevRecord.sFunctionid
+        val sSub = prevRecord.sSubmissionid
+        val sProj = prevRecord.sProjectid
+
+        val segments = comparingList.map { record ->
+            record.fLeftbound to record.fRightbound
+        }
+        val nonAbsorbedSegments = absorbingSegments(segments)
+        nonAbsorbedSegments.forEach { nonAbsorbedSegment ->
+            val otherSegments = segmentsMap[nonAbsorbedSegment] ?: throw IllegalStateException(
+                "After absorbing segments=${segments} for firstFunId=${fFun}, firstSubId=${fSub}, secondFunId=${sFun}," +
+                        " secondSubId=${sSub} for nonAbsorbedSegment=${nonAbsorbedSegment} second functions segments are null"
+            )
+            dbBatchCreateAsync(otherSegments.map { otherSegment ->
+                HashClonesRecord().apply {
+                    fFunctionid = fFun
+                    fSubmissionid = fSub
+                    fProjectid = fProj
+                    fLeftbound = nonAbsorbedSegment.first
+                    fRightbound = nonAbsorbedSegment.second
+                    sFunctionid = sFun
+                    sSubmissionid = sSub
+                    sProjectid = sProj
+                    sLeftbound = otherSegment.first
+                    sRightbound = otherSegment.second
+                }
+            })
+        }
+        comparingList.clear()
+        segmentsMap.clear()
+    }
+
     private suspend fun compareKlones() {
         val oldAlgoClones = JsonArray(dbFindAsync(SubmissionResultRecord().apply {
-            id = 287
+            id = 13
         }).first().body.toString())
 
         val newAlgoClones = dbFindAsync(
             HashClonesRecord().apply {
-                fSubmissionid = 261
+                fSubmissionid = 5
             })
-        compareKlones(oldAlgoClones, newAlgoClones, null, "prodTest", setOf(261))
+        compareKlones(oldAlgoClones, newAlgoClones, null, "prodTest", setOf(5))
     }
 
     suspend fun compareKlones(
@@ -283,13 +290,17 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
 
     private suspend fun getFunId(firstFun: JsonObject): Int? {
         val funName = firstFun.getString("function_name")
-        if (funName.isEmpty()) {
+        val path = firstFun.getJsonObject("file").getString("path")
+        val funIds = db {
+            select(Tables.FUNCTION.ID)
+                .from(Tables.FUNCTION)
+                .where(Tables.FUNCTION.NAME.like("${path}%${funName}%"))
+                .fetch()
+        }
+        if (funIds.size != 1) {
             return null
         }
-        val functionFromDb = dbFetchAsync(FunctionRecord().apply {
-            name = funName
-        })
-        return functionFromDb.id
+        return funIds.first().value1()
     }
 
     private fun intoHashCloneRecord(record: Record10<Int, Int, Int, Int, Int, Int, Int, Int, Int, Int>): HashClonesRecord {
