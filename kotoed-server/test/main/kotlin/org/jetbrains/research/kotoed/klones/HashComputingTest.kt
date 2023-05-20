@@ -2,6 +2,7 @@ package org.jetbrains.research.kotoed.klones
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.research.kotoed.api.HashComputingVerticle
 import org.jetbrains.research.kotoed.db.processors.SubmissionProcessorVerticle
 import org.jetbrains.research.kotoed.util.Loggable
 import org.jetbrains.research.kotoed.util.code.getPsi
@@ -10,7 +11,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class HashComputingTest: Loggable {
-    val subProcessorVarticle = SubmissionProcessorVerticle()
+    val hashComputingVerticle = HashComputingVerticle()
 
     @Test
     fun differentExpressionEqualsHashesTest() {
@@ -26,9 +27,9 @@ class HashComputingTest: Loggable {
             """
 
         val firstFun = getPsiElementFromString(firstFunction)
-        val hashesForFirstFunction = subProcessorVarticle.computeHashesForElement(firstFun)
+        val hashesForFirstFunction = hashComputingVerticle.computeHashesForElement(firstFun)
         val secondFun = getPsiElementFromString(secondFunction)
-        val hashesForSecondFunction = subProcessorVarticle.computeHashesForElement(secondFun)
+        val hashesForSecondFunction = hashComputingVerticle.computeHashesForElement(secondFun)
         assertEquals(hashesForFirstFunction, hashesForSecondFunction)
     }
 

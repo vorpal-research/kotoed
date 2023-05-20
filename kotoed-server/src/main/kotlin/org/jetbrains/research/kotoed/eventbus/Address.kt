@@ -192,6 +192,8 @@ object Address {
         const val KloneCheck = "kotoed.code.klonecheck"
         const val ProjectKloneCheck = "kotoed.code.project.klonecheck"
         const val DifferenceBetweenKlones = "kotoed.code.difference"
+        const val Hashes = "kotoed.code.hashes"
+        const val AllHashes = "kotoed.code.all.hashes"
     }
 
     object User {

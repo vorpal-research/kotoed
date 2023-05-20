@@ -11,10 +11,12 @@ import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRec
 import org.jetbrains.research.kotoed.util.AutoDeployable
 import org.jetbrains.research.kotoed.util.dbBatchCreateAsync
 import org.jetbrains.research.kotoed.util.dbFindAsync
+import org.jooq.Record1
 import org.jooq.Record10
 import java.io.BufferedWriter
 import java.io.File
 import java.util.Comparator
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Function
 import kotlin.math.abs
 
@@ -29,7 +31,29 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
             return JsonArray()
         }
         val projectId = Integer.parseInt(message_.filter)
+        if (projectId != -1) {
+            val start = System.currentTimeMillis()
+            processProjectClones(projectId)
+            log.info("Process klones for project=${projectId} for ${System.currentTimeMillis() - start} ms")
+            return JsonArray()
+        }
+        val projects = db {
+            select(Tables.FUNCTION_PART_HASH.PROJECTID)
+                .from(Tables.FUNCTION_PART_HASH)
+                .groupBy(Tables.FUNCTION_PART_HASH.PROJECTID)
+                .fetch()
+                .into(Int::class.java)
+        }
+        val start = System.currentTimeMillis()
+        val count = AtomicInteger()
+        projects.forEach { processProjectClones(it)
+            log.info("Process ${count.incrementAndGet()} projects") }
+        log.info("Process klones for ${count.get()} projects for ${System.currentTimeMillis() - start} ms")
+        //TODO remember lastProcessedSub
+        return JsonArray()
+    }
 
+    private suspend fun processProjectClones(projectId: Int) {
         val lastProcessedSub = dbFindAsync(ProcessedProjectSubRecord().apply {
             this.projectid = projectId
         })
@@ -49,7 +73,7 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
             )
                 .from(fph1)
                 .join(fph2)
-                .on(fph1.HASH.eq(fph2.HASH))
+                .on(fph1.HASH.eq(fph2.HASH).and(fph1.FUNCTIONID.eq(fph2.FUNCTIONID)))
                 .where(
                     fph1.PROJECTID.eq(projectId)
                         .and(fph1.SUBMISSIONID.greaterThan(lastProcessedSubId))
@@ -60,7 +84,7 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
                 .map { record -> intoHashCloneRecord(record) }
         }
         if (records.isEmpty()) {
-            return JsonArray()
+            return
         }
         val comparingList: MutableList<HashClonesRecord> = mutableListOf(records[0])
         val segmentsMap: MutableMap<Pair<Int, Int>, MutableList<Pair<Int, Int>>> = hashMapOf()
@@ -74,8 +98,6 @@ class FunctionPartHashVerticle : CrudDatabaseVerticleWithReferences<FunctionPart
             putClonesRecordsSegmentsIntoMap(segmentsMap, records[i])
         }
         processFunctionClones(comparingList, segmentsMap, records[records.size - 1])
-        //TODO remember lastProcessedSub
-        return JsonArray()
     }
 
     private suspend fun processFunctionClones(
