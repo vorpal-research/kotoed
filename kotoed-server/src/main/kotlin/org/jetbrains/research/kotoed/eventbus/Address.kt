@@ -110,6 +110,7 @@ object Address {
                 const val List = "kotoed.api.submission.code.list"
                 const val Date = "kotoed.api.submission.code.date"
                 const val Diff = "kotoed.api.submission.code.diff"
+                const val DiffWithPrevious = "kotoed.api.submission.code.diffWithPrevious"
             }
 
             object Result {
@@ -189,6 +190,10 @@ object Address {
         const val PurgeCache = "kotoed.code.purgecache"
 
         const val KloneCheck = "kotoed.code.klonecheck"
+        const val ProjectKloneCheck = "kotoed.code.project.klonecheck"
+        const val DifferenceBetweenKlones = "kotoed.code.difference"
+        const val Hashes = "kotoed.code.hashes"
+        const val AllHashes = "kotoed.code.all.hashes"
     }
 
     object User {

@@ -1,6 +1,9 @@
 package org.jetbrains.research.kotoed.db.processors
 
 import io.vertx.core.json.JsonObject
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtClassBody
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.code.Location
 import org.jetbrains.research.kotoed.data.api.VerificationData
@@ -22,8 +25,28 @@ data class BuildTriggerResult(
         val buildRequestId: Int
 ) : Jsonable
 
+fun KtNamedFunction.getFullName(): String {
+    val resultName = StringBuilder(this.containingFile.name)
+    if (!this.isTopLevel) {
+        if (this.parent is KtClassBody) {
+            val classParent = this.parent.parent as KtClass
+            resultName.append(classParent.name)
+        } else {
+            throw IllegalArgumentException("Function =${this.name} is not topLevel or class function")
+        }
+    }
+    if (this.receiverTypeReference != null) {
+        resultName.append(this.receiverTypeReference!!.text)
+    }
+    resultName.append(this.name)
+    for (valueParameter in this.valueParameters) {
+        resultName.append(valueParameter.typeReference?.text)
+    }
+    return resultName.toString()
+}
+
 @AutoDeployable
-class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.SUBMISSION) {
+class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(SUBMISSION) {
 
     // parent submission id can be invalid, filter it out
     override val checkedReferences: List<ForeignKey<SubmissionRecord, *>>
@@ -193,7 +216,10 @@ class SubmissionProcessorVerticle : ProcessorVerticle<SubmissionRecord>(Tables.S
                                 buildRequestId = ack.buildId
                             }
                     )
-
+                    val hashesVerificationData: VerificationData = sendJsonableAsync(
+                        Address.Code.Hashes,
+                        sub
+                    ) //FIXME call only when create submission
                     VerificationData.Processed
                 }
                 1 -> {

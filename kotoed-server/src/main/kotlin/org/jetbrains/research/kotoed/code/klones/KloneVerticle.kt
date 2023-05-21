@@ -13,21 +13,26 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.research.kotoed.code.Filename
 import org.jetbrains.research.kotoed.data.api.Code
+import org.jetbrains.research.kotoed.data.api.VerificationData
+import org.jetbrains.research.kotoed.data.api.VerificationStatus
 import org.jetbrains.research.kotoed.data.db.ComplexDatabaseQuery
+import org.jetbrains.research.kotoed.data.db.setPageForQuery
 import org.jetbrains.research.kotoed.data.vcs.CloneStatus
+import org.jetbrains.research.kotoed.database.Tables
 import org.jetbrains.research.kotoed.database.enums.SubmissionState
-import org.jetbrains.research.kotoed.database.tables.records.CourseRecord
-import org.jetbrains.research.kotoed.database.tables.records.ProjectRecord
-import org.jetbrains.research.kotoed.database.tables.records.SubmissionResultRecord
+import org.jetbrains.research.kotoed.database.tables.records.*
 import org.jetbrains.research.kotoed.db.condition.lang.formatToQuery
 import org.jetbrains.research.kotoed.eventbus.Address
 import org.jetbrains.research.kotoed.parsers.HaskellLexer
 import org.jetbrains.research.kotoed.util.*
 import org.jetbrains.research.kotoed.util.code.getPsi
 import org.jetbrains.research.kotoed.util.code.temporaryKotlinEnv
+import org.jetbrains.research.kotoed.util.database.toRecord
+import org.jooq.impl.DSL
 import org.kohsuke.randname.RandomNameGenerator
 import ru.spbstu.ktuples.placeholders._0
 import ru.spbstu.ktuples.placeholders.bind
+import java.util.concurrent.atomic.AtomicInteger
 
 sealed class KloneRequest(val priority: Int) : Jsonable, Comparable<KloneRequest> {
     override fun compareTo(other: KloneRequest): Int = priority - other.priority
@@ -73,6 +78,38 @@ class KloneVerticle : AbstractKotoedVerticle(), Loggable {
                 .join(projQ, field = "project_id")
 
         return sendJsonableCollectAsync(Address.DB.query("submission"), q)
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.ProjectKloneCheck)
+    suspend fun handleSimilarHashesForProject(projectRecord: ProjectRecord) {
+        dbQueryAsync(ComplexDatabaseQuery(Tables.FUNCTION_PART_HASH).filter("${projectRecord.id}"))
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.DifferenceBetweenKlones)
+    suspend fun handleDifference(projectRecord: ProjectRecord) {
+        dbQueryAsync(ComplexDatabaseQuery(Tables.FUNCTION_PART_HASH))
+    }
+
+    @JsonableEventBusConsumerFor(Address.Code.AllHashes)
+    suspend fun computeHashesForAllSubs(projectRecord: ProjectRecord) {
+        val startTime = System.currentTimeMillis()
+        val count = AtomicInteger()
+        val allSubs: List<JsonObject> = dbQueryAsync(
+            ComplexDatabaseQuery(Tables.SUBMISSION)
+                .join(ComplexDatabaseQuery(Tables.PROJECT).join(Tables.COURSE))
+                .filter("state != %s and state != %s and project.course.name == %s"
+                    .formatToQuery(SubmissionState.invalid, SubmissionState.pending, "KotlinAsFirst-2022"))
+                .limit(1000)
+        )
+        for (sub in allSubs) {
+            val submissionRecord = sub.toRecord<SubmissionRecord>()
+            val data: VerificationData = sendJsonableAsync(Address.Code.Hashes, submissionRecord)
+            if (data.status != VerificationStatus.Invalid) {
+                log.info("Count hashes for ${count.incrementAndGet()} submission")
+            }
+        }
+        log.info("All time in millis: ${System.currentTimeMillis() - startTime}")
+        log.info("Count hashes for ${count.get()} submission")
     }
 
     @JsonableEventBusConsumerFor(Address.Code.KloneCheck)
